@@ -33,9 +33,8 @@ public class Tray {
             menu.addSeparator();
             menu.add(item1);
 
-            ClassLoader classLoader = Tray.class.getClassLoader();
             SystemTray tray = SystemTray.getSystemTray();
-            ImageIcon icon = new ImageIcon(classLoader.getResource("com/urbanspork/client/mvc/resource/icon16x16.png"));
+            ImageIcon icon = new ImageIcon(Resource.TRAY_ICON.getAbsolutePath());
             TRAY_ICON = new TrayIcon(icon.getImage(), "Proxy Client", menu);
             TRAY_ICON.setImageAutoSize(true);
             tray.add(TRAY_ICON);

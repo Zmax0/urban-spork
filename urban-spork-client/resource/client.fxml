@@ -106,9 +106,6 @@
                   <JFXTextField fx:id="currentConfigMemoTextField" GridPane.columnIndex="9" GridPane.columnSpan="2" GridPane.rowIndex="9" />
                   <JFXTextField fx:id="clientConfigPortTextField"  GridPane.columnIndex="9" GridPane.columnSpan="2" GridPane.rowIndex="12" />
                   <JFXToggleButton fx:id="currentConfigPasswordToggleButton" contentDisplay="GRAPHIC_ONLY" ellipsisString="" graphicTextGap="0.0" onAction="#showCurrentConfigPassword" rotate="90.0" size="4.0" text=" " textAlignment="RIGHT" textOverrun="CLIP" toggleColor="BLACK" toggleLineColor="SLATEGRAY" GridPane.columnIndex="10" GridPane.halignment="RIGHT" GridPane.hgrow="NEVER" GridPane.rowIndex="5" GridPane.valignment="CENTER" GridPane.vgrow="NEVER">
-                     <GridPane.margin>
-                        <Insets />
-                     </GridPane.margin>
                      <padding>
                         <Insets bottom="-5.0" right="-5.0" top="-5.0" />
                      </padding></JFXToggleButton>

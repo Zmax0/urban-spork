@@ -7,17 +7,16 @@ import java.io.IOException;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.urbanspork.client.mvc.Resource;
 
 public class ConfigHandler {
-
-    private static final String CONFIG_NAME = "config.json";
 
     private File config;
 
     private boolean isNewFile;
 
     public ConfigHandler() {
-        this(deaultConfig());
+        this(Resource.CONFIG_JSON);
     }
 
     public ConfigHandler(File config) {
@@ -60,7 +59,4 @@ public class ConfigHandler {
         return t;
     }
 
-    private static File deaultConfig() {
-        return new File(ConfigHandler.class.getProtectionDomain().getCodeSource().getLocation().getFile() + '/' + CONFIG_NAME);
-    }
 }
