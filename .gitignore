@@ -1,0 +1,10 @@
+/.project
+/.classpath
+/cpu-admin.iml
+/.idea
+/.settings/
+/*/.project
+/*/.settings/
+/*/.idea
+/*/target/
+/*/.classpath

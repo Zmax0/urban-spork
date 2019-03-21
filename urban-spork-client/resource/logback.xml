@@ -1,0 +1,22 @@
+<configuration debug="false">
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%level [%thread] %logger{5} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="VIEW" class="com.urbanspork.client.mvc.Appender" />
+
+  <logger name="io.netty" additivity="false">
+    <appender-ref ref="STDOUT" />
+  </logger>
+
+  <logger name="com.urbanspork" additivity="false">
+    <appender-ref ref="VIEW" />
+  </logger>
+
+  <root level="INFO">
+    <appender-ref ref="VIEW" />
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>
