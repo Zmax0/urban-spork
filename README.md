@@ -9,6 +9,11 @@ Shadowsocks proxy build by java
 put *config.json* file into the unpacked folder
   
     {
-      "socks5.server.password":"{password}",
-      "socks5.server.port":{port}
+        "servers":[
+            {
+                "cipher":"{cipher}",
+                "password":"{password}",
+                "port":"{port}"
+            }
+        ]
     }
