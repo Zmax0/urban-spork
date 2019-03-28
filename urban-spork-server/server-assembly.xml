@@ -15,9 +15,9 @@
     <fileSet>
       <directory>resource</directory>
       <outputDirectory></outputDirectory>
-      <includes>
-        <include>*</include>
-      </includes>
+      <excludes>
+        <exclude>**/*.xml</exclude>
+      </excludes>
     </fileSet>
     <fileSet>
       <directory>${project.build.directory}</directory>
