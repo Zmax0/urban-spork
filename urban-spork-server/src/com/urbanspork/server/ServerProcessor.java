@@ -1,6 +1,7 @@
 package com.urbanspork.server;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,9 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.ByteToMessageDecoder.Cumulator;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.internal.StringUtil;
 
 public class ServerProcessor extends ChannelInboundHandlerAdapter {
@@ -53,22 +57,34 @@ public class ServerProcessor extends ChannelInboundHandlerAdapter {
                         .group(localChannel.eventLoop())
                         .channel(NioSocketChannel.class)
                         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30 * 1000)
+                        .option(ChannelOption.SO_RCVBUF, 32 * 1024)
                         .option(ChannelOption.SO_KEEPALIVE, true)
                         .option(ChannelOption.TCP_NODELAY, true)
                         .handler(new ChannelInitializer<SocketChannel>() {
                             @Override
                             protected void initChannel(SocketChannel ch) throws Exception {
-                                ch.pipeline().addLast(new DefaultChannelInboundHandler(localChannel));
+                                ch.pipeline()
+                                    .addLast(new IdleStateHandler(0, 0, 30, TimeUnit.SECONDS) {
+                                        @Override
+                                        protected IdleStateEvent newIdleStateEvent(IdleState state, boolean first) {
+                                            logger.debug("{} state: {}", remoteAddress, state);
+                                            ServerProcessor.this.close();
+                                            localChannel.close();
+                                            return super.newIdleStateEvent(state, first);
+                                        }
+                                    })
+                                    .addLast(new DefaultChannelInboundHandler(localChannel));
                             }
                         })
                         .connect(remoteAddress)
                         .addListener((ChannelFutureListener) future -> {
                             if (future.isSuccess()) {
-                                logger.info("Connect remote address: {}", remoteAddress);
                                 remoteChannel = future.channel();
+                                logger.info("Connect channel {}", remoteChannel);
                                 if (cumulation != null) {
-                                    remoteChannel.writeAndFlush(cumulation);
+                                    remoteChannel.write(cumulation);
                                     cumulation = null;
+                                    remoteChannel.flush();
                                 }
                             } else {
                                 throw new IllegalStateException("Connect " + remoteAddress + " failed");
@@ -76,11 +92,10 @@ public class ServerProcessor extends ChannelInboundHandlerAdapter {
                         });
                 }
                 if (cumulation != null && remoteChannel != null) {
-                    remoteChannel.writeAndFlush(cumulation);
+                    remoteChannel.write(cumulation);
                     cumulation = null;
+                    remoteChannel.flush();
                 }
-            } else {
-                throw new IllegalStateException("Get no remote address");
             }
         } else {
             ctx.fireChannelRead(msg);
@@ -89,14 +104,18 @@ public class ServerProcessor extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        this.close();
+        ctx.close();
+        logger.error(StringUtil.EMPTY_STRING, cause);
+    }
+
+    private void close() {
         if (cumulation != null) {
-            cumulation.release();
             cumulation = null;
         }
         if (remoteChannel != null) {
+            logger.info("Close channel {}", remoteChannel);
             remoteChannel.close();
         }
-        ctx.close();
-        logger.error(StringUtil.EMPTY_STRING, cause);
     }
 }
