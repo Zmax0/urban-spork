@@ -1,2 +1,13 @@
 #!/bin/bash
-nohup $JAVA_HOME/bin/java -jar urban-spork-server.jar > log 2>&1 &
+server="urban-spork-server"
+eval pid=$(pgrep -f ${server})
+if [ ${pid} ]
+then
+    echo "kill ${server} pid "${pid}
+    kill -9 ${pid}
+    sleep 2
+fi
+nohup $JAVA_HOME/bin/java -jar ${server}.jar > log 2>&1 &
+sleep 1
+eval pid=$(pgrep -f ${server})
+echo "start "${server}" ["${pid}"]"

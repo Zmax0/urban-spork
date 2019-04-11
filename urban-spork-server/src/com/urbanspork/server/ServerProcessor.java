@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.urbanspork.common.Attributes;
-import com.urbanspork.common.DefaultChannelInboundHandler;
+import com.urbanspork.common.CachedChannelInboundHandler;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -20,17 +20,10 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.handler.codec.ByteToMessageDecoder.Cumulator;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.internal.StringUtil;
 
 public class ServerProcessor extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerProcessor.class);
-
-    private final Cumulator cumulator = ByteToMessageDecoder.MERGE_CUMULATOR;
 
     private boolean first;
 
@@ -40,82 +33,65 @@ public class ServerProcessor extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (msg instanceof ByteBuf) {
+        Channel localChannel = ctx.channel();
+        InetSocketAddress remoteAddress = localChannel.attr(Attributes.REMOTE_ADDRESS).get();
+        if (msg instanceof ByteBuf && remoteAddress != null) {
             ByteBuf data = (ByteBuf) msg;
-            first = cumulation == null;
-            if (first) {
-                cumulation = data;
+            if (remoteChannel == null) {
+                first = cumulation == null;
+                if (first) {
+                    cumulation = data;
+                } else {
+                    ByteToMessageDecoder.MERGE_CUMULATOR.cumulate(ctx.alloc(), cumulation, data);
+                }
+                Bootstrap bootstrap = new Bootstrap();
+                bootstrap
+                    .group(localChannel.eventLoop())
+                    .channel(NioSocketChannel.class)
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) TimeUnit.SECONDS.toMillis(5))
+                    .option(ChannelOption.SO_KEEPALIVE, true)
+                    .handler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        protected void initChannel(SocketChannel remoteChannel) throws Exception {
+                            remoteChannel.pipeline().addLast(new CachedChannelInboundHandler(localChannel, cumulation.retain()));
+                        }
+                    })
+                    .connect(remoteAddress)
+                    .addListener((ChannelFutureListener) future -> {
+                        if (future.isSuccess()) {
+                            remoteChannel = future.channel();
+                            logger.info("Connect channel {}", remoteChannel);
+                        } else {
+                            throw new IllegalStateException("Connect " + remoteAddress + " failed");
+                        }
+                    });
             } else {
-                cumulator.cumulate(ctx.alloc(), cumulation, data);
+                remoteChannel.writeAndFlush(msg);
             }
-            Channel localChannel = ctx.channel();
-            InetSocketAddress remoteAddress = localChannel.attr(Attributes.REMOTE_ADDRESS).get();
-            if (remoteAddress != null) {
-                if (remoteChannel == null) {
-                    Bootstrap bootstrap = new Bootstrap();
-                    bootstrap
-                        .group(localChannel.eventLoop())
-                        .channel(NioSocketChannel.class)
-                        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30 * 1000)
-                        .option(ChannelOption.SO_RCVBUF, 32 * 1024)
-                        .option(ChannelOption.SO_KEEPALIVE, true)
-                        .option(ChannelOption.TCP_NODELAY, true)
-                        .handler(new ChannelInitializer<SocketChannel>() {
-                            @Override
-                            protected void initChannel(SocketChannel ch) throws Exception {
-                                ch.pipeline()
-                                    .addLast(new IdleStateHandler(0, 0, 30, TimeUnit.SECONDS) {
-                                        @Override
-                                        protected IdleStateEvent newIdleStateEvent(IdleState state, boolean first) {
-                                            logger.debug("{} state: {}", remoteAddress, state);
-                                            ServerProcessor.this.close();
-                                            localChannel.close();
-                                            return super.newIdleStateEvent(state, first);
-                                        }
-                                    })
-                                    .addLast(new DefaultChannelInboundHandler(localChannel));
-                            }
-                        })
-                        .connect(remoteAddress)
-                        .addListener((ChannelFutureListener) future -> {
-                            if (future.isSuccess()) {
-                                remoteChannel = future.channel();
-                                logger.info("Connect channel {}", remoteChannel);
-                                if (cumulation != null) {
-                                    remoteChannel.write(cumulation);
-                                    cumulation = null;
-                                    remoteChannel.flush();
-                                }
-                            } else {
-                                throw new IllegalStateException("Connect " + remoteAddress + " failed");
-                            }
-                        });
-                }
-                if (cumulation != null && remoteChannel != null) {
-                    remoteChannel.write(cumulation);
-                    cumulation = null;
-                    remoteChannel.flush();
-                }
-            }
-        } else {
-            ctx.fireChannelRead(msg);
         }
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        this.close();
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        logger.debug("Channel {} close", ctx.channel());
         ctx.close();
-        logger.error(StringUtil.EMPTY_STRING, cause);
+        release();
     }
 
-    private void close() {
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        logger.error("Channel " + ctx.channel() + " error, cause: ", cause);
+        ctx.channel().close();
+        release();
+    }
+
+    private void release() {
         if (cumulation != null) {
             cumulation = null;
         }
         if (remoteChannel != null) {
-            logger.info("Close channel {}", remoteChannel);
             remoteChannel.close();
         }
     }
+
 }

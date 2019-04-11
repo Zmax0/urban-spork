@@ -28,7 +28,7 @@ public class ClientInitializer extends ChannelInitializer<NioSocketChannel> {
     protected void initChannel(NioSocketChannel channel) throws Exception {
         ServerConfig config = clientConfig.getCurrent();
         if (config == null) {
-            logger.warn("Proxy server configuration is unreachale");
+            logger.error("Proxy server configuration is unreachale");
             channel.disconnect();
         } else {
             channel.attr(Attributes.SERVER_ADDRESS).set(new InetSocketAddress(config.getHost(), Integer.valueOf(config.getPort())));

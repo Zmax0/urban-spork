@@ -22,6 +22,7 @@ import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
+import io.netty.util.internal.StringUtil;
 
 public class ClientProcessor extends SimpleChannelInboundHandler<Socks5CommandRequest> {
 
@@ -36,8 +37,7 @@ public class ClientProcessor extends SimpleChannelInboundHandler<Socks5CommandRe
         bootstrap
             .group(localChannel.eventLoop())
             .channel(localChannel.getClass())
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
-            .option(ChannelOption.SO_KEEPALIVE, true)
+            .option(ChannelOption.TCP_NODELAY, true)
             .handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel remoteChannel) throws Exception {
@@ -50,10 +50,12 @@ public class ClientProcessor extends SimpleChannelInboundHandler<Socks5CommandRe
                         .addLast(new DefaultChannelInboundHandler(localChannel));
                 }
             }).connect(serverAddress).addListener((ChannelFutureListener) future -> {
+                localChannel.pipeline().remove(ClientProcessor.this);
                 if (future.isSuccess()) {
+                    localChannel.pipeline().addLast(new DefaultChannelInboundHandler(future.channel()));
                     localChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.IPv4));
-                    localChannel.pipeline().remove(ClientProcessor.this).addLast(new DefaultChannelInboundHandler(future.channel()));
                 } else {
+                    localChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, Socks5AddressType.IPv4));
                     logger.error("Connect proxy server failed");
                 }
             });
@@ -62,7 +64,8 @@ public class ClientProcessor extends SimpleChannelInboundHandler<Socks5CommandRe
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("Channel [{}] ERROR", ctx.channel().id(), cause);
+        logger.error(StringUtil.EMPTY_STRING, cause);
+        ctx.channel().writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, Socks5AddressType.IPv4));
     }
 
 }

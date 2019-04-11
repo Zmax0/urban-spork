@@ -10,6 +10,8 @@ import java.io.OutputStreamWriter;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 
+import io.netty.util.CharsetUtil;
+
 public class ConfigHandler {
 
     private static final String name = "config.json";
@@ -27,7 +29,7 @@ public class ConfigHandler {
         if (!config.exists()) {
             config.createNewFile();
         }
-        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(config), "UTF-8")) {
+        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(config), CharsetUtil.UTF_8.name())) {
             writer.write(JSON.toJSONString(object, SerializerFeature.DisableCircularReferenceDetect, SerializerFeature.PrettyFormat));
             writer.flush();
             writer.close();
@@ -39,7 +41,7 @@ public class ConfigHandler {
         if (config.exists()) {
             StringBuilder builder = new StringBuilder();
             char[] cbuf = new char[1];
-            try (InputStreamReader reader = new InputStreamReader(new FileInputStream(config), "UTF-8")) {
+            try (InputStreamReader reader = new InputStreamReader(new FileInputStream(config), CharsetUtil.UTF_8.name())) {
                 while (reader.read(cbuf) != -1) {
                     builder.append(cbuf);
                 }

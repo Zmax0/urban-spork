@@ -20,17 +20,13 @@ public class DefaultChannelInboundHandler extends SimpleChannelInboundHandler<By
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        if (channel.isActive()) {
-            channel.writeAndFlush(msg.retain());
-        } else {
-            logger.warn("Channel " + channel + " is not active");
-            msg.release();
-        }
+        channel.writeAndFlush(msg.retain());
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("Channel " + channel + " error, cause: ", cause);
+        logger.error("exceptionCaught Channel " + ctx.channel() + " error, cause: ", cause);
+        ctx.close();
     }
 
 }
