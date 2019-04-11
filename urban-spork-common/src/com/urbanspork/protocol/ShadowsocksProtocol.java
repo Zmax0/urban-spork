@@ -17,8 +17,9 @@ public interface ShadowsocksProtocol {
         String host = request.dstAddr();
         int port = request.dstPort();
         buf.writeByte(request.dstAddrType().byteValue());
-        buf.writeByte(host.length());
-        buf.writeBytes(host.getBytes(CharsetUtil.US_ASCII));
+        byte[] hostBytes = host.getBytes(CharsetUtil.US_ASCII);
+        buf.writeByte(hostBytes.length);
+        buf.writeBytes(hostBytes);
         buf.writeShort(port);
         return buf;
     }
@@ -27,25 +28,20 @@ public interface ShadowsocksProtocol {
         Socks5AddressType addressType = Socks5AddressType.valueOf(msg.getByte(0));
         if (addressType == Socks5AddressType.DOMAIN) {
             int length = (int) msg.getByte(1);
-            if (msg.readableBytes() < length + 4) {
-                return null;
+            if (msg.readableBytes() >= length + 4) {
+                msg.readerIndex(msg.readerIndex() + 2);
+                String host = msg.readCharSequence(length, CharsetUtil.US_ASCII).toString();
+                int port = msg.readUnsignedShort();
+                return new InetSocketAddress(host, port);
             }
-            msg.readerIndex(msg.readerIndex() + 2);
-            String host = msg.readCharSequence(length, CharsetUtil.US_ASCII).toString();
-            int port = msg.readUnsignedShort();
-            return new InetSocketAddress(host, port);
-        } else if (addressType == Socks5AddressType.IPv4) {
-            if (msg.readableBytes() < 7) {
-                return null;
-            }
+        } else if (addressType == Socks5AddressType.IPv4 && msg.readableBytes() >= 7) {
             msg.readerIndex(msg.readerIndex() + 1);
             ByteBuf ip = msg.readBytes(4);
             String host = InetAddress.getByAddress(ByteBufUtil.getBytes(ip)).toString().substring(1);
             int port = msg.readShort();
             return new InetSocketAddress(host, port);
-        } else {
-            return null;
         }
+        throw new IllegalArgumentException("Unknown address type: " + addressType);
     }
 
 }
