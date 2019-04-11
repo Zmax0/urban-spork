@@ -25,7 +25,11 @@ public class ShadowsocksProtocolCodec extends MessageToMessageCodec<ByteBuf, Byt
         if (request != null) {
             logger.debug("Encode request: {}", request.dstAddr() + ':' + request.dstPort());
             ctx.channel().attr(Attributes.REQUEST).set(null);
-            out.add(Unpooled.wrappedBuffer(ShadowsocksProtocol.encodeRequest(request), msg));
+            if (msg.isReadable()) {
+                out.add(Unpooled.wrappedBuffer(ShadowsocksProtocol.encodeRequest(request), msg));
+            } else {
+                out.add(Unpooled.wrappedBuffer(ShadowsocksProtocol.encodeRequest(request)));
+            }
         } else {
             out.add(msg);
         }

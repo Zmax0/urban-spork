@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.urbanspork.config.ClientConfig;
+import com.urbanspork.config.ConfigHandler;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -25,14 +26,18 @@ public class Client {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
-                .childHandler(new ClientInitializer(clientConfig))
-                .childOption(ChannelOption.SO_KEEPALIVE, true);
+                .childOption(ChannelOption.TCP_NODELAY, true)
+                .childHandler(new ClientInitializer(clientConfig)); 
             ChannelFuture f = b.bind(port).sync();
             f.channel().closeFuture().sync();
         } finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+        launch(ConfigHandler.read(ClientConfig.class));
     }
 
 }

@@ -21,9 +21,10 @@ public class ClientShakeHandsHandler extends SimpleChannelInboundHandler<SocksMe
                 ctx.writeAndFlush(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH));
             } else if (socksRequest instanceof Socks5CommandRequest) {
                 Socks5CommandRequest socksCommandRequest = (Socks5CommandRequest) socksRequest;
-                if (socksCommandRequest.type() == Socks5CommandType.CONNECT) {
+                Socks5CommandType socks5CommandType = socksCommandRequest.type();
+                if (socks5CommandType == Socks5CommandType.CONNECT) {
                     ctx.pipeline().addLast(new ClientProcessor()).remove(this);
-                    ctx.fireChannelRead(socksCommandRequest);
+                    ctx.fireChannelRead(socksRequest);
                 } else {
                     ctx.close();
                 }
