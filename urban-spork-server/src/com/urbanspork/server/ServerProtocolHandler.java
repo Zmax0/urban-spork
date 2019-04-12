@@ -11,17 +11,13 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.util.ReferenceCountUtil;
 
 public class ServerProtocolHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        ctx.close();
+        // skip
     }
 
     @Override
@@ -32,19 +28,27 @@ public class ServerProtocolHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof ByteBuf) {
-            Channel channel = ctx.channel();
-            ByteBuf buff = (ByteBuf) msg;
-            ShadowsocksCipher cipher = channel.attr(Attributes.CIPHER).get();
-            ShadowsocksKey key = channel.attr(Attributes.KEY).get();
-            byte[] decrypt = cipher.decrypt(ByteBufUtil.getBytes(buff), key);
-            ByteBuf decryptedBuff = Unpooled.buffer();
-            decryptedBuff.writeBytes(decrypt);
-            if (decryptedBuff.readableBytes() >= 2) {
-                channel.attr(Attributes.REMOTE_ADDRESS).set(ShadowsocksProtocol.decodeAddress(decryptedBuff));
-                channel.pipeline().addLast(new ServerProcessor(ctx, decryptedBuff)).remove(this);
+            try {
+                Channel channel = ctx.channel();
+                ShadowsocksCipher cipher = channel.attr(Attributes.CIPHER).get();
+                ShadowsocksKey key = channel.attr(Attributes.KEY).get();
+                byte[] decrypt = cipher.decrypt(ByteBufUtil.getBytes((ByteBuf) msg), key);
+                ByteBuf decryptedBuff = Unpooled.buffer();
+                decryptedBuff.writeBytes(decrypt);
+                if (decryptedBuff.readableBytes() >= 2) {
+                    channel.attr(Attributes.REMOTE_ADDRESS).set(ShadowsocksProtocol.decodeAddress(decryptedBuff));
+                    channel.pipeline().addLast(new RemoteConnectHandler(channel, decryptedBuff)).remove(this);
+                }
+            } finally {
+                ReferenceCountUtil.release(msg);
             }
         } else {
             ctx.fireChannelRead(msg);
         }
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        ctx.close();
     }
 }
