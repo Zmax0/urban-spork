@@ -24,24 +24,19 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.ReferenceCountUtil;
 
-public class ServerProcessor extends ChannelInboundHandlerAdapter {
+public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
 
-    private static final Logger logger = LoggerFactory.getLogger(ServerProcessor.class);
+    private static final Logger logger = LoggerFactory.getLogger(RemoteConnectHandler.class);
 
-    private ShadowsocksCipher cipher;
-    private ShadowsocksKey key;
     private Channel remoteChannel;
     private ByteBuf buff;
 
-    public ServerProcessor(ChannelHandlerContext ctx, ByteBuf buff) {
-        Channel channel = ctx.channel();
-        this.cipher = channel.attr(Attributes.CIPHER).get();
-        this.key = channel.attr(Attributes.KEY).get();
+    public RemoteConnectHandler(Channel localChannel, ByteBuf buff) {
         this.buff = buff;
-        init(channel);
+        connect(localChannel);
     }
 
-    private void init(Channel localChannel) {
+    private void connect(Channel localChannel) {
         InetSocketAddress remoteAddress = localChannel.attr(Attributes.REMOTE_ADDRESS).get();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap
@@ -52,14 +47,13 @@ public class ServerProcessor extends ChannelInboundHandlerAdapter {
             .handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 protected void initChannel(SocketChannel remoteChannel) throws Exception {
-                    remoteChannel.pipeline().addLast(new ServerReceivedHandler(localChannel, buff.retain()));
+                    remoteChannel.pipeline().addLast(new RemoteReceiveHandler(localChannel, buff));
                 }
             })
             .connect(remoteAddress)
             .addListener((ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
                     remoteChannel = future.channel();
-                    logger.info("Connect channel {}", remoteChannel);
                 } else {
                     throw new IllegalStateException("Connect " + remoteAddress + " failed");
                 }
@@ -68,20 +62,22 @@ public class ServerProcessor extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        try {
-            if (msg instanceof ByteBuf) {
-                ByteBuf data = (ByteBuf) msg;
-                byte[] decrypt = cipher.decrypt(ByteBufUtil.getBytes(data), key);
+        if (msg instanceof ByteBuf) {
+            try {
+                Channel channel = ctx.channel();
+                ShadowsocksCipher cipher = channel.attr(Attributes.CIPHER).get();
+                ShadowsocksKey key = channel.attr(Attributes.KEY).get();
+                byte[] decrypt = cipher.decrypt(ByteBufUtil.getBytes((ByteBuf) msg), key);
                 if (remoteChannel == null) {
                     buff.writeBytes(decrypt);
                 } else {
                     remoteChannel.writeAndFlush(Unpooled.wrappedBuffer(decrypt));
                 }
-            } else {
-                ctx.fireChannelRead(msg);
+            } finally {
+                ReferenceCountUtil.release(msg);
             }
-        } finally {
-            ReferenceCountUtil.release(msg);
+        } else {
+            ctx.fireChannelRead(msg);
         }
     }
 
@@ -104,6 +100,7 @@ public class ServerProcessor extends ChannelInboundHandlerAdapter {
             remoteChannel.close();
         }
         if (buff != null) {
+            buff.clear();
             buff = null;
         }
     }

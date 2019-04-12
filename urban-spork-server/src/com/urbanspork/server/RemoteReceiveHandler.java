@@ -13,38 +13,36 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.util.ReferenceCountUtil;
 
-public class ServerReceivedHandler extends SimpleChannelInboundHandler<ByteBuf> {
+public class RemoteReceiveHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
-    private final Logger logger = LoggerFactory.getLogger(ServerReceivedHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(RemoteReceiveHandler.class);
 
-    private final Channel channel;
-    private ByteBuf cache;
+    private final Channel localChannel;
+    private ByteBuf buff;
 
-    public ServerReceivedHandler(Channel channel, ByteBuf cache) {
-        this.channel = channel;
-        this.cache = cache;
+    public RemoteReceiveHandler(Channel localChannel, ByteBuf buff) {
+        this.localChannel = localChannel;
+        this.buff = buff;
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        ctx.writeAndFlush(cache);
-        ReferenceCountUtil.release(cache);
+        ctx.writeAndFlush(buff);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         ctx.close();
         release();
-        logger.debug("Channel {} inactive", ctx.channel());
+        logger.info("Channel {} inactive", ctx.channel());
     }
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        ShadowsocksCipher cipher = channel.attr(Attributes.CIPHER).get();
-        ShadowsocksKey key = channel.attr(Attributes.KEY).get();
-        channel.writeAndFlush(Unpooled.wrappedBuffer(cipher.encrypt(ByteBufUtil.getBytes(msg), key)));
+        ShadowsocksCipher cipher = localChannel.attr(Attributes.CIPHER).get();
+        ShadowsocksKey key = localChannel.attr(Attributes.KEY).get();
+        localChannel.writeAndFlush(Unpooled.wrappedBuffer(cipher.encrypt(ByteBufUtil.getBytes(msg), key)));
     }
 
     @Override
@@ -55,11 +53,11 @@ public class ServerReceivedHandler extends SimpleChannelInboundHandler<ByteBuf> 
     }
 
     private void release() {
-        if (channel != null) {
-            channel.close();
+        if (localChannel != null) {
+            localChannel.close();
         }
-        if (cache != null) {
-            cache = null;
+        if (buff != null) {
+            buff = null;
         }
     }
 
