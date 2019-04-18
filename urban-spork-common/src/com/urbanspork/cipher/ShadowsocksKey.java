@@ -1,19 +1,16 @@
-package com.urbanspork.key;
+package com.urbanspork.cipher;
 
 import static java.lang.System.arraycopy;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Optional;
 
 import javax.crypto.SecretKey;
 
 public class ShadowsocksKey implements SecretKey {
 
     private static final long serialVersionUID = 20181226;
-
-    private static final int DEFAULT_KEY_LENGTH = 32;
 
     private static MessageDigest MD5 = null;
 
@@ -25,14 +22,25 @@ public class ShadowsocksKey implements SecretKey {
         }
     }
 
-    private String password;
+    private final String password;
 
-    private transient byte[] key;
+    private final int length;
 
-    public ShadowsocksKey(String password) {
-        super();
+    private final transient byte[] key;
+
+    public ShadowsocksKey(String password, int length) {
         this.password = password;
-        this.key = generateKey(password);
+        this.length = length;
+        this.key = getEncode();
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String toString() {
+        return password;
     }
 
     @Override
@@ -47,26 +55,21 @@ public class ShadowsocksKey implements SecretKey {
 
     @Override
     public byte[] getEncoded() {
-        return key;
+        return this.key;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    private byte[] generateKey(String _password) {
-        Optional<String> password = Optional.of(_password);
-        byte[] key = new byte[DEFAULT_KEY_LENGTH];
+    private byte[] getEncode() {
+        byte[] key = new byte[length];
         byte[] passwordBytes = null;
         byte[] passwordDigest = null;
         byte[] container = null;
         int index = 0;
         try {
-            passwordBytes = password.get().getBytes("UTF-8");
+            passwordBytes = password.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
             throw new UnsupportedOperationException(e);
         }
-        while (index < DEFAULT_KEY_LENGTH) {
+        while (index < length) {
             if (index == 0) {
                 passwordDigest = MD5.digest(passwordBytes);
                 container = new byte[passwordBytes.length + passwordDigest.length];
@@ -80,5 +83,4 @@ public class ShadowsocksKey implements SecretKey {
         }
         return key;
     }
-
 }

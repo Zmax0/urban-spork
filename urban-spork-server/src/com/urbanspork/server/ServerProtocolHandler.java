@@ -1,8 +1,8 @@
 package com.urbanspork.server;
 
 import com.urbanspork.cipher.ShadowsocksCipher;
+import com.urbanspork.cipher.ShadowsocksKey;
 import com.urbanspork.common.Attributes;
-import com.urbanspork.key.ShadowsocksKey;
 import com.urbanspork.protocol.ShadowsocksProtocol;
 
 import io.netty.buffer.ByteBuf;

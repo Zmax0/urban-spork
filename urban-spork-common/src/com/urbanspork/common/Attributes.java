@@ -3,7 +3,7 @@ package com.urbanspork.common;
 import java.net.InetSocketAddress;
 
 import com.urbanspork.cipher.ShadowsocksCipher;
-import com.urbanspork.key.ShadowsocksKey;
+import com.urbanspork.cipher.ShadowsocksKey;
 
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.util.AttributeKey;

@@ -72,10 +72,10 @@ public class ServerConfig {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         if (memo != null) {
-            builder.append('[').append(memo).append(']').append(' ');
+            builder.append(memo);
         }
         if (host != null) {
-            builder.append(host).append(':').append(port);
+            builder.append(' ').append(host).append(':').append(port);
         }
         return builder.toString();
     }

@@ -1,8 +1,9 @@
 package com.urbanspork.server;
 
+import com.urbanspork.cipher.ShadowsocksCipher;
+import com.urbanspork.cipher.ShadowsocksKey;
 import com.urbanspork.common.Attributes;
 import com.urbanspork.config.ServerConfig;
-import com.urbanspork.key.ShadowsocksKey;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -17,8 +18,9 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
 
     @Override
     protected void initChannel(Channel c) throws Exception {
-        c.attr(Attributes.CIPHER).set(serverConfig.getCipher().get());
-        c.attr(Attributes.KEY).set(new ShadowsocksKey(serverConfig.getPassword()));
+        ShadowsocksCipher cipher = serverConfig.getCipher().get();
+        c.attr(Attributes.CIPHER).set(cipher);
+        c.attr(Attributes.KEY).set(new ShadowsocksKey(serverConfig.getPassword(), cipher.getKeyLength()));
         c.pipeline().addLast(new ServerProtocolHandler());
     }
 

@@ -5,10 +5,11 @@ import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.urbanspork.cipher.ShadowsocksCipher;
+import com.urbanspork.cipher.ShadowsocksKey;
 import com.urbanspork.common.Attributes;
 import com.urbanspork.config.ClientConfig;
 import com.urbanspork.config.ServerConfig;
-import com.urbanspork.key.ShadowsocksKey;
 
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -32,8 +33,9 @@ public class ClientInitializer extends ChannelInitializer<NioSocketChannel> {
             channel.disconnect();
         } else {
             channel.attr(Attributes.SERVER_ADDRESS).set(new InetSocketAddress(config.getHost(), Integer.valueOf(config.getPort())));
-            channel.attr(Attributes.KEY).set(new ShadowsocksKey(config.getPassword()));
-            channel.attr(Attributes.CIPHER).set(config.getCipher().get());
+            ShadowsocksCipher cipher = config.getCipher().get();
+            channel.attr(Attributes.CIPHER).set(cipher);
+            channel.attr(Attributes.KEY).set(new ShadowsocksKey(config.getPassword(), cipher.getKeyLength()));
             channel.pipeline()
                 .addLast(new SocksPortUnificationServerHandler())
                 .addLast(new ClientShakeHandsHandler());

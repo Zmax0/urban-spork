@@ -7,8 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.urbanspork.cipher.ShadowsocksCipher;
+import com.urbanspork.cipher.ShadowsocksKey;
 import com.urbanspork.common.Attributes;
-import com.urbanspork.key.ShadowsocksKey;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;

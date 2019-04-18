@@ -13,6 +13,7 @@
 
   <logger name="com.urbanspork" additivity="false">
     <appender-ref ref="VIEW" />
+    <appender-ref ref="STDOUT" />
   </logger>
 
   <root level="INFO">
