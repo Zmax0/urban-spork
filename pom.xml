@@ -11,36 +11,43 @@
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <io.netty.version>4.1.33.Final</io.netty.version>
-    <org.bouncycastle.version>1.60</org.bouncycastle.version>
+    <junit.jupiter.version>5.4.1</junit.jupiter.version>
+    <fastjson.version>1.2.57</fastjson.version>
+    <logback.version>1.2.3</logback.version>
+    <netty.version>4.1.33.Final</netty.version>
+    <bouncycastle.version>1.60</bouncycastle.version>
   </properties>
   <dependencyManagement>
     <dependencies>
-      <!-- junit -->
       <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>4.12</version>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>${junit.jupiter.version}</version>
+        <scope>test</scope>
       </dependency>
-      <!-- logback -->
       <dependency>
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-core</artifactId>
-        <version>1.2.3</version>
+        <version>${logback.version}</version>
       </dependency>
       <dependency>
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-classic</artifactId>
-        <version>1.2.3</version>
+        <version>${logback.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.alibaba</groupId>
+        <artifactId>fastjson</artifactId>
+        <version>${fastjson.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
+
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.7.0</version>
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
@@ -48,4 +55,19 @@
       </plugin>
     </plugins>
   </build>
+
+  <repositories>
+    <repository>
+      <id>nexus-aliyun</id>
+      <name>Nexus aliyun</name>
+      <layout>default</layout>
+      <url>http://maven.aliyun.com/nexus/content/groups/public</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+    </repository>
+  </repositories>
 </project>

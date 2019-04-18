@@ -12,19 +12,22 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-all</artifactId>
-      <version>${io.netty.version}</version>
+      <version>${netty.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
-      <version>${org.bouncycastle.version}</version>
+      <version>${bouncycastle.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.alibaba</groupId>
       <artifactId>fastjson</artifactId>
-      <version>1.2.35</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
@@ -34,6 +37,9 @@
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
     </dependency>
-  </dependencies>
 
+  </dependencies>
+  <build>
+    <testSourceDirectory>test</testSourceDirectory>
+  </build>
 </project>

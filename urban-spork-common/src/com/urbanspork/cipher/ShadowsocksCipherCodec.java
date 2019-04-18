@@ -3,8 +3,6 @@ package com.urbanspork.cipher;
 import java.util.List;
 import java.util.Optional;
 
-import javax.crypto.SecretKey;
-
 import com.urbanspork.common.Attributes;
 
 import io.netty.buffer.ByteBuf;
@@ -20,7 +18,7 @@ public class ShadowsocksCipherCodec extends MessageToMessageCodec<ByteBuf, ByteB
     protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
         Channel channel = ctx.channel();
         ShadowsocksCipher cipher = Optional.of(channel.attr(Attributes.CIPHER).get()).orElseThrow(CipherNotFoundException::new);
-        SecretKey key = Optional.of((channel.attr(Attributes.KEY).get())).orElseThrow(CipherNotFoundException::new);
+        ShadowsocksKey key = Optional.of((channel.attr(Attributes.KEY).get())).orElseThrow(CipherNotFoundException::new);
         byte[] encrypt = cipher.encrypt(ByteBufUtil.getBytes(msg), key);
         out.add(Unpooled.buffer(encrypt.length).writeBytes(encrypt));
     }
@@ -29,7 +27,7 @@ public class ShadowsocksCipherCodec extends MessageToMessageCodec<ByteBuf, ByteB
     protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
         Channel channel = ctx.channel();
         ShadowsocksCipher cipher = Optional.of(channel.attr(Attributes.CIPHER).get()).orElseThrow(CipherNotFoundException::new);
-        SecretKey key = Optional.of((channel.attr(Attributes.KEY).get())).orElseThrow(CipherNotFoundException::new);
+        ShadowsocksKey key = Optional.of((channel.attr(Attributes.KEY).get())).orElseThrow(CipherNotFoundException::new);
         byte[] decrypt = cipher.decrypt(ByteBufUtil.getBytes(msg), key);
         out.add(Unpooled.buffer(decrypt.length).writeBytes(decrypt));
     }

@@ -7,6 +7,6 @@ then
     kill -9 ${pid}
     sleep 1
 fi
-nohup $JAVA_HOME/bin/java -jar ${server}.jar > log 2>&1 &
+nohup $JAVA_HOME/bin/java -jar -Dio.netty.leakDetectionLevel=advanced ${server}.jar > log 2>&1 &
 eval pid=$(pgrep -f ${server})
 echo "start ${server} pid "${pid}

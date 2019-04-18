@@ -17,24 +17,28 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 public class Server {
 
     public static void main(String[] args) throws IOException {
+        ThreadGroup threadGroup = new ThreadGroup("Server-Group");
+        threadGroup.setDaemon(true);
         List<ServerConfig> serverConfigs = Objects.requireNonNull(ConfigHandler.read(ClientConfig.class), "Please put the 'config.json' file into the folder").getServers();
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
         serverConfigs.forEach(serverConfig -> {
-            try {
-                int port = Integer.valueOf(serverConfig.getPort());
-                ServerBootstrap b = new ServerBootstrap();
-                b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .childHandler(new ServerInitializer(serverConfig));
-                ChannelFuture f = b.bind(port).sync();
-                f.channel().closeFuture().sync();
-            } catch (InterruptedException e) {
-                // skip
-            } finally {
-                workerGroup.shutdownGracefully();
-                bossGroup.shutdownGracefully();
-            }
+            new Thread(threadGroup, () -> {
+                EventLoopGroup bossGroup = new NioEventLoopGroup();
+                EventLoopGroup workerGroup = new NioEventLoopGroup();
+                try {
+                    int port = Integer.valueOf(serverConfig.getPort());
+                    ServerBootstrap b = new ServerBootstrap();
+                    b.group(bossGroup, workerGroup)
+                        .channel(NioServerSocketChannel.class)
+                        .childHandler(new ServerInitializer(serverConfig));
+                    ChannelFuture f = b.bind(port).sync();
+                    f.channel().closeFuture().sync();
+                } catch (InterruptedException e) {
+                    // skip
+                } finally {
+                    workerGroup.shutdownGracefully();
+                    bossGroup.shutdownGracefully();
+                }
+            }, "Server-Launcher-" + serverConfig.getPort()).start();
         });
     }
 

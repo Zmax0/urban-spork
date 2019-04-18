@@ -1,26 +1,26 @@
-package com.urbanspork.cipher;
+package com.urbanspork.cipher.impl;
 
 import java.io.ByteArrayOutputStream;
-import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.StreamBlockCipher;
+import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
-public abstract class AbstractStreamBlockCipher implements Cipher {
+public class StreamCiphers extends AbstractCipher {
 
-    protected int ivl;
+    private final StreamCipher cipher;
+    private final int ivSize;
 
-    protected StreamBlockCipher cipher;
-
-    private volatile boolean inited;
+    public StreamCiphers(StreamCipher cipher, int ivSize) {
+        this.cipher = cipher;
+        this.ivSize = ivSize;
+    }
 
     @Override
     public byte[] encrypt(byte[] in, byte[] key) throws Exception {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         if (!inited) {
-            byte[] iv = new byte[ivl];
-            new SecureRandom().nextBytes(iv);
+            byte[] iv = randomBytes(ivSize);
             ParametersWithIV parametersWithIV = new ParametersWithIV(new KeyParameter(key), iv);
             cipher.init(true, parametersWithIV);
             stream.write(iv);
@@ -34,12 +34,12 @@ public abstract class AbstractStreamBlockCipher implements Cipher {
 
     @Override
     public byte[] decrypt(byte[] in, byte[] key) throws Exception {
-        byte[] iv = new byte[ivl];
+        byte[] iv = new byte[ivSize];
         if (!inited) {
             System.arraycopy(in, 0, iv, 0, iv.length);
             int length = in.length - iv.length;
             byte[] temp = new byte[length];
-            System.arraycopy(in, ivl, temp, 0, length);
+            System.arraycopy(in, ivSize, temp, 0, length);
             ParametersWithIV parametersWithIV = new ParametersWithIV(new KeyParameter(key), iv);
             cipher.init(false, parametersWithIV);
             in = temp;
