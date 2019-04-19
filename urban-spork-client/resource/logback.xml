@@ -5,7 +5,7 @@
     </encoder>
   </appender>
 
-  <appender name="VIEW" class="com.urbanspork.client.mvc.Appender" />
+  <appender name="VIEW" class="com.urbanspork.client.mvc.component.Appender" />
 
   <logger name="io.netty" additivity="false">
     <appender-ref ref="STDOUT" />

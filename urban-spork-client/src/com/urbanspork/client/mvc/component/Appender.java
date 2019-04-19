@@ -1,6 +1,7 @@
-package com.urbanspork.client.mvc;
+package com.urbanspork.client.mvc.component;
 
 import com.jfoenix.controls.JFXTextArea;
+import com.urbanspork.client.mvc.Component;
 
 import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -22,7 +23,8 @@ public class Appender extends AppenderBase<ILoggingEvent> {
     @Override
     protected void append(ILoggingEvent eventObject) {
         String msg = patternLayout.doLayout(eventObject);
-        JFXTextArea logTextArea = Controller.INSTANCE.getLogTextArea();
+        Controller controller = Component.Controller.get();
+        JFXTextArea logTextArea = controller.getLogTextArea();
         logTextArea.appendText(msg);
     }
 

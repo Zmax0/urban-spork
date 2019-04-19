@@ -1,4 +1,4 @@
-package com.urbanspork.client.mvc;
+package com.urbanspork.client.mvc.component;
 
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
@@ -8,21 +8,25 @@ import java.awt.TrayIcon.MessageType;
 
 import javax.swing.ImageIcon;
 
+import com.urbanspork.client.mvc.Component;
+import com.urbanspork.client.mvc.Resource;
+
 import javafx.application.Platform;
 
 public class Tray {
 
     private static final boolean IS_SUPPORTED = SystemTray.isSupported();
 
-    private static TrayIcon TRAY_ICON;
+    private TrayIcon trayIcon;
 
-    public static void launch(String[] args) throws Exception {
+    public void launch(String[] args) throws Exception {
         if (IS_SUPPORTED) {
             PopupMenu menu = new PopupMenu();
             MenuItem item0 = new MenuItem("Console");
             item0.addActionListener(listener -> {
                 Platform.runLater(() -> {
-                    Console.show();
+                    Console console = Component.Console.get();
+                    console.show();
                 });
             });
             MenuItem item1 = new MenuItem("Exit");
@@ -35,15 +39,15 @@ public class Tray {
 
             SystemTray tray = SystemTray.getSystemTray();
             ImageIcon icon = new ImageIcon(Resource.TRAY_ICON.getAbsolutePath());
-            TRAY_ICON = new TrayIcon(icon.getImage(), "Proxy Client", menu);
-            TRAY_ICON.setImageAutoSize(true);
-            tray.add(TRAY_ICON);
+            trayIcon = new TrayIcon(icon.getImage(), "Proxy Client", menu);
+            trayIcon.setImageAutoSize(true);
+            tray.add(trayIcon);
         }
     }
 
-    public static void displayMessage(String caption, String text, MessageType messageType) {
+    public void displayMessage(String caption, String text, MessageType messageType) {
         if (IS_SUPPORTED) {
-            TRAY_ICON.displayMessage(caption, text, messageType);
+            trayIcon.displayMessage(caption, text, messageType);
         }
     }
 

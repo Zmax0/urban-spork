@@ -1,4 +1,4 @@
-package com.urbanspork.client.mvc;
+package com.urbanspork.client.mvc.component;
 
 import java.awt.TrayIcon.MessageType;
 import java.io.IOException;
@@ -21,6 +21,7 @@ import com.jfoenix.controls.JFXToggleButton;
 import com.jfoenix.validation.RequiredFieldValidator;
 import com.urbanspork.cipher.ShadowsocksCiphers;
 import com.urbanspork.client.Client;
+import com.urbanspork.client.mvc.Component;
 import com.urbanspork.config.ClientConfig;
 import com.urbanspork.config.ConfigHandler;
 import com.urbanspork.config.ServerConfig;
@@ -32,10 +33,9 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.MultipleSelectionModel;
 
 public class Controller implements Initializable {
-
-    static Controller INSTANCE;
 
     private final Logger logger = LoggerFactory.getLogger(Controller.class);
 
@@ -80,7 +80,7 @@ public class Controller implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        INSTANCE = this;
+        Component.Controller.set(this);
         loadConfig();
         initViews();
         launchClient();
@@ -139,22 +139,26 @@ public class Controller implements Initializable {
 
     @FXML
     public void moveUpServerConfig(ActionEvent event) {
-        int index = serverConfigListView.getSelectionModel().getSelectedIndex();
+        MultipleSelectionModel<ServerConfig> selectionModel = serverConfigListView.getSelectionModel();
+        int index = selectionModel.getSelectedIndex();
         if (index > 0) {
             ServerConfig config = serverConfigObservableList.get(index);
             serverConfigObservableList.remove(index);
             serverConfigObservableList.add(index - 1, config);
+            selectionModel.select(index - 1);
         }
         saveConfig();
     }
 
     @FXML
     public void moveDownServerConfig(ActionEvent event) {
-        int index = serverConfigListView.getSelectionModel().getSelectedIndex();
+        MultipleSelectionModel<ServerConfig> selectionModel = serverConfigListView.getSelectionModel();
+        int index = selectionModel.getSelectedIndex();
         if (index < serverConfigObservableList.size() - 1) {
             ServerConfig config = serverConfigObservableList.get(index);
             serverConfigObservableList.remove(index);
             serverConfigObservableList.add(index + 1, config);
+            selectionModel.select(index + 1);
         }
         saveConfig();
     }
@@ -255,6 +259,7 @@ public class Controller implements Initializable {
     }
 
     private void launchClient() {
+        Tray tray = Component.Tray.get();
         if (clientConfig.getCurrent() != null) {
             clinetLauncher = new Thread(() -> {
                 try {
@@ -268,9 +273,9 @@ public class Controller implements Initializable {
             clinetLauncher.setName("Client-Launcher");
             clinetLauncher.setDaemon(true);
             clinetLauncher.start();
-            Tray.displayMessage("Proxy is running", clientConfig.getCurrent().toString(), MessageType.INFO);
+            tray.displayMessage("Proxy is running", clientConfig.getCurrent().toString(), MessageType.INFO);
         } else {
-            Tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
+            tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
         }
     }
 
