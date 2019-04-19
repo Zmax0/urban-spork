@@ -1,4 +1,7 @@
-package com.urbanspork.client.mvc;
+package com.urbanspork.client.mvc.component;
+
+import com.urbanspork.client.mvc.Component;
+import com.urbanspork.client.mvc.Resource;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -9,26 +12,27 @@ import javafx.stage.Stage;
 
 public class Console extends Application {
 
-    private static Stage PRIMARY_STAGE;
+    private Stage primaryStage;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        Component.Console.set(this);
+        this.primaryStage = primaryStage;
         Platform.setImplicitExit(false);
-        PRIMARY_STAGE = primaryStage;
         Parent root = FXMLLoader.load(Resource.CLIENT_FXML.toURI().toURL());
         Scene scene = new Scene(root);
-        PRIMARY_STAGE.setScene(scene);
-        PRIMARY_STAGE.setOnCloseRequest(event -> {
+        primaryStage.setScene(scene);
+        primaryStage.setOnCloseRequest(event -> {
             event.consume();
-            PRIMARY_STAGE.hide();
+            primaryStage.hide();
         });
-        PRIMARY_STAGE.setResizable(false);
-        PRIMARY_STAGE.setTitle("Console");
-        PRIMARY_STAGE.hide();
+        primaryStage.setResizable(false);
+        primaryStage.setTitle("Console");
+        primaryStage.hide();
     }
 
-    public static void show() {
-        PRIMARY_STAGE.show();
+    public void show() {
+        primaryStage.show();
     }
 
     public static void launch(String[] args) {
