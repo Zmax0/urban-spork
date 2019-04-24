@@ -60,6 +60,10 @@ public class Controller implements Initializable {
     @FXML
     private JFXButton moveDownServerConfigButton;
     @FXML
+    private JFXButton confirmServerConfigButton;
+    @FXML
+    private JFXButton cancelServerConfigButton;
+    @FXML
     private JFXTextField currentConfigHostTextField;
     @FXML
     private JFXTextField currentConfigPortTextField;
@@ -88,37 +92,14 @@ public class Controller implements Initializable {
 
     @FXML
     public void addServerConfig(ActionEvent event) {
-        boolean flag = currentConfigHostTextField.validate() & currentConfigPortTextField.validate();
-        String password = null;
-        if (currentConfigPasswordTextField.isVisible()) {
-            flag &= currentConfigPasswordTextField.validate();
-            password = currentConfigPasswordTextField.getText();
-            currentConfigPasswordPasswordField.setText(password);
-        }
-        if (currentConfigPasswordPasswordField.isVisible()) {
-            flag &= currentConfigPasswordPasswordField.validate();
-            password = currentConfigPasswordPasswordField.getText();
-            currentConfigPasswordTextField.setText(password);
-        }
-        if (flag) {
-            ServerConfig config = new ServerConfig();
-            config.setHost(currentConfigHostTextField.getText());
-            config.setPort(currentConfigPortTextField.getText());
-            config.setPassword(password);
-            config.setMemo(currentConfigMemoTextField.getText());
-            config.setCipher(currentConfigCipherChoiceBox.getValue());
-            serverConfigObservableList.add(config);
-            clientConfig.setCurrent(config);
-            saveConfig();
-        }
-        if (clinetLauncher == null) {
-            clientConfig.setPort(clientConfigPortTextField.getText());
-            launchClient();
-        }
+        ServerConfig config = new ServerConfig();
+        serverConfigObservableList.add(config);
+        serverConfigListView.getSelectionModel().select(config);
+        display(config);
     }
 
     @FXML
-    public void delServerConfig(ActionEvent event) {
+    public void deleteServerConfig(ActionEvent event) {
         int index = serverConfigListView.getSelectionModel().getSelectedIndex();
         serverConfigObservableList.remove(index);
         if (!serverConfigObservableList.isEmpty()) {
@@ -169,6 +150,29 @@ public class Controller implements Initializable {
         currentConfigPasswordTextField.visibleProperty().set(currentConfigPasswordToggleButton.isSelected());
     }
 
+    @FXML
+    public void confirm(ActionEvent event) {
+        ServerConfig config = serverConfigListView.getSelectionModel().getSelectedItem();
+        if (config != clientConfig.getCurrent() && validate()) {
+            config.setHost(currentConfigHostTextField.getText());
+            config.setPort(currentConfigPortTextField.getText());
+            config.setPassword(currentConfigPasswordTextField.getText());
+            config.setMemo(currentConfigMemoTextField.getText());
+            config.setCipher(currentConfigCipherChoiceBox.getValue());
+            clientConfig.setPort(clientConfigPortTextField.getText());
+            clientConfig.setCurrent(config);
+            serverConfigListView.refresh();
+            saveConfig();
+            relaunchClient();
+        }
+    }
+
+    @FXML
+    public void cancel(ActionEvent event) {
+        serverConfigListView.getSelectionModel().select(clientConfig.getCurrent());
+        hideConsole();
+    }
+
     public JFXTextArea getLogTextArea() {
         return logTextArea;
     }
@@ -181,7 +185,7 @@ public class Controller implements Initializable {
         }
         if (clientConfig == null) {
             clientConfig = new ClientConfig();
-            clientConfig.setServers(new ArrayList<>(32));
+            clientConfig.setServers(new ArrayList<>(16));
         }
     }
 
@@ -190,13 +194,12 @@ public class Controller implements Initializable {
         requiredFieldValidator = new RequiredFieldValidator("Can't be blank");
         // serverConfigListView
         serverConfigObservableList = FXCollections.observableArrayList(clientConfig.getServers());
+        clientConfig.setServers(serverConfigObservableList);
         serverConfigListView.setItems(serverConfigObservableList);
         serverConfigListView.getSelectionModel().selectedItemProperty().addListener(
             (o, oldValue, newValue) -> {
-                clientConfig.setCurrent(newValue);
+                resetValidation();
                 display(newValue);
-                saveConfig();
-                logger.info("Proxy server changed -> {}", newValue);
             });
         // currentConfigCipherChoiceBox
         List<ShadowsocksCiphers> ciphers = Arrays.asList(ShadowsocksCiphers.values());
@@ -226,6 +229,10 @@ public class Controller implements Initializable {
                     currentConfigPasswordTextField.validate();
                 }
             });
+        currentConfigPasswordTextField.textProperty().addListener(
+            (o, oldValue, newValue) -> {
+                currentConfigPasswordPasswordField.setText(newValue);
+            });
         // currentConfigPasswordPasswordField
         currentConfigPasswordPasswordField.getValidators().add(requiredFieldValidator);
         currentConfigPasswordPasswordField.focusedProperty().addListener(
@@ -233,6 +240,10 @@ public class Controller implements Initializable {
                 if (!newValue) {
                     currentConfigPasswordPasswordField.validate();
                 }
+            });
+        currentConfigPasswordPasswordField.textProperty().addListener(
+            (o, oldValue, newValue) -> {
+                currentConfigPasswordTextField.setText(newValue);
             });
         // clientConfigPortTextField
         clientConfigPortTextField.getValidators().add(requiredFieldValidator);
@@ -260,7 +271,8 @@ public class Controller implements Initializable {
 
     private void launchClient() {
         Tray tray = Component.Tray.get();
-        if (clientConfig.getCurrent() != null) {
+        ServerConfig config = clientConfig.getCurrent();
+        if (config != null) {
             clinetLauncher = new Thread(() -> {
                 try {
                     Client.launch(clientConfig);
@@ -277,6 +289,29 @@ public class Controller implements Initializable {
         } else {
             tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
         }
+    }
+
+    private void hideConsole() {
+        Console console = Component.Console.get();
+        console.hide();
+    }
+
+    private boolean validate() {
+        boolean result = currentConfigHostTextField.validate() & currentConfigPortTextField.validate();
+        if (currentConfigPasswordTextField.isVisible()) {
+            result &= currentConfigPasswordTextField.validate();
+        }
+        if (currentConfigPasswordPasswordField.isVisible()) {
+            result &= currentConfigPasswordPasswordField.validate();
+        }
+        return result;
+    }
+
+    private void resetValidation() {
+        currentConfigHostTextField.resetValidation();
+        currentConfigPortTextField.resetValidation();
+        currentConfigPasswordTextField.resetValidation();
+        currentConfigPasswordPasswordField.resetValidation();
     }
 
     private void display(ClientConfig c) {
@@ -299,7 +334,6 @@ public class Controller implements Initializable {
     }
 
     private void saveConfig() {
-        clientConfig.setServers(serverConfigObservableList);
         try {
             ConfigHandler.write(clientConfig);
         } catch (IOException e) {

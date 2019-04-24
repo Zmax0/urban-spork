@@ -35,6 +35,10 @@ public class Console extends Application {
         primaryStage.show();
     }
 
+    public void hide() {
+        primaryStage.hide();
+    }
+
     public static void launch(String[] args) {
         Application.launch(args);
     }
