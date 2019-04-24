@@ -1,7 +1,5 @@
 package com.urbanspork.config;
 
-import java.util.Objects;
-
 import com.urbanspork.cipher.ShadowsocksCiphers;
 
 public class ServerConfig {
@@ -60,12 +58,8 @@ public class ServerConfig {
         this.memo = memo;
     }
 
-    public ServerConfig checkSelf() {
-        requireNonEmpty(host, "Host must not be null");
-        requireNonEmpty(port, "Port must not be null");
-        requireNonEmpty(password, "Password must not be null");
-        Objects.requireNonNull(cipher, "Cipher must not be null");
-        return this;
+    public boolean check() {
+        return !isEmpty(host) && !isEmpty(port) && !isEmpty(password) && cipher != null;
     }
 
     @Override
@@ -77,12 +71,13 @@ public class ServerConfig {
         if (host != null) {
             builder.append(' ').append(host).append(':').append(port);
         }
+        if (builder.length() == 0) {
+            builder.append("未配置的服务器");
+        }
         return builder.toString();
     }
 
-    private void requireNonEmpty(String s, String msg) {
-        if (s == null || s.isEmpty()) {
-            throw new NullPointerException(msg);
-        }
+    private boolean isEmpty(String s) {
+        return s == null || s.isEmpty();
     }
 }
