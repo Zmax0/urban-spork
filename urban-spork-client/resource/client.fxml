@@ -1,4 +1,17 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.*?>
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.paint.*?>
+<?import com.jfoenix.controls.* ?>
+<?import java.lang.* ?>
+<?import javafx.geometry.* ?>
+<?import javafx.scene.control.* ?>
+<?import javafx.scene.layout.* ?>
+<?import javafx.scene.paint.* ?>
 <?import com.jfoenix.validation.* ?>
 <?import javafx.scene.paint.* ?>
 <?import javafx.scene.* ?>
@@ -8,9 +21,10 @@
 <?import java.lang.* ?>
 <?import javafx.scene.control.* ?>
 <?import javafx.scene.layout.* ?>
+
 <TabPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="500.0" stylesheets="@client.css" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.urbanspork.client.mvc.component.Controller">
    <tabs>
-      <Tab text="配置服务器">
+      <Tab text="%console.tab0.text">
          <content>
             <GridPane>
                <columnConstraints>
@@ -24,6 +38,7 @@
                   <ColumnConstraints hgrow="SOMETIMES" minWidth="50.0" prefWidth="100.0" />
                   <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="10.0" />
                   <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="10.0" />
                   <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
                   <ColumnConstraints hgrow="SOMETIMES" minWidth="20.0" prefWidth="20.0" />
                </columnConstraints>
@@ -47,7 +62,7 @@
                   <RowConstraints minHeight="20.0" prefHeight="20.0" vgrow="SOMETIMES" />
                </rowConstraints>
                <children>
-                  <JFXButton fx:id="addServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#addServerConfig" text="添加" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="13" GridPane.valignment="BOTTOM">
+                  <JFXButton fx:id="addServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" minHeight="-Infinity" minWidth="-Infinity" onAction="#addServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.add" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="13" GridPane.valignment="BOTTOM">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -57,7 +72,7 @@
                         </LinearGradient>
                      </ripplerFill>
                   </JFXButton>
-                  <JFXButton fx:id="copyServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#copyServerConfig" text="复制" textAlignment="CENTER" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="13" GridPane.valignment="BOTTOM">
+                  <JFXButton fx:id="copyServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#copyServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.copy" textAlignment="CENTER" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="13" GridPane.valignment="BOTTOM">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -67,7 +82,7 @@
                         </LinearGradient>
                      </ripplerFill>
                   </JFXButton>
-                  <JFXButton fx:id="moveUpServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#moveUpServerConfig" text="上移" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="15" GridPane.valignment="CENTER">
+                  <JFXButton fx:id="moveUpServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#moveUpServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.moveUp" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="15" GridPane.valignment="CENTER">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -77,7 +92,7 @@
                         </LinearGradient>
                      </ripplerFill>
                   </JFXButton>
-                  <JFXButton fx:id="moveDownServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#moveDownServerConfig" text="下移" textAlignment="CENTER" GridPane.columnIndex="5" GridPane.halignment="LEFT" GridPane.rowIndex="15" GridPane.valignment="CENTER">
+                  <JFXButton fx:id="moveDownServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#moveDownServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.moveDown" textAlignment="CENTER" GridPane.columnIndex="5" GridPane.halignment="LEFT" GridPane.rowIndex="15" GridPane.valignment="CENTER">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -87,7 +102,7 @@
                         </LinearGradient>
                      </ripplerFill>
                   </JFXButton>
-                  <JFXButton fx:id="delServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#deleteServerConfig" text="删除" textAlignment="CENTER" GridPane.columnIndex="5" GridPane.halignment="LEFT" GridPane.rowIndex="13" GridPane.valignment="BOTTOM">
+                  <JFXButton fx:id="delServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#deleteServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.del" textAlignment="CENTER" GridPane.columnIndex="5" GridPane.halignment="LEFT" GridPane.rowIndex="13" GridPane.valignment="BOTTOM">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -97,7 +112,7 @@
                         </LinearGradient>
                      </ripplerFill>
                   </JFXButton>
-                  <JFXButton fx:id="confirmServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#confirm" text="确定" textAlignment="CENTER" GridPane.columnIndex="9" GridPane.rowIndex="15">
+                  <JFXButton fx:id="confirmServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#confirm" prefHeight="28.0" prefWidth="70.0" text="%console.button.confirm" textAlignment="CENTER" GridPane.columnIndex="9" GridPane.rowIndex="15">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -107,7 +122,7 @@
                         </LinearGradient>
                      </ripplerFill>
                   </JFXButton>
-                  <JFXButton fx:id="cancelServerConfigButton2" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#cancel" text="取消" textAlignment="CENTER" GridPane.columnIndex="10" GridPane.rowIndex="15">
+                  <JFXButton fx:id="cancelServerConfigButton2" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#cancel" prefHeight="28.0" prefWidth="70.0" text="%console.button.cancel" textAlignment="CENTER" GridPane.columnIndex="11" GridPane.rowIndex="15">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -118,19 +133,19 @@
                      </ripplerFill>
                   </JFXButton>
                   <JFXListView fx:id="serverConfigListView" prefHeight="188.0" prefWidth="97.0" GridPane.columnIndex="1" GridPane.columnSpan="5" GridPane.rowIndex="1" GridPane.rowSpan="11" />
-                  <Label text="地址" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
-                  <Label text="端口" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="3" />
-                  <Label text="密码" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="5" />
-                  <Label text="加密" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="7" />
-                  <Label text="备注" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="9" />
-                  <Label text="代理端口" textAlignment="RIGHT" GridPane.columnIndex="6" GridPane.columnSpan="2" GridPane.halignment="RIGHT" GridPane.rowIndex="13" />
-                  <JFXTextField fx:id="currentConfigHostTextField" GridPane.columnIndex="9" GridPane.columnSpan="2" GridPane.rowIndex="1" />
-                  <JFXTextField fx:id="currentConfigPortTextField" GridPane.columnIndex="9" GridPane.columnSpan="2" GridPane.rowIndex="3" />
+                  <Label text="%console.label.host" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+                  <Label text="%console.label.port" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="3" />
+                  <Label text="%console.label.password" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="5" />
+                  <Label text="%console.label.cipher" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="7" />
+                  <Label text="%console.label.memo" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="9" />
+                  <Label text="%console.label.proxy.port" textAlignment="RIGHT" GridPane.columnIndex="6" GridPane.columnSpan="2" GridPane.halignment="RIGHT" GridPane.rowIndex="13" />
+                  <JFXTextField fx:id="currentConfigHostTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="1" />
+                  <JFXTextField fx:id="currentConfigPortTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="3" />
                   <JFXTextField fx:id="currentConfigPasswordTextField" visible="false" GridPane.columnIndex="9" GridPane.columnSpan="2" GridPane.rowIndex="5" />
-                  <JFXPasswordField fx:id="currentConfigPasswordPasswordField" GridPane.columnIndex="9" GridPane.columnSpan="2" GridPane.rowIndex="5" />
-                  <JFXTextField fx:id="currentConfigMemoTextField" GridPane.columnIndex="9" GridPane.columnSpan="2" GridPane.rowIndex="9" />
-                  <JFXTextField fx:id="clientConfigPortTextField" GridPane.columnIndex="9" GridPane.columnSpan="2" GridPane.rowIndex="13" />
-                  <JFXToggleButton fx:id="currentConfigPasswordToggleButton" contentDisplay="GRAPHIC_ONLY" ellipsisString="" graphicTextGap="0.0" onAction="#showCurrentConfigPassword" rotate="90.0" size="4.0" text=" " textAlignment="RIGHT" textOverrun="CLIP" toggleColor="BLACK" toggleLineColor="SLATEGRAY" GridPane.columnIndex="10" GridPane.halignment="RIGHT" GridPane.hgrow="NEVER" GridPane.rowIndex="5" GridPane.valignment="CENTER" GridPane.vgrow="NEVER">
+                  <JFXPasswordField fx:id="currentConfigPasswordPasswordField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="5" />
+                  <JFXTextField fx:id="currentConfigMemoTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="9" />
+                  <JFXTextField fx:id="clientConfigPortTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="13" />
+                  <JFXToggleButton fx:id="currentConfigPasswordToggleButton" contentDisplay="GRAPHIC_ONLY" ellipsisString="" graphicTextGap="0.0" onAction="#showCurrentConfigPassword" rotate="90.0" size="4.0" text=" " textAlignment="RIGHT" textOverrun="CLIP" toggleColor="BLACK" toggleLineColor="SLATEGRAY" GridPane.columnIndex="11" GridPane.halignment="RIGHT" GridPane.hgrow="NEVER" GridPane.rowIndex="5" GridPane.valignment="CENTER" GridPane.vgrow="NEVER">
                      <padding>
                         <Insets bottom="-5.0" right="-5.0" top="-5.0" />
                      </padding>
@@ -140,7 +155,7 @@
             </GridPane>
          </content>
       </Tab>
-      <Tab text="查看日志">
+      <Tab text="%console.tab1.text">
          <content>
             <ScrollPane prefViewportHeight="453.0" prefViewportWidth="640.0">
                <content>
