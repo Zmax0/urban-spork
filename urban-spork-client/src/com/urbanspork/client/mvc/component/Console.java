@@ -1,5 +1,9 @@
 package com.urbanspork.client.mvc.component;
 
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+
 import com.urbanspork.client.mvc.Component;
 import com.urbanspork.client.mvc.Resource;
 
@@ -9,6 +13,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 public class Console extends Application {
 
@@ -19,9 +24,16 @@ public class Console extends Application {
         Component.Console.set(this);
         this.primaryStage = primaryStage;
         Platform.setImplicitExit(false);
-        Parent root = FXMLLoader.load(Resource.CLIENT_FXML.toURI().toURL());
+        ResourceBundle bundle = null;
+        try {
+            bundle = ResourceBundle.getBundle("com.urbanspork.client.i18n.language", Locale.getDefault());
+        } catch (MissingResourceException e) {
+            bundle = ResourceBundle.getBundle("com.urbanspork.client.i18n.language", new Locale("en"));
+        }
+        Parent root = FXMLLoader.load(Resource.CLIENT_FXML.toURI().toURL(), bundle);
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
+        primaryStage.initStyle(StageStyle.UNIFIED);
         primaryStage.setOnCloseRequest(event -> {
             event.consume();
             primaryStage.hide();
@@ -32,7 +44,11 @@ public class Console extends Application {
     }
 
     public void show() {
-        primaryStage.show();
+        if (primaryStage.isShowing()) {
+            primaryStage.requestFocus();
+        } else {
+            primaryStage.show();
+        }
     }
 
     public void hide() {

@@ -14,8 +14,9 @@ public class Resource {
     public static final File CLIENT_FXML;
 
     static {
-        TRAY_ICON = new File(ConfigLocation.PATH + File.separatorChar + RESOURCE + File.separatorChar + TRAY_ICON_NAME);
-        CLIENT_FXML = new File(ConfigLocation.PATH + File.separatorChar + RESOURCE + File.separatorChar + CLIENT_FXML_NAME);
+        String path = ConfigLocation.PATH;
+        TRAY_ICON = new File(path + File.separatorChar + RESOURCE + File.separatorChar + TRAY_ICON_NAME);
+        CLIENT_FXML = new File(path + File.separatorChar + RESOURCE + File.separatorChar + CLIENT_FXML_NAME);
     }
 
 }
