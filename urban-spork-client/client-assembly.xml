@@ -13,13 +13,6 @@
   </dependencySets>
   <fileSets>
     <fileSet>
-      <directory>resource</directory>
-      <outputDirectory>resource</outputDirectory>
-      <excludes>
-        <exclude>**/*.xml</exclude>
-      </excludes>
-    </fileSet>
-    <fileSet>
       <directory>${project.build.directory}</directory>
       <outputDirectory></outputDirectory>
       <includes>

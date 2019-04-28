@@ -22,6 +22,7 @@ import com.jfoenix.validation.RequiredFieldValidator;
 import com.urbanspork.cipher.ShadowsocksCiphers;
 import com.urbanspork.client.Client;
 import com.urbanspork.client.mvc.Component;
+import com.urbanspork.client.mvc.i18n.I18n;
 import com.urbanspork.config.ClientConfig;
 import com.urbanspork.config.ConfigHandler;
 import com.urbanspork.config.ServerConfig;
@@ -93,6 +94,7 @@ public class Controller implements Initializable {
     @FXML
     public void addServerConfig(ActionEvent event) {
         ServerConfig config = new ServerConfig();
+        config.setCipher(ShadowsocksCiphers.AES_256_CFB);
         serverConfigObservableList.add(config);
         serverConfigListView.getSelectionModel().select(config);
         display(config);
@@ -191,7 +193,7 @@ public class Controller implements Initializable {
 
     private void initViews() {
         // requiredFieldValidator
-        requiredFieldValidator = new RequiredFieldValidator("Can't be blank");
+        requiredFieldValidator = new RequiredFieldValidator(I18n.CONSOLE_VALIDATOR_REQUIRED_FIELD_MESSAGE);
         // serverConfigListView
         serverConfigObservableList = FXCollections.observableArrayList(clientConfig.getServers());
         clientConfig.setServers(serverConfigObservableList);
@@ -285,7 +287,9 @@ public class Controller implements Initializable {
             clinetLauncher.setName("Client-Launcher");
             clinetLauncher.setDaemon(true);
             clinetLauncher.start();
-            tray.displayMessage("Proxy is running", clientConfig.getCurrent().toString(), MessageType.INFO);
+            String message = clientConfig.getCurrent().toString();
+            tray.displayMessage("Proxy is running", message, MessageType.INFO);
+            tray.setToolTip(message);
         } else {
             tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
         }
