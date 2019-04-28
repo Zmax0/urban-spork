@@ -1,11 +1,8 @@
 package com.urbanspork.client.mvc.component;
 
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-
 import com.urbanspork.client.mvc.Component;
 import com.urbanspork.client.mvc.Resource;
+import com.urbanspork.client.mvc.i18n.I18n;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -24,13 +21,7 @@ public class Console extends Application {
         Component.Console.set(this);
         this.primaryStage = primaryStage;
         Platform.setImplicitExit(false);
-        ResourceBundle bundle = null;
-        try {
-            bundle = ResourceBundle.getBundle("com.urbanspork.client.i18n.language", Locale.getDefault());
-        } catch (MissingResourceException e) {
-            bundle = ResourceBundle.getBundle("com.urbanspork.client.i18n.language", new Locale("en"));
-        }
-        Parent root = FXMLLoader.load(Resource.CLIENT_FXML.toURI().toURL(), bundle);
+        Parent root = FXMLLoader.load(Resource.CLIENT_FXML, Resource.bundle);
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
         primaryStage.initStyle(StageStyle.UNIFIED);
@@ -39,7 +30,7 @@ public class Console extends Application {
             primaryStage.hide();
         });
         primaryStage.setResizable(false);
-        primaryStage.setTitle("Console");
+        primaryStage.setTitle(I18n.PRAGRAM_TITLE);
         primaryStage.hide();
     }
 

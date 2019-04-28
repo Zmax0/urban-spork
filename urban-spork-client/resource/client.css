@@ -1,30 +1,37 @@
+@font-face {
+    font-family: 'Fira Code Retina';
+    src: url('FiraCode-Retina.ttf');
+    font-weight: 500;
+}
+
 * {
     -fx-primary: #f8f8ff;
     -fx-secondary: derive(black, 90%);
     -fx-primarytext: #000000;
 }
 
-/* .root {
-    -fx-background-image: url("background.jpg");
+.root {
+    -fx-font-family: "Fira Code Retina";
+    -fx-font-size: 13px;
 }
- */
 
 .label {
-    -fx-font-size: 13px;
     -fx-font-weight: bold;
     -fx-text-fill: #141111;
-    /* -fx-effect: dropshadow( gaussian, rgba(255, 255, 255, 0.5), 0, 0, 0, 1); */
 }
 
 .button {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
     -fx-text-fill: -fx-primarytext;
     -fx-background-color: -fx-secondary;
     -fx-border-color: -fx-primary;
-    -fx-font-size: 12px;
     -fx-text-alignment: center;
 }
 
 .jfx-list-view .list-cell:selected {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
     -fx-background-color: #9e9e9e;
     -fx-text-fill: -fx-primary;
 }
@@ -61,8 +68,6 @@
 
 #logTextArea {
     -fx-background-color: #000000;
-    -fx-font-family: Consolas;
-    -fx-font-size: 13;
     -fx-highlight-fill: #00ff00;
     -fx-highlight-text-fill: #000000;
     -fx-text-fill: #00ff00;

@@ -19,7 +19,7 @@ public class ConfigHandler {
 
     static {
         try {
-            config = new File(ConfigLocation.PATH + File.separatorChar + name);
+            config = new File(ConfigLocation.getPath(ConfigHandler.class) + File.separatorChar + name);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

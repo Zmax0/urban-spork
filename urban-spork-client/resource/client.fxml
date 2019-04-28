@@ -82,7 +82,7 @@
                         </LinearGradient>
                      </ripplerFill>
                   </JFXButton>
-                  <JFXButton fx:id="moveUpServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#moveUpServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.moveUp" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="15" GridPane.valignment="CENTER">
+                  <JFXButton fx:id="moveUpServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#moveUpServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.up" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="15" GridPane.valignment="CENTER">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -92,7 +92,7 @@
                         </LinearGradient>
                      </ripplerFill>
                   </JFXButton>
-                  <JFXButton fx:id="moveDownServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#moveDownServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.moveDown" textAlignment="CENTER" GridPane.columnIndex="5" GridPane.halignment="LEFT" GridPane.rowIndex="15" GridPane.valignment="CENTER">
+                  <JFXButton fx:id="moveDownServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#moveDownServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.down" textAlignment="CENTER" GridPane.columnIndex="5" GridPane.halignment="LEFT" GridPane.rowIndex="15" GridPane.valignment="CENTER">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -141,7 +141,7 @@
                   <Label text="%console.label.proxy.port" textAlignment="RIGHT" GridPane.columnIndex="6" GridPane.columnSpan="2" GridPane.halignment="RIGHT" GridPane.rowIndex="13" />
                   <JFXTextField fx:id="currentConfigHostTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="1" />
                   <JFXTextField fx:id="currentConfigPortTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="3" />
-                  <JFXTextField fx:id="currentConfigPasswordTextField" visible="false" GridPane.columnIndex="9" GridPane.columnSpan="2" GridPane.rowIndex="5" />
+                  <JFXTextField fx:id="currentConfigPasswordTextField" visible="false" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="5" />
                   <JFXPasswordField fx:id="currentConfigPasswordPasswordField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="5" />
                   <JFXTextField fx:id="currentConfigMemoTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="9" />
                   <JFXTextField fx:id="clientConfigPortTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="13" />
