@@ -1,10 +1,14 @@
 package com.urbanspork.cipher.impl;
 
-import java.io.ByteArrayOutputStream;
-
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+
+import com.urbanspork.cipher.AbstractCipher;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
 
 public class StreamCiphers extends AbstractCipher {
 
@@ -18,18 +22,18 @@ public class StreamCiphers extends AbstractCipher {
 
     @Override
     public byte[] encrypt(byte[] in, byte[] key) throws Exception {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ByteBuf result = Unpooled.buffer();
         if (!inited) {
             byte[] iv = randomBytes(ivSize);
             ParametersWithIV parametersWithIV = new ParametersWithIV(new KeyParameter(key), iv);
             cipher.init(true, parametersWithIV);
-            stream.write(iv);
+            result.writeBytes(iv);
             inited = true;
         }
         byte[] out = new byte[in.length];
         cipher.processBytes(in, 0, in.length, out, 0);
-        stream.write(out);
-        return stream.toByteArray();
+        result.writeBytes(out);
+        return ByteBufUtil.getBytes(result);
     }
 
     @Override

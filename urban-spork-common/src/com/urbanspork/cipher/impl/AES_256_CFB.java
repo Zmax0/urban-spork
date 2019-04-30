@@ -1,5 +1,6 @@
 package com.urbanspork.cipher.impl;
 
+import com.urbanspork.cipher.AbstractShadowsocksCipher;
 import com.urbanspork.cipher.Cipher;
 
 public class AES_256_CFB extends AbstractShadowsocksCipher {

@@ -1,5 +1,6 @@
 package com.urbanspork.cipher.impl;
 
+import com.urbanspork.cipher.AbstractShadowsocksCipher;
 import com.urbanspork.cipher.Cipher;
 
 public class ChaCha20_IETF extends AbstractShadowsocksCipher {

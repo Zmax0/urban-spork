@@ -1,8 +1,4 @@
-package com.urbanspork.cipher.impl;
-
-import com.urbanspork.cipher.Cipher;
-import com.urbanspork.cipher.ShadowsocksCipher;
-import com.urbanspork.cipher.ShadowsocksKey;
+package com.urbanspork.cipher;
 
 public abstract class AbstractShadowsocksCipher implements ShadowsocksCipher {
 

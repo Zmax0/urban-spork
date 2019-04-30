@@ -1,7 +1,5 @@
 package com.urbanspork.cipher.impl;
 
-import java.io.ByteArrayOutputStream;
-
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
@@ -11,7 +9,10 @@ import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 
+import com.urbanspork.cipher.AbstractCipher;
+
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 
 /**
@@ -45,11 +46,11 @@ public class AEADBlockCiphers extends AbstractCipher {
 
     @Override
     public byte[] encrypt(byte[] in, byte[] key) throws Exception {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ByteBuf result = Unpooled.buffer();
         if (!inited) {
             inited = true;
             byte[] salt = randomBytes(saltSize);
-            stream.write(salt);
+            result.writeBytes(salt);
             subkey = generateSubkey(key, salt);
             temp = new byte[2 + tagSize + payloadSize + tagSize];
         }
@@ -61,18 +62,18 @@ public class AEADBlockCiphers extends AbstractCipher {
             encryptBuff.readBytes(temp, 0, 2);
             cipher.init(true, generateCipherParameters());
             cipher.doFinal(temp, cipher.processBytes(temp, 0, 2, temp, 0));
-            stream.write(temp, 0, 2 + tagSize);
+            result.writeBytes(temp, 0, 2 + tagSize);
             _in.readBytes(temp, 2 + tagSize, payloadLength);
             cipher.init(true, generateCipherParameters());
             cipher.doFinal(temp, 2 + tagSize + cipher.processBytes(temp, 2 + tagSize, payloadLength, temp, 2 + tagSize));
-            stream.write(temp, 2 + tagSize, payloadLength + tagSize);
+            result.writeBytes(temp, 2 + tagSize, payloadLength + tagSize);
         }
-        return stream.toByteArray();
+        return ByteBufUtil.getBytes(result);
     }
 
     @Override
     public byte[] decrypt(byte[] in, byte[] key) throws Exception {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ByteBuf result = Unpooled.buffer();
         ByteBuf _in = null;
         if (temp != null) {
             _in = Unpooled.wrappedBuffer(temp, in);
@@ -108,11 +109,11 @@ public class AEADBlockCiphers extends AbstractCipher {
             _in.readBytes(payloadBytes, 0, payloadLength + tagSize);
             cipher.init(false, generateCipherParameters());
             cipher.doFinal(payloadBytes, cipher.processBytes(payloadBytes, 0, payloadLength + tagSize, payloadBytes, 0));
-            stream.write(payloadBytes, 0, payloadLength);
+            result.writeBytes(payloadBytes, 0, payloadLength);
             payloadLength = 0;
             temp = null;
         }
-        return stream.toByteArray();
+        return ByteBufUtil.getBytes(result);
     }
 
     private CipherParameters generateCipherParameters() {
