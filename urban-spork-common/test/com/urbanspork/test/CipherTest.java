@@ -3,44 +3,41 @@ package com.urbanspork.test;
 import java.security.SecureRandom;
 import java.util.Random;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import com.urbanspork.cipher.ShadowsocksCipher;
 import com.urbanspork.cipher.ShadowsocksCiphers;
 import com.urbanspork.cipher.ShadowsocksKey;
 
 @DisplayName("Cipher Test")
+@TestInstance(Lifecycle.PER_CLASS)
 public class CipherTest {
 
-    @DisplayName("<= aes_256_cfb")
-    @Test
-    public void aes_256_cfb() throws Exception {
-        ShadowsocksCipher cipher = ShadowsocksCiphers.AES_256_CFB.get();
-        ShadowsocksKey key = new ShadowsocksKey(randomString(64), cipher.getKeyLength());
-        byte[] in = randomBytes(100);
-        byte[] out = test(cipher, key, in);
-        Assertions.assertArrayEquals(in, out);
+    private String password;
+    private byte[] in;
+    private byte[] out;
+
+    @BeforeAll
+    public void beforeAll() {
+        password = randomString(64);
+        in = randomBytes(100);
     }
 
-    @DisplayName("<= aes-256-gcm")
-    @Test
-    public void aes_256_gcm() throws Exception {
-        ShadowsocksCipher cipher = ShadowsocksCiphers.AES_256_GCM.get();
-        ShadowsocksKey key = new ShadowsocksKey(randomString(64), cipher.getKeyLength());
-        byte[] in = randomBytes(100);
-        byte[] out = test(cipher, key, in);
-        Assertions.assertArrayEquals(in, out);
+    @ParameterizedTest
+    @EnumSource(ShadowsocksCiphers.class)
+    public void start(ShadowsocksCiphers cipher) throws Exception {
+        cipherTest(cipher.get());
     }
 
-    @DisplayName("<= chacha20-ietf")
-    @Test
-    public void chacha20_ietf() throws Exception {
-        ShadowsocksCipher cipher = ShadowsocksCiphers.ChaCha20_IETF.get();
-        ShadowsocksKey key = new ShadowsocksKey(randomString(64), cipher.getKeyLength());
-        byte[] in = randomBytes(100);
-        byte[] out = test(cipher, key, in);
+    @AfterEach
+    public void afterEach() {
         Assertions.assertArrayEquals(in, out);
     }
 
@@ -61,7 +58,12 @@ public class CipherTest {
         return bytes;
     }
 
-    private byte[] test(ShadowsocksCipher cipher, ShadowsocksKey key, byte[] in) throws Exception {
+    private void cipherTest(ShadowsocksCipher cipher) throws Exception {
+        ShadowsocksKey key = new ShadowsocksKey(password, cipher.getKeyLength());
+        out = cipherTest(cipher, key, in);
+    }
+
+    private byte[] cipherTest(ShadowsocksCipher cipher, ShadowsocksKey key, byte[] in) throws Exception {
         byte[] encrypt = cipher.encrypt(in, key);
         byte[] subpackage0 = new byte[encrypt.length - 10];
         byte[] subpackage1 = new byte[10];
