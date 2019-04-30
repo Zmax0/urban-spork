@@ -36,7 +36,9 @@ public class Console extends Application {
 
     public void show() {
         if (primaryStage.isShowing()) {
-            primaryStage.requestFocus();
+            if (!primaryStage.isFocused()) {
+                primaryStage.requestFocus();
+            }
         } else {
             primaryStage.show();
         }

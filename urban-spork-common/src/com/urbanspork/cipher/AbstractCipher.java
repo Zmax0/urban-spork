@@ -1,6 +1,4 @@
-package com.urbanspork.cipher.impl;
-
-import com.urbanspork.cipher.Cipher;
+package com.urbanspork.cipher;
 
 public abstract class AbstractCipher implements Cipher {
 
