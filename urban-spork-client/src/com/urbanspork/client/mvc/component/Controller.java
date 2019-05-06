@@ -12,16 +12,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.fastjson.JSON;
-import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXListView;
 import com.jfoenix.controls.JFXPasswordField;
-import com.jfoenix.controls.JFXTextArea;
 import com.jfoenix.controls.JFXTextField;
-import com.jfoenix.controls.JFXToggleButton;
 import com.jfoenix.validation.RequiredFieldValidator;
 import com.urbanspork.cipher.ShadowsocksCiphers;
 import com.urbanspork.client.Client;
 import com.urbanspork.client.mvc.Component;
+import com.urbanspork.client.mvc.Resource;
 import com.urbanspork.client.mvc.i18n.I18n;
 import com.urbanspork.config.ClientConfig;
 import com.urbanspork.config.ConfigHandler;
@@ -33,8 +31,11 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.MultipleSelectionModel;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.ToggleButton;
 
 public class Controller implements Initializable {
 
@@ -51,19 +52,19 @@ public class Controller implements Initializable {
     @FXML
     private JFXListView<ServerConfig> serverConfigListView;
     @FXML
-    private JFXButton addServerConfigButton;
+    private Button addServerConfigButton;
     @FXML
-    private JFXButton delServerConfigButton;
+    private Button delServerConfigButton;
     @FXML
-    private JFXButton copyServerConfigButton;
+    private Button copyServerConfigButton;
     @FXML
-    private JFXButton moveUpServerConfigButton;
+    private Button moveUpServerConfigButton;
     @FXML
-    private JFXButton moveDownServerConfigButton;
+    private Button moveDownServerConfigButton;
     @FXML
-    private JFXButton confirmServerConfigButton;
+    private Button confirmServerConfigButton;
     @FXML
-    private JFXButton cancelServerConfigButton;
+    private Button cancelServerConfigButton;
     @FXML
     private JFXTextField currentConfigHostTextField;
     @FXML
@@ -75,13 +76,13 @@ public class Controller implements Initializable {
     @FXML
     private JFXTextField currentConfigMemoTextField;
     @FXML
-    private JFXToggleButton currentConfigPasswordToggleButton;
+    private ToggleButton currentConfigPasswordToggleButton;
     @FXML
     private ChoiceBox<ShadowsocksCiphers> currentConfigCipherChoiceBox;
     @FXML
     private JFXTextField clientConfigPortTextField;
     @FXML
-    private JFXTextArea logTextArea;
+    private TextArea logTextArea;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -182,14 +183,14 @@ public class Controller implements Initializable {
         serverConfigListView.getSelectionModel().select(clientConfig.getCurrent());
     }
 
-    public JFXTextArea getLogTextArea() {
+    public TextArea getLogTextArea() {
         return logTextArea;
     }
 
     private void loadConfig() {
         try {
-            clientConfig = ConfigHandler.read(ClientConfig.class);
-        } catch (IOException e) {
+            clientConfig = Resource.CLIENT_CONFIG;
+        } catch (Exception e) {
             logger.error("Loading config failed", e);
         }
         if (clientConfig == null) {

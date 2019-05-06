@@ -1,13 +1,18 @@
 package com.urbanspork.client.mvc.i18n;
 
+import java.util.Locale;
+
 import com.urbanspork.client.mvc.Resource;
 
 public final class I18n {
+
+    public static final Locale[] LANGUAGES = new Locale[] { Locale.CHINESE, Locale.ENGLISH };
 
     public static final String PRAGRAM_TITLE = Resource.bundle.getString("pragram.title");
     public static final String TRAY_TOOLTIP = Resource.bundle.getString("tray.tooltip");
     public static final String TRAY_EXIT = Resource.bundle.getString("tray.exit");
     public static final String TRAY_MENU_CONSOLE = Resource.bundle.getString("tray.menu.console");
+    public static final String TRAY_MENU_LANGUAGE = Resource.bundle.getString("tray.menu.language");
     public static final String CONSOLE_TAB0_TEXT = Resource.bundle.getString("console.tab0.text");
     public static final String CONSOLE_TAB1_TEXT = Resource.bundle.getString("console.tab1.text");
     public static final String CONSOLE_BUTTON_ADD = Resource.bundle.getString("console.button.add");
