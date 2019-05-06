@@ -4,7 +4,7 @@ import java.util.Objects;
 
 public enum Component {
 
-    Tray(null), Controller(null), Console(null);
+    Controller(null), Console(null);
 
     private Object component;
 
