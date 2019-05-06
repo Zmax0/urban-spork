@@ -8,6 +8,8 @@ public class ClientConfig {
 
     private String port;
 
+    private String language;
+
     private ServerConfig current;
 
     private List<ServerConfig> servers;
@@ -18,6 +20,14 @@ public class ClientConfig {
 
     public void setPort(String port) {
         this.port = port;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
     }
 
     public ServerConfig getCurrent() {

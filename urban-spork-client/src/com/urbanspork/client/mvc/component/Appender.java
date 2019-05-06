@@ -1,11 +1,11 @@
 package com.urbanspork.client.mvc.component;
 
-import com.jfoenix.controls.JFXTextArea;
 import com.urbanspork.client.mvc.Component;
 
 import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
+import javafx.scene.control.TextArea;
 
 public class Appender extends AppenderBase<ILoggingEvent> {
 
@@ -24,7 +24,7 @@ public class Appender extends AppenderBase<ILoggingEvent> {
     protected void append(ILoggingEvent eventObject) {
         String msg = patternLayout.doLayout(eventObject);
         Controller controller = Component.Controller.get();
-        JFXTextArea logTextArea = controller.getLogTextArea();
+        TextArea logTextArea = controller.getLogTextArea();
         String log = logTextArea.textProperty().get();
         if (log.length() > 10000) {
             logTextArea.appendText("Clear for log length is " + log.length());
