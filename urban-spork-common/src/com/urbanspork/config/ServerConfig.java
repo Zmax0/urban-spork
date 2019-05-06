@@ -14,9 +14,9 @@ public class ServerConfig {
 
     private String memo;
 
-    public ServerConfig() {
-
-    }
+    // @formatter:off
+    public ServerConfig() {}
+    // @formatter:on
 
     public String getHost() {
         return host;

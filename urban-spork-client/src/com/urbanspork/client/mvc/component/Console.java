@@ -17,8 +17,12 @@ public class Console extends Application {
     private Stage primaryStage;
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void init() throws Exception {
         Component.Console.set(this);
+    }
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
         this.primaryStage = primaryStage;
         Platform.setImplicitExit(false);
         Parent root = FXMLLoader.load(Resource.CLIENT_FXML, Resource.bundle);
@@ -35,20 +39,24 @@ public class Console extends Application {
     }
 
     public void show() {
-        if (primaryStage.isShowing()) {
-            if (!primaryStage.isFocused()) {
-                primaryStage.requestFocus();
+        if (primaryStage != null) {
+            if (primaryStage.isShowing()) {
+                if (!primaryStage.isFocused()) {
+                    primaryStage.requestFocus();
+                }
+            } else {
+                primaryStage.show();
             }
-        } else {
-            primaryStage.show();
         }
     }
 
     public void hide() {
-        primaryStage.hide();
+        if (primaryStage != null) {
+            primaryStage.hide();
+        }
     }
 
-    public static void launch(String[] args) {
+    public static void launch(String... args) {
         Application.launch(args);
     }
 

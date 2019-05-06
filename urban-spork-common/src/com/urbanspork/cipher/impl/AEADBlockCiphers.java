@@ -123,7 +123,7 @@ public class AEADBlockCiphers extends AbstractCipher {
     }
 
     private byte[] generateSubkey(byte[] key, byte[] salt) {
-        byte[] out = new byte[saltSize];
+        byte[] out = new byte[salt.length];
         HKDFBytesGenerator generator = new HKDFBytesGenerator(new SHA1Digest());
         generator.init(new HKDFParameters(key, salt, info));
         generator.generateBytes(out, 0, out.length);

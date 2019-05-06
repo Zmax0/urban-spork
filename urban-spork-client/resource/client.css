@@ -1,7 +1,29 @@
 @font-face {
-    font-family: 'Fira Code Retina';
-    src: url('FiraCode-Retina.ttf');
+    font-family: 'Fira Code';
+    font-weight: 300;
+    font-style: normal;
+    src: url('font/ttf/FiraCode-Light.ttf');
+}
+
+@font-face {
+    font-family: 'Fira Code';
+    font-weight: 400;
+    font-style: normal;
+    src: url('font/ttf/FiraCode-Regular.ttf');
+}
+
+@font-face {
+    font-family: 'Fira Code';
     font-weight: 500;
+    font-style: normal;
+    src: url('font/ttf/FiraCode-Medium.ttf');
+}
+
+@font-face {
+    font-family: 'Fira Code';
+    font-weight: 700;
+    font-style: normal;
+    src: url('font/ttf/FiraCode-Bold.ttf');
 }
 
 * {
@@ -11,29 +33,27 @@
 }
 
 .root {
-    -fx-font-family: "Fira Code Retina";
-    -fx-font-size: 13px;
+    -fx-font-family: "Fira Code";
+    -fx-font-size: 12px;
 }
 
 .label {
-    -fx-font-weight: bold;
-    -fx-text-fill: #141111;
+    -fx-font-weight: 700;
+    /* -fx-text-fill: #141111; */
 }
 
-.button {
-    -fx-font-size: 12px;
-    -fx-font-weight: bold;
-    -fx-text-fill: -fx-primarytext;
+.jfx-button {
+    -fx-font-weight: 700;
     -fx-background-color: -fx-secondary;
-    -fx-border-color: -fx-primary;
+    /* -fx-text-fill: -fx-primarytext; */
+    /* -fx-border-color: -fx-primary; */
     -fx-text-alignment: center;
 }
 
-.jfx-list-view .list-cell:selected {
-    -fx-font-size: 12px;
-    -fx-font-weight: bold;
-    -fx-background-color: #9e9e9e;
-    -fx-text-fill: -fx-primary;
+.jfx-list-view .jfx-list-cell:selected {
+    -fx-font-weight: 700;
+    /* -fx-background-color: #9e9e9e; */
+    /* -fx-text-fill: -fx-primary; */
 }
 
 .jfx-list-view .scroll-bar:horizontal .track, .jfx-list-view .scroll-bar:vertical .track {
@@ -67,6 +87,7 @@
 }
 
 #logTextArea {
+    -fx-font-size: 13px;
     -fx-background-color: #000000;
     -fx-highlight-fill: #00ff00;
     -fx-highlight-text-fill: #000000;

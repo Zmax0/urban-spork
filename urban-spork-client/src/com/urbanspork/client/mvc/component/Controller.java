@@ -103,11 +103,13 @@ public class Controller implements Initializable {
     @FXML
     public void deleteServerConfig(ActionEvent event) {
         int index = serverConfigListView.getSelectionModel().getSelectedIndex();
-        serverConfigObservableList.remove(index);
-        if (!serverConfigObservableList.isEmpty()) {
-            serverConfigListView.getSelectionModel().select(index);
+        if (index > 0) {
+            serverConfigObservableList.remove(index);
+            if (!serverConfigObservableList.isEmpty()) {
+                serverConfigListView.getSelectionModel().select(index);
+            }
+            saveConfig();
         }
-        saveConfig();
     }
 
     @FXML
@@ -171,8 +173,13 @@ public class Controller implements Initializable {
 
     @FXML
     public void cancel(ActionEvent event) {
-        serverConfigListView.getSelectionModel().select(clientConfig.getCurrent());
         hideConsole();
+        int lastIndex = serverConfigObservableList.size() - 1;
+        ServerConfig lastConfig = serverConfigObservableList.get(lastIndex);
+        if (!lastConfig.check()) {
+            serverConfigObservableList.remove(lastIndex);
+        }
+        serverConfigListView.getSelectionModel().select(clientConfig.getCurrent());
     }
 
     public JFXTextArea getLogTextArea() {
@@ -272,14 +279,14 @@ public class Controller implements Initializable {
     }
 
     private void launchClient() {
-        Tray tray = Component.Tray.get();
         ServerConfig config = clientConfig.getCurrent();
         if (config != null) {
             clinetLauncher = new Thread(() -> {
                 try {
                     Client.launch(clientConfig);
                 } catch (InterruptedException e) {
-                    logger.info("[{}] was interrupted by relaunch", Thread.currentThread().getName());
+                    Thread thread = Thread.currentThread();
+                    logger.info("[{}-{}] was interrupted by relaunch", thread.getName(), thread.getId());
                 } catch (Exception e) {
                     logger.error(StringUtil.EMPTY_STRING, e);
                 }
@@ -287,11 +294,12 @@ public class Controller implements Initializable {
             clinetLauncher.setName("Client-Launcher");
             clinetLauncher.setDaemon(true);
             clinetLauncher.start();
+            logger.debug("[{}-{}] start", clinetLauncher.getName(), clinetLauncher.getId());
             String message = clientConfig.getCurrent().toString();
-            tray.displayMessage("Proxy is running", message, MessageType.INFO);
-            tray.setToolTip(message);
+            Tray.displayMessage("Proxy is running", message, MessageType.INFO);
+            Tray.setToolTip(message);
         } else {
-            tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
+            Tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
         }
     }
 
