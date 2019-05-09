@@ -1,4 +1,4 @@
-package com.urbanspork.client.config;
+package com.urbanspork.config;
 
 import java.util.Objects;
 

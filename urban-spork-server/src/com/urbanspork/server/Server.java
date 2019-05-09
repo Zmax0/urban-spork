@@ -1,6 +1,11 @@
 package com.urbanspork.server;
 
-import com.urbanspork.utils.ConfigUtils;
+import java.util.List;
+import java.util.Objects;
+
+import com.urbanspork.config.ClientConfig;
+import com.urbanspork.config.ConfigHandler;
+import com.urbanspork.config.ServerConfig;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -10,24 +15,21 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 public class Server {
 
-    private static final int DEFAULT_PORT = 1088;
-
     public static void main(String[] args) throws Exception {
-        int port = DEFAULT_PORT;
-        Integer configPort = ConfigUtils.get("socks5.server.port", Integer.class);
-        if (configPort != null) {
-            port = configPort;
-        }
+        List<ServerConfig> serverConfigs = Objects.requireNonNull(ConfigHandler.read(ClientConfig.class), "Please put the 'config.json' file into the folder").getServers();
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class).childHandler(new ServerInitializer());
-            ChannelFuture f = b.bind(port).sync();
-            f.channel().closeFuture().sync();
-        } finally {
-            workerGroup.shutdownGracefully();
-            bossGroup.shutdownGracefully();
+        for (ServerConfig serverConfig : serverConfigs) {
+            try {
+                int port = Integer.valueOf(serverConfig.getPort());
+                ServerBootstrap b = new ServerBootstrap();
+                b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class).childHandler(new ServerInitializer(serverConfig));
+                ChannelFuture f = b.bind(port).sync();
+                f.channel().closeFuture().sync();
+            } finally {
+                workerGroup.shutdownGracefully();
+                bossGroup.shutdownGracefully();
+            }
         }
     }
 
