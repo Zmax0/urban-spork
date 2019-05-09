@@ -3,7 +3,6 @@ package com.urbanspork.client.mvc.component;
 import java.awt.TrayIcon.MessageType;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -188,15 +187,7 @@ public class Controller implements Initializable {
     }
 
     private void loadConfig() {
-        try {
-            clientConfig = Resource.CLIENT_CONFIG;
-        } catch (Exception e) {
-            logger.error("Loading config failed", e);
-        }
-        if (clientConfig == null) {
-            clientConfig = new ClientConfig();
-            clientConfig.setServers(new ArrayList<>(16));
-        }
+        clientConfig = Resource.config;
     }
 
     private void initViews() {

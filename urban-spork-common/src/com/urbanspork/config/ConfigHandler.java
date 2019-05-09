@@ -18,11 +18,7 @@ public class ConfigHandler {
     public static final File config;
 
     static {
-        try {
-            config = new File(ConfigLocation.getPath(ConfigHandler.class) + File.separatorChar + name);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        config = new File(ConfigLocation.getPath(ConfigHandler.class) + File.separatorChar + name);
     }
 
     public static void write(Object object) throws IOException {

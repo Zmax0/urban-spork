@@ -18,7 +18,7 @@ public class Client {
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
     public static void launch(ClientConfig clientConfig) throws Exception {
-        logger.info("Proxy client launched => {}", clientConfig);
+        logger.info("Proxy client launched ~> {}", clientConfig);
         int port = Integer.valueOf(clientConfig.getPort());
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
