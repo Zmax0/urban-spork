@@ -12,6 +12,12 @@
 <?import javafx.scene.control.* ?>
 <?import javafx.scene.layout.* ?>
 <?import javafx.scene.paint.* ?>
+<?import com.jfoenix.controls.* ?>
+<?import java.lang.* ?>
+<?import javafx.geometry.* ?>
+<?import javafx.scene.control.* ?>
+<?import javafx.scene.layout.* ?>
+<?import javafx.scene.paint.* ?>
 <?import com.jfoenix.validation.* ?>
 <?import javafx.scene.paint.* ?>
 <?import javafx.scene.* ?>
@@ -145,11 +151,7 @@
                   <JFXPasswordField fx:id="currentConfigPasswordPasswordField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="5" />
                   <JFXTextField fx:id="currentConfigMemoTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="9" />
                   <JFXTextField fx:id="clientConfigPortTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="13" />
-                  <JFXToggleButton fx:id="currentConfigPasswordToggleButton" contentDisplay="GRAPHIC_ONLY" ellipsisString="" graphicTextGap="0.0" onAction="#showCurrentConfigPassword" rotate="90.0" size="4.0" text=" " textAlignment="RIGHT" textOverrun="CLIP" toggleColor="BLACK" toggleLineColor="SLATEGRAY" GridPane.columnIndex="11" GridPane.halignment="RIGHT" GridPane.hgrow="NEVER" GridPane.rowIndex="5" GridPane.valignment="CENTER" GridPane.vgrow="NEVER">
-                     <padding>
-                        <Insets bottom="-5.0" right="-5.0" top="-5.0" />
-                     </padding>
-                  </JFXToggleButton>
+                  <JFXToggleButton fx:id="currentConfigPasswordToggleButton" onAction="#showCurrentConfigPassword" size="0" styleClass="hide-show" GridPane.columnIndex="11" GridPane.halignment="RIGHT" GridPane.hgrow="NEVER" GridPane.rowIndex="5" GridPane.valignment="CENTER" GridPane.vgrow="NEVER" />
                   <ChoiceBox fx:id="currentConfigCipherChoiceBox" blendMode="HARD_LIGHT" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="7" />
                </children>
             </GridPane>

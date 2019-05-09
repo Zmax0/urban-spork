@@ -88,14 +88,14 @@ public class Tray {
     }
 
     private static void buildLanguageMenu(Menu menu) {
-        ClientConfig config = Resource.CLIENT_CONFIG;
+        ClientConfig config = Resource.config;
         String language = config.getLanguage();
         final Locale configLanguage = new Locale(language);
         List<CheckboxMenuItem> items = new ArrayList<>(I18n.LANGUAGES.length);
         for (Locale locale : I18n.LANGUAGES) {
             CheckboxMenuItem item = new CheckboxMenuItem();
             item.setName(locale.getLanguage());
-            item.setLabel(locale.getDisplayLanguage());
+            item.setLabel(locale.getDisplayLanguage(configLanguage));
             if (locale.equals(configLanguage)) {
                 item.setState(true);
             }

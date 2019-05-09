@@ -1,55 +1,85 @@
-@font-face {
-    font-family: 'Fira Code';
-    font-weight: 300;
-    font-style: normal;
-    src: url('font/ttf/FiraCode-Light.ttf');
-}
+/** Source Han Sans */
 
 @font-face {
-    font-family: 'Fira Code';
-    font-weight: 400;
-    font-style: normal;
-    src: url('font/ttf/FiraCode-Regular.ttf');
-}
-
-@font-face {
-    font-family: 'Fira Code';
+    font-family: 'Source Han Sans SC';
     font-weight: 500;
-    font-style: normal;
-    src: url('font/ttf/FiraCode-Medium.ttf');
+    src: url('font/otf/SourceHanSansSC-Regular.otf');
 }
 
 @font-face {
-    font-family: 'Fira Code';
+    font-family: 'Source Han Sans SC';
     font-weight: 700;
-    font-style: normal;
-    src: url('font/ttf/FiraCode-Bold.ttf');
+    src: url('font/otf/SourceHanSansSC-Bold.otf');
+}
+
+/** Source Han Serif */
+
+@font-face {
+    font-family: 'Source Han Serif SC';
+    font-weight: 500;
+    src: url('font/otf/SourceHanSerifSC-Regular.otf');
+}
+
+@font-face {
+    font-family: 'Source Han Serif SC';
+    font-weight: 700;
+    src: url('font/otf/SourceHanSerifSC-Medium.otf');
+}
+
+/** Ubuntu Mono */
+
+@font-face {
+    font-family: 'Ubuntu Mono';
+    font-weight: 500;
+    src: url('font/ttf/UbuntuMono-R.ttf');
+}
+
+@font-face {
+    font-family: 'Ubuntu Mono';
+    font-weight: 700;
+    src: url('font/ttf/UbuntuMono-B.ttf');
 }
 
 * {
-    -fx-primary: #f8f8ff;
-    -fx-secondary: derive(black, 90%);
-    -fx-primarytext: #000000;
+    -fx-primary-color: #f8f8ff;
+    -fx-secondary-color: derive(black, 90%);
+    -fx-primary-text: #000000;
 }
 
 .root {
-    -fx-font-family: "Fira Code";
+    -fx-font-family: 'Source Han Serif SC';
 }
 
 .label {
+    -fx-font-family: 'Source Han Sans SC';
+}
+
+.tab-pane .tab-header-area {
+    /* -fx-font-family: 'Source Han Sans SC'; */
     -fx-font-weight: 700;
-    /* -fx-text-fill: #141111; */
 }
 
 .jfx-button {
+    -fx-font-family: 'Source Han Sans SC';
     -fx-font-weight: 700;
-    -fx-background-color: -fx-secondary;
-    /* -fx-text-fill: -fx-primarytext; */
-    /* -fx-border-color: -fx-primary; */
+    -fx-background-color: -fx-secondary-color;
+    -fx-text-fill: -fx-primary-text;
+    -fx-border-color: -fx-primary-color;
     -fx-text-alignment: center;
 }
 
+.hide-show.toggle-button {
+    -fx-background-image: url("image/eye.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: 100% 50%;
+}
+
+.hide-show.toggle-button:selected {
+    -fx-background-image: url("image/eye-close.png")
+}
+
 .list-view {
+    -fx-border-color: #d3d3d3;
     -fx-background-insets: 0;
     -fx-background-color: transparent, white, transparent, white;
 }
@@ -93,8 +123,9 @@
 }
 
 .text-area {
-    -fx-font-weight: 500;
-    -fx-font-size: 13px;
+    -fx-font-family: 'Ubuntu Mono';
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
     -fx-highlight-fill: #00ff00;
     -fx-text-fill: #00ff00;
     -fx-highlight-text-fill: #000000;
