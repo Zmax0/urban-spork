@@ -5,9 +5,9 @@ import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.urbanspork.client.config.ClientConfig;
-import com.urbanspork.client.config.ServerConfig;
 import com.urbanspork.common.Attributes;
+import com.urbanspork.config.ClientConfig;
+import com.urbanspork.config.ServerConfig;
 import com.urbanspork.key.ShadowsocksKey;
 
 import io.netty.channel.ChannelInitializer;

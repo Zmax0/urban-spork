@@ -2,10 +2,10 @@ package com.urbanspork.cipher;
 
 import javax.crypto.SecretKey;
 
-public class AES_256_CBA implements ShadowsocksCipher {
+public class AES_256_CFB implements ShadowsocksCipher {
 
-    private final SymmetricEncryptUtils encrypt = SymmetricEncryptUtils.AES.AES_256_CFB();
-    private final SymmetricEncryptUtils decrypt = SymmetricEncryptUtils.AES.AES_256_CFB();
+    private final Cipher encrypt = Cipher.StreamBlockCiphers.AES_256_CFB();
+    private final Cipher decrypt = Cipher.StreamBlockCiphers.AES_256_CFB();
 
     @Override
     public byte[] encrypt(byte[] in, SecretKey key) throws Exception {

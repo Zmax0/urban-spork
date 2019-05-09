@@ -1,6 +1,7 @@
 package com.urbanspork.client.mvc;
 
 import java.awt.TrayIcon.MessageType;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,9 +21,9 @@ import com.jfoenix.controls.JFXToggleButton;
 import com.jfoenix.validation.RequiredFieldValidator;
 import com.urbanspork.cipher.ShadowsocksCiphers;
 import com.urbanspork.client.Client;
-import com.urbanspork.client.config.ClientConfig;
-import com.urbanspork.client.config.ConfigHandler;
-import com.urbanspork.client.config.ServerConfig;
+import com.urbanspork.config.ClientConfig;
+import com.urbanspork.config.ConfigHandler;
+import com.urbanspork.config.ServerConfig;
 
 import io.netty.util.internal.StringUtil;
 import javafx.collections.FXCollections;
@@ -39,8 +40,6 @@ public class Controller implements Initializable {
     private final Logger logger = LoggerFactory.getLogger(Controller.class);
 
     private ClientConfig clientConfig;
-
-    private ConfigHandler configHandler;
 
     private Thread clinetLauncher;
 
@@ -170,13 +169,12 @@ public class Controller implements Initializable {
         return logTextArea;
     }
 
-    public ClientConfig getClientConfig() {
-        return clientConfig;
-    }
-
     private void loadConfig() {
-        configHandler = new ConfigHandler();
-        clientConfig = configHandler.read(ClientConfig.class);
+        try {
+            clientConfig = ConfigHandler.read(ClientConfig.class);
+        } catch (IOException e) {
+            logger.error("Loading config failed", e);
+        }
         if (clientConfig == null) {
             clientConfig = new ClientConfig();
             clientConfig.setServers(new ArrayList<>(32));
@@ -193,12 +191,13 @@ public class Controller implements Initializable {
             (o, oldValue, newValue) -> {
                 clientConfig.setCurrent(newValue);
                 display(newValue);
+                saveConfig();
                 logger.info("Proxy server changed -> {}", newValue);
             });
         // currentConfigCipherChoiceBox
         List<ShadowsocksCiphers> ciphers = Arrays.asList(ShadowsocksCiphers.values());
         currentConfigCipherChoiceBox.setItems(FXCollections.observableArrayList(ciphers));
-        currentConfigCipherChoiceBox.setValue(ShadowsocksCiphers.AES_256_CBA);
+        currentConfigCipherChoiceBox.setValue(ShadowsocksCiphers.AES_256_CFB);
         // currentConfigHostTextField
         currentConfigHostTextField.getValidators().add(requiredFieldValidator);
         currentConfigHostTextField.focusedProperty().addListener(
@@ -296,7 +295,11 @@ public class Controller implements Initializable {
 
     private void saveConfig() {
         clientConfig.setServers(serverConfigObservableList);
-        configHandler.write(clientConfig);
+        try {
+            ConfigHandler.write(clientConfig);
+        } catch (IOException e) {
+            logger.error("Saving config failed", e);
+        }
     }
 
 }
