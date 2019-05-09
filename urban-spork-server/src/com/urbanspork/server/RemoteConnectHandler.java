@@ -6,14 +6,10 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.urbanspork.cipher.ShadowsocksCipher;
-import com.urbanspork.cipher.ShadowsocksKey;
 import com.urbanspork.common.Attributes;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -22,11 +18,14 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.ReferenceCountUtil;
+import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.handler.codec.ByteToMessageDecoder.Cumulator;
 
 public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(RemoteConnectHandler.class);
+
+    private final Cumulator cumulator = ByteToMessageDecoder.MERGE_CUMULATOR;
 
     private Channel remoteChannel;
     private ByteBuf buff;
@@ -63,18 +62,10 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof ByteBuf) {
-            try {
-                Channel channel = ctx.channel();
-                ShadowsocksCipher cipher = channel.attr(Attributes.CIPHER).get();
-                ShadowsocksKey key = channel.attr(Attributes.KEY).get();
-                byte[] decrypt = cipher.decrypt(ByteBufUtil.getBytes((ByteBuf) msg), key);
-                if (remoteChannel == null) {
-                    buff.writeBytes(decrypt);
-                } else {
-                    remoteChannel.writeAndFlush(Unpooled.wrappedBuffer(decrypt));
-                }
-            } finally {
-                ReferenceCountUtil.release(msg);
+            if (remoteChannel == null) {
+                cumulator.cumulate(ctx.alloc(), buff, (ByteBuf) msg);
+            } else {
+                remoteChannel.writeAndFlush(msg);
             }
         } else {
             ctx.fireChannelRead(msg);

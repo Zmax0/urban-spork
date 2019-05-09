@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import com.urbanspork.cipher.ShadowsocksCipherCodec;
 import com.urbanspork.common.Attributes;
 import com.urbanspork.common.DefaultChannelInboundHandler;
-import com.urbanspork.protocol.ShadowsocksClientProtocolCodec;
+import com.urbanspork.protocol.ShadowsocksProtocolEncoder;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -46,7 +46,7 @@ public class ClientProcessor extends SimpleChannelInboundHandler<Socks5CommandRe
                     remoteChannel.attr(Attributes.REQUEST).set(msg);
                     remoteChannel.pipeline()
                         .addLast(new ShadowsocksCipherCodec())
-                        .addLast(new ShadowsocksClientProtocolCodec())
+                        .addLast(new ShadowsocksProtocolEncoder())
                         .addLast(new DefaultChannelInboundHandler(localChannel));
                 }
             }).connect(serverAddress).addListener((ChannelFutureListener) future -> {

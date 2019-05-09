@@ -3,13 +3,7 @@ package com.urbanspork.server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.urbanspork.cipher.ShadowsocksCipher;
-import com.urbanspork.cipher.ShadowsocksKey;
-import com.urbanspork.common.Attributes;
-
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -40,9 +34,7 @@ public class RemoteReceiveHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        ShadowsocksCipher cipher = localChannel.attr(Attributes.CIPHER).get();
-        ShadowsocksKey key = localChannel.attr(Attributes.KEY).get();
-        localChannel.writeAndFlush(Unpooled.wrappedBuffer(cipher.encrypt(ByteBufUtil.getBytes(msg), key)));
+        localChannel.writeAndFlush(msg.retain());
     }
 
     @Override
