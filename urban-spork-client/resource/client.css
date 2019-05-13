@@ -2,27 +2,13 @@
 
 @font-face {
     font-family: 'Source Han Sans SC';
-    font-weight: 500;
     src: url('font/otf/SourceHanSansSC-Regular.otf');
-}
-
-@font-face {
-    font-family: 'Source Han Sans SC';
-    font-weight: 700;
-    src: url('font/otf/SourceHanSansSC-Bold.otf');
 }
 
 /** Source Han Serif */
 
 @font-face {
     font-family: 'Source Han Serif SC';
-    font-weight: 500;
-    src: url('font/otf/SourceHanSerifSC-Regular.otf');
-}
-
-@font-face {
-    font-family: 'Source Han Serif SC';
-    font-weight: 700;
     src: url('font/otf/SourceHanSerifSC-Medium.otf');
 }
 
@@ -30,13 +16,6 @@
 
 @font-face {
     font-family: 'Ubuntu Mono';
-    font-weight: 500;
-    src: url('font/ttf/UbuntuMono-R.ttf');
-}
-
-@font-face {
-    font-family: 'Ubuntu Mono';
-    font-weight: 700;
     src: url('font/ttf/UbuntuMono-B.ttf');
 }
 
@@ -56,12 +35,11 @@
 
 .tab-pane .tab-header-area {
     /* -fx-font-family: 'Source Han Sans SC'; */
-    -fx-font-weight: 700;
+    /* -fx-font-weight: 700; */
 }
 
 .jfx-button {
     -fx-font-family: 'Source Han Sans SC';
-    -fx-font-weight: 700;
     -fx-background-color: -fx-secondary-color;
     -fx-text-fill: -fx-primary-text;
     -fx-border-color: -fx-primary-color;
@@ -89,7 +67,7 @@
 }
 
 .list-view .list-cell:selected {
-    -fx-font-weight: 700;
+    /* -fx-font-weight: 700; */
 }
 
 .jfx-list-view .scroll-bar:horizontal .track, .jfx-list-view .scroll-bar:vertical .track {
@@ -124,7 +102,6 @@
 
 .text-area {
     -fx-font-family: 'Ubuntu Mono';
-    -fx-font-weight: bold;
     -fx-font-size: 14px;
     -fx-highlight-fill: #00ff00;
     -fx-text-fill: #00ff00;

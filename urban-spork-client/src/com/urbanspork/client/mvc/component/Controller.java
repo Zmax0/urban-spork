@@ -73,7 +73,7 @@ public class Controller implements Initializable {
     @FXML
     private JFXTextField currentConfigPasswordTextField;
     @FXML
-    private JFXTextField currentConfigMemoTextField;
+    private JFXTextField currentConfigRemarkTextField;
     @FXML
     private ToggleButton currentConfigPasswordToggleButton;
     @FXML
@@ -161,7 +161,7 @@ public class Controller implements Initializable {
             config.setHost(currentConfigHostTextField.getText());
             config.setPort(currentConfigPortTextField.getText());
             config.setPassword(currentConfigPasswordTextField.getText());
-            config.setMemo(currentConfigMemoTextField.getText());
+            config.setRemark(currentConfigRemarkTextField.getText());
             config.setCipher(currentConfigCipherChoiceBox.getValue());
             clientConfig.setPort(clientConfigPortTextField.getText());
             clientConfig.setCurrent(config);
@@ -329,7 +329,7 @@ public class Controller implements Initializable {
         if (c != null) {
             currentConfigHostTextField.setText(c.getHost());
             currentConfigPortTextField.setText(c.getPort());
-            currentConfigMemoTextField.setText(c.getMemo());
+            currentConfigRemarkTextField.setText(c.getRemark());
             currentConfigPasswordPasswordField.setText(c.getPassword());
             currentConfigPasswordTextField.setText(c.getPassword());
             currentConfigPasswordToggleButton.setSelected(false);

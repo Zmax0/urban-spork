@@ -143,13 +143,13 @@
                   <Label text="%console.label.port" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="3" />
                   <Label text="%console.label.password" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="5" />
                   <Label text="%console.label.cipher" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="7" />
-                  <Label text="%console.label.memo" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="9" />
+                  <Label text="%console.label.remark" GridPane.columnIndex="7" GridPane.halignment="RIGHT" GridPane.rowIndex="9" />
                   <Label text="%console.label.proxy.port" textAlignment="RIGHT" GridPane.columnIndex="6" GridPane.columnSpan="2" GridPane.halignment="RIGHT" GridPane.rowIndex="13" />
                   <JFXTextField fx:id="currentConfigHostTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="1" />
                   <JFXTextField fx:id="currentConfigPortTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="3" />
                   <JFXTextField fx:id="currentConfigPasswordTextField" visible="false" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="5" />
                   <JFXPasswordField fx:id="currentConfigPasswordPasswordField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="5" />
-                  <JFXTextField fx:id="currentConfigMemoTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="9" />
+                  <JFXTextField fx:id="currentConfigRemarkTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="9" />
                   <JFXTextField fx:id="clientConfigPortTextField" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="13" />
                   <JFXToggleButton fx:id="currentConfigPasswordToggleButton" onAction="#showCurrentConfigPassword" size="0" styleClass="hide-show" GridPane.columnIndex="11" GridPane.halignment="RIGHT" GridPane.hgrow="NEVER" GridPane.rowIndex="5" GridPane.valignment="CENTER" GridPane.vgrow="NEVER" />
                   <ChoiceBox fx:id="currentConfigCipherChoiceBox" blendMode="HARD_LIGHT" GridPane.columnIndex="9" GridPane.columnSpan="3" GridPane.rowIndex="7" />

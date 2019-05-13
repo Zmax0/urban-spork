@@ -26,7 +26,7 @@ public final class I18n {
     public static final String CONSOLE_LABEL_PORT = Resource.bundle.getString("console.label.port");
     public static final String CONSOLE_LABEL_PASSWORD = Resource.bundle.getString("console.label.password");
     public static final String CONSOLE_LABEL_CIPHER = Resource.bundle.getString("console.label.cipher");
-    public static final String CONSOLE_LABEL_MEMO = Resource.bundle.getString("console.label.memo");
+    public static final String CONSOLE_LABEL_REMARK = Resource.bundle.getString("console.label.remark");
     public static final String CONSOLE_LABEL_PROXY_PORT = Resource.bundle.getString("console.label.proxy.port");
     public static final String CONSOLE_VALIDATOR_REQUIRED_FIELD_MESSAGE = Resource.bundle.getString("console.validator.required.field.message");
 
