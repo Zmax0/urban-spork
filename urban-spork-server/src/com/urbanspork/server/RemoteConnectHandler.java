@@ -19,13 +19,10 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.handler.codec.ByteToMessageDecoder.Cumulator;
 
 public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(RemoteConnectHandler.class);
-
-    private final Cumulator cumulator = ByteToMessageDecoder.MERGE_CUMULATOR;
 
     private Channel remoteChannel;
     private ByteBuf buff;
@@ -63,7 +60,7 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof ByteBuf) {
             if (remoteChannel == null) {
-                cumulator.cumulate(ctx.alloc(), buff, (ByteBuf) msg);
+                ByteToMessageDecoder.COMPOSITE_CUMULATOR.cumulate(ctx.alloc(), buff, (ByteBuf) msg);
             } else {
                 remoteChannel.writeAndFlush(msg);
             }

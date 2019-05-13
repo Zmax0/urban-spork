@@ -12,7 +12,7 @@ public class ServerConfig {
 
     private ShadowsocksCiphers cipher;
 
-    private String memo;
+    private String remark;
 
     // @formatter:off
     public ServerConfig() {}
@@ -50,12 +50,12 @@ public class ServerConfig {
         this.password = password;
     }
 
-    public String getMemo() {
-        return memo;
+    public String getRemark() {
+        return remark;
     }
 
-    public void setMemo(String memo) {
-        this.memo = memo;
+    public void setRemark(String remark) {
+        this.remark = remark;
     }
 
     public boolean check() {
@@ -65,8 +65,8 @@ public class ServerConfig {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        if (memo != null) {
-            builder.append(memo);
+        if (remark != null) {
+            builder.append(remark);
         }
         if (host != null) {
             builder.append(' ').append(host).append(':').append(port);
