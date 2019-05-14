@@ -51,7 +51,9 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
                 if (future.isSuccess()) {
                     remoteChannel = future.channel();
                 } else {
-                    throw new IllegalStateException("Connect " + remoteAddress + " failed");
+                    logger.error("Connect " + remoteAddress + " failed");
+                    localChannel.close();
+                    release();
                 }
             });
     }
@@ -61,6 +63,7 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
         if (msg instanceof ByteBuf) {
             if (remoteChannel == null) {
                 ByteToMessageDecoder.COMPOSITE_CUMULATOR.cumulate(ctx.alloc(), buff, (ByteBuf) msg);
+                ((ByteBuf) msg).release();
             } else {
                 remoteChannel.writeAndFlush(msg);
             }
