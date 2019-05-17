@@ -40,11 +40,10 @@ public class Console extends Application {
 
     public void show() {
         if (primaryStage != null) {
-            if (primaryStage.isShowing()) {
-                if (!primaryStage.isFocused()) {
-                    primaryStage.requestFocus();
-                }
-            } else {
+            if (primaryStage.isIconified()) {
+                primaryStage.setIconified(false);
+            }
+            if (!primaryStage.isShowing()) {
                 primaryStage.show();
             }
         }

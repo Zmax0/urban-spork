@@ -23,14 +23,16 @@ public class ServerProtocolHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof ByteBuf) {
-                Channel channel = ctx.channel();
-                ByteBuf buff = (ByteBuf) msg;
-                if (buff.readableBytes() >= 2) {
-                    channel.attr(Attributes.REMOTE_ADDRESS).set(ShadowsocksProtocol.decodeAddress(buff));
-                    channel.pipeline().addLast(new RemoteConnectHandler(channel, buff)).remove(this);
+            Channel channel = ctx.channel();
+            ByteBuf buff = (ByteBuf) msg;
+            if (buff.readableBytes() >= 2) {
+                channel.attr(Attributes.REMOTE_ADDRESS).set(ShadowsocksProtocol.decodeAddress(buff));
+                channel.pipeline().addLast(new RemoteConnectHandler(channel, buff)).remove(this);
+            } else {
+                ctx.close();
             }
         } else {
-            ctx.fireChannelRead(msg);
+            ctx.close();
         }
     }
 
