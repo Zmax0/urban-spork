@@ -1,5 +1,8 @@
 package com.urbanspork.server;
 
+import com.urbanspork.common.Attributes;
+import com.urbanspork.protocol.ShadowsocksProtocol;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -20,8 +23,12 @@ public class ServerProtocolHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof ByteBuf) {
-            Channel channel = ctx.channel();
-            channel.pipeline().addLast(new RemoteConnectHandler(channel, (ByteBuf) msg)).remove(this);
+                Channel channel = ctx.channel();
+                ByteBuf buff = (ByteBuf) msg;
+                if (buff.readableBytes() >= 2) {
+                    channel.attr(Attributes.REMOTE_ADDRESS).set(ShadowsocksProtocol.decodeAddress(buff));
+                    channel.pipeline().addLast(new RemoteConnectHandler(channel, buff)).remove(this);
+            }
         } else {
             ctx.fireChannelRead(msg);
         }

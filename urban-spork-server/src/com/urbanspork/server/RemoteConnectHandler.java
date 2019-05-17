@@ -18,7 +18,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.ByteToMessageDecoder;
 
 public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
 
@@ -62,7 +61,7 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof ByteBuf) {
             if (remoteChannel == null) {
-                ByteToMessageDecoder.COMPOSITE_CUMULATOR.cumulate(ctx.alloc(), buff, (ByteBuf) msg);
+                buff.writeBytes((ByteBuf) msg);
                 ((ByteBuf) msg).release();
             } else {
                 remoteChannel.writeAndFlush(msg);

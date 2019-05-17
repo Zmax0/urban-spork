@@ -41,7 +41,7 @@ public interface ShadowsocksProtocol {
             int port = msg.readShort();
             return new InetSocketAddress(host, port);
         }
-        return null;
+        throw new IllegalArgumentException("Unknown address type: " + addressType);
     }
 
 }
