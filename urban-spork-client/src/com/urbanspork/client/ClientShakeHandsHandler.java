@@ -3,12 +3,18 @@ package com.urbanspork.client;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.socksx.SocksMessage;
+import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5InitialResponse;
+import io.netty.handler.codec.socksx.v5.DefaultSocks5PasswordAuthResponse;
+import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5AuthMethod;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequestDecoder;
+import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import io.netty.handler.codec.socksx.v5.Socks5InitialRequest;
+import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthRequest;
+import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthStatus;
 
 public class ClientShakeHandsHandler extends SimpleChannelInboundHandler<SocksMessage> {
 
@@ -26,14 +32,16 @@ public class ClientShakeHandsHandler extends SimpleChannelInboundHandler<SocksMe
                     ctx.pipeline().addLast(new ClientProcessor()).remove(this);
                     ctx.fireChannelRead(socksRequest);
                 } else {
-                    ctx.close();
+                    ctx.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, Socks5AddressType.IPv4));
                 }
+            } else if (socksRequest instanceof Socks5PasswordAuthRequest) {
+                ctx.writeAndFlush(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.SUCCESS));
             } else {
                 ctx.close();
             }
             break;
+        case SOCKS4a:
         case UNKNOWN:
-        default:
             ctx.close();
             break;
         }

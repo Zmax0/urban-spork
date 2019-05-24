@@ -10,3 +10,4 @@ fi
 nohup $JAVA_HOME/bin/java -jar -Dio.netty.leakDetectionLevel=advanced ${server}.jar > log 2>&1 &
 eval pid=$(pgrep -f ${server})
 echo "start ${server} pid "${pid}
+tail -1000f log

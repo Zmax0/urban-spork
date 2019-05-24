@@ -2,13 +2,13 @@ package com.urbanspork.client;
 
 import java.net.InetSocketAddress;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.urbanspork.cipher.ShadowsocksCipherCodec;
 import com.urbanspork.common.Attributes;
 import com.urbanspork.common.DefaultChannelInboundHandler;
 import com.urbanspork.protocol.ShadowsocksProtocolEncoder;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -22,7 +22,6 @@ import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
-import io.netty.util.internal.StringUtil;
 
 public class ClientProcessor extends SimpleChannelInboundHandler<Socks5CommandRequest> {
 
@@ -56,7 +55,7 @@ public class ClientProcessor extends SimpleChannelInboundHandler<Socks5CommandRe
                     localChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.IPv4));
                 } else {
                     localChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, Socks5AddressType.IPv4));
-                    logger.error("Connect proxy server failed");
+                    logger.error("Connect proxy server {} failed", serverAddress);
                 }
             });
 
@@ -64,7 +63,7 @@ public class ClientProcessor extends SimpleChannelInboundHandler<Socks5CommandRe
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error(StringUtil.EMPTY_STRING, cause);
+        logger.error("Exception caught on channel " + ctx.channel() + " ->", cause);
         ctx.channel().writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, Socks5AddressType.IPv4));
     }
 

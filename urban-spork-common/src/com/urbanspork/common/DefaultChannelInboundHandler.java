@@ -10,7 +10,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 public class DefaultChannelInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
-    private final Logger logger = LoggerFactory.getLogger(DefaultChannelInboundHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultChannelInboundHandler.class);
 
     private final Channel channel;
 
@@ -25,7 +25,7 @@ public class DefaultChannelInboundHandler extends SimpleChannelInboundHandler<By
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("exceptionCaught Channel " + ctx.channel() + " error, cause: ", cause);
+        logger.error("Exception caught on channel " + ctx.channel() + " ->", cause);
         ctx.close();
     }
 
