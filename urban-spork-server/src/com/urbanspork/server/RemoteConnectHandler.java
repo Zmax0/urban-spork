@@ -80,7 +80,7 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("Channel " + ctx.channel() + " error, cause: ", cause);
+        logger.error("Exception on channel " + ctx.channel() + " ->", cause.getMessage());
         ctx.channel().close();
         release();
     }

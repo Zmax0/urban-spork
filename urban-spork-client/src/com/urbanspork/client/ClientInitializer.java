@@ -17,7 +17,7 @@ import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler;
 
 public class ClientInitializer extends ChannelInitializer<NioSocketChannel> {
 
-    private final Logger logger = LoggerFactory.getLogger(ClientInitializer.class);
+    private static final Logger logger = LoggerFactory.getLogger(ClientInitializer.class);
 
     private ClientConfig clientConfig;
 
