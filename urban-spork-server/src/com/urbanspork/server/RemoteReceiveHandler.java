@@ -34,7 +34,7 @@ public class RemoteReceiveHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        localChannel.writeAndFlush(msg.retain());
+        localChannel.writeAndFlush(msg);
     }
 
     @Override
