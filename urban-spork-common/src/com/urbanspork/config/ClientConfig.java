@@ -1,5 +1,6 @@
 package com.urbanspork.config;
 
+import java.io.IOException;
 import java.util.List;
 
 public class ClientConfig {
@@ -10,7 +11,7 @@ public class ClientConfig {
 
     private String language;
 
-    private ServerConfig current;
+    private int index;
 
     private List<ServerConfig> servers;
 
@@ -30,12 +31,12 @@ public class ClientConfig {
         this.language = language;
     }
 
-    public ServerConfig getCurrent() {
-        return current;
+    public int getIndex() {
+        return index;
     }
 
-    public void setCurrent(ServerConfig current) {
-        this.current = current;
+    public void setIndex(int index) {
+        this.index = index;
     }
 
     public List<ServerConfig> getServers() {
@@ -44,6 +45,22 @@ public class ClientConfig {
 
     public void setServers(List<ServerConfig> servers) {
         this.servers = servers;
+    }
+
+    public ServerConfig getCurrent() {
+        ServerConfig current = null;
+        List<ServerConfig> servers = getServers();
+        if (servers != null && !servers.isEmpty()) {
+            int index = getIndex();
+            if (index < servers.size()) {
+                current = servers.get(index);
+            }
+        }
+        return current;
+    }
+
+    public void save() throws IOException {
+        ConfigHandler.write(this);
     }
 
     @Override
