@@ -18,7 +18,7 @@ public class Console extends Application {
 
     @Override
     public void init() throws Exception {
-        Component.Console.set(this);
+        Component.register(this);
     }
 
     @Override

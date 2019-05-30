@@ -1,24 +1,25 @@
 package com.urbanspork.client.mvc;
 
-import java.util.Objects;
+import com.urbanspork.client.mvc.component.Console;
+import com.urbanspork.client.mvc.component.Controller;
 
-public enum Component {
+public class Component {
 
-    Controller(null), Console(null);
+    public static Controller Controller;
+    public static Console Console;
 
-    private Object component;
-
-    private Component(Object component) {
-        this.component = component;
-    }
-
-    public void set(Object component) {
-        this.component = Objects.requireNonNull(component);
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> T get() {
-        return (T) this.component;
+    public static final void register(Object object) {
+        if (object != null) {
+            if (object instanceof Controller) {
+                Controller = (Controller) object;
+            } else if (object instanceof Console) {
+                Console = (Console) object;
+            } else {
+                throw new UnsupportedOperationException();
+            }
+        } else {
+            throw new NullPointerException();
+        }
     }
 
 }
