@@ -23,8 +23,7 @@ public class Appender extends AppenderBase<ILoggingEvent> {
     @Override
     protected void append(ILoggingEvent eventObject) {
         String msg = patternLayout.doLayout(eventObject);
-        Controller controller = Component.Controller.get();
-        TextArea logTextArea = controller.getLogTextArea();
+        TextArea logTextArea = Component.Controller.getLogTextArea();
         String log = logTextArea.textProperty().get();
         if (log.length() > 10000) {
             logTextArea.appendText("Clear for log length is " + log.length());
