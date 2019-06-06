@@ -2,7 +2,7 @@ package com.urbanspork.client.mvc.component.tray.menu.item;
 
 import java.awt.Menu;
 
-import com.urbanspork.client.mvc.Component;
+import com.urbanspork.client.mvc.Components;
 import com.urbanspork.client.mvc.i18n.I18n;
 
 import javafx.application.Platform;
@@ -22,7 +22,7 @@ public class ConsoleMenuItem implements TrayMenuItem {
     @Override
     public void act() {
         Platform.runLater(() -> {
-            Component.Console.show();
+            Components.Console.show();
         });
     }
 

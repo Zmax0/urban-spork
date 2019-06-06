@@ -2,12 +2,13 @@ package com.urbanspork.client.mvc.component;
 
 import java.awt.TrayIcon.MessageType;
 
-import com.urbanspork.client.Client;
-import com.urbanspork.client.mvc.Resource;
-import com.urbanspork.config.ServerConfig;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.urbanspork.client.Client;
+import com.urbanspork.client.mvc.Components;
+import com.urbanspork.client.mvc.Resource;
+import com.urbanspork.config.ServerConfig;
 
 import io.netty.util.internal.StringUtil;
 
@@ -46,10 +47,10 @@ public class Proxy {
             launcher.start();
             logger.debug("[{}-{}] start", launcher.getName(), launcher.getId());
             String message = Resource.config.getCurrent().toString();
-            Tray.displayMessage("Proxy is running", message, MessageType.INFO);
-            Tray.setToolTip(message);
+            Components.Tray.displayMessage("Proxy is running", message, MessageType.INFO);
+            Components.Tray.setToolTip(message);
         } else {
-            Tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
+            Components.Tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
         }
     }
 
