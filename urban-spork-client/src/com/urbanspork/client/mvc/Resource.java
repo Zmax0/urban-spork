@@ -13,9 +13,11 @@ import com.urbanspork.config.ConfigHandler;
 public class Resource {
 
     private static final String resource = "resource";
-    private static final String trayIconName = "icon.png";
+    private static final String trayIconName = "ticon.png";
+    private static final String programIconName = "picon.png";
     private static final String clientFxmlName = "client.fxml";
 
+    public static final URL PROGRAM_ICON;
     public static final URL TRAY_ICON;
     public static final URL CLIENT_FXML;
 
@@ -33,6 +35,7 @@ public class Resource {
             config.setServers(new ArrayList<>(16));
         }
         ClassLoader classLoader = Resource.class.getClassLoader();
+        PROGRAM_ICON = classLoader.getResource(resource + "/" + programIconName);
         TRAY_ICON = classLoader.getResource(resource + "/" + trayIconName);
         CLIENT_FXML = classLoader.getResource(resource + "/" + clientFxmlName);
         String language = config.getLanguage();

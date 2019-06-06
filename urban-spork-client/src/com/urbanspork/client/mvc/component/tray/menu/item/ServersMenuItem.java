@@ -8,10 +8,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.urbanspork.client.mvc.Component;
+import com.urbanspork.client.mvc.Components;
 import com.urbanspork.client.mvc.Resource;
 import com.urbanspork.client.mvc.component.Proxy;
-import com.urbanspork.client.mvc.component.Tray;
 import com.urbanspork.client.mvc.i18n.I18n;
 import com.urbanspork.config.ClientConfig;
 import com.urbanspork.config.ServerConfig;
@@ -38,7 +37,7 @@ public class ServersMenuItem implements TrayMenuItem {
                             CheckboxMenuItem i = items.get(k);
                             if (i == item) {
                                 config.setIndex(k);
-                                Component.Controller.serverConfigListViewSelect(k);
+                                Components.Controller.serverConfigListViewSelect(k);
                             }
                             if (i != item && i.getState()) {
                                 i.setState(false);
@@ -47,13 +46,13 @@ public class ServersMenuItem implements TrayMenuItem {
                         try {
                             config.save();
                         } catch (IOException e) {
-                            Tray.displayMessage("Error", "Save config error, cause: " + e.getMessage(), MessageType.ERROR);
+                            Components.Tray.displayMessage("Error", "Save config error, cause: " + e.getMessage(), MessageType.ERROR);
                             return;
                         }
                         Proxy.relaunch();
                         String message = config.getCurrent().toString();
-                        Tray.displayMessage("Proxy is running", message, MessageType.INFO);
-                        Tray.setToolTip(message);
+                        Components.Tray.displayMessage("Proxy is running", message, MessageType.INFO);
+                        Components.Tray.setToolTip(message);
                     } else {
                         item.setState(true);
                     }

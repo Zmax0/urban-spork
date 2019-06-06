@@ -8,7 +8,7 @@ public final class I18n {
 
     public static final Locale[] LANGUAGES = new Locale[] { Locale.CHINESE, Locale.ENGLISH };
 
-    public static final String PRAGRAM_TITLE = Resource.bundle.getString("pragram.title");
+    public static final String PROGRAM_TITLE = Resource.bundle.getString("program.title");
     public static final String TRAY_TOOLTIP = Resource.bundle.getString("tray.tooltip");
     public static final String TRAY_EXIT = Resource.bundle.getString("tray.exit");
     public static final String TRAY_MENU_CONSOLE = Resource.bundle.getString("tray.menu.console");

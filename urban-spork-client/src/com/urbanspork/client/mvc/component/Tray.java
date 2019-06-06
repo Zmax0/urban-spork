@@ -8,6 +8,8 @@ import java.awt.TrayIcon.MessageType;
 
 import javax.swing.ImageIcon;
 
+import com.urbanspork.client.mvc.Component;
+import com.urbanspork.client.mvc.Components;
 import com.urbanspork.client.mvc.Resource;
 import com.urbanspork.client.mvc.component.tray.menu.item.ConsoleMenuItem;
 import com.urbanspork.client.mvc.component.tray.menu.item.ExistMenuItem;
@@ -15,22 +17,48 @@ import com.urbanspork.client.mvc.component.tray.menu.item.LanguageMenuItem;
 import com.urbanspork.client.mvc.component.tray.menu.item.ServersMenuItem;
 import com.urbanspork.client.mvc.i18n.I18n;
 
-public class Tray {
+public class Tray implements Component {
 
     private static final boolean isSupported = SystemTray.isSupported();
 
-    private static final PopupMenu menu = new PopupMenu();
+    private final PopupMenu menu = new PopupMenu();
 
-    private static TrayIcon trayIcon;
+    private TrayIcon trayIcon;
 
-    public static final void launch(String[] args) {
+    private boolean started;
+
+    public Tray() {
+        Components.register(this);
+    }
+
+    public final void displayMessage(String caption, String text, MessageType messageType) {
+        if (isSupported && trayIcon != null) {
+            trayIcon.displayMessage(caption, text, messageType);
+        }
+    }
+
+    public final void setToolTip(String tooltip) {
+        if (isSupported && trayIcon != null) {
+            StringBuilder builder = new StringBuilder(I18n.TRAY_TOOLTIP);
+            builder.append(System.lineSeparator()).append(tooltip);
+            trayIcon.setToolTip(builder.toString());
+        }
+    }
+
+    public final void refresh() {
+        menu.remove(0);
+        menu.insert(new ServersMenuItem().get(), 0);
+    }
+
+    @Override
+    public void start(String[] args) {
         if (isSupported) {
             // ==============================
             // tray icon
             // ==============================
             SystemTray tray = SystemTray.getSystemTray();
             ImageIcon icon = new ImageIcon(Resource.TRAY_ICON);
-            trayIcon = new TrayIcon(icon.getImage(), I18n.PRAGRAM_TITLE, menu);
+            trayIcon = new TrayIcon(icon.getImage(), I18n.PROGRAM_TITLE, menu);
             trayIcon.setImageAutoSize(true);
             try {
                 tray.add(trayIcon);
@@ -48,25 +76,12 @@ public class Tray {
             menu.addSeparator();
             menu.add(new ExistMenuItem(tray, trayIcon).get());
         }
+        started = true;
     }
 
-    public static final void displayMessage(String caption, String text, MessageType messageType) {
-        if (isSupported && trayIcon != null) {
-            trayIcon.displayMessage(caption, text, messageType);
-        }
-    }
-
-    public static final void setToolTip(String tooltip) {
-        if (isSupported && trayIcon != null) {
-            StringBuilder builder = new StringBuilder(I18n.TRAY_TOOLTIP);
-            builder.append(System.lineSeparator()).append(tooltip);
-            trayIcon.setToolTip(builder.toString());
-        }
-    }
-
-    public static final void refresh() {
-        menu.remove(0);
-        menu.insert(new ServersMenuItem().get(), 0);
+    @Override
+    public boolean started() {
+        return started;
     }
 
 }

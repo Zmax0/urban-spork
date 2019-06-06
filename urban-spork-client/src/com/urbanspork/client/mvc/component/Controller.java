@@ -15,7 +15,7 @@ import com.jfoenix.controls.JFXPasswordField;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.validation.RequiredFieldValidator;
 import com.urbanspork.cipher.ShadowsocksCiphers;
-import com.urbanspork.client.mvc.Component;
+import com.urbanspork.client.mvc.Components;
 import com.urbanspork.client.mvc.Resource;
 import com.urbanspork.client.mvc.i18n.I18n;
 import com.urbanspork.config.ClientConfig;
@@ -37,6 +37,7 @@ public class Controller implements Initializable {
     private final Logger logger = LoggerFactory.getLogger(Controller.class);
 
     private ClientConfig clientConfig;
+
     private ObservableList<ServerConfig> serverConfigObservableList;
 
     private RequiredFieldValidator requiredFieldValidator;
@@ -78,9 +79,10 @@ public class Controller implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        Component.register(this);
+        Components.register(this);
         loadConfig();
         initViews();
+        Components.Console.started = true;
     }
 
     @FXML
@@ -263,7 +265,7 @@ public class Controller implements Initializable {
     }
 
     private void hideConsole() {
-        Component.Console.hide();
+        Components.Console.hide();
     }
 
     private boolean validate() {
@@ -310,7 +312,7 @@ public class Controller implements Initializable {
             logger.error("Saving config failed", e);
             return;
         }
-        Tray.refresh();
+        Components.Tray.refresh();
     }
 
 }

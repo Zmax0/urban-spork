@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import com.urbanspork.client.mvc.Components;
 import com.urbanspork.client.mvc.Resource;
-import com.urbanspork.client.mvc.component.Tray;
 import com.urbanspork.client.mvc.i18n.I18n;
 import com.urbanspork.config.ClientConfig;
 import com.urbanspork.config.ConfigHandler;
@@ -37,10 +37,10 @@ public class LanguageMenuItem implements TrayMenuItem {
                     try {
                         ConfigHandler.write(config);
                     } catch (IOException e) {
-                        Tray.displayMessage("Error", "Save config error, cause: " + e.getMessage(), MessageType.ERROR);
+                        Components.Tray.displayMessage("Error", "Save config error, cause: " + e.getMessage(), MessageType.ERROR);
                         return;
                     }
-                    Tray.displayMessage("Config is saved", "Take effect after restart", MessageType.INFO);
+                    Components.Tray.displayMessage("Config is saved", "Take effect after restart", MessageType.INFO);
                     for (CheckboxMenuItem i : items) {
                         if (i != item && i.getState()) {
                             i.setState(false);
