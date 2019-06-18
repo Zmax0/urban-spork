@@ -12,7 +12,7 @@ public class RemoteReceiveHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     private final Logger logger = LoggerFactory.getLogger(RemoteReceiveHandler.class);
 
-    private final Channel localChannel;
+    private Channel localChannel;
     private ByteBuf buff;
 
     public RemoteReceiveHandler(Channel localChannel, ByteBuf buff) {
@@ -23,6 +23,7 @@ public class RemoteReceiveHandler extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         ctx.writeAndFlush(buff);
+        buff = null;
     }
 
     @Override
@@ -34,23 +35,22 @@ public class RemoteReceiveHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        localChannel.writeAndFlush(msg);
+        localChannel.writeAndFlush(msg.retain());
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        logger.error("Exception caught on channel " + ctx.channel() + " -> {}", cause.getMessage());
         ctx.close();
         release();
-        logger.error("Exception caught on channel " + ctx.channel() + " ->", cause.getMessage());
     }
 
     private void release() {
         if (localChannel != null) {
             localChannel.close();
         }
-        if (buff != null) {
-            buff = null;
-        }
+        localChannel = null;
+        buff = null;
     }
 
 }
