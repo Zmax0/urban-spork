@@ -25,7 +25,7 @@ public class DefaultChannelInboundHandler extends SimpleChannelInboundHandler<By
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("Exception caught on channel " + ctx.channel() + " ->", cause);
+        logger.error("Exception caught on channel " + ctx.channel() + " -> {}", cause.getMessage());
         ctx.close();
     }
 

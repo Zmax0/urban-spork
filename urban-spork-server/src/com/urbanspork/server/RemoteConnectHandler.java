@@ -73,14 +73,14 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        logger.info("Channel {} close", ctx.channel());
+        logger.info("Channel {} inactive", ctx.channel());
         ctx.close();
         release();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("Exception on channel " + ctx.channel() + " ->", cause.getMessage());
+        logger.error("Exception on channel " + ctx.channel() + " -> {}", cause.getMessage());
         ctx.channel().close();
         release();
     }
@@ -91,8 +91,9 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
         }
         if (buff != null) {
             buff.clear();
-            buff = null;
         }
+        remoteChannel = null;
+        buff = null;
     }
 
 }
