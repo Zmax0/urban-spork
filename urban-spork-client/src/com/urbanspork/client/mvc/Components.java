@@ -6,18 +6,18 @@ import com.urbanspork.client.mvc.component.Tray;
 
 public class Components {
 
-    public static Controller Controller;
-    public static Console Console;
-    public static Tray Tray;
+    public static Controller CONTROLLER;
+    public static Console CONSOLE;
+    public static Tray TRAY;
 
     public static final void register(Object object) {
         if (object != null) {
             if (object instanceof Controller) {
-                Controller = (Controller) object;
+                CONTROLLER = (Controller) object;
             } else if (object instanceof Console) {
-                Console = (Console) object;
+                CONSOLE = (Console) object;
             } else if (object instanceof Tray) {
-                Tray = (Tray) object;
+                TRAY = (Tray) object;
             } else {
                 throw new UnsupportedOperationException();
             }

@@ -37,10 +37,10 @@ public class LanguageMenuItem implements TrayMenuItem {
                     try {
                         ConfigHandler.write(config);
                     } catch (IOException e) {
-                        Components.Tray.displayMessage("Error", "Save config error, cause: " + e.getMessage(), MessageType.ERROR);
+                        Components.TRAY.displayMessage("Error", "Save config error, cause: " + e.getMessage(), MessageType.ERROR);
                         return;
                     }
-                    Components.Tray.displayMessage("Config is saved", "Take effect after restart", MessageType.INFO);
+                    Components.TRAY.displayMessage("Config is saved", "Take effect after restart", MessageType.INFO);
                     for (CheckboxMenuItem i : items) {
                         if (i != item && i.getState()) {
                             i.setState(false);

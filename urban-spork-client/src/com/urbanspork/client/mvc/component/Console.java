@@ -78,6 +78,6 @@ public class Console extends Application implements Component {
 
     @Override
     public boolean started() {
-        return Components.Console != null && Components.Console.started;
+        return Components.CONSOLE != null && Components.CONSOLE.started;
     }
 }
