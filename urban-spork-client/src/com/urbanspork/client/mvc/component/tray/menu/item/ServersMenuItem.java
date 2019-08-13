@@ -37,7 +37,7 @@ public class ServersMenuItem implements TrayMenuItem {
                             CheckboxMenuItem i = items.get(k);
                             if (i == item) {
                                 config.setIndex(k);
-                                Components.Controller.serverConfigListViewSelect(k);
+                                Components.CONTROLLER.serverConfigListViewSelect(k);
                             }
                             if (i != item && i.getState()) {
                                 i.setState(false);
@@ -46,13 +46,13 @@ public class ServersMenuItem implements TrayMenuItem {
                         try {
                             config.save();
                         } catch (IOException e) {
-                            Components.Tray.displayMessage("Error", "Save config error, cause: " + e.getMessage(), MessageType.ERROR);
+                            Components.TRAY.displayMessage("Error", "Save config error, cause: " + e.getMessage(), MessageType.ERROR);
                             return;
                         }
                         Proxy.relaunch();
                         String message = config.getCurrent().toString();
-                        Components.Tray.displayMessage("Proxy is running", message, MessageType.INFO);
-                        Components.Tray.setToolTip(message);
+                        Components.TRAY.displayMessage("Proxy is running", message, MessageType.INFO);
+                        Components.TRAY.setToolTip(message);
                     } else {
                         item.setState(true);
                     }

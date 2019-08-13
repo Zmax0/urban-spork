@@ -47,10 +47,10 @@ public class Proxy {
             launcher.start();
             logger.debug("[{}-{}] start", launcher.getName(), launcher.getId());
             String message = Resource.config.getCurrent().toString();
-            Components.Tray.displayMessage("Proxy is running", message, MessageType.INFO);
-            Components.Tray.setToolTip(message);
+            Components.TRAY.displayMessage("Proxy is running", message, MessageType.INFO);
+            Components.TRAY.setToolTip(message);
         } else {
-            Components.Tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
+            Components.TRAY.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
         }
     }
 

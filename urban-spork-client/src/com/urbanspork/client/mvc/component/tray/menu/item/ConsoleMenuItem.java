@@ -22,7 +22,7 @@ public class ConsoleMenuItem implements TrayMenuItem {
     @Override
     public void act() {
         Platform.runLater(() -> {
-            Components.Console.show();
+            Components.CONSOLE.show();
         });
     }
 

@@ -82,7 +82,7 @@ public class Controller implements Initializable {
         Components.register(this);
         loadConfig();
         initViews();
-        Components.Console.started = true;
+        Components.CONSOLE.started = true;
     }
 
     @FXML
@@ -265,7 +265,7 @@ public class Controller implements Initializable {
     }
 
     private void hideConsole() {
-        Components.Console.hide();
+        Components.CONSOLE.hide();
     }
 
     private boolean validate() {
@@ -312,7 +312,7 @@ public class Controller implements Initializable {
             logger.error("Saving config failed", e);
             return;
         }
-        Components.Tray.refresh();
+        Components.TRAY.refresh();
     }
 
 }
