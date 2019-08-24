@@ -1,17 +1,24 @@
 package com.urbanspork.cipher.impl;
 
-import com.urbanspork.cipher.AbstractShadowsocksCipher;
 import com.urbanspork.cipher.Cipher;
+import com.urbanspork.cipher.ShadowsocksCipher;
 
-public class AES_256_CFB extends AbstractShadowsocksCipher {
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.CFBBlockCipher;
 
-    public AES_256_CFB() {
-        super(Cipher.AES_256_CFB(), Cipher.AES_256_CFB());
+public class AES_256_CFB implements ShadowsocksCipher {
+
+    private StreamCiphers encrypter = new StreamCiphers(new CFBBlockCipher(new AESEngine(), 128), 16);
+    private StreamCiphers decrypter = new StreamCiphers(new CFBBlockCipher(new AESEngine(), 128), 16);
+
+    @Override
+    public Cipher encrypter() {
+        return encrypter;
     }
 
     @Override
-    public String toString() {
-        return "aes-256-cfb";
+    public Cipher decrypter() {
+        return decrypter;
     }
 
     @Override
@@ -19,4 +26,8 @@ public class AES_256_CFB extends AbstractShadowsocksCipher {
         return 32;
     }
 
+    @Override
+    public String toString() {
+        return "aes-256-cfb";
+    }
 }

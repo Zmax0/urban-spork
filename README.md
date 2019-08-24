@@ -22,3 +22,4 @@ put *config.json* file into the unpacked folder
 - [x] aes-256-cfb
 - [x] aes-256-gcm
 - [x] chacha20-ietf
+- [x] camellia-256-cfb
