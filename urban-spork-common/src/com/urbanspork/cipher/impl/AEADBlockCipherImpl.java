@@ -22,7 +22,7 @@ import io.netty.buffer.Unpooled;
  * 
  * @see <a href=https://shadowsocks.org/en/spec/AEAD-Ciphers.html">https://shadowsocks.org/en/spec/AEAD-Ciphers.html</a>
  */
-public class AEADBlockCiphers extends AbstractCipher {
+public class AEADBlockCipherImpl extends AbstractCipher {
 
     private static final int nonceSize = 12;
     private static final int tagSize = 16;
@@ -38,7 +38,7 @@ public class AEADBlockCiphers extends AbstractCipher {
     private byte[] temp;
     private int payloadLength;
 
-    public AEADBlockCiphers(AEADBlockCipher cipher, int saltSize, int macSize) {
+    public AEADBlockCipherImpl(AEADBlockCipher cipher, int saltSize, int macSize) {
         this.saltSize = saltSize;
         this.macSize = macSize;
         this.cipher = cipher;

@@ -33,7 +33,7 @@ public class CipherTest {
     @ParameterizedTest
     @EnumSource(ShadowsocksCiphers.class)
     public void start(ShadowsocksCiphers cipher) throws Exception {
-        cipherTest(cipher.get());
+        cipherTest(cipher.newShadowsocksCipher());
     }
 
     @AfterEach

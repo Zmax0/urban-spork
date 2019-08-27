@@ -10,12 +10,12 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 
-public class StreamCiphers extends AbstractCipher {
+public class StreamCipherImpl extends AbstractCipher {
 
     private final StreamCipher cipher;
     private final int ivSize;
 
-    public StreamCiphers(StreamCipher cipher, int ivSize) {
+    public StreamCipherImpl(StreamCipher cipher, int ivSize) {
         this.cipher = cipher;
         this.ivSize = ivSize;
     }

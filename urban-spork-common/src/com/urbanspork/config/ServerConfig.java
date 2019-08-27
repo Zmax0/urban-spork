@@ -1,5 +1,7 @@
 package com.urbanspork.config;
 
+import java.util.Base64;
+
 import com.urbanspork.cipher.ShadowsocksCiphers;
 
 public class ServerConfig {
@@ -13,10 +15,6 @@ public class ServerConfig {
     private ShadowsocksCiphers cipher;
 
     private String remark;
-
-    // @formatter:off
-    public ServerConfig() {}
-    // @formatter:on
 
     public String getHost() {
         return host;
@@ -75,6 +73,32 @@ public class ServerConfig {
             builder.append("未配置的服务器");
         }
         return builder.toString();
+    }
+
+    public String toURI() {
+        String userinfo = toString() + ":" + getPassword();
+        String temp = userinfo + "@" + getHost() + ":" + getPort();
+        return "ss://" + Base64.getEncoder().encodeToString(temp.getBytes());
+    }
+
+    public ServerConfig fromURI(String uri) {
+        if (uri.startsWith("ss://")) {
+            String temp = new String(Base64.getDecoder().decode(uri.substring(5).getBytes()));
+            if (!temp.isEmpty()) {
+                String[] strs = temp.split(":");
+                if (strs.length == 3) {
+                    setCipher(ShadowsocksCiphers.nameOf(strs[0]));
+                    setPort(strs[2]);
+                    strs = strs[1].split("@");
+                    if (strs.length == 2) {
+                        setHost(strs[1]);
+                        setPassword(strs[0]);
+                        return this;
+                    }
+                }
+            }
+        }
+        throw new IllegalArgumentException("Invalid uri format");
     }
 
     private boolean isEmpty(String s) {
