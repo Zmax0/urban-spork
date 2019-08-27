@@ -8,8 +8,13 @@ import org.bouncycastle.crypto.modes.SICBlockCipher;
 
 public class AES_256_CTR implements ShadowsocksCipher {
 
-    private StreamCiphers encrypter = new StreamCiphers(new SICBlockCipher(new AESEngine()), 16);
-    private StreamCiphers decrypter = new StreamCiphers(new SICBlockCipher(new AESEngine()), 16);
+    private StreamCipherImpl encrypter = new StreamCipherImpl(new SICBlockCipher(new AESEngine()), 16);
+    private StreamCipherImpl decrypter = new StreamCipherImpl(new SICBlockCipher(new AESEngine()), 16);
+
+    @Override
+    public String getName() {
+        return "aes-256-ctr";
+    }
 
     @Override
     public Cipher encrypter() {
@@ -24,11 +29,6 @@ public class AES_256_CTR implements ShadowsocksCipher {
     @Override
     public int getKeyLength() {
         return 32;
-    }
-
-    @Override
-    public String toString() {
-        return "aes-256-ctr";
     }
 
 }

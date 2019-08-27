@@ -8,8 +8,13 @@ import org.bouncycastle.crypto.modes.CFBBlockCipher;
 
 public class Camellia_256_CFB implements ShadowsocksCipher {
 
-    private StreamCiphers encrypter = new StreamCiphers(new CFBBlockCipher(new CamelliaEngine(), 128), 16);
-    private StreamCiphers decrypter = new StreamCiphers(new CFBBlockCipher(new CamelliaEngine(), 128), 16);
+    private StreamCipherImpl encrypter = new StreamCipherImpl(new CFBBlockCipher(new CamelliaEngine(), 128), 16);
+    private StreamCipherImpl decrypter = new StreamCipherImpl(new CFBBlockCipher(new CamelliaEngine(), 128), 16);
+
+    @Override
+    public String getName() {
+        return "camellia-256-cfb";
+    }
 
     @Override
     public Cipher encrypter() {
@@ -24,11 +29,6 @@ public class Camellia_256_CFB implements ShadowsocksCipher {
     @Override
     public int getKeyLength() {
         return 32;
-    }
-
-    @Override
-    public String toString() {
-        return "camellia-256-cfb";
     }
 
 }

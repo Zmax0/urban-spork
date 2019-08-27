@@ -2,6 +2,8 @@ package com.urbanspork.cipher;
 
 public interface ShadowsocksCipher {
 
+    String getName();
+
     Cipher encrypter();
 
     Cipher decrypter();

@@ -7,8 +7,13 @@ import org.bouncycastle.crypto.engines.ChaCha7539Engine;
 
 public class ChaCha20_IETF implements ShadowsocksCipher {
 
-    private StreamCiphers encrypter = new StreamCiphers(new ChaCha7539Engine(), 12);
-    private StreamCiphers decrypter = new StreamCiphers(new ChaCha7539Engine(), 12);
+    private StreamCipherImpl encrypter = new StreamCipherImpl(new ChaCha7539Engine(), 12);
+    private StreamCipherImpl decrypter = new StreamCipherImpl(new ChaCha7539Engine(), 12);
+
+    @Override
+    public String getName() {
+        return "chacha20-ietf";
+    }
 
     @Override
     public Cipher encrypter() {
@@ -18,11 +23,6 @@ public class ChaCha20_IETF implements ShadowsocksCipher {
     @Override
     public Cipher decrypter() {
         return decrypter;
-    }
-
-    @Override
-    public String toString() {
-        return "chacha20-ietf";
     }
 
     @Override

@@ -8,8 +8,13 @@ import org.bouncycastle.crypto.modes.GCMBlockCipher;
 
 public class AES_256_GCM implements ShadowsocksCipher {
 
-    private AEADBlockCiphers encrypter = new AEADBlockCiphers(new GCMBlockCipher(new AESEngine()), 32, 128);
-    private AEADBlockCiphers decrypter = new AEADBlockCiphers(new GCMBlockCipher(new AESEngine()), 32, 128);
+    private AEADBlockCipherImpl encrypter = new AEADBlockCipherImpl(new GCMBlockCipher(new AESEngine()), 32, 128);
+    private AEADBlockCipherImpl decrypter = new AEADBlockCipherImpl(new GCMBlockCipher(new AESEngine()), 32, 128);
+
+    @Override
+    public String getName() {
+        return "aes-256-gcm";
+    }
 
     @Override
     public Cipher encrypter() {
@@ -24,11 +29,6 @@ public class AES_256_GCM implements ShadowsocksCipher {
     @Override
     public int getKeyLength() {
         return 32;
-    }
-
-    @Override
-    public String toString() {
-        return "aes-256-gcm";
     }
 
 }
