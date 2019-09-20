@@ -38,7 +38,7 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
             .group(localChannel.eventLoop())
             .channel(NioSocketChannel.class)
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) TimeUnit.SECONDS.toMillis(5))
-            .option(ChannelOption.SO_KEEPALIVE, true)
+            // .option(ChannelOption.SO_KEEPALIVE, true)
             .handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 protected void initChannel(SocketChannel remoteChannel) throws Exception {
@@ -52,6 +52,9 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
                 } else {
                     logger.error("Connect " + remoteAddress + " failed");
                     localChannel.close();
+                    if (buff != null) {
+                        buff.release();
+                    }
                     release();
                 }
             });
@@ -82,17 +85,17 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         logger.error("Exception on channel " + ctx.channel() + " -> {}", cause.getMessage());
         ctx.channel().close();
+        if (buff != null) {
+            buff.release();
+        }
         release();
     }
 
     private void release() {
         if (remoteChannel != null) {
             remoteChannel.close();
+            remoteChannel = null;
         }
-        if (buff != null) {
-            buff.clear();
-        }
-        remoteChannel = null;
         buff = null;
     }
 

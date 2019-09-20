@@ -48,9 +48,12 @@ public class RemoteReceiveHandler extends SimpleChannelInboundHandler<ByteBuf> {
     private void release() {
         if (localChannel != null) {
             localChannel.close();
+            localChannel = null;
         }
-        localChannel = null;
-        buff = null;
+        if (buff != null) {
+            buff.release();
+            buff = null;
+        }
     }
 
 }
