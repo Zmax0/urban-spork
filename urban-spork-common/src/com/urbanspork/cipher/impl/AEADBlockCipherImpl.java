@@ -1,5 +1,7 @@
 package com.urbanspork.cipher.impl;
 
+import static io.netty.buffer.Unpooled.directBuffer;
+
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
@@ -9,11 +11,10 @@ import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 
-import com.urbanspork.cipher.AbstractCipher;
+import com.urbanspork.cipher.Cipher;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.Unpooled;
 
 /**
  * AEAD Cipher
@@ -22,7 +23,7 @@ import io.netty.buffer.Unpooled;
  * 
  * @see <a href=https://shadowsocks.org/en/spec/AEAD-Ciphers.html">https://shadowsocks.org/en/spec/AEAD-Ciphers.html</a>
  */
-public class AEADBlockCipherImpl extends AbstractCipher {
+public class AEADBlockCipherImpl implements Cipher {
 
     private static final int nonceSize = 12;
     private static final int tagSize = 16;
@@ -34,6 +35,7 @@ public class AEADBlockCipherImpl extends AbstractCipher {
     private final int macSize;
     private final AEADBlockCipher cipher;
 
+    private volatile boolean inited;
     private byte[] subkey;
     private byte[] temp;
     private int payloadLength;
@@ -46,40 +48,42 @@ public class AEADBlockCipherImpl extends AbstractCipher {
 
     @Override
     public byte[] encrypt(byte[] in, byte[] key) throws Exception {
-        ByteBuf result = Unpooled.buffer();
+        ByteBuf buf = directBuffer();
         if (!inited) {
             inited = true;
             byte[] salt = randomBytes(saltSize);
-            result.writeBytes(salt);
+            buf.writeBytes(salt);
             subkey = generateSubkey(key, salt);
             temp = new byte[2 + tagSize + payloadSize + tagSize];
         }
-        ByteBuf _in = Unpooled.wrappedBuffer(in);
+        ByteBuf _in = directBuffer(in.length);
+        _in.writeBytes(in);
         while (_in.isReadable()) {
             int payloadLength = Math.min(_in.readableBytes(), payloadSize);
-            ByteBuf encryptBuff = Unpooled.buffer(2);
+            ByteBuf encryptBuff = directBuffer(2);
             encryptBuff.writeShort(payloadLength);
             encryptBuff.readBytes(temp, 0, 2);
             cipher.init(true, generateCipherParameters());
             cipher.doFinal(temp, cipher.processBytes(temp, 0, 2, temp, 0));
-            result.writeBytes(temp, 0, 2 + tagSize);
+            buf.writeBytes(temp, 0, 2 + tagSize);
             _in.readBytes(temp, 2 + tagSize, payloadLength);
             cipher.init(true, generateCipherParameters());
             cipher.doFinal(temp, 2 + tagSize + cipher.processBytes(temp, 2 + tagSize, payloadLength, temp, 2 + tagSize));
-            result.writeBytes(temp, 2 + tagSize, payloadLength + tagSize);
+            buf.writeBytes(temp, 2 + tagSize, payloadLength + tagSize);
         }
-        return ByteBufUtil.getBytes(result);
+        byte[] out = ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.readableBytes(), false);
+        buf.release();
+        return out;
     }
 
     @Override
     public byte[] decrypt(byte[] in, byte[] key) throws Exception {
-        ByteBuf result = Unpooled.buffer();
-        ByteBuf _in = null;
+        ByteBuf buf = directBuffer();
+        ByteBuf _in = directBuffer();
         if (temp != null) {
-            _in = Unpooled.wrappedBuffer(temp, in);
-        } else {
-            _in = Unpooled.wrappedBuffer(in);
+            _in.writeBytes(temp);
         }
+        _in.writeBytes(in);
         if (!inited) {
             inited = true;
             byte[] salt = new byte[saltSize];
@@ -97,7 +101,8 @@ public class AEADBlockCipherImpl extends AbstractCipher {
                 _in.readBytes(payloadLengthBytes, 0, 2 + tagSize);
                 cipher.init(false, generateCipherParameters());
                 cipher.doFinal(payloadLengthBytes, cipher.processBytes(payloadLengthBytes, 0, 2 + tagSize, payloadLengthBytes, 0));
-                ByteBuf _payloadLength = Unpooled.wrappedBuffer(payloadLengthBytes);
+                ByteBuf _payloadLength = directBuffer(payloadLengthBytes.length);
+                _payloadLength.writeBytes(payloadLengthBytes);
                 payloadLength = _payloadLength.getShort(0);
             }
             if (_in.readableBytes() < payloadLength + tagSize) {
@@ -109,11 +114,13 @@ public class AEADBlockCipherImpl extends AbstractCipher {
             _in.readBytes(payloadBytes, 0, payloadLength + tagSize);
             cipher.init(false, generateCipherParameters());
             cipher.doFinal(payloadBytes, cipher.processBytes(payloadBytes, 0, payloadLength + tagSize, payloadBytes, 0));
-            result.writeBytes(payloadBytes, 0, payloadLength);
+            buf.writeBytes(payloadBytes, 0, payloadLength);
             payloadLength = 0;
             temp = null;
         }
-        return ByteBufUtil.getBytes(result);
+        byte[] out = ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.readableBytes(), false);
+        buf.release();
+        return out;
     }
 
     private CipherParameters generateCipherParameters() {

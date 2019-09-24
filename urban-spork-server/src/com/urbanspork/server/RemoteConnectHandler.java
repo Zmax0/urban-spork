@@ -37,8 +37,8 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
         bootstrap
             .group(localChannel.eventLoop())
             .channel(NioSocketChannel.class)
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) TimeUnit.SECONDS.toMillis(5))
-            // .option(ChannelOption.SO_KEEPALIVE, true)
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) TimeUnit.SECONDS.toMillis(30))
+            .option(ChannelOption.TCP_NODELAY, true)
             .handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 protected void initChannel(SocketChannel remoteChannel) throws Exception {
@@ -83,9 +83,9 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("Exception on channel " + ctx.channel() + " -> {}", cause.getMessage());
+        logger.error("Exception on channel " + ctx.channel() + " ~>", cause);
         ctx.channel().close();
-        if (buff != null) {
+        if (buff.refCnt() > 0) {
             buff.release();
         }
         release();

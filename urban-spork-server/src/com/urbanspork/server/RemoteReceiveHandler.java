@@ -40,7 +40,7 @@ public class RemoteReceiveHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("Exception caught on channel " + ctx.channel() + " -> {}", cause.getMessage());
+        logger.error("Exception caught on channel " + ctx.channel() + " ~>", cause);
         ctx.close();
         release();
     }

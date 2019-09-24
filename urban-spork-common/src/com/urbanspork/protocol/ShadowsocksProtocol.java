@@ -12,8 +12,8 @@ import io.netty.util.CharsetUtil;
 
 public interface ShadowsocksProtocol {
 
-    static ByteBuf encodeRequest(Socks5CommandRequest request) {
-        ByteBuf buf = Unpooled.buffer();
+    default ByteBuf encodeRequest(Socks5CommandRequest request) {
+        ByteBuf buf = Unpooled.directBuffer();
         String host = request.dstAddr();
         int port = request.dstPort();
         buf.writeByte(request.dstAddrType().byteValue());
@@ -24,7 +24,7 @@ public interface ShadowsocksProtocol {
         return buf;
     }
 
-    static InetSocketAddress decodeAddress(ByteBuf msg) throws Exception {
+    default InetSocketAddress decodeAddress(ByteBuf msg) throws Exception {
         Socks5AddressType addressType = Socks5AddressType.valueOf(msg.getByte(0));
         if (addressType == Socks5AddressType.DOMAIN) {
             int length = (int) msg.getByte(1);
