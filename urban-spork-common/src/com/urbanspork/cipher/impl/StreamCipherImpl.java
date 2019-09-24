@@ -1,19 +1,22 @@
 package com.urbanspork.cipher.impl;
 
+import static io.netty.buffer.Unpooled.directBuffer;
+
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
-import com.urbanspork.cipher.AbstractCipher;
+import com.urbanspork.cipher.Cipher;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.Unpooled;
 
-public class StreamCipherImpl extends AbstractCipher {
+public class StreamCipherImpl implements Cipher {
 
     private final StreamCipher cipher;
     private final int ivSize;
+
+    private volatile boolean inited;
 
     public StreamCipherImpl(StreamCipher cipher, int ivSize) {
         this.cipher = cipher;
@@ -22,18 +25,20 @@ public class StreamCipherImpl extends AbstractCipher {
 
     @Override
     public byte[] encrypt(byte[] in, byte[] key) throws Exception {
-        ByteBuf result = Unpooled.buffer();
+        ByteBuf buf = directBuffer();
         if (!inited) {
             byte[] iv = randomBytes(ivSize);
             ParametersWithIV parametersWithIV = new ParametersWithIV(new KeyParameter(key), iv);
             cipher.init(true, parametersWithIV);
-            result.writeBytes(iv);
+            buf.writeBytes(iv);
             inited = true;
         }
         byte[] out = new byte[in.length];
         cipher.processBytes(in, 0, in.length, out, 0);
-        result.writeBytes(out);
-        return ByteBufUtil.getBytes(result);
+        buf.writeBytes(out);
+        out = ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.readableBytes(), false);
+        buf.release();
+        return out;
     }
 
     @Override

@@ -8,7 +8,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
-public class ServerProtocolHandler extends ChannelInboundHandlerAdapter {
+public class ServerProtocolHandler extends ChannelInboundHandlerAdapter implements ShadowsocksProtocol {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -26,7 +26,7 @@ public class ServerProtocolHandler extends ChannelInboundHandlerAdapter {
             Channel channel = ctx.channel();
             ByteBuf buff = (ByteBuf) msg;
             if (buff.readableBytes() >= 2) {
-                channel.attr(Attributes.REMOTE_ADDRESS).set(ShadowsocksProtocol.decodeAddress(buff));
+                channel.attr(Attributes.REMOTE_ADDRESS).set(decodeAddress(buff));
                 channel.pipeline().addLast(new RemoteConnectHandler(channel, buff)).remove(this);
             } else {
                 ctx.close();

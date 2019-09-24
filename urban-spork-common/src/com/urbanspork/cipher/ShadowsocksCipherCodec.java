@@ -19,7 +19,7 @@ public class ShadowsocksCipherCodec extends MessageToMessageCodec<ByteBuf, ByteB
         Channel channel = ctx.channel();
         ShadowsocksCipher cipher = Optional.of(channel.attr(Attributes.CIPHER).get()).orElseThrow(CipherNotFoundException::new);
         ShadowsocksKey key = Optional.of((channel.attr(Attributes.KEY).get())).orElseThrow(CipherNotFoundException::new);
-        byte[] encrypt = cipher.encrypt(ByteBufUtil.getBytes(msg), key);
+        byte[] encrypt = cipher.encrypt(ByteBufUtil.getBytes(msg, msg.readerIndex(), msg.readableBytes(), false), key);
         out.add(Unpooled.buffer(encrypt.length).writeBytes(encrypt));
     }
 
@@ -28,7 +28,7 @@ public class ShadowsocksCipherCodec extends MessageToMessageCodec<ByteBuf, ByteB
         Channel channel = ctx.channel();
         ShadowsocksCipher cipher = Optional.of(channel.attr(Attributes.CIPHER).get()).orElseThrow(CipherNotFoundException::new);
         ShadowsocksKey key = Optional.of((channel.attr(Attributes.KEY).get())).orElseThrow(CipherNotFoundException::new);
-        byte[] decrypt = cipher.decrypt(ByteBufUtil.getBytes(msg), key);
+        byte[] decrypt = cipher.decrypt(ByteBufUtil.getBytes(msg, msg.readerIndex(), msg.readableBytes(), false), key);
         out.add(Unpooled.buffer(decrypt.length).writeBytes(decrypt));
     }
 

@@ -63,7 +63,7 @@ public class ClientProcessor extends SimpleChannelInboundHandler<Socks5CommandRe
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("Exception caught on channel " + ctx.channel() + " ->", cause);
+        logger.error("Exception caught on channel " + ctx.channel() + " ~>", cause);
         ctx.channel().writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, Socks5AddressType.IPv4));
     }
 

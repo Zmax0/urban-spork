@@ -12,7 +12,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 
-public class ShadowsocksProtocolEncoder extends MessageToMessageEncoder<ByteBuf> {
+public class ShadowsocksProtocolEncoder extends MessageToMessageEncoder<ByteBuf> implements ShadowsocksProtocol {
 
     private final Logger logger = LoggerFactory.getLogger(ShadowsocksProtocolEncoder.class);
 
@@ -21,7 +21,7 @@ public class ShadowsocksProtocolEncoder extends MessageToMessageEncoder<ByteBuf>
         if (request != null) {
             logger.debug("Encode request: {}", request.dstAddr() + ':' + request.dstPort());
             ctx.channel().attr(Attributes.REQUEST).set(null);
-            ByteBuf buff = ShadowsocksProtocol.encodeRequest(request);
+            ByteBuf buff = encodeRequest(request);
             if (msg.isReadable()) {
                 buff.writeBytes(msg);
             }
