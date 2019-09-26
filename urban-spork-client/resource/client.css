@@ -67,7 +67,7 @@
 }
 
 .list-view .list-cell:selected {
-    /* -fx-font-weight: 700; */
+    -fx-font-weight: 700;
 }
 
 .jfx-list-view .scroll-bar:horizontal .track, .jfx-list-view .scroll-bar:vertical .track {

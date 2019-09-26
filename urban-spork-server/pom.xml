@@ -6,14 +6,13 @@
     <version>1.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>urban-spork-server</artifactId>
+  <version>${urban-spork.version}</version>
   <dependencies>
     <dependency>
       <groupId>urban-spork</groupId>
       <artifactId>urban-spork-common</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
     </dependency>
   </dependencies>
-
   <build>
     <finalName>${project.name}</finalName>
     <resources>

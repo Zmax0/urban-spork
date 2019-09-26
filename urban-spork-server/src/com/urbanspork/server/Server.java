@@ -2,7 +2,7 @@ package com.urbanspork.server;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 
 import com.urbanspork.config.ClientConfig;
 import com.urbanspork.config.ConfigHandler;
@@ -19,11 +19,13 @@ public class Server {
     public static void main(String[] args) throws IOException {
         ThreadGroup threadGroup = new ThreadGroup("Server-Group");
         threadGroup.setDaemon(true);
-        List<ServerConfig> serverConfigs = Objects.requireNonNull(ConfigHandler.read(ClientConfig.class), "Please put the 'config.json' file into the folder").getServers();
+        List<ServerConfig> serverConfigs = Optional.of(ConfigHandler.read(ClientConfig.class))
+            .orElseThrow(() -> new IllegalArgumentException("Please put the 'config.json' file into the folder"))
+            .getServers();
+        EventLoopGroup bossGroup = new NioEventLoopGroup();
+        EventLoopGroup workerGroup = new NioEventLoopGroup();
         serverConfigs.forEach(serverConfig -> {
             new Thread(threadGroup, () -> {
-                EventLoopGroup bossGroup = new NioEventLoopGroup();
-                EventLoopGroup workerGroup = new NioEventLoopGroup();
                 try {
                     int port = Integer.valueOf(serverConfig.getPort());
                     ServerBootstrap b = new ServerBootstrap();

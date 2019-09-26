@@ -1,6 +1,10 @@
 # urban-spork
 Shadowsocks proxy
 
+## Require
+
+Java 11
+
 ## Build
 
     mvn clean install
