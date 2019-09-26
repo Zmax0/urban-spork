@@ -11,14 +11,21 @@
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <junit.jupiter.version>5.4.1</junit.jupiter.version>
-    <fastjson.version>1.2.57</fastjson.version>
+    <urban-spork.version>1.0.0-SNAPSHOT</urban-spork.version>
+    <junit.jupiter.version>5.5.2</junit.jupiter.version>
+    <fastjson.version>1.2.61</fastjson.version>
     <logback.version>1.2.3</logback.version>
-    <netty.version>4.1.33.Final</netty.version>
-    <bouncycastle.version>1.62</bouncycastle.version>
+    <netty.version>4.1.41.Final</netty.version>
+    <bouncycastle.version>1.63</bouncycastle.version>
+    <jfoenix.version>9.0.8</jfoenix.version>
   </properties>
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>urban-spork</groupId>
+        <artifactId>urban-spork-common</artifactId>
+        <version>${urban-spork.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter</artifactId>
@@ -40,27 +47,47 @@
         <artifactId>fastjson</artifactId>
         <version>${fastjson.version}</version>
       </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-all</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-jdk15on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.jfoenix</groupId>
+        <artifactId>jfoenix</artifactId>
+        <version>${jfoenix.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-fxml</artifactId>
+        <version>11</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
-
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <source>11</source>
+          <target>11</target>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.22.1</version>
+        <version>3.0.0-M3</version>
       </plugin>
     </plugins>
   </build>
-
   <repositories>
     <repository>
       <id>nexus-aliyun</id>

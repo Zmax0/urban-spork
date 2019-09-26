@@ -8,7 +8,6 @@ import java.awt.TrayIcon.MessageType;
 
 import javax.swing.ImageIcon;
 
-import com.urbanspork.client.mvc.Component;
 import com.urbanspork.client.mvc.Components;
 import com.urbanspork.client.mvc.Resource;
 import com.urbanspork.client.mvc.component.tray.menu.item.ConsoleMenuItem;
@@ -17,15 +16,13 @@ import com.urbanspork.client.mvc.component.tray.menu.item.LanguageMenuItem;
 import com.urbanspork.client.mvc.component.tray.menu.item.ServersMenuItem;
 import com.urbanspork.client.mvc.i18n.I18n;
 
-public class Tray implements Component {
+public class Tray {
 
     private static final boolean isSupported = SystemTray.isSupported();
 
     private final PopupMenu menu = new PopupMenu();
 
     private TrayIcon trayIcon;
-
-    private boolean started;
 
     public Tray() {
         Components.register(this);
@@ -50,7 +47,6 @@ public class Tray implements Component {
         menu.insert(new ServersMenuItem().get(), 0);
     }
 
-    @Override
     public void start(String[] args) {
         if (isSupported) {
             // ==============================
@@ -76,12 +72,6 @@ public class Tray implements Component {
             menu.addSeparator();
             menu.add(new ExistMenuItem(tray, trayIcon).get());
         }
-        started = true;
-    }
-
-    @Override
-    public boolean started() {
-        return started;
     }
 
 }

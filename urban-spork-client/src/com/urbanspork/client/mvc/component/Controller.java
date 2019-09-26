@@ -82,7 +82,6 @@ public class Controller implements Initializable {
         Components.register(this);
         loadConfig();
         initViews();
-        Components.CONSOLE.started = true;
     }
 
     @FXML
@@ -150,17 +149,27 @@ public class Controller implements Initializable {
 
     @FXML
     public void confirm(ActionEvent event) {
-        MultipleSelectionModel<ServerConfig> selectionModel = serverConfigListView.getSelectionModel();
-        ServerConfig config = selectionModel.getSelectedItem();
         if (validate()) {
+            MultipleSelectionModel<ServerConfig> selectionModel = serverConfigListView.getSelectionModel();
+            ServerConfig config = selectionModel.getSelectedItem();
+            boolean isNew = config == null;
+            if (config == null) {
+                config = new ServerConfig();
+                config.setCipher(ShadowsocksCiphers.AES_256_CFB);
+            }
             config.setHost(currentConfigHostTextField.getText());
             config.setPort(currentConfigPortTextField.getText());
             config.setPassword(currentConfigPasswordTextField.getText());
             config.setRemark(currentConfigRemarkTextField.getText());
             config.setCipher(currentConfigCipherChoiceBox.getValue());
+            if (isNew) {
+                serverConfigObservableList.add(config);
+                serverConfigListView.getSelectionModel().select(config);
+            } else {
+                serverConfigListView.refresh();
+            }
             clientConfig.setPort(clientConfigPortTextField.getText());
             clientConfig.setIndex(selectionModel.getSelectedIndex());
-            serverConfigListView.refresh();
             saveConfig();
             Proxy.relaunch();
         }

@@ -1,6 +1,5 @@
 package com.urbanspork.client.mvc.component;
 
-import com.urbanspork.client.mvc.Component;
 import com.urbanspork.client.mvc.Components;
 import com.urbanspork.client.mvc.Resource;
 import com.urbanspork.client.mvc.i18n.I18n;
@@ -14,9 +13,7 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
-public class Console extends Application implements Component {
-
-    boolean started;
+public class Console extends Application {
 
     private Thread thread;
 
@@ -66,7 +63,6 @@ public class Console extends Application implements Component {
         Application.launch(args);
     }
 
-    @Override
     public void start(String[] args) {
         thread = new Thread(() -> {
             launch(args);
@@ -76,8 +72,4 @@ public class Console extends Application implements Component {
         thread.start();
     }
 
-    @Override
-    public boolean started() {
-        return Components.CONSOLE != null && Components.CONSOLE.started;
-    }
 }
