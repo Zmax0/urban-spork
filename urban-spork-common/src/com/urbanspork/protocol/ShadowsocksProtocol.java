@@ -4,7 +4,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
@@ -36,8 +35,9 @@ public interface ShadowsocksProtocol {
             }
         } else if (addressType == Socks5AddressType.IPv4 && msg.readableBytes() >= 7) {
             msg.readerIndex(msg.readerIndex() + 1);
-            ByteBuf ip = msg.readBytes(4);
-            String host = InetAddress.getByAddress(ByteBufUtil.getBytes(ip)).toString().substring(1);
+            byte[] ip = new byte[4];
+            msg.readBytes(ip);
+            String host = InetAddress.getByAddress(ip).toString().substring(1);
             int port = msg.readShort();
             return new InetSocketAddress(host, port);
         }

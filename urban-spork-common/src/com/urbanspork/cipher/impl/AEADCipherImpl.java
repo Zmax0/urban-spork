@@ -5,7 +5,7 @@ import static io.netty.buffer.Unpooled.directBuffer;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
-import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -23,7 +23,7 @@ import io.netty.buffer.ByteBufUtil;
  * 
  * @see <a href=https://shadowsocks.org/en/spec/AEAD-Ciphers.html">https://shadowsocks.org/en/spec/AEAD-Ciphers.html</a>
  */
-public class AEADBlockCipherImpl implements Cipher {
+public class AEADCipherImpl implements Cipher {
 
     private static final int nonceSize = 12;
     private static final int tagSize = 16;
@@ -33,14 +33,14 @@ public class AEADBlockCipherImpl implements Cipher {
 
     private final int saltSize;
     private final int macSize;
-    private final AEADBlockCipher cipher;
+    private final AEADCipher cipher;
 
     private volatile boolean inited;
     private byte[] subkey;
     private byte[] temp;
     private int payloadLength;
 
-    public AEADBlockCipherImpl(AEADBlockCipher cipher, int saltSize, int macSize) {
+    public AEADCipherImpl(AEADCipher cipher, int saltSize, int macSize) {
         this.saltSize = saltSize;
         this.macSize = macSize;
         this.cipher = cipher;
