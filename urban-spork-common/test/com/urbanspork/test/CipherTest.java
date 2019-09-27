@@ -21,6 +21,7 @@ import com.urbanspork.cipher.ShadowsocksKey;
 public class CipherTest {
 
     private String password;
+    private ShadowsocksCipher cipher;
     private byte[] in;
     private byte[] out;
 
@@ -33,12 +34,14 @@ public class CipherTest {
     @ParameterizedTest
     @EnumSource(ShadowsocksCiphers.class)
     public void start(ShadowsocksCiphers cipher) throws Exception {
-        cipherTest(cipher.newShadowsocksCipher());
+        this.cipher = cipher.newShadowsocksCipher();
+        cipherTest();
     }
 
     @AfterEach
     public void afterEach() {
         Assertions.assertArrayEquals(in, out);
+        System.out.println("\u2713 " + cipher.getName());
     }
 
     private static String randomString(int length) {
@@ -58,7 +61,7 @@ public class CipherTest {
         return bytes;
     }
 
-    private void cipherTest(ShadowsocksCipher cipher) throws Exception {
+    private void cipherTest() throws Exception {
         ShadowsocksKey key = new ShadowsocksKey(password, cipher.getKeyLength());
         out = cipherTest(cipher, key, in);
     }

@@ -7,6 +7,7 @@ import com.urbanspork.cipher.impl.AES_256_CTR;
 import com.urbanspork.cipher.impl.AES_256_GCM;
 import com.urbanspork.cipher.impl.Camellia_256_CFB;
 import com.urbanspork.cipher.impl.ChaCha20_IETF;
+import com.urbanspork.cipher.impl.ChaCha20_IETF_Poly1305;
 
 public enum ShadowsocksCiphers {
 
@@ -16,9 +17,11 @@ public enum ShadowsocksCiphers {
 
     AES_256_GCM(new AES_256_GCM()),
 
+    Camellia_256_CFB(new Camellia_256_CFB()),
+
     ChaCha20_IETF(new ChaCha20_IETF()),
 
-    Camellia_256_CFB(new Camellia_256_CFB());
+    ChaCha20_IETF_Poly1305(new ChaCha20_IETF_Poly1305());
 
     private ShadowsocksCipher shadowsocksCipher;
 
@@ -42,6 +45,8 @@ public enum ShadowsocksCiphers {
             return new ChaCha20_IETF();
         case Camellia_256_CFB:
             return new Camellia_256_CFB();
+        case ChaCha20_IETF_Poly1305:
+            return new ChaCha20_IETF_Poly1305();
         default:
             throw new UnsupportedOperationException();
         }
