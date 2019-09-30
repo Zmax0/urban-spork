@@ -21,6 +21,9 @@ import com.urbanspork.client.mvc.i18n.I18n;
 import com.urbanspork.config.ClientConfig;
 import com.urbanspork.config.ServerConfig;
 
+import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -86,11 +89,13 @@ public class Controller implements Initializable {
 
     @FXML
     public void addServerConfig(ActionEvent event) {
-        ServerConfig config = new ServerConfig();
-        config.setCipher(ShadowsocksCiphers.AES_256_CFB);
-        serverConfigObservableList.add(config);
-        serverConfigListView.getSelectionModel().select(config);
-        display(config);
+        if (validate()) {
+            ServerConfig newValue = new ServerConfig();
+            newValue.setCipher(ShadowsocksCiphers.AES_256_CFB);
+            serverConfigObservableList.add(newValue);
+            serverConfigListView.getSelectionModel().select(newValue);
+            display(newValue);
+        }
     }
 
     @FXML
@@ -101,7 +106,6 @@ public class Controller implements Initializable {
             if (!serverConfigObservableList.isEmpty()) {
                 serverConfigListView.getSelectionModel().select(index);
             }
-            saveConfig();
         }
     }
 
@@ -111,7 +115,6 @@ public class Controller implements Initializable {
         if (config != null) {
             ServerConfig copyed = JSON.parseObject(JSON.toJSONString(config), ServerConfig.class);
             serverConfigObservableList.add(copyed);
-            saveConfig();
         }
     }
 
@@ -125,7 +128,6 @@ public class Controller implements Initializable {
             serverConfigObservableList.add(index - 1, config);
             selectionModel.select(index - 1);
         }
-        saveConfig();
     }
 
     @FXML
@@ -138,7 +140,6 @@ public class Controller implements Initializable {
             serverConfigObservableList.add(index + 1, config);
             selectionModel.select(index + 1);
         }
-        saveConfig();
     }
 
     @FXML
@@ -157,11 +158,7 @@ public class Controller implements Initializable {
                 config = new ServerConfig();
                 config.setCipher(ShadowsocksCiphers.AES_256_CFB);
             }
-            config.setHost(currentConfigHostTextField.getText());
-            config.setPort(currentConfigPortTextField.getText());
-            config.setPassword(currentConfigPasswordTextField.getText());
-            config.setRemark(currentConfigRemarkTextField.getText());
-            config.setCipher(currentConfigCipherChoiceBox.getValue());
+            pack(config);
             if (isNew) {
                 serverConfigObservableList.add(config);
                 serverConfigListView.getSelectionModel().select(config);
@@ -179,11 +176,13 @@ public class Controller implements Initializable {
     public void cancel(ActionEvent event) {
         hideConsole();
         int lastIndex = serverConfigObservableList.size() - 1;
-        ServerConfig lastConfig = serverConfigObservableList.get(lastIndex);
-        if (!lastConfig.check()) {
-            serverConfigObservableList.remove(lastIndex);
+        if (lastIndex > -1) {
+            ServerConfig lastConfig = serverConfigObservableList.get(lastIndex);
+            if (!lastConfig.check()) {
+                serverConfigObservableList.remove(lastIndex);
+            }
+            serverConfigListView.getSelectionModel().select(clientConfig.getCurrent());
         }
-        serverConfigListView.getSelectionModel().select(clientConfig.getCurrent());
     }
 
     public TextArea getLogTextArea() {
@@ -208,9 +207,30 @@ public class Controller implements Initializable {
         MultipleSelectionModel<ServerConfig> selectionModel = serverConfigListView.getSelectionModel();
         selectionModel.select(clientConfig.getIndex());
         selectionModel.selectedItemProperty().addListener(
-            (o, oldValue, newValue) -> {
-                resetValidation();
-                display(newValue);
+            new ChangeListener<ServerConfig>() {
+
+                private boolean changing = false;
+
+                @Override
+                public void changed(ObservableValue<? extends ServerConfig> observable, ServerConfig oldValue, ServerConfig newValue) {
+                    if (serverConfigObservableList.contains(oldValue)) {
+                        if (validate()) {
+                            resetValidation();
+                            pack(oldValue);
+                            serverConfigListView.refresh();
+                            display(newValue);
+                        } else if (!changing) {
+                            changing = true;
+                            Platform.runLater(() -> {
+                                selectionModel.select(oldValue);
+                                changing = false;
+                            });
+                        }
+                    } else {
+                        resetValidation();
+                        display(newValue);
+                    }
+                }
             });
         // currentConfigCipherChoiceBox
         List<ShadowsocksCiphers> ciphers = Arrays.asList(ShadowsocksCiphers.values());
@@ -312,6 +332,14 @@ public class Controller implements Initializable {
             currentConfigPasswordToggleButton.setSelected(false);
             currentConfigCipherChoiceBox.setValue(c.getCipher());
         }
+    }
+
+    private void pack(ServerConfig config) {
+        config.setHost(currentConfigHostTextField.getText());
+        config.setPort(currentConfigPortTextField.getText());
+        config.setPassword(currentConfigPasswordTextField.getText());
+        config.setRemark(currentConfigRemarkTextField.getText());
+        config.setCipher(currentConfigCipherChoiceBox.getValue());
     }
 
     private void saveConfig() {
