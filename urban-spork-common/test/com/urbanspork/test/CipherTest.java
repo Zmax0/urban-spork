@@ -41,7 +41,6 @@ public class CipherTest {
     @AfterEach
     public void afterEach() {
         Assertions.assertArrayEquals(in, out);
-        System.out.println("\u2713 " + cipher.getName());
     }
 
     private static String randomString(int length) {

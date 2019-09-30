@@ -40,9 +40,9 @@
 
 .jfx-button {
     -fx-font-family: 'Source Han Sans SC';
-    -fx-background-color: -fx-secondary-color;
     -fx-text-fill: -fx-primary-text;
-    -fx-border-color: -fx-primary-color;
+    -fx-background-color: -fx-secondary-color;
+    /* -fx-border-color: -fx-primary-color; */
     -fx-text-alignment: center;
 }
 

@@ -73,7 +73,7 @@
                   <RowConstraints minHeight="20.0" prefHeight="20.0" vgrow="SOMETIMES" />
                </rowConstraints>
                <children>
-                  <JFXButton fx:id="addServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" minHeight="-Infinity" minWidth="-Infinity" onAction="#addServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.add" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="13" GridPane.valignment="BOTTOM">
+                  <JFXButton fx:id="addServerConfigButton" buttonType="RAISED" contentDisplay="CENTER" graphicTextGap="20.0" minHeight="-Infinity" minWidth="-Infinity" onAction="#addServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.add" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="13" GridPane.valignment="BOTTOM">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -83,7 +83,7 @@
                         </LinearGradient>
                      </ripplerFill>
                   </JFXButton>
-                  <JFXButton fx:id="copyServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#copyServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.copy" textAlignment="CENTER" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="13" GridPane.valignment="BOTTOM">
+                  <JFXButton fx:id="copyServerConfigButton" buttonType="RAISED" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#copyServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.copy" textAlignment="CENTER" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="13" GridPane.valignment="BOTTOM">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -93,7 +93,7 @@
                         </LinearGradient>
                      </ripplerFill>
                   </JFXButton>
-                  <JFXButton fx:id="moveUpServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#moveUpServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.up" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="15" GridPane.valignment="CENTER">
+                  <JFXButton fx:id="moveUpServerConfigButton" buttonType="RAISED" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#moveUpServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.up" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="15" GridPane.valignment="CENTER">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -103,7 +103,7 @@
                         </LinearGradient>
                      </ripplerFill>
                   </JFXButton>
-                  <JFXButton fx:id="moveDownServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#moveDownServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.down" textAlignment="CENTER" GridPane.columnIndex="5" GridPane.halignment="LEFT" GridPane.rowIndex="15" GridPane.valignment="CENTER">
+                  <JFXButton fx:id="moveDownServerConfigButton" buttonType="RAISED" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#moveDownServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.down" textAlignment="CENTER" GridPane.columnIndex="5" GridPane.halignment="LEFT" GridPane.rowIndex="15" GridPane.valignment="CENTER">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -113,7 +113,7 @@
                         </LinearGradient>
                      </ripplerFill>
                   </JFXButton>
-                  <JFXButton fx:id="delServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#deleteServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.del" textAlignment="CENTER" GridPane.columnIndex="5" GridPane.halignment="LEFT" GridPane.rowIndex="13" GridPane.valignment="BOTTOM">
+                  <JFXButton fx:id="delServerConfigButton" buttonType="RAISED" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#deleteServerConfig" prefHeight="28.0" prefWidth="70.0" text="%console.button.del" textAlignment="CENTER" GridPane.columnIndex="5" GridPane.halignment="LEFT" GridPane.rowIndex="13" GridPane.valignment="BOTTOM">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -123,7 +123,7 @@
                         </LinearGradient>
                      </ripplerFill>
                   </JFXButton>
-                  <JFXButton fx:id="confirmServerConfigButton" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#confirm" prefHeight="28.0" prefWidth="70.0" text="%console.button.confirm" textAlignment="CENTER" GridPane.columnIndex="9" GridPane.rowIndex="15">
+                  <JFXButton fx:id="confirmServerConfigButton" buttonType="RAISED" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#confirm" prefHeight="28.0" prefWidth="70.0" text="%console.button.confirm" textAlignment="CENTER" GridPane.columnIndex="9" GridPane.rowIndex="15">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
@@ -133,7 +133,7 @@
                         </LinearGradient>
                      </ripplerFill>
                   </JFXButton>
-                  <JFXButton fx:id="cancelServerConfigButton2" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#cancel" prefHeight="28.0" prefWidth="70.0" text="%console.button.cancel" textAlignment="CENTER" GridPane.columnIndex="11" GridPane.rowIndex="15">
+                  <JFXButton fx:id="cancelServerConfigButton2" buttonType="RAISED" contentDisplay="CENTER" graphicTextGap="20.0" maxHeight="-Infinity" maxWidth="-Infinity" onAction="#cancel" prefHeight="28.0" prefWidth="70.0" text="%console.button.cancel" textAlignment="CENTER" GridPane.columnIndex="11" GridPane.rowIndex="15">
                      <ripplerFill>
                         <LinearGradient endX="1.0" endY="1.0">
                            <stops>
