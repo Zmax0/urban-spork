@@ -8,7 +8,6 @@ import java.awt.TrayIcon.MessageType;
 
 import javax.swing.ImageIcon;
 
-import com.urbanspork.client.mvc.Components;
 import com.urbanspork.client.mvc.Resource;
 import com.urbanspork.client.mvc.component.tray.menu.item.ConsoleMenuItem;
 import com.urbanspork.client.mvc.component.tray.menu.item.ExistMenuItem;
@@ -23,10 +22,6 @@ public class Tray {
     private final PopupMenu menu = new PopupMenu();
 
     private TrayIcon trayIcon;
-
-    public Tray() {
-        Components.register(this);
-    }
 
     public final void displayMessage(String caption, String text, MessageType messageType) {
         if (isSupported && trayIcon != null) {

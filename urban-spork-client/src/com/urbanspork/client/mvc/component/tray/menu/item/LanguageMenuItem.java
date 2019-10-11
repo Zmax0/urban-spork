@@ -20,7 +20,7 @@ public class LanguageMenuItem implements TrayMenuItem {
     @Override
     public MenuItem getDirectly() {
         Menu menu = new Menu(I18n.TRAY_MENU_LANGUAGE);
-        ClientConfig config = Resource.config;
+        ClientConfig config = Resource.config();
         String language = config.getLanguage();
         final Locale configLanguage = new Locale(language);
         List<CheckboxMenuItem> items = new ArrayList<>(I18n.LANGUAGES.length);
@@ -37,7 +37,7 @@ public class LanguageMenuItem implements TrayMenuItem {
                     try {
                         ConfigHandler.write(config);
                     } catch (IOException e) {
-                        Components.TRAY.displayMessage("Error", "Save config error, cause: " + e.getMessage(), MessageType.ERROR);
+                        Components.TRAY.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
                         return;
                     }
                     Components.TRAY.displayMessage("Config is saved", "Take effect after restart", MessageType.INFO);

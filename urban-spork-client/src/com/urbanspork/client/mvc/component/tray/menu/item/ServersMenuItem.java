@@ -20,7 +20,7 @@ public class ServersMenuItem implements TrayMenuItem {
     @Override
     public MenuItem getDirectly() {
         Menu menu = new Menu(I18n.TRAY_MENU_SERVERS);
-        ClientConfig config = Resource.config;
+        ClientConfig config = Resource.config();
         List<ServerConfig> servers = config.getServers();
         if (servers != null && !servers.isEmpty()) {
             final List<CheckboxMenuItem> items = new ArrayList<>();
@@ -37,7 +37,7 @@ public class ServersMenuItem implements TrayMenuItem {
                             CheckboxMenuItem i = items.get(k);
                             if (i == item) {
                                 config.setIndex(k);
-                                Components.CONTROLLER.serverConfigListViewSelect(k);
+                                Components.CONSOLE.serverConfigListViewSelect(k);
                             }
                             if (i != item && i.getState()) {
                                 i.setState(false);
@@ -46,7 +46,7 @@ public class ServersMenuItem implements TrayMenuItem {
                         try {
                             config.save();
                         } catch (IOException e) {
-                            Components.TRAY.displayMessage("Error", "Save config error, cause: " + e.getMessage(), MessageType.ERROR);
+                            Components.TRAY.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
                             return;
                         }
                         Proxy.relaunch();
