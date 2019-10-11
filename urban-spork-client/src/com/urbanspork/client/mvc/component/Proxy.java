@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import com.urbanspork.client.Client;
 import com.urbanspork.client.mvc.Components;
 import com.urbanspork.client.mvc.Resource;
+import com.urbanspork.config.ClientConfig;
 import com.urbanspork.config.ServerConfig;
 
 import io.netty.util.internal.StringUtil;
@@ -15,6 +16,8 @@ import io.netty.util.internal.StringUtil;
 public class Proxy {
 
     private static final Logger logger = LoggerFactory.getLogger(Proxy.class);
+
+    private static final ClientConfig config = Resource.config();
 
     private static Thread launcher;
 
@@ -30,11 +33,11 @@ public class Proxy {
     }
 
     private static void launch() {
-        ServerConfig config = Resource.config.getCurrent();
-        if (config != null) {
+        ServerConfig currentConfig = config.getCurrent();
+        if (currentConfig != null) {
             launcher = new Thread(() -> {
                 try {
-                    Client.launch(Resource.config);
+                    Client.launch(config);
                 } catch (InterruptedException e) {
                     Thread thread = Thread.currentThread();
                     logger.info("[{}-{}] was interrupted by relaunch", thread.getName(), thread.getId());
@@ -46,7 +49,7 @@ public class Proxy {
             launcher.setDaemon(true);
             launcher.start();
             logger.debug("[{}-{}] start", launcher.getName(), launcher.getId());
-            String message = Resource.config.getCurrent().toString();
+            String message = currentConfig.toString();
             Components.TRAY.displayMessage("Proxy is running", message, MessageType.INFO);
             Components.TRAY.setToolTip(message);
         } else {

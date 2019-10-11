@@ -14,18 +14,14 @@ import io.netty.util.CharsetUtil;
 
 public class ConfigHandler {
 
-    private static final String name = "config.json";
-    public static final File config;
-
-    static {
-        config = new File(ConfigLocation.getPath(ConfigHandler.class) + File.separatorChar + name);
-    }
+    private static final String NAME = "config.json";
+    private static final File FILE = new File(ConfigLocation.getPath(ConfigHandler.class) + File.separatorChar + NAME);;
 
     public static void write(Object object) throws IOException {
-        if (!config.exists()) {
-            config.createNewFile();
+        if (!FILE.exists()) {
+            FILE.createNewFile();
         }
-        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(config), CharsetUtil.UTF_8.name())) {
+        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(FILE), CharsetUtil.UTF_8.name())) {
             writer.write(JSON.toJSONString(object, SerializerFeature.DisableCircularReferenceDetect, SerializerFeature.PrettyFormat));
             writer.flush();
             writer.close();
@@ -34,14 +30,13 @@ public class ConfigHandler {
 
     public static <T> T read(Class<T> clazz) throws IOException {
         T t = null;
-        if (config.exists()) {
+        if (FILE.exists()) {
             StringBuilder builder = new StringBuilder();
             char[] cbuf = new char[1];
-            try (InputStreamReader reader = new InputStreamReader(new FileInputStream(config), CharsetUtil.UTF_8.name())) {
+            try (InputStreamReader reader = new InputStreamReader(new FileInputStream(FILE), CharsetUtil.UTF_8.name())) {
                 while (reader.read(cbuf) != -1) {
                     builder.append(cbuf);
                 }
-                reader.close();
             }
             t = JSON.parseObject(builder.toString(), clazz);
         }

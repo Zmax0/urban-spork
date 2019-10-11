@@ -7,8 +7,10 @@ import com.urbanspork.client.mvc.component.Tray;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        new Tray().start(args);
-        new Console().start(args);
+        Tray tray = new Tray();
+        Components.register(tray);
+        tray.start(args);
+        Console.launch(args);
         Proxy.launch(args);
     }
 

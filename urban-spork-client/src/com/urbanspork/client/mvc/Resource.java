@@ -12,33 +12,34 @@ import com.urbanspork.config.ConfigHandler;
 
 public class Resource {
 
-    private static final String resource = "resource";
-    private static final String trayIconName = "ticon.png";
-    private static final String programIconName = "picon.png";
-    private static final String clientFxmlName = "client.fxml";
+    private static final String RESOURCE = "resource";
+    private static final String TRAY_ICON_NAME = "ticon.png";
+    private static final String PROGRAM_ICON_NAME = "picon.png";
+    private static final String CONSOLE_CSS_NAME = "console.css";
+    private static final ClientConfig CONFIG;
+    private static final ResourceBundle BUNDLE;
 
     public static final URL PROGRAM_ICON;
     public static final URL TRAY_ICON;
-    public static final URL CLIENT_FXML;
-
-    public static ClientConfig config;
-    public static ResourceBundle bundle;
+    public static final URL CONSOLE_CSS;
 
     static {
+        ClassLoader classLoader = Resource.class.getClassLoader();
+        PROGRAM_ICON = classLoader.getResource(RESOURCE + "/" + PROGRAM_ICON_NAME);
+        TRAY_ICON = classLoader.getResource(RESOURCE + "/" + TRAY_ICON_NAME);
+        CONSOLE_CSS = classLoader.getResource(RESOURCE + "/" + CONSOLE_CSS_NAME);
+        ClientConfig config = null;
         try {
             config = ConfigHandler.read(ClientConfig.class);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load config", e);
+            throw new RuntimeException("Failed to load config file", e);
         }
         if (config == null) {
             config = new ClientConfig();
             config.setServers(new ArrayList<>(16));
         }
-        ClassLoader classLoader = Resource.class.getClassLoader();
-        PROGRAM_ICON = classLoader.getResource(resource + "/" + programIconName);
-        TRAY_ICON = classLoader.getResource(resource + "/" + trayIconName);
-        CLIENT_FXML = classLoader.getResource(resource + "/" + clientFxmlName);
         String language = config.getLanguage();
+        ResourceBundle bundle = null;
         try {
             if (language == null) {
                 Locale locale = Locale.getDefault();
@@ -50,6 +51,16 @@ public class Resource {
         } catch (MissingResourceException e) {
             bundle = ResourceBundle.getBundle("com.urbanspork.client.mvc.i18n.language", Locale.ENGLISH);
         }
+        CONFIG = config;
+        BUNDLE = bundle;
+    }
+
+    public static ClientConfig config() {
+        return CONFIG;
+    }
+
+    public static ResourceBundle bundle() {
+        return BUNDLE;
     }
 
 }
