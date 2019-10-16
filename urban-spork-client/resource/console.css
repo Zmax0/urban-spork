@@ -1,24 +1,3 @@
-/** Source Han Sans */
-
-@font-face {
-    font-family: 'Source Han Sans SC';
-    src: url('font/otf/SourceHanSansSC-Regular.otf');
-}
-
-/** Source Han Serif */
-
-@font-face {
-    font-family: 'Source Han Serif SC';
-    src: url('font/otf/SourceHanSerifSC-Medium.otf');
-}
-
-/** Ubuntu Mono */
-
-@font-face {
-    font-family: 'Ubuntu Mono';
-    src: url('font/ttf/UbuntuMono-B.ttf');
-}
-
 * {
     -fx-primary-color: #f8f8ff;
     -fx-secondary-color: derive(black, 90%);
@@ -26,24 +5,40 @@
 }
 
 .root {
-    -fx-font-family: 'Source Han Serif SC';
+    -fx-font-family: 'Microsoft YaHei UI';
+    -fx-font-size: 12px;
 }
 
 .label {
-    -fx-font-family: 'Source Han Sans SC';
+    /* -fx-border-color: -fx-secondary-color; */
 }
 
-.tab-pane .tab-header-area {
-    /* -fx-font-family: 'Source Han Sans SC'; */
-    /* -fx-font-weight: 700; */
+.jfx-tab-pane {
+    /* -fx-padding: 1px; */
+    /* -fx-background-color: -fx-secondary-color, -fx-primary-color; */
+    /* -fx-background-insets: 0, 1; */
+}
+
+.jfx-tab-pane .headers-region {
+    -fx-background-color: -fx-secondary-color;
+}
+
+.jfx-tab-pane .tab-header-background {
+    -fx-background-color: -fx-secondary-color;
+}
+
+.jfx-tab-pane .tab-header-area .tab-selected-line {
+    -fx-background-color: black;
 }
 
 .jfx-button {
-    -fx-font-family: 'Source Han Sans SC';
+    -jfx-button-type: RAISED;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
     -fx-text-fill: -fx-primary-text;
-    /* -fx-background-color: -fx-secondary-color; */
-    /* -fx-border-color: -fx-primary-color; */
-    -fx-text-alignment: center;
+    -fx-background-color: -fx-secondary-color;
+    /* -fx-border-color: -fx-secondary-color; */
+    /* -fx-text-alignment: center; */
 }
 
 .hide-show.toggle-button {
@@ -54,6 +49,14 @@
 
 .hide-show.toggle-button:selected {
     -fx-background-image: url("image/eye-close.png")
+}
+
+.choice-box .label {
+    /* -fx-font-family: 'Georgia'; */
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    /* -fx-background-color: black; */
+    /* -fx-mark-color: orange; */
 }
 
 .list-view {
@@ -101,8 +104,9 @@
 }
 
 .text-area {
-    -fx-font-family: 'Ubuntu Mono';
-    -fx-font-size: 14px;
+    -fx-font-family: 'Consolas';
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
     -fx-highlight-fill: #00ff00;
     -fx-text-fill: #00ff00;
     -fx-highlight-text-fill: #000000;
