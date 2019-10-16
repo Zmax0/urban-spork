@@ -1,7 +1,7 @@
 package com.urbanspork.client.mvc;
 
-import com.urbanspork.client.mvc.component.Console;
-import com.urbanspork.client.mvc.component.Tray;
+import com.urbanspork.client.mvc.console.component.Console;
+import com.urbanspork.client.mvc.console.component.Tray;
 
 public class Components {
 

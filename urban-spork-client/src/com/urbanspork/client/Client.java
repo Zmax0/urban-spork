@@ -18,7 +18,7 @@ public class Client {
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
     public static void launch(ClientConfig clientConfig) throws Exception {
-        logger.info("Proxy client launched ~> {}", clientConfig);
+        logger.info("Launching proxy client ~> {}", clientConfig);
         int port = Integer.valueOf(clientConfig.getPort());
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -27,7 +27,7 @@ public class Client {
             b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childOption(ChannelOption.TCP_NODELAY, true)
-                .childHandler(new ClientInitializer(clientConfig)); 
+                .childHandler(new ClientInitializer(clientConfig));
             ChannelFuture f = b.bind(port).sync();
             f.channel().closeFuture().sync();
         } finally {

@@ -32,7 +32,4 @@
       <artifactId>logback-classic</artifactId>
     </dependency>
   </dependencies>
-  <build>
-    <testSourceDirectory>test</testSourceDirectory>
-  </build>
 </project>
