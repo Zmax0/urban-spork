@@ -68,13 +68,13 @@ public class ServersMenuItem implements TrayMenuItemBuilder {
     }
 
     @Override
-    public String getLabel() {
-        return I18n.TRAY_MENU_SERVERS;
+    public ActionListener getActionListener() {
+        return null;
     }
 
     @Override
-    public ActionListener getActionListener() {
-        return null;
+    public String getLabel() {
+        return I18n.TRAY_MENU_SERVERS;
     }
 
     private String getLabel(ServerConfig config) {
