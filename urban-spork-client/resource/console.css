@@ -9,14 +9,12 @@
     -fx-font-size: 12px;
 }
 
-.label {
-    /* -fx-border-color: -fx-secondary-color; */
-}
-
 .jfx-tab-pane {
     /* -fx-padding: 1px; */
     /* -fx-background-color: -fx-secondary-color, -fx-primary-color; */
     /* -fx-background-insets: 0, 1; */
+    -fx-pref-width: 500;
+    -fx-pref-height: 500;
 }
 
 .jfx-tab-pane .headers-region {
@@ -27,8 +25,23 @@
     -fx-background-color: -fx-secondary-color;
 }
 
+.jfx-tab-pane .tab-header-area .jfx-rippler {
+    -jfx-rippler-fill: black;
+}
+
 .jfx-tab-pane .tab-header-area .tab-selected-line {
     -fx-background-color: black;
+}
+
+GridPane {
+    /* debug */
+    -fx-grid-lines-visible: true;
+}
+
+.label {
+    /* -fx-border-color: -fx-secondary-color; */
+    -fx-min-width: 65;
+    -fx-alignment: center-right;
 }
 
 .jfx-button {
@@ -38,7 +51,11 @@
     -fx-text-fill: -fx-primary-text;
     -fx-background-color: -fx-secondary-color;
     /* -fx-border-color: -fx-secondary-color; */
-    /* -fx-text-alignment: center; */
+    -fx-text-alignment: center;
+    -fx-pref-width: 70;
+    -fx-pref-height: 30;
+    -fx-content-display: center;
+    -fx-graphic-text-gap: 20;
 }
 
 .hide-show.toggle-button {
@@ -48,13 +65,14 @@
 }
 
 .hide-show.toggle-button:selected {
-    -fx-background-image: url("image/eye-close.png")
+    -fx-background-image: url("image/eye-close.png");
 }
 
 .choice-box .label {
     /* -fx-font-family: 'Georgia'; */
     -fx-font-size: 13px;
     -fx-font-weight: bold;
+    -fx-alignment: center-left;
     /* -fx-background-color: black; */
     /* -fx-mark-color: orange; */
 }
@@ -107,8 +125,8 @@
     -fx-font-family: 'Consolas';
     -fx-font-size: 13px;
     -fx-font-weight: 800;
-    -fx-highlight-fill: #00ff00;
     -fx-text-fill: #00ff00;
+    -fx-highlight-fill: #00ff00;
     -fx-highlight-text-fill: #000000;
     -fx-background-insets: 0;
     -fx-background-color: transparent, white, transparent, white;

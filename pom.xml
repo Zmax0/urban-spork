@@ -13,7 +13,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <urban-spork.version>1.0.0-SNAPSHOT</urban-spork.version>
     <junit.jupiter.version>5.5.2</junit.jupiter.version>
-    <fastjson.version>1.2.61</fastjson.version>
+    <fastjson.version>1.2.62</fastjson.version>
     <logback.version>1.2.3</logback.version>
     <netty.version>4.1.42.Final</netty.version>
     <bouncycastle.version>1.63</bouncycastle.version>

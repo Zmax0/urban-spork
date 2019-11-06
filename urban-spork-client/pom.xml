@@ -81,9 +81,14 @@
         <artifactId>javafx-maven-plugin</artifactId>
         <version>0.0.3</version>
         <configuration>
-          <jlinkImageName>urbanspork</jlinkImageName>
           <launcher>launcher</launcher>
           <mainClass>com.urbanspork.client.mvc.Main</mainClass>
+          <stripDebug>true</stripDebug>
+          <compress>2</compress>
+          <noHeaderFiles>true</noHeaderFiles>
+          <noManPages>true</noManPages>
+          <jlinkImageName>urbanspork</jlinkImageName>
+          <jlinkZipName>urbanspork_zip</jlinkZipName>
         </configuration>
       </plugin>
     </plugins>
