@@ -4,11 +4,11 @@ public interface ShadowsocksCipher {
 
     String getName();
 
+    int getKeyLength();
+
     Cipher encrypter();
 
     Cipher decrypter();
-
-    int getKeyLength();
 
     default byte[] encrypt(byte[] in, ShadowsocksKey key) throws Exception {
         return encrypter().encrypt(in, key.getEncoded());

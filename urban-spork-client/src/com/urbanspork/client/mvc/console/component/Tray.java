@@ -8,7 +8,6 @@ import java.awt.TrayIcon.MessageType;
 
 import javax.swing.ImageIcon;
 
-import com.urbanspork.client.mvc.Components;
 import com.urbanspork.client.mvc.Resource;
 import com.urbanspork.client.mvc.i18n.I18n;
 import com.urbanspork.client.mvc.tray.menu.item.ConsoleMenuItem;
@@ -20,43 +19,41 @@ public class Tray {
 
     private static final boolean isSupported = SystemTray.isSupported();
 
-    private final PopupMenu menu = new PopupMenu();
+    private static final PopupMenu menu = new PopupMenu();
 
-    private TrayIcon trayIcon;
+    private static final ImageIcon icon = new ImageIcon(Resource.TRAY_ICON);
+
+    private static final TrayIcon trayIcon = isSupported ? new TrayIcon(icon.getImage(), I18n.PROGRAM_TITLE, menu) : null;
 
     public static void launch(String[] args) {
-        Tray tray = new Tray();
-        tray.start();
-        Components.register(tray);
+        start();
     }
 
-    public final void displayMessage(String caption, String text, MessageType messageType) {
-        if (isSupported && trayIcon != null) {
+    public static void displayMessage(String caption, String text, MessageType messageType) {
+        if (isSupported) {
             trayIcon.displayMessage(caption, text, messageType);
         }
     }
 
-    public final void setToolTip(String tooltip) {
-        if (isSupported && trayIcon != null) {
+    public static void setToolTip(String tooltip) {
+        if (isSupported) {
             StringBuilder builder = new StringBuilder(I18n.TRAY_TOOLTIP);
             builder.append(System.lineSeparator()).append(tooltip);
             trayIcon.setToolTip(builder.toString());
         }
     }
 
-    public final void refresh() {
+    public static void refresh() {
         menu.remove(0);
-        menu.insert(new ServersMenuItem().get(), 0);
+        menu.insert(new ServersMenuItem().build(), 0);
     }
 
-    private void start() {
+    private static void start() {
         if (isSupported) {
             // ==============================
             // tray icon
             // ==============================
             SystemTray tray = SystemTray.getSystemTray();
-            ImageIcon icon = new ImageIcon(Resource.TRAY_ICON);
-            trayIcon = new TrayIcon(icon.getImage(), I18n.PROGRAM_TITLE, menu);
             trayIcon.setImageAutoSize(true);
             try {
                 tray.add(trayIcon);
@@ -66,13 +63,13 @@ public class Tray {
             // ==============================
             // tray menu
             // ==============================
-            menu.add(new ServersMenuItem().get());
+            menu.add(new ServersMenuItem().build());
             menu.addSeparator();
-            menu.add(new ConsoleMenuItem().get());
+            menu.add(new ConsoleMenuItem().build());
             menu.addSeparator();
-            menu.add(new LanguageMenuItem().get());
+            menu.add(new LanguageMenuItem().build());
             menu.addSeparator();
-            menu.add(new ExistMenuItem(tray, trayIcon).get());
+            menu.add(new ExistMenuItem(tray, trayIcon).build());
         }
     }
 

@@ -2,13 +2,13 @@ package com.urbanspork.client;
 
 import java.net.InetSocketAddress;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.urbanspork.cipher.ShadowsocksCipherCodec;
 import com.urbanspork.common.Attributes;
 import com.urbanspork.common.DefaultChannelInboundHandler;
 import com.urbanspork.protocol.ShadowsocksProtocolEncoder;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;

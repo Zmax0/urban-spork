@@ -14,7 +14,6 @@ import com.jfoenix.controls.JFXTabPane;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.validation.RequiredFieldValidator;
 import com.urbanspork.cipher.ShadowsocksCiphers;
-import com.urbanspork.client.mvc.Components;
 import com.urbanspork.client.mvc.Resource;
 import com.urbanspork.client.mvc.console.unit.ConsoleButton;
 import com.urbanspork.client.mvc.console.unit.ConsoleColumnConstraints;
@@ -49,7 +48,6 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.RowConstraints;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -60,15 +58,17 @@ public class Console extends Application {
 
     private final ClientConfig clientConfig = Resource.config();
 
-    private Parent root;
+    private static Stage primaryStage;
 
-    private Stage primaryStage;
+    private static TextArea logTextArea;
+
+    private static JFXListView<ServerConfig> serverConfigListView;
+
+    private Parent root;
 
     private ObservableList<ServerConfig> serverConfigObservableList;
 
     private RequiredFieldValidator requiredFieldValidator;
-
-    private JFXListView<ServerConfig> serverConfigListView;
 
     private Button addServerConfigButton;
 
@@ -100,8 +100,6 @@ public class Console extends Application {
 
     private JFXTextField clientConfigPortTextField;
 
-    private TextArea logTextArea;
-
     public static void launch(String... args) {
         Application.launch(args);
     }
@@ -110,13 +108,12 @@ public class Console extends Application {
     public void init() throws Exception {
         initModule();
         initController();
-        Components.register(this);
-        Proxy.launch(null);
     }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        this.primaryStage = primaryStage;
+        Proxy.launch();
+        Console.primaryStage = primaryStage;
         Platform.setImplicitExit(false);
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
@@ -137,7 +134,7 @@ public class Console extends Application {
         }
     }
 
-    public void show() {
+    public static void show() {
         if (primaryStage != null) {
             if (primaryStage.isIconified()) {
                 primaryStage.setIconified(false);
@@ -146,6 +143,14 @@ public class Console extends Application {
                 primaryStage.show();
             }
         }
+    }
+
+    public static TextArea getLogTextArea() {
+        return logTextArea;
+    }
+
+    public static JFXListView<ServerConfig> getServerConfigListView() {
+        return serverConfigListView;
     }
 
     public void addServerConfig(ActionEvent event) {
@@ -203,10 +208,6 @@ public class Console extends Application {
         currentConfigPasswordTextField.visibleProperty().set(currentConfigPasswordToggleButton.isSelected());
     }
 
-    public void serverConfigListViewSelect(int index) {
-        serverConfigListView.getSelectionModel().select(index);
-    }
-
     public void confirmServerConfig(ActionEvent event) {
         if (validate()) {
             MultipleSelectionModel<ServerConfig> selectionModel = serverConfigListView.getSelectionModel();
@@ -242,8 +243,24 @@ public class Console extends Application {
         }
     }
 
-    public TextArea getLogTextArea() {
-        return logTextArea;
+    private void initElement() {
+        serverConfigListView = new ServerConfigListView();
+        logTextArea = new ConsoleLogTextArea();
+        addServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_ADD, event -> addServerConfig(event));
+        delServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_DEL, event -> deleteServerConfig(event));
+        copyServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_COPY, event -> copyServerConfig(event));
+        moveUpServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_UP, event -> moveUpServerConfig(event));
+        moveDownServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_DOWN, event -> moveDownServerConfig(event));
+        confirmServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_CONFIRM, event -> confirmServerConfig(event));
+        cancelServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_CANCEL, event -> cancelServerConfig(event));
+        currentConfigHostTextField = new ConsoleTextField();
+        currentConfigPortTextField = new ConsoleTextField();
+        currentConfigPasswordPasswordField = new JFXPasswordField();
+        currentConfigPasswordTextField = new ConsolePasswordTextField();
+        currentConfigRemarkTextField = new ConsoleTextField();
+        currentConfigPasswordToggleButton = new CurrentConfigPasswordToggleButton(event -> showCurrentConfigPassword(event));
+        currentConfigCipherChoiceBox = new CurrentConfigCipherChoiceBox();
+        clientConfigPortTextField = new ConsoleTextField();
     }
 
     private void initModule() {
@@ -257,10 +274,8 @@ public class Console extends Application {
         ColumnConstraints ccConner = new ConsoleColumnConstraints(20);
         // gap grid
         ColumnConstraints ccGap1 = new ConsoleColumnConstraints(10);
-        ColumnConstraints ccGap2 = new ConsoleColumnConstraints(20);
         // container grid
-        ColumnConstraints ccContainer0 = new ConsoleColumnConstraints(Region.USE_COMPUTED_SIZE);
-        ColumnConstraints ccContainer1 = new ConsoleColumnConstraints(70);
+        ColumnConstraints ccContainer0 = new ColumnConstraints();
         ObservableList<ColumnConstraints> columnConstraints0 = gridPane0.getColumnConstraints();
         columnConstraints0.add(ccConner);
         columnConstraints0.add(ccContainer0);
@@ -269,10 +284,10 @@ public class Console extends Application {
         columnConstraints0.add(ccGap1);
         columnConstraints0.add(ccContainer0);
         columnConstraints0.add(ccGap1);
-        columnConstraints0.add(ccContainer1);
-        columnConstraints0.add(ccGap2);
         columnConstraints0.add(ccContainer0);
-        columnConstraints0.add(ccGap2);
+        columnConstraints0.add(ccGap1);
+        columnConstraints0.add(ccContainer0);
+        columnConstraints0.add(ccGap1);
         columnConstraints0.add(ccContainer0);
         columnConstraints0.add(ccConner);
         // ----------- RowConstraints -----------
@@ -282,8 +297,10 @@ public class Console extends Application {
         RowConstraints rcGap0 = new ConsoleRowConstraints(20);
         RowConstraints rcGap1 = new ConsoleRowConstraints(10);
         // container grid
-        RowConstraints rcContainer0 = new ConsoleRowConstraints(40);
-        RowConstraints rcContainer1 = new ConsoleRowConstraints(20);
+        RowConstraints rcContainer0 = new ConsoleRowConstraints(35);
+        RowConstraints rcContainer1 = new RowConstraints();
+        RowConstraints rcContainer2 = new RowConstraints();
+        rcContainer2.setVgrow(Priority.ALWAYS);
         ObservableList<RowConstraints> rowConstraints0 = gridPane0.getRowConstraints();
         rowConstraints0.add(rcCorner);
         rowConstraints0.add(rcContainer0);
@@ -298,6 +315,9 @@ public class Console extends Application {
         rowConstraints0.add(rcGap0);
         rowConstraints0.add(rcContainer0);
         rowConstraints0.add(rcGap0);
+        rowConstraints0.add(rcContainer0);
+        rowConstraints0.add(rcGap1);
+        rowConstraints0.add(rcGap1);
         rowConstraints0.add(rcContainer1);
         rowConstraints0.add(rcGap1);
         rowConstraints0.add(rcContainer1);
@@ -316,7 +336,7 @@ public class Console extends Application {
         gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_PASSWORD), 7, 5);
         gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_CIPHER), 7, 7);
         gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_REMARK), 7, 9);
-        gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_PROXY_PORT), 6, 13, 2, 1);
+        gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_PROXY_PORT), 7, 13);
         gridPane0.add(currentConfigHostTextField, 9, 1, 3, 1);
         gridPane0.add(currentConfigPortTextField, 9, 3, 3, 1);
         gridPane0.add(currentConfigPasswordTextField, 9, 5, 3, 1);
@@ -332,7 +352,6 @@ public class Console extends Application {
         // tab1 gridPane1
         // ==========
         GridPane gridPane1 = new GridPane();
-        gridPane1.setPrefSize(440, 30);
         ObservableList<ColumnConstraints> columnConstraints1 = gridPane1.getColumnConstraints();
         ColumnConstraints ccContainer2 = new ColumnConstraints();
         ccContainer2.setHgrow(Priority.ALWAYS);
@@ -340,8 +359,6 @@ public class Console extends Application {
         columnConstraints1.add(ccContainer2);
         columnConstraints1.add(ccGap1);
         ObservableList<RowConstraints> rowConstraints1 = gridPane1.getRowConstraints();
-        RowConstraints rcContainer2 = new RowConstraints();
-        rcContainer2.setVgrow(Priority.ALWAYS);
         rowConstraints1.add(rcGap1);
         rowConstraints1.add(rcContainer2);
         rowConstraints1.add(rcGap1);
@@ -354,29 +371,8 @@ public class Console extends Application {
         // ==========
         JFXTabPane tabPane = new JFXTabPane();
         tabPane.getTabs().addAll(tab0, tab1);
-        tabPane.setPrefSize(500, 500);
         tabPane.getStylesheets().add(Resource.CONSOLE_CSS.toExternalForm());
         root = tabPane;
-    }
-
-    private void initElement() {
-        serverConfigListView = new ServerConfigListView();
-        addServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_ADD, event -> addServerConfig(event));
-        delServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_DEL, event -> deleteServerConfig(event));
-        copyServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_COPY, event -> copyServerConfig(event));
-        moveUpServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_UP, event -> moveUpServerConfig(event));
-        moveDownServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_DOWN, event -> moveDownServerConfig(event));
-        confirmServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_CONFIRM, event -> confirmServerConfig(event));
-        cancelServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_CANCEL, event -> cancelServerConfig(event));
-        currentConfigHostTextField = new ConsoleTextField();
-        currentConfigPortTextField = new ConsoleTextField();
-        currentConfigPasswordPasswordField = new JFXPasswordField();
-        currentConfigPasswordTextField = new ConsolePasswordTextField();
-        currentConfigRemarkTextField = new ConsoleTextField();
-        currentConfigPasswordToggleButton = new CurrentConfigPasswordToggleButton(event -> showCurrentConfigPassword(event));
-        currentConfigCipherChoiceBox = new CurrentConfigCipherChoiceBox();
-        clientConfigPortTextField = new ConsoleTextField();
-        logTextArea = new ConsoleLogTextArea();
     }
 
     private void initController() {
@@ -528,7 +524,7 @@ public class Console extends Application {
             logger.error("Saving file failed", e);
             return;
         }
-        Components.TRAY.refresh();
+        Tray.refresh();
     }
 
 }

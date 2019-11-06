@@ -3,12 +3,13 @@ package com.urbanspork.client.mvc.tray.menu.item;
 import java.awt.MenuItem;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
+import java.awt.event.ActionListener;
 
 import com.urbanspork.client.mvc.i18n.I18n;
 
 import javafx.application.Platform;
 
-public class ExistMenuItem implements TrayMenuItem {
+public class ExistMenuItem implements TrayMenuItemBuilder {
 
     private SystemTray tray;
 
@@ -20,7 +21,7 @@ public class ExistMenuItem implements TrayMenuItem {
     }
 
     @Override
-    public MenuItem getDirectly() {
+    public MenuItem getMenuItem() {
         return null;
     }
 
@@ -30,10 +31,12 @@ public class ExistMenuItem implements TrayMenuItem {
     }
 
     @Override
-    public void act() {
-        Platform.exit();
-        tray.remove(trayIcon);
-        System.exit(0);
+    public ActionListener getActionListener() {
+        return e -> {
+            Platform.exit();
+            tray.remove(trayIcon);
+            System.exit(0);
+        };
     }
 
 }

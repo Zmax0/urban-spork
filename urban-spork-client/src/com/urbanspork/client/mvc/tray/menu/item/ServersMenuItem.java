@@ -4,22 +4,24 @@ import java.awt.CheckboxMenuItem;
 import java.awt.Menu;
 import java.awt.MenuItem;
 import java.awt.TrayIcon.MessageType;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.urbanspork.client.mvc.Components;
 import com.urbanspork.client.mvc.Resource;
+import com.urbanspork.client.mvc.console.component.Console;
 import com.urbanspork.client.mvc.console.component.Proxy;
+import com.urbanspork.client.mvc.console.component.Tray;
 import com.urbanspork.client.mvc.i18n.I18n;
 import com.urbanspork.config.ClientConfig;
 import com.urbanspork.config.ServerConfig;
 
-public class ServersMenuItem implements TrayMenuItem {
+public class ServersMenuItem implements TrayMenuItemBuilder {
 
     @Override
-    public MenuItem getDirectly() {
-        Menu menu = new Menu(I18n.TRAY_MENU_SERVERS);
+    public MenuItem getMenuItem() {
+        Menu menu = new Menu(getLabel());
         ClientConfig config = Resource.config();
         List<ServerConfig> servers = config.getServers();
         if (servers != null && !servers.isEmpty()) {
@@ -37,7 +39,7 @@ public class ServersMenuItem implements TrayMenuItem {
                             CheckboxMenuItem i = items.get(k);
                             if (i == item) {
                                 config.setIndex(k);
-                                Components.CONSOLE.serverConfigListViewSelect(k);
+                                Console.getServerConfigListView().getSelectionModel().select(k);
                             }
                             if (i != item && i.getState()) {
                                 i.setState(false);
@@ -46,13 +48,13 @@ public class ServersMenuItem implements TrayMenuItem {
                         try {
                             config.save();
                         } catch (IOException e) {
-                            Components.TRAY.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
+                            Tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
                             return;
                         }
                         Proxy.relaunch();
                         String message = config.getCurrent().toString();
-                        Components.TRAY.displayMessage("Proxy is running", message, MessageType.INFO);
-                        Components.TRAY.setToolTip(message);
+                        Tray.displayMessage("Proxy is running", message, MessageType.INFO);
+                        Tray.setToolTip(message);
                     } else {
                         item.setState(true);
                     }
@@ -71,8 +73,8 @@ public class ServersMenuItem implements TrayMenuItem {
     }
 
     @Override
-    public void act() {
-
+    public ActionListener getActionListener() {
+        return null;
     }
 
     private String getLabel(ServerConfig config) {
