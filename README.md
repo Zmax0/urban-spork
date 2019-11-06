@@ -1,5 +1,8 @@
 # urban-spork
+
 Shadowsocks proxy
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/3286f43f4c854b4da8c1058637343273)](https://www.codacy.com/manual/Zmax0/urban-spork?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Zmax0/urban-spork&amp;utm_campaign=Badge_Grade)
 
 ## Require
 
