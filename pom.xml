@@ -7,6 +7,7 @@
   <modules>
     <module>urban-spork-common</module>
     <module>urban-spork-client</module>
+    <module>urban-spork-client-gui</module>
     <module>urban-spork-server</module>
   </modules>
   <properties>
@@ -24,6 +25,11 @@
       <dependency>
         <groupId>urban-spork</groupId>
         <artifactId>urban-spork-common</artifactId>
+        <version>${urban-spork.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>urban-spork</groupId>
+        <artifactId>urban-spork-client</artifactId>
         <version>${urban-spork.version}</version>
       </dependency>
       <dependency>

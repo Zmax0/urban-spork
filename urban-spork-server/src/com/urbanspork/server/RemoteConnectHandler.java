@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.urbanspork.common.Attributes;
+import com.urbanspork.common.channel.AttributeKeys;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -32,7 +32,7 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void connect(Channel localChannel) {
-        InetSocketAddress remoteAddress = localChannel.attr(Attributes.REMOTE_ADDRESS).get();
+        InetSocketAddress remoteAddress = localChannel.attr(AttributeKeys.REMOTE_ADDRESS).get();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap
             .group(localChannel.eventLoop())
