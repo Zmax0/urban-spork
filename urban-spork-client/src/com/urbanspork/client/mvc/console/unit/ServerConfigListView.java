@@ -5,8 +5,4 @@ import com.urbanspork.config.ServerConfig;
 
 public class ServerConfigListView extends JFXListView<ServerConfig> {
 
-    public ServerConfigListView() {
-
-    }
-
 }
