@@ -3,8 +3,8 @@ package com.urbanspork.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.urbanspork.config.ClientConfig;
-import com.urbanspork.config.ConfigHandler;
+import com.urbanspork.common.config.ClientConfig;
+import com.urbanspork.common.config.ConfigHandler;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;

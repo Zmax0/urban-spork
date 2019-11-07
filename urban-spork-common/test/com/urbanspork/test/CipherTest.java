@@ -12,9 +12,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import com.urbanspork.cipher.ShadowsocksCipher;
-import com.urbanspork.cipher.ShadowsocksCiphers;
-import com.urbanspork.cipher.ShadowsocksKey;
+import com.urbanspork.common.cipher.ShadowsocksCipher;
+import com.urbanspork.common.cipher.ShadowsocksCiphers;
+import com.urbanspork.common.cipher.ShadowsocksKey;
 
 @DisplayName("Cipher Test")
 @TestInstance(Lifecycle.PER_CLASS)

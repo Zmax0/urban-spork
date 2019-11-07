@@ -5,10 +5,10 @@ import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.urbanspork.cipher.ShadowsocksCipherCodec;
-import com.urbanspork.common.Attributes;
-import com.urbanspork.common.DefaultChannelInboundHandler;
-import com.urbanspork.protocol.ShadowsocksProtocolEncoder;
+import com.urbanspork.common.channel.AttributeKeys;
+import com.urbanspork.common.channel.DefaultChannelInboundHandler;
+import com.urbanspork.common.cipher.ShadowsocksCipherCodec;
+import com.urbanspork.common.protocol.ShadowsocksProtocolEncoder;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -30,7 +30,7 @@ public class ClientProcessor extends SimpleChannelInboundHandler<Socks5CommandRe
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Socks5CommandRequest msg) throws Exception {
         Channel localChannel = ctx.channel();
-        InetSocketAddress serverAddress = localChannel.attr(Attributes.SERVER_ADDRESS).get();
+        InetSocketAddress serverAddress = localChannel.attr(AttributeKeys.SERVER_ADDRESS).get();
         logger.debug("Connect proxy server {}", serverAddress);
         Bootstrap bootstrap = new Bootstrap();
         bootstrap
@@ -40,9 +40,9 @@ public class ClientProcessor extends SimpleChannelInboundHandler<Socks5CommandRe
             .handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel remoteChannel) throws Exception {
-                    remoteChannel.attr(Attributes.KEY).set(localChannel.attr(Attributes.KEY).get());
-                    remoteChannel.attr(Attributes.CIPHER).set(localChannel.attr(Attributes.CIPHER).get());
-                    remoteChannel.attr(Attributes.REQUEST).set(msg);
+                    remoteChannel.attr(AttributeKeys.KEY).set(localChannel.attr(AttributeKeys.KEY).get());
+                    remoteChannel.attr(AttributeKeys.CIPHER).set(localChannel.attr(AttributeKeys.CIPHER).get());
+                    remoteChannel.attr(AttributeKeys.REQUEST).set(msg);
                     remoteChannel.pipeline()
                         .addLast(new ShadowsocksCipherCodec())
                         .addLast(new ShadowsocksProtocolEncoder())

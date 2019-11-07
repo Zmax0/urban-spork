@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-import com.urbanspork.config.ClientConfig;
-import com.urbanspork.config.ConfigHandler;
-import com.urbanspork.config.ServerConfig;
+import com.urbanspork.common.config.ClientConfig;
+import com.urbanspork.common.config.ConfigHandler;
+import com.urbanspork.common.config.ServerConfig;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
