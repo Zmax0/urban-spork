@@ -69,7 +69,7 @@ public class Tray {
             menu.addSeparator();
             menu.add(new LanguageMenuItem().build());
             menu.addSeparator();
-            menu.add(new ExistMenuItem(tray, trayIcon).build());
+            menu.add(new ExistMenuItem().build());
         }
     }
 

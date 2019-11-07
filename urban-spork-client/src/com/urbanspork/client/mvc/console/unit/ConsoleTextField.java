@@ -4,8 +4,4 @@ import com.jfoenix.controls.JFXTextField;
 
 public class ConsoleTextField extends JFXTextField {
 
-    public ConsoleTextField() {
-
-    }
-
 }

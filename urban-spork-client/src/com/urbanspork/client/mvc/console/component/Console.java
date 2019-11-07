@@ -263,8 +263,7 @@ public class Console extends Application {
         clientConfigPortTextField = new ConsoleTextField();
     }
 
-    private void initModule() {
-        initElement();
+    private JFXTabPane initTabPane() {
         // ==========
         // tab0 gridPane0
         // ==========
@@ -372,7 +371,12 @@ public class Console extends Application {
         JFXTabPane tabPane = new JFXTabPane();
         tabPane.getTabs().addAll(tab0, tab1);
         tabPane.getStylesheets().add(Resource.CONSOLE_CSS.toExternalForm());
-        root = tabPane;
+        return tabPane;
+    }
+
+    private void initModule() {
+        initElement();
+        root = initTabPane();
     }
 
     private void initController() {

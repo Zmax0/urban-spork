@@ -42,6 +42,7 @@ public class ClientShakeHandsHandler extends SimpleChannelInboundHandler<SocksMe
             break;
         case SOCKS4a:
         case UNKNOWN:
+        default:
             ctx.close();
             break;
         }
