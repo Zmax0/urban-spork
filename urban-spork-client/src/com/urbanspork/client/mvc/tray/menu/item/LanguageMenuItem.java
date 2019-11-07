@@ -43,7 +43,7 @@ public class LanguageMenuItem implements TrayMenuItemBuilder {
                     }
                     Tray.displayMessage("Config is saved", "Take effect after restart", MessageType.INFO);
                     for (CheckboxMenuItem i : items) {
-                        if (i != item && i.getState()) {
+                        if (!i.equals(item) && i.getState()) {
                             i.setState(false);
                         }
                     }

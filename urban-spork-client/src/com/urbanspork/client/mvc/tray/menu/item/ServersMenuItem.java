@@ -37,11 +37,11 @@ public class ServersMenuItem implements TrayMenuItemBuilder {
                     if (item.getState()) {
                         for (int k = 0; k < items.size(); k++) {
                             CheckboxMenuItem i = items.get(k);
-                            if (i == item) {
+                            if (i.equals(item)) {
                                 config.setIndex(k);
                                 Console.getServerConfigListView().getSelectionModel().select(k);
                             }
-                            if (i != item && i.getState()) {
+                            if (!i.equals(item) && i.getState()) {
                                 i.setState(false);
                             }
                         }

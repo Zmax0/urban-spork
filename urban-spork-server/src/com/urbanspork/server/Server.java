@@ -17,15 +17,13 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 public class Server {
 
     public static void main(String[] args) throws IOException {
-        ThreadGroup threadGroup = new ThreadGroup("Server-Group");
-        threadGroup.setDaemon(true);
         List<ServerConfig> serverConfigs = Optional.of(ConfigHandler.read(ClientConfig.class))
             .orElseThrow(() -> new IllegalArgumentException("Please put the 'config.json' file into the folder"))
             .getServers();
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         serverConfigs.forEach(serverConfig -> {
-            new Thread(threadGroup, () -> {
+            new Thread(() -> {
                 try {
                     int port = Integer.valueOf(serverConfig.getPort());
                     ServerBootstrap b = new ServerBootstrap();

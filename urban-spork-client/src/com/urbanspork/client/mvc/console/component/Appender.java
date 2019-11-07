@@ -25,7 +25,7 @@ public class Appender extends AppenderBase<ILoggingEvent> {
         String log = logTextArea.textProperty().get();
         if (log.length() > 10000) {
             logTextArea.appendText("Clear for log length is " + log.length());
-            log = new String();
+            logTextArea.textProperty().set("");
         }
         logTextArea.appendText(msg);
     }

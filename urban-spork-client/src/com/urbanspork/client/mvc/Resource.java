@@ -7,10 +7,15 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.urbanspork.config.ClientConfig;
 import com.urbanspork.config.ConfigHandler;
 
 public class Resource {
+
+    private static final Logger logger = LoggerFactory.getLogger(Resource.class);
 
     private static final String RESOURCE = "resource";
     private static final String TRAY_ICON_NAME = "ticon.png";
@@ -32,7 +37,7 @@ public class Resource {
         try {
             config = ConfigHandler.read(ClientConfig.class);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load config file", e);
+            logger.error("Failed to load config file", e);
         }
         if (config == null) {
             config = new ClientConfig();
