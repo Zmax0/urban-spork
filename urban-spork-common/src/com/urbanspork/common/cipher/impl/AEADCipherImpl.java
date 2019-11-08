@@ -1,6 +1,6 @@
 package com.urbanspork.common.cipher.impl;
 
-import static io.netty.buffer.Unpooled.directBuffer;
+import static io.netty.buffer.Unpooled.buffer;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -48,7 +48,7 @@ public class AEADCipherImpl implements Cipher {
 
     @Override
     public byte[] encrypt(byte[] in, byte[] key) throws Exception {
-        ByteBuf buf = directBuffer();
+        ByteBuf buf = buffer();
         if (!inited) {
             inited = true;
             byte[] salt = randomBytes(saltSize);
@@ -56,11 +56,11 @@ public class AEADCipherImpl implements Cipher {
             subkey = generateSubkey(key, salt);
             temp = new byte[2 + tagSize + payloadSize + tagSize];
         }
-        ByteBuf _in = directBuffer(in.length);
+        ByteBuf _in = buffer(in.length);
         _in.writeBytes(in);
         while (_in.isReadable()) {
             int payloadLength = Math.min(_in.readableBytes(), payloadSize);
-            ByteBuf encryptBuff = directBuffer(2);
+            ByteBuf encryptBuff = buffer(2);
             encryptBuff.writeShort(payloadLength);
             encryptBuff.readBytes(temp, 0, 2);
             cipher.init(true, generateCipherParameters());
@@ -78,8 +78,8 @@ public class AEADCipherImpl implements Cipher {
 
     @Override
     public byte[] decrypt(byte[] in, byte[] key) throws Exception {
-        ByteBuf buf = directBuffer();
-        ByteBuf _in = directBuffer();
+        ByteBuf buf = buffer();
+        ByteBuf _in = buffer();
         if (temp != null) {
             _in.writeBytes(temp);
         }
@@ -101,7 +101,7 @@ public class AEADCipherImpl implements Cipher {
                 _in.readBytes(payloadLengthBytes, 0, 2 + tagSize);
                 cipher.init(false, generateCipherParameters());
                 cipher.doFinal(payloadLengthBytes, cipher.processBytes(payloadLengthBytes, 0, 2 + tagSize, payloadLengthBytes, 0));
-                ByteBuf _payloadLength = directBuffer(payloadLengthBytes.length);
+                ByteBuf _payloadLength = buffer(payloadLengthBytes.length);
                 _payloadLength.writeBytes(payloadLengthBytes);
                 payloadLength = _payloadLength.getShort(0);
             }

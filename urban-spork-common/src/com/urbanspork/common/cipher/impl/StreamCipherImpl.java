@@ -1,6 +1,6 @@
 package com.urbanspork.common.cipher.impl;
 
-import static io.netty.buffer.Unpooled.directBuffer;
+import static io.netty.buffer.Unpooled.buffer;
 
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -25,7 +25,7 @@ public class StreamCipherImpl implements Cipher {
 
     @Override
     public byte[] encrypt(byte[] in, byte[] key) throws Exception {
-        ByteBuf buf = directBuffer();
+        ByteBuf buf = buffer();
         if (!inited) {
             byte[] iv = randomBytes(ivSize);
             ParametersWithIV parametersWithIV = new ParametersWithIV(new KeyParameter(key), iv);

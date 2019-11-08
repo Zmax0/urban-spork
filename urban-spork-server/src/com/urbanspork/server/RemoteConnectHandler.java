@@ -1,7 +1,6 @@
 package com.urbanspork.server;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,12 +9,12 @@ import com.urbanspork.common.channel.AttributeKeys;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
@@ -24,40 +23,11 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(RemoteConnectHandler.class);
 
     private Channel remoteChannel;
-    private ByteBuf buff;
+    private ByteBuf buff = Unpooled.directBuffer();
 
-    public RemoteConnectHandler(Channel localChannel, ByteBuf buff) {
-        this.buff = buff;
-        connect(localChannel);
-    }
-
-    private void connect(Channel localChannel) {
-        InetSocketAddress remoteAddress = localChannel.attr(AttributeKeys.REMOTE_ADDRESS).get();
-        Bootstrap bootstrap = new Bootstrap();
-        bootstrap
-            .group(localChannel.eventLoop())
-            .channel(NioSocketChannel.class)
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) TimeUnit.SECONDS.toMillis(30))
-            .option(ChannelOption.TCP_NODELAY, true)
-            .handler(new ChannelInitializer<SocketChannel>() {
-                @Override
-                protected void initChannel(SocketChannel remoteChannel) throws Exception {
-                    remoteChannel.pipeline().addLast(new RemoteReceiveHandler(localChannel, buff));
-                }
-            })
-            .connect(remoteAddress)
-            .addListener((ChannelFutureListener) future -> {
-                if (future.isSuccess()) {
-                    remoteChannel = future.channel();
-                } else {
-                    logger.error("Connect " + remoteAddress + " failed");
-                    localChannel.close();
-                    if (buff != null) {
-                        buff.release();
-                    }
-                    release();
-                }
-            });
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        connect(ctx);
     }
 
     @Override
@@ -65,38 +35,46 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
         if (msg instanceof ByteBuf) {
             if (remoteChannel == null) {
                 buff.writeBytes((ByteBuf) msg);
-                ((ByteBuf) msg).release();
             } else {
                 remoteChannel.writeAndFlush(msg);
             }
         } else {
-            ctx.fireChannelRead(msg);
+            remoteChannel.writeAndFlush(msg);
         }
-    }
-
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        logger.info("Channel {} inactive", ctx.channel());
-        ctx.close();
-        release();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         logger.error("Exception on channel " + ctx.channel() + " ~>", cause);
-        ctx.channel().close();
-        if (buff.refCnt() > 0) {
-            buff.release();
-        }
-        release();
-    }
-
-    private void release() {
+        ctx.close();
         if (remoteChannel != null) {
             remoteChannel.close();
-            remoteChannel = null;
         }
-        buff = null;
+    }
+
+    private void connect(ChannelHandlerContext ctx) {
+        Channel localChannel = ctx.channel();
+        InetSocketAddress remoteAddress = localChannel.attr(AttributeKeys.REMOTE_ADDRESS).get();
+        Bootstrap bootstrap = new Bootstrap();
+        bootstrap
+            .group(localChannel.eventLoop())
+            .channel(NioSocketChannel.class)
+            .handler(new ChannelInitializer<SocketChannel>() {
+                @Override
+                public void initChannel(SocketChannel remoteChannel) throws Exception {
+                    remoteChannel.pipeline().addLast(new RemoteReceiveHandler(localChannel, buff));
+                }
+            })
+            .connect(remoteAddress)
+            .addListener((ChannelFutureListener) future -> {
+                if (future.isSuccess()) {
+                    remoteChannel = future.channel();
+                    buff = null;
+                } else {
+                    logger.error("Connect " + remoteAddress + " failed");
+                    ctx.close();
+                }
+            });
     }
 
 }

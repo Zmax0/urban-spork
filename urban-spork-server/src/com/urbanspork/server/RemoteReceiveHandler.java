@@ -6,11 +6,11 @@ import org.slf4j.LoggerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 
-public class RemoteReceiveHandler extends SimpleChannelInboundHandler<ByteBuf> {
+public class RemoteReceiveHandler extends ChannelInboundHandlerAdapter {
 
-    private final Logger logger = LoggerFactory.getLogger(RemoteReceiveHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(RemoteReceiveHandler.class);
 
     private Channel localChannel;
     private ByteBuf buff;
@@ -27,15 +27,8 @@ public class RemoteReceiveHandler extends SimpleChannelInboundHandler<ByteBuf> {
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        ctx.close();
-        release();
-        logger.info("Channel {} inactive", ctx.channel());
-    }
-
-    @Override
-    public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        localChannel.writeAndFlush(msg.retain());
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        localChannel.writeAndFlush(msg);
     }
 
     @Override
@@ -49,10 +42,6 @@ public class RemoteReceiveHandler extends SimpleChannelInboundHandler<ByteBuf> {
         if (localChannel != null) {
             localChannel.close();
             localChannel = null;
-        }
-        if (buff != null) {
-            buff.release();
-            buff = null;
         }
     }
 

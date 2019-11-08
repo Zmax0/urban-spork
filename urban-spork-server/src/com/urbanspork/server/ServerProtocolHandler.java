@@ -12,32 +12,27 @@ public class ServerProtocolHandler extends ChannelInboundHandlerAdapter implemen
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        // skip
-    }
-
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        ctx.close();
+        // fired by channelRead
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof ByteBuf) {
+            ByteBuf _msg = (ByteBuf) msg;
             Channel channel = ctx.channel();
-            ByteBuf buff = (ByteBuf) msg;
-            if (buff.readableBytes() >= 2) {
-                channel.attr(AttributeKeys.REMOTE_ADDRESS).set(decodeAddress(buff));
-                channel.pipeline().addLast(new RemoteConnectHandler(channel, buff)).remove(this);
+            if (_msg.readableBytes() >= 2) {
+                channel.attr(AttributeKeys.REMOTE_ADDRESS).set(decodeAddress(_msg));
+                channel.pipeline()
+                    .addLast(new RemoteConnectHandler())
+                    .remove(this);
+                ctx.fireChannelActive();
+                ctx.fireChannelRead(_msg);
             } else {
-                ctx.close();
+                ctx.fireExceptionCaught(new IllegalStateException("Can not decode remote address"));
             }
         } else {
-            ctx.close();
+            ctx.fireChannelRead(msg);
         }
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        ctx.close();
-    }
 }
