@@ -22,7 +22,6 @@
     </dependency>
   </dependencies>
   <build>
-    <finalName>${project.name}</finalName>
     <resources>
       <resource>
         <directory>src</directory>

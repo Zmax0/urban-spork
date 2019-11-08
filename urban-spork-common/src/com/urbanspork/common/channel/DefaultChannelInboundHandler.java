@@ -3,12 +3,11 @@ package com.urbanspork.common.channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 
-public class DefaultChannelInboundHandler extends SimpleChannelInboundHandler<ByteBuf> {
+public class DefaultChannelInboundHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultChannelInboundHandler.class);
 
@@ -19,14 +18,16 @@ public class DefaultChannelInboundHandler extends SimpleChannelInboundHandler<By
     }
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        channel.writeAndFlush(msg.retain());
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        channel.writeAndFlush(msg);
+        ctx.fireChannelReadComplete();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         logger.error("Exception caught on channel " + ctx.channel() + " -> {}", cause.getMessage());
         ctx.close();
+        channel.close();
     }
 
 }

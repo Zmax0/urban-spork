@@ -20,6 +20,9 @@ public class Server {
         List<ServerConfig> serverConfigs = Optional.of(ConfigHandler.read(ClientConfig.class))
             .orElseThrow(() -> new IllegalArgumentException("Please put the 'config.json' file into the folder"))
             .getServers();
+        if (serverConfigs.isEmpty()) {
+            throw new IllegalArgumentException("Server config in the file is empty");
+        }
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         serverConfigs.forEach(serverConfig -> {

@@ -5,9 +5,10 @@
     </encoder>
   </appender>
 
-  <logger name="io.netty" level="DEBUG" />
+  <logger name="io.netty" level="DEBUG"/>
+  <logger name="com.urbanspork" level="DEBUG"/>
 
   <root level="WARN">
-    <appender-ref ref="STDOUT" />
+    <appender-ref ref="STDOUT"/>
   </root>
 </configuration>

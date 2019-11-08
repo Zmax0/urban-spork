@@ -76,6 +76,7 @@
     </dependencies>
   </dependencyManagement>
   <build>
+    <finalName>${project.name}</finalName>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
     <plugins>

@@ -13,7 +13,6 @@
     </dependency>
   </dependencies>
   <build>
-    <finalName>${project.name}</finalName>
     <resources>
       <resource>
         <directory>resource</directory>
