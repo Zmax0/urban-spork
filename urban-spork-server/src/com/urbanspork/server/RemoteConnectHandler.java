@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.urbanspork.common.channel.AttributeKeys;
+import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -22,7 +23,6 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(RemoteConnectHandler.class);
 
-    private Channel remoteChannel;
     private ByteBuf buff = Unpooled.directBuffer();
 
     @Override
@@ -33,13 +33,7 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof ByteBuf) {
-            if (remoteChannel == null) {
-                buff.writeBytes((ByteBuf) msg);
-            } else {
-                remoteChannel.writeAndFlush(msg);
-            }
-        } else {
-            remoteChannel.writeAndFlush(msg);
+            buff.writeBytes((ByteBuf) msg);
         }
     }
 
@@ -47,9 +41,7 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         logger.error("Exception on channel " + ctx.channel() + " ~>", cause);
         ctx.close();
-        if (remoteChannel != null) {
-            remoteChannel.close();
-        }
+        ctx.newFailedFuture(cause);
     }
 
     private void connect(ChannelHandlerContext ctx) {
@@ -62,13 +54,16 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
             .handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel remoteChannel) throws Exception {
-                    remoteChannel.pipeline().addLast(new RemoteReceiveHandler(localChannel, buff));
+                    remoteChannel.pipeline().addLast(new DefaultChannelInboundHandler(localChannel));
                 }
             })
             .connect(remoteAddress)
             .addListener((ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
-                    remoteChannel = future.channel();
+                    localChannel.pipeline()
+                        .addLast(new DefaultChannelInboundHandler(future.channel()))
+                        .remove(RemoteConnectHandler.this);
+                    ctx.fireChannelRead(buff);
                     buff = null;
                 } else {
                     logger.error("Connect " + remoteAddress + " failed");
