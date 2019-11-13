@@ -264,9 +264,9 @@ public class Console extends Application {
     }
 
     private JFXTabPane initTabPane() {
-        // ==========
+        // ====================
         // tab0 gridPane0
-        // ==========
+        // ====================
         GridPane gridPane0 = new GridPane();
         // ----------- ColumnConstraints -----------
         // corner grid
@@ -347,9 +347,9 @@ public class Console extends Application {
         Tab tab0 = new Tab(I18n.CONSOLE_TAB0_TEXT);
         tab0.setContent(gridPane0);
         tab0.setClosable(false);
-        // ==========
+        // ====================
         // tab1 gridPane1
-        // ==========
+        // ====================
         GridPane gridPane1 = new GridPane();
         ObservableList<ColumnConstraints> columnConstraints1 = gridPane1.getColumnConstraints();
         ColumnConstraints ccContainer2 = new ColumnConstraints();
@@ -365,9 +365,9 @@ public class Console extends Application {
         Tab tab1 = new Tab(I18n.CONSOLE_TAB1_TEXT);
         tab1.setContent(gridPane1);
         tab1.setClosable(false);
-        // ==========
+        // ====================
         // main tab pane
-        // ==========
+        // ====================
         JFXTabPane tabPane = new JFXTabPane();
         tabPane.getTabs().addAll(tab0, tab1);
         tabPane.getStylesheets().add(Resource.CONSOLE_CSS.toExternalForm());

@@ -20,7 +20,6 @@ public class DefaultChannelInboundHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         channel.writeAndFlush(msg);
-        ctx.fireChannelReadComplete();
     }
 
     @Override
