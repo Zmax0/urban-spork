@@ -25,8 +25,14 @@ public class DefaultChannelInboundHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         logger.error("Exception caught on channel " + ctx.channel() + " -> {}", cause.getMessage());
-        ctx.close();
         channel.close();
+        ctx.close();
     }
 
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        channel.close();
+        logger.trace("Inbound channel {} inactive", ctx.channel());
+        super.channelInactive(ctx);
+    }
 }

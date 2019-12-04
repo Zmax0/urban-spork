@@ -27,24 +27,6 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        connect(ctx);
-    }
-
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (msg instanceof ByteBuf) {
-            buff.writeBytes((ByteBuf) msg);
-        }
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("Exception on channel " + ctx.channel() + " ~>", cause);
-        ctx.close();
-        ctx.newFailedFuture(cause);
-    }
-
-    private void connect(ChannelHandlerContext ctx) {
         Channel localChannel = ctx.channel();
         InetSocketAddress remoteAddress = localChannel.attr(AttributeKeys.REMOTE_ADDRESS).get();
         Bootstrap bootstrap = new Bootstrap();
@@ -64,12 +46,22 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
                         .addLast(new DefaultChannelInboundHandler(future.channel()))
                         .remove(RemoteConnectHandler.this);
                     ctx.fireChannelRead(buff);
-                    buff = null;
                 } else {
                     logger.error("Connect " + remoteAddress + " failed");
                     ctx.close();
                 }
             });
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        buff.writeBytes((ByteBuf) msg);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        logger.error("Exception on channel " + ctx.channel() + " ~>", cause);
+        ctx.close();
     }
 
 }
