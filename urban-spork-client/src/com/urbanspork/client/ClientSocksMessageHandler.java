@@ -16,26 +16,26 @@ import io.netty.handler.codec.socksx.v5.Socks5InitialRequest;
 import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthRequest;
 import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthStatus;
 
-public class ClientShakeHandsHandler extends SimpleChannelInboundHandler<SocksMessage> {
+public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<SocksMessage> {
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, SocksMessage socksRequest) throws Exception {
-        switch (socksRequest.version()) {
+    public void channelRead0(ChannelHandlerContext ctx, SocksMessage msg) throws Exception {
+        switch (msg.version()) {
         case SOCKS5:
-            if (socksRequest instanceof Socks5InitialRequest) {
+            if (msg instanceof Socks5InitialRequest) {
                 ctx.pipeline().addFirst(new Socks5CommandRequestDecoder());
-                ctx.writeAndFlush(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH));
-            } else if (socksRequest instanceof Socks5CommandRequest) {
-                Socks5CommandRequest socksCommandRequest = (Socks5CommandRequest) socksRequest;
-                Socks5CommandType socks5CommandType = socksCommandRequest.type();
+                ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH));
+            } else if (msg instanceof Socks5CommandRequest) {
+                Socks5CommandRequest socks5CommandRequest = (Socks5CommandRequest) msg;
+                Socks5CommandType socks5CommandType = socks5CommandRequest.type();
                 if (socks5CommandType == Socks5CommandType.CONNECT) {
-                    ctx.pipeline().addLast(new ClientProcessor()).remove(this);
-                    ctx.fireChannelRead(socksRequest);
+                    ctx.pipeline().addLast(new ClientSocksConnectHandler()).remove(this);
+                    ctx.fireChannelRead(socks5CommandRequest);
                 } else {
-                    ctx.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, Socks5AddressType.IPv4));
+                    ctx.write(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, Socks5AddressType.IPv4));
                 }
-            } else if (socksRequest instanceof Socks5PasswordAuthRequest) {
-                ctx.writeAndFlush(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.SUCCESS));
+            } else if (msg instanceof Socks5PasswordAuthRequest) {
+                ctx.write(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.SUCCESS));
             } else {
                 ctx.close();
             }
@@ -48,4 +48,8 @@ public class ClientShakeHandsHandler extends SimpleChannelInboundHandler<SocksMe
         }
     }
 
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        ctx.flush();
+    }
 }

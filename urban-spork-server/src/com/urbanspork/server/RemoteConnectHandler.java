@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.urbanspork.common.channel.AttributeKeys;
+import com.urbanspork.common.channel.ChannelCloseUtils;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 
 import io.netty.bootstrap.Bootstrap;
@@ -16,14 +17,14 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 
 public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(RemoteConnectHandler.class);
 
-    private ByteBuf buff = Unpooled.directBuffer();
+    private final ByteBuf buff = Unpooled.directBuffer();
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -32,11 +33,12 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
         Bootstrap bootstrap = new Bootstrap();
         bootstrap
             .group(localChannel.eventLoop())
-            .channel(NioSocketChannel.class)
+            .channel(localChannel.getClass())
+            .option(ChannelOption.AUTO_READ, false)
             .handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel remoteChannel) throws Exception {
-                    remoteChannel.pipeline().addLast(new DefaultChannelInboundHandler(localChannel));
+                    remoteChannel.pipeline().addLast(new RemoteChannelInboundHandler(localChannel));
                 }
             })
             .connect(remoteAddress)
@@ -48,7 +50,7 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
                     ctx.fireChannelRead(buff);
                 } else {
                     logger.error("Connect " + remoteAddress + " failed");
-                    ctx.close();
+                    localChannel.close();
                 }
             });
     }
@@ -59,9 +61,14 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
+    public void channelInactive(ChannelHandlerContext ctx) {
+        ChannelCloseUtils.closeOnFlush(ctx.channel());
+    }
+
+    @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         logger.error("Exception on channel " + ctx.channel() + " ~>", cause);
-        ctx.close();
+        ChannelCloseUtils.closeOnFlush(ctx.channel());
     }
 
 }

@@ -1,7 +1,5 @@
 package com.urbanspork.common.cipher;
 
-import java.util.Arrays;
-
 import com.urbanspork.common.cipher.impl.AES_256_CFB;
 import com.urbanspork.common.cipher.impl.AES_256_CTR;
 import com.urbanspork.common.cipher.impl.AES_256_GCM;
@@ -11,27 +9,17 @@ import com.urbanspork.common.cipher.impl.ChaCha20_IETF_Poly1305;
 
 public enum ShadowsocksCiphers {
 
-    AES_256_CFB(new AES_256_CFB()),
+    AES_256_CFB,
 
-    AES_256_CTR(new AES_256_CTR()),
+    AES_256_CTR,
 
-    AES_256_GCM(new AES_256_GCM()),
+    AES_256_GCM,
 
-    Camellia_256_CFB(new Camellia_256_CFB()),
+    Camellia_256_CFB,
 
-    ChaCha20_IETF(new ChaCha20_IETF()),
+    ChaCha20_IETF,
 
-    ChaCha20_IETF_Poly1305(new ChaCha20_IETF_Poly1305());
-
-    private ShadowsocksCipher shadowsocksCipher;
-
-    private ShadowsocksCiphers(ShadowsocksCipher shadowsocksCipher) {
-        this.shadowsocksCipher = shadowsocksCipher;
-    }
-
-    private ShadowsocksCipher getShadowsocksCipher() {
-        return shadowsocksCipher;
-    }
+    ChaCha20_IETF_Poly1305;
 
     public ShadowsocksCipher newShadowsocksCipher() {
         switch (this) {
@@ -50,12 +38,6 @@ public enum ShadowsocksCiphers {
         default:
             throw new UnsupportedOperationException();
         }
-    }
-
-    public static ShadowsocksCiphers nameOf(String name) {
-        return Arrays.asList(values()).stream()
-            .filter(cipher -> cipher.getShadowsocksCipher().getName().equals(name))
-            .findAny().orElseThrow(UnsupportedOperationException::new);
     }
 
 }
