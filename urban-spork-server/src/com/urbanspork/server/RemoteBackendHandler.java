@@ -7,9 +7,9 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 
-public class RemoteChannelInboundHandler extends DefaultChannelInboundHandler {
+public class RemoteBackendHandler extends DefaultChannelInboundHandler {
 
-    public RemoteChannelInboundHandler(Channel channel) {
+    public RemoteBackendHandler(Channel channel) {
         super(channel);
     }
 

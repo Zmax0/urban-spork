@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.netty.util.CharsetUtil;
 
@@ -22,7 +22,8 @@ public class ConfigHandler {
             FILE.createNewFile();
         }
         try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(FILE), CharsetUtil.UTF_8.name())) {
-            writer.write(JSON.toJSONString(object, SerializerFeature.DisableCircularReferenceDetect, SerializerFeature.PrettyFormat));
+            ObjectMapper mapper = new ObjectMapper();
+            writer.write(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object));
             writer.flush();
             writer.close();
         }
@@ -38,7 +39,9 @@ public class ConfigHandler {
                     builder.append(cbuf);
                 }
             }
-            t = JSON.parseObject(builder.toString(), clazz);
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            t = mapper.readValue(builder.toString(), clazz);
         }
         return t;
     }

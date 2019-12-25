@@ -22,7 +22,7 @@ public class ServerProtocolHandler extends ChannelInboundHandlerAdapter implemen
             Channel channel = ctx.channel();
             if (_msg.readableBytes() >= 2) {
                 channel.attr(AttributeKeys.REMOTE_ADDRESS).set(decodeAddress(_msg));
-                channel.pipeline().addLast(new RemoteConnectHandler()).remove(this);
+                channel.pipeline().addLast(new RemoteFrontendHandler()).remove(this);
                 ctx.fireChannelActive();
                 ctx.fireChannelRead(_msg);
             } else {

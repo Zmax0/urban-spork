@@ -20,11 +20,11 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
 
-public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
+public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
 
-    private static final Logger logger = LoggerFactory.getLogger(RemoteConnectHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(RemoteFrontendHandler.class);
 
-    private final ByteBuf buff = Unpooled.directBuffer();
+    private ByteBuf buff = Unpooled.directBuffer();
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -38,7 +38,7 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
             .handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel remoteChannel) throws Exception {
-                    remoteChannel.pipeline().addLast(new RemoteChannelInboundHandler(localChannel));
+                    remoteChannel.pipeline().addLast(new RemoteBackendHandler(localChannel));
                 }
             })
             .connect(remoteAddress)
@@ -46,8 +46,9 @@ public class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
                 if (future.isSuccess()) {
                     localChannel.pipeline()
                         .addLast(new DefaultChannelInboundHandler(future.channel()))
-                        .remove(RemoteConnectHandler.this);
+                        .remove(RemoteFrontendHandler.this);
                     ctx.fireChannelRead(buff);
+                    buff = null;
                 } else {
                     logger.error("Connect " + remoteAddress + " failed");
                     localChannel.close();

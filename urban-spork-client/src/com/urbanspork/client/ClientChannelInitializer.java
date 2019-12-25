@@ -15,13 +15,13 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler;
 
-public class ClientInitializer extends ChannelInitializer<NioSocketChannel> {
+public class ClientChannelInitializer extends ChannelInitializer<NioSocketChannel> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ClientInitializer.class);
+    private static final Logger logger = LoggerFactory.getLogger(ClientChannelInitializer.class);
 
     private ClientConfig clientConfig;
 
-    public ClientInitializer(ClientConfig clientConfig) {
+    public ClientChannelInitializer(ClientConfig clientConfig) {
         this.clientConfig = clientConfig;
     }
 

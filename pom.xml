@@ -15,7 +15,8 @@
     <urban-spork.version>1.0.0-SNAPSHOT</urban-spork.version>
     <junit.jupiter.version>5.5.2</junit.jupiter.version>
     <fastjson.version>1.2.62</fastjson.version>
-    <logback.version>1.2.3</logback.version>
+    <jackson.version>2.10.1</jackson.version>
+    <logback.version>1.3.0-alpha5</logback.version>
     <netty.version>4.1.42.Final</netty.version>
     <bouncycastle.version>1.63</bouncycastle.version>
     <jfoenix.version>9.0.8</jfoenix.version>
@@ -49,9 +50,9 @@
         <version>${logback.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.alibaba</groupId>
-        <artifactId>fastjson</artifactId>
-        <version>${fastjson.version}</version>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
       </dependency>
       <dependency>
         <groupId>io.netty</groupId>
