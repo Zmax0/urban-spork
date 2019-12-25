@@ -7,7 +7,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.fastjson.JSON;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jfoenix.controls.JFXListView;
 import com.jfoenix.controls.JFXPasswordField;
 import com.jfoenix.controls.JFXTabPane;
@@ -176,8 +176,14 @@ public class Console extends Application {
     public void copyServerConfig(ActionEvent event) {
         ServerConfig config = serverConfigListView.getSelectionModel().getSelectedItem();
         if (config != null) {
-            ServerConfig copyed = JSON.parseObject(JSON.toJSONString(config), ServerConfig.class);
-            serverConfigObservableList.add(copyed);
+            ObjectMapper mapper = new ObjectMapper();
+            ServerConfig copyed = null;
+            try {
+                copyed = mapper.readValue(mapper.writeValueAsBytes(config), ServerConfig.class);
+                serverConfigObservableList.add(copyed);
+            } catch (IOException e) {
+                logger.error("Copy server config error", e);
+            }
         }
     }
 

@@ -26,8 +26,9 @@ public class Client {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
+                .childOption(ChannelOption.SO_KEEPALIVE, true)
                 .childOption(ChannelOption.TCP_NODELAY, true)
-                .childHandler(new ClientInitializer(clientConfig));
+                .childHandler(new ClientChannelInitializer(clientConfig));
             ChannelFuture f = b.bind(port).sync();
             f.channel().closeFuture().sync();
         } finally {
