@@ -33,7 +33,7 @@ public class ServerProtocolHandler extends ChannelInboundHandlerAdapter implemen
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.error("Protocol error", cause.getMessage());
+        logger.error("Protocol error ~> {}", cause.getMessage());
         ctx.close();
     }
 
