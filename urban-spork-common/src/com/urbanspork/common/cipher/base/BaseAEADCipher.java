@@ -14,7 +14,6 @@ import com.urbanspork.common.cipher.Cipher;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.Unpooled;
 
 /**
  * AEAD Cipher
@@ -35,7 +34,7 @@ public class BaseAEADCipher implements Cipher {
     private final AEADCipher cipher;
 
     private volatile boolean inited;
-    private ByteBuf nonce = Unpooled.buffer(nonceSize);
+    private ByteBuf nonce = buffer(nonceSize);
 
     private byte[] subkey;
     private byte[] temp;
