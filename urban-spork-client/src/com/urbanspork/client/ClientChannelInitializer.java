@@ -35,7 +35,7 @@ public class ClientChannelInitializer extends ChannelInitializer<NioSocketChanne
             channel.attr(AttributeKeys.SERVER_ADDRESS).set(new InetSocketAddress(config.getHost(), Integer.valueOf(config.getPort())));
             ShadowsocksCipher cipher = config.getCipher().newShadowsocksCipher();
             channel.attr(AttributeKeys.CIPHER).set(cipher);
-            channel.attr(AttributeKeys.KEY).set(new ShadowsocksKey(config.getPassword(), cipher.getKeyLength()));
+            channel.attr(AttributeKeys.KEY).set(new ShadowsocksKey(config.getPassword(), cipher.getKeySize()));
             channel.pipeline()
                 .addLast(new SocksPortUnificationServerHandler())
                 .addLast(new ClientSocksMessageHandler());

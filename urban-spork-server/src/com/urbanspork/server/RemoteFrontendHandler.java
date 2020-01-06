@@ -19,6 +19,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.util.ReferenceCountUtil;
 
 public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
 
@@ -59,6 +60,7 @@ public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         buff.writeBytes((ByteBuf) msg);
+        ReferenceCountUtil.release(msg);
     }
 
     @Override

@@ -8,8 +8,8 @@ import com.urbanspork.common.cipher.ShadowsocksCipher;
 
 public class AES_256_CFB implements ShadowsocksCipher {
 
-    private StreamCipherImpl encrypter = new StreamCipherImpl(new CFBBlockCipher(new AESEngine(), 128), 16);
-    private StreamCipherImpl decrypter = new StreamCipherImpl(new CFBBlockCipher(new AESEngine(), 128), 16);
+    private Cipher encrypter = new StreamCipherImpl(new CFBBlockCipher(new AESEngine(), 128), 16);
+    private Cipher decrypter = new StreamCipherImpl(new CFBBlockCipher(new AESEngine(), 128), 16);
 
     @Override
     public String getName() {
@@ -27,7 +27,7 @@ public class AES_256_CFB implements ShadowsocksCipher {
     }
 
     @Override
-    public int getKeyLength() {
+    public int getKeySize() {
         return 32;
     }
 }

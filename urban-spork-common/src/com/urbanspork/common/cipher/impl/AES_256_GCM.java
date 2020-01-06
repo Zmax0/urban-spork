@@ -8,8 +8,8 @@ import com.urbanspork.common.cipher.ShadowsocksCipher;
 
 public class AES_256_GCM implements ShadowsocksCipher {
 
-    private AEADCipherImpl encrypter = new AEADCipherImpl(new GCMBlockCipher(new AESEngine()), 32, 128);
-    private AEADCipherImpl decrypter = new AEADCipherImpl(new GCMBlockCipher(new AESEngine()), 32, 128);
+    private Cipher encrypter = new AEADCipherImpl(new GCMBlockCipher(new AESEngine()), 32, 128);
+    private Cipher decrypter = new AEADCipherImpl(new GCMBlockCipher(new AESEngine()), 32, 128);
 
     @Override
     public String getName() {
@@ -27,7 +27,7 @@ public class AES_256_GCM implements ShadowsocksCipher {
     }
 
     @Override
-    public int getKeyLength() {
+    public int getKeySize() {
         return 32;
     }
 

@@ -61,7 +61,7 @@ public class CipherTest {
     }
 
     private void cipherTest() throws Exception {
-        ShadowsocksKey key = new ShadowsocksKey(password, cipher.getKeyLength());
+        ShadowsocksKey key = new ShadowsocksKey(password, cipher.getKeySize());
         out = cipherTest(cipher, key, in);
     }
 

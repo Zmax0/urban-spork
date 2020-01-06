@@ -4,7 +4,7 @@ public interface ShadowsocksCipher {
 
     String getName();
 
-    int getKeyLength();
+    int getKeySize();
 
     Cipher encrypter();
 

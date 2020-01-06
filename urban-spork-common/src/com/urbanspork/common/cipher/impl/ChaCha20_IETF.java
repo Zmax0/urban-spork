@@ -7,8 +7,8 @@ import com.urbanspork.common.cipher.ShadowsocksCipher;
 
 public class ChaCha20_IETF implements ShadowsocksCipher {
 
-    private StreamCipherImpl encrypter = new StreamCipherImpl(new ChaCha7539Engine(), 12);
-    private StreamCipherImpl decrypter = new StreamCipherImpl(new ChaCha7539Engine(), 12);
+    private Cipher encrypter = new StreamCipherImpl(new ChaCha7539Engine(), 12);
+    private Cipher decrypter = new StreamCipherImpl(new ChaCha7539Engine(), 12);
 
     @Override
     public String getName() {
@@ -26,7 +26,7 @@ public class ChaCha20_IETF implements ShadowsocksCipher {
     }
 
     @Override
-    public int getKeyLength() {
+    public int getKeySize() {
         return 32;
     }
 

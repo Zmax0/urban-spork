@@ -9,12 +9,12 @@ import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.util.Arrays;
 
 import com.urbanspork.common.cipher.Cipher;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
 
 /**
  * AEAD Cipher
@@ -29,13 +29,14 @@ public class AEADCipherImpl implements Cipher {
     private static final int tagSize = 16;
     private static final int payloadSize = 0x3FFF;
     private static final byte[] info = new byte[] { 115, 115, 45, 115, 117, 98, 107, 101, 121 };
-    private final byte[] nonce = new byte[nonceSize];
 
     private final int saltSize;
     private final int macSize;
     private final AEADCipher cipher;
 
     private volatile boolean inited;
+    private ByteBuf nonce = Unpooled.buffer(nonceSize);
+
     private byte[] subkey;
     private byte[] temp;
     private int payloadLength;
@@ -124,9 +125,15 @@ public class AEADCipherImpl implements Cipher {
     }
 
     private CipherParameters generateCipherParameters() {
-        CipherParameters parameters = new AEADParameters(new KeyParameter(subkey), macSize, Arrays.copyOf(nonce, nonceSize));
-        nonce[0]++;
+        CipherParameters parameters = new AEADParameters(new KeyParameter(subkey), macSize, nonce.array());
+        increaseNonce(nonce);
         return parameters;
+    }
+
+    private void increaseNonce(ByteBuf nonce) {
+        int i = nonce.getIntLE(0);
+        i++;
+        nonce.setIntLE(0, i);
     }
 
     private byte[] generateSubkey(byte[] key, byte[] salt) {
