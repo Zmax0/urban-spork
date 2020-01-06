@@ -1,4 +1,5 @@
-package com.urbanspork.common.cipher.impl;
+
+package com.urbanspork.common.cipher.base;
 
 import static io.netty.buffer.Unpooled.buffer;
 
@@ -11,14 +12,14 @@ import com.urbanspork.common.cipher.Cipher;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 
-public class StreamCipherImpl implements Cipher {
+public class BaseStreamCipher implements Cipher {
 
     private final StreamCipher cipher;
     private final int ivSize;
 
     private volatile boolean inited;
 
-    public StreamCipherImpl(StreamCipher cipher, int ivSize) {
+    public BaseStreamCipher(StreamCipher cipher, int ivSize) {
         this.cipher = cipher;
         this.ivSize = ivSize;
     }

@@ -1,19 +1,20 @@
 package com.urbanspork.common.cipher.impl;
 
-import org.bouncycastle.crypto.modes.ChaCha20Poly1305;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.GCMBlockCipher;
 
 import com.urbanspork.common.cipher.Cipher;
 import com.urbanspork.common.cipher.ShadowsocksCipher;
 import com.urbanspork.common.cipher.base.BaseAEADCipher;
 
-public class ChaCha20_IETF_Poly1305 implements ShadowsocksCipher {
+public class AES_192_GCM implements ShadowsocksCipher {
 
-    private Cipher encrypter = new BaseAEADCipher(new ChaCha20Poly1305(), 32, 128);
-    private Cipher decrypter = new BaseAEADCipher(new ChaCha20Poly1305(), 32, 128);
+    private Cipher encrypter = new BaseAEADCipher(new GCMBlockCipher(new AESEngine()), 24, 128);
+    private Cipher decrypter = new BaseAEADCipher(new GCMBlockCipher(new AESEngine()), 24, 128);
 
     @Override
     public String getName() {
-        return "chacha20-ietf-poly1305";
+        return "aes-192-gcm";
     }
 
     @Override
@@ -28,7 +29,7 @@ public class ChaCha20_IETF_Poly1305 implements ShadowsocksCipher {
 
     @Override
     public int getKeySize() {
-        return 32;
+        return 24;
     }
 
 }

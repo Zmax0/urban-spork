@@ -7,14 +7,14 @@ import com.urbanspork.common.cipher.Cipher;
 import com.urbanspork.common.cipher.ShadowsocksCipher;
 import com.urbanspork.common.cipher.base.BaseStreamCipher;
 
-public class AES_256_CFB implements ShadowsocksCipher {
+public class AES_128_CFB implements ShadowsocksCipher {
 
     private Cipher encrypter = new BaseStreamCipher(new CFBBlockCipher(new AESEngine(), 128), 16);
     private Cipher decrypter = new BaseStreamCipher(new CFBBlockCipher(new AESEngine(), 128), 16);
 
     @Override
     public String getName() {
-        return "aes-256-cfb";
+        return "aes-128-cfb";
     }
 
     @Override
@@ -29,6 +29,6 @@ public class AES_256_CFB implements ShadowsocksCipher {
 
     @Override
     public int getKeySize() {
-        return 32;
+        return 16;
     }
 }
