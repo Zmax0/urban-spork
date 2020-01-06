@@ -68,8 +68,6 @@ public class Console extends Application {
 
     private ObservableList<ServerConfig> serverConfigObservableList;
 
-    private RequiredFieldValidator requiredFieldValidator;
-
     private Button addServerConfigButton;
 
     private Button delServerConfigButton;
@@ -387,7 +385,7 @@ public class Console extends Application {
 
     private void initController() {
         // requiredFieldValidator
-        requiredFieldValidator = new RequiredFieldValidator(I18n.CONSOLE_VALIDATOR_REQUIRED_FIELD_MESSAGE);
+        RequiredFieldValidator requiredFieldValidator = new RequiredFieldValidator(I18n.CONSOLE_VALIDATOR_REQUIRED_FIELD_MESSAGE);
         // serverConfigListView
         serverConfigObservableList = FXCollections.observableArrayList(clientConfig.getServers());
         clientConfig.setServers(serverConfigObservableList);
