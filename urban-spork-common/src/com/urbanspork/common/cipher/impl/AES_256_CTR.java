@@ -5,11 +5,12 @@ import org.bouncycastle.crypto.modes.SICBlockCipher;
 
 import com.urbanspork.common.cipher.Cipher;
 import com.urbanspork.common.cipher.ShadowsocksCipher;
+import com.urbanspork.common.cipher.base.BaseStreamCipher;
 
 public class AES_256_CTR implements ShadowsocksCipher {
 
-    private Cipher encrypter = new StreamCipherImpl(new SICBlockCipher(new AESEngine()), 16);
-    private Cipher decrypter = new StreamCipherImpl(new SICBlockCipher(new AESEngine()), 16);
+    private Cipher encrypter = new BaseStreamCipher(new SICBlockCipher(new AESEngine()), 16);
+    private Cipher decrypter = new BaseStreamCipher(new SICBlockCipher(new AESEngine()), 16);
 
     @Override
     public String getName() {

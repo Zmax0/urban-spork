@@ -78,7 +78,7 @@ public class ShadowsocksKey implements SecretKey {
                 arraycopy(passwordBytes, 0, container, passwordDigest.length, passwordBytes.length);
                 passwordDigest = MD5.digest(container);
             }
-            arraycopy(passwordDigest, 0, key, index, passwordDigest.length);
+            arraycopy(passwordDigest, 0, key, index, Math.min(length - index, passwordDigest.length));
             index += passwordDigest.length;
         }
         return key;

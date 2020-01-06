@@ -5,11 +5,12 @@ import org.bouncycastle.crypto.modes.CFBBlockCipher;
 
 import com.urbanspork.common.cipher.Cipher;
 import com.urbanspork.common.cipher.ShadowsocksCipher;
+import com.urbanspork.common.cipher.base.BaseStreamCipher;
 
 public class Camellia_256_CFB implements ShadowsocksCipher {
 
-    private Cipher encrypter = new StreamCipherImpl(new CFBBlockCipher(new CamelliaEngine(), 128), 16);
-    private Cipher decrypter = new StreamCipherImpl(new CFBBlockCipher(new CamelliaEngine(), 128), 16);
+    private Cipher encrypter = new BaseStreamCipher(new CFBBlockCipher(new CamelliaEngine(), 128), 16);
+    private Cipher decrypter = new BaseStreamCipher(new CFBBlockCipher(new CamelliaEngine(), 128), 16);
 
     @Override
     public String getName() {

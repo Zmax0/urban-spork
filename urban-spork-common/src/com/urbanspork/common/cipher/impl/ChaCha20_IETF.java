@@ -4,11 +4,12 @@ import org.bouncycastle.crypto.engines.ChaCha7539Engine;
 
 import com.urbanspork.common.cipher.Cipher;
 import com.urbanspork.common.cipher.ShadowsocksCipher;
+import com.urbanspork.common.cipher.base.BaseStreamCipher;
 
 public class ChaCha20_IETF implements ShadowsocksCipher {
 
-    private Cipher encrypter = new StreamCipherImpl(new ChaCha7539Engine(), 12);
-    private Cipher decrypter = new StreamCipherImpl(new ChaCha7539Engine(), 12);
+    private Cipher encrypter = new BaseStreamCipher(new ChaCha7539Engine(), 12);
+    private Cipher decrypter = new BaseStreamCipher(new ChaCha7539Engine(), 12);
 
     @Override
     public String getName() {

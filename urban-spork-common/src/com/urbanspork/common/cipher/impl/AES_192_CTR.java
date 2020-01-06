@@ -1,20 +1,20 @@
 package com.urbanspork.common.cipher.impl;
 
 import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.modes.CFBBlockCipher;
+import org.bouncycastle.crypto.modes.SICBlockCipher;
 
 import com.urbanspork.common.cipher.Cipher;
 import com.urbanspork.common.cipher.ShadowsocksCipher;
 import com.urbanspork.common.cipher.base.BaseStreamCipher;
 
-public class AES_256_CFB implements ShadowsocksCipher {
+public class AES_192_CTR implements ShadowsocksCipher {
 
-    private Cipher encrypter = new BaseStreamCipher(new CFBBlockCipher(new AESEngine(), 128), 16);
-    private Cipher decrypter = new BaseStreamCipher(new CFBBlockCipher(new AESEngine(), 128), 16);
+    private Cipher encrypter = new BaseStreamCipher(new SICBlockCipher(new AESEngine()), 16);
+    private Cipher decrypter = new BaseStreamCipher(new SICBlockCipher(new AESEngine()), 16);
 
     @Override
     public String getName() {
-        return "aes-256-cfb";
+        return "aes-192-ctr";
     }
 
     @Override
@@ -29,6 +29,7 @@ public class AES_256_CFB implements ShadowsocksCipher {
 
     @Override
     public int getKeySize() {
-        return 32;
+        return 24;
     }
+
 }

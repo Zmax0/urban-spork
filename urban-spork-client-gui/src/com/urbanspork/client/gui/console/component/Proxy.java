@@ -45,7 +45,7 @@ public class Proxy {
             String message = currentConfig.toString();
             Tray.displayMessage("Proxy is running", message, MessageType.INFO);
             Tray.setToolTip(message);
-            launcher.setName("Client-Launcher");
+            launcher.setName("UrbanSporkClient-" + currentConfig.getHost() + ':' + currentConfig.getPort());
             launcher.setDaemon(true);
             launcher.start();
             logger.debug("[{}-{}] launched", launcher.getName(), launcher.getId());

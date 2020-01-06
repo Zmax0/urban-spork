@@ -1,4 +1,4 @@
-package com.urbanspork.common.cipher.impl;
+package com.urbanspork.common.cipher.base;
 
 import static io.netty.buffer.Unpooled.buffer;
 
@@ -23,7 +23,7 @@ import io.netty.buffer.Unpooled;
  * 
  * @see <a href=https://shadowsocks.org/en/spec/AEAD-Ciphers.html">https://shadowsocks.org/en/spec/AEAD-Ciphers.html</a>
  */
-public class AEADCipherImpl implements Cipher {
+public class BaseAEADCipher implements Cipher {
 
     private static final int nonceSize = 12;
     private static final int tagSize = 16;
@@ -41,7 +41,7 @@ public class AEADCipherImpl implements Cipher {
     private byte[] temp;
     private int payloadLength;
 
-    public AEADCipherImpl(AEADCipher cipher, int saltSize, int macSize) {
+    public BaseAEADCipher(AEADCipher cipher, int saltSize, int macSize) {
         this.saltSize = saltSize;
         this.macSize = macSize;
         this.cipher = cipher;
