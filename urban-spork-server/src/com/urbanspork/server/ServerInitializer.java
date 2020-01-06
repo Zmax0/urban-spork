@@ -21,7 +21,7 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
     protected void initChannel(Channel c) throws Exception {
         ShadowsocksCipher cipher = serverConfig.getCipher().newShadowsocksCipher();
         c.attr(AttributeKeys.CIPHER).set(cipher);
-        c.attr(AttributeKeys.KEY).set(new ShadowsocksKey(serverConfig.getPassword(), cipher.getKeyLength()));
+        c.attr(AttributeKeys.KEY).set(new ShadowsocksKey(serverConfig.getPassword(), cipher.getKeySize()));
         c.pipeline()
             .addLast(new ShadowsocksCipherCodec())
             .addLast(new ServerProtocolHandler());

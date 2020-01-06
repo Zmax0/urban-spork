@@ -7,8 +7,8 @@ import com.urbanspork.common.cipher.ShadowsocksCipher;
 
 public class ChaCha20_IETF_Poly1305 implements ShadowsocksCipher {
 
-    private AEADCipherImpl encrypter = new AEADCipherImpl(new ChaCha20Poly1305(), 32, 128);
-    private AEADCipherImpl decrypter = new AEADCipherImpl(new ChaCha20Poly1305(), 32, 128);
+    private Cipher encrypter = new AEADCipherImpl(new ChaCha20Poly1305(), 32, 128);
+    private Cipher decrypter = new AEADCipherImpl(new ChaCha20Poly1305(), 32, 128);
 
     @Override
     public String getName() {
@@ -26,7 +26,7 @@ public class ChaCha20_IETF_Poly1305 implements ShadowsocksCipher {
     }
 
     @Override
-    public int getKeyLength() {
+    public int getKeySize() {
         return 32;
     }
 
