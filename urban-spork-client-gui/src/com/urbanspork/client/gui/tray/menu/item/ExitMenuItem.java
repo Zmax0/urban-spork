@@ -7,7 +7,7 @@ import com.urbanspork.client.gui.i18n.I18n;
 
 import javafx.application.Platform;
 
-public class ExistMenuItem implements TrayMenuItemBuilder {
+public class ExitMenuItem implements TrayMenuItemBuilder {
 
     @Override
     public MenuItem getMenuItem() {

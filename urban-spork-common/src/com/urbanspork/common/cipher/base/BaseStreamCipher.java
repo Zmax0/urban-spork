@@ -25,7 +25,7 @@ public class BaseStreamCipher implements Cipher {
     }
 
     @Override
-    public byte[] encrypt(byte[] in, byte[] key) throws Exception {
+    public byte[] encrypt(byte[] input, byte[] key) throws Exception {
         ByteBuf buf = buffer();
         if (!inited) {
             byte[] iv = randomBytes(ivSize);
@@ -34,30 +34,30 @@ public class BaseStreamCipher implements Cipher {
             buf.writeBytes(iv);
             inited = true;
         }
-        byte[] out = new byte[in.length];
-        cipher.processBytes(in, 0, in.length, out, 0);
-        buf.writeBytes(out);
-        out = ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.readableBytes(), false);
+        byte[] output = new byte[input.length];
+        cipher.processBytes(input, 0, input.length, output, 0);
+        buf.writeBytes(output);
+        output = ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.readableBytes(), false);
         buf.release();
-        return out;
+        return output;
     }
 
     @Override
-    public byte[] decrypt(byte[] in, byte[] key) throws Exception {
+    public byte[] decrypt(byte[] input, byte[] key) throws Exception {
         byte[] iv = new byte[ivSize];
         if (!inited) {
-            System.arraycopy(in, 0, iv, 0, iv.length);
-            int length = in.length - iv.length;
+            System.arraycopy(input, 0, iv, 0, iv.length);
+            int length = input.length - iv.length;
             byte[] temp = new byte[length];
-            System.arraycopy(in, ivSize, temp, 0, length);
+            System.arraycopy(input, ivSize, temp, 0, length);
             ParametersWithIV parametersWithIV = new ParametersWithIV(new KeyParameter(key), iv);
             cipher.init(false, parametersWithIV);
-            in = temp;
+            input = temp;
             inited = true;
         }
-        byte[] out = new byte[in.length];
-        cipher.processBytes(in, 0, in.length, out, 0);
-        return out;
+        byte[] output = new byte[input.length];
+        cipher.processBytes(input, 0, input.length, output, 0);
+        return output;
     }
 
 }

@@ -11,7 +11,7 @@ import javax.swing.ImageIcon;
 import com.urbanspork.client.gui.Resource;
 import com.urbanspork.client.gui.i18n.I18n;
 import com.urbanspork.client.gui.tray.menu.item.ConsoleMenuItem;
-import com.urbanspork.client.gui.tray.menu.item.ExistMenuItem;
+import com.urbanspork.client.gui.tray.menu.item.ExitMenuItem;
 import com.urbanspork.client.gui.tray.menu.item.LanguageMenuItem;
 import com.urbanspork.client.gui.tray.menu.item.ServersMenuItem;
 
@@ -69,7 +69,7 @@ public class Tray {
             menu.addSeparator();
             menu.add(new LanguageMenuItem().build());
             menu.addSeparator();
-            menu.add(new ExistMenuItem().build());
+            menu.add(new ExitMenuItem().build());
         }
     }
 
