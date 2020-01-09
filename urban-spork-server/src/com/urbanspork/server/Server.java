@@ -43,7 +43,7 @@ public class Server {
                     workerGroup.shutdownGracefully();
                     bossGroup.shutdownGracefully();
                 }
-            }, "UrbanSporkServer-" + serverConfig.getHost() + ':' + serverConfig.getPort()).start();
+            }, "UrbanSporkServer-" + serverConfig.getPort()).start();
         });
     }
 
