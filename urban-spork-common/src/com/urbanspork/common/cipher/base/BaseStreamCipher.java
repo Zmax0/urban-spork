@@ -17,7 +17,8 @@ public class BaseStreamCipher implements Cipher {
     private final StreamCipher cipher;
     private final int ivSize;
 
-    private volatile boolean inited;
+    private boolean inited;
+    private byte[] temp;
 
     public BaseStreamCipher(StreamCipher cipher, int ivSize) {
         this.cipher = cipher;
@@ -44,16 +45,28 @@ public class BaseStreamCipher implements Cipher {
 
     @Override
     public byte[] decrypt(byte[] in, byte[] key) throws Exception {
-        byte[] iv = new byte[ivSize];
+        if (temp != null) {
+            byte[] bytes = new byte[in.length + temp.length];
+            System.arraycopy(temp, 0, bytes, 0, temp.length);
+            System.arraycopy(in, 0, bytes, temp.length, in.length);
+            in = bytes;
+            temp = null;
+        }
         byte[] _in = null;
         if (!inited) {
-            System.arraycopy(in, 0, iv, 0, iv.length);
-            int length = in.length - iv.length;
-            _in = new byte[length];
-            System.arraycopy(in, ivSize, _in, 0, length);
-            ParametersWithIV parametersWithIV = new ParametersWithIV(new KeyParameter(key), iv);
-            cipher.init(false, parametersWithIV);
-            inited = true;
+            if (in.length < ivSize) {
+                temp = in;
+                return empty;
+            } else {
+                byte[] iv = new byte[ivSize];
+                System.arraycopy(in, 0, iv, 0, iv.length);
+                int length = in.length - iv.length;
+                _in = new byte[length];
+                System.arraycopy(in, ivSize, _in, 0, length);
+                ParametersWithIV parametersWithIV = new ParametersWithIV(new KeyParameter(key), iv);
+                cipher.init(false, parametersWithIV);
+                inited = true;
+            }
         }
         if (_in == null) {
             byte[] out = new byte[in.length];

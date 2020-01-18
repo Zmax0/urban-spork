@@ -67,15 +67,20 @@ public class CipherTest {
 
     private byte[] cipherTest(ShadowsocksCipher cipher, ShadowsocksKey key, byte[] in) throws Exception {
         byte[] encrypt = cipher.encrypt(in, key);
-        byte[] subpackage0 = new byte[encrypt.length - 10];
-        byte[] subpackage1 = new byte[10];
+        byte[] subpackage0 = new byte[5];
+        byte[] subpackage1 = new byte[15];
+        byte[] subpackage2 = new byte[encrypt.length - 20];
         System.arraycopy(encrypt, 0, subpackage0, 0, subpackage0.length);
         System.arraycopy(encrypt, subpackage0.length, subpackage1, 0, subpackage1.length);
+        System.arraycopy(encrypt, subpackage0.length + subpackage1.length, subpackage2, 0, subpackage2.length);
         byte[] decrypt0 = cipher.decrypt(subpackage0, key);
         byte[] decrypt1 = cipher.decrypt(subpackage1, key);
-        byte[] decrypt = new byte[decrypt0.length + decrypt1.length];
+        byte[] decrypt2 = cipher.decrypt(subpackage2, key);
+        byte[] decrypt = new byte[decrypt0.length + decrypt1.length + decrypt2.length];
         System.arraycopy(decrypt0, 0, decrypt, 0, decrypt0.length);
         System.arraycopy(decrypt1, 0, decrypt, decrypt0.length, decrypt1.length);
+        System.arraycopy(decrypt2, 0, decrypt, decrypt0.length + decrypt1.length, decrypt2.length);
         return decrypt;
     }
+
 }

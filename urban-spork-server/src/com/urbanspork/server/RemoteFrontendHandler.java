@@ -18,6 +18,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.util.ReferenceCountUtil;
 
@@ -45,11 +46,12 @@ public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
             .connect(remoteAddress)
             .addListener((ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
-                    localChannel.pipeline()
-                        .addLast(new DefaultChannelInboundHandler(future.channel()))
-                        .remove(RemoteFrontendHandler.this);
-                    ctx.fireChannelRead(buff);
-                    buff = null;
+                    ChannelPipeline pipeline = localChannel.pipeline();
+                    pipeline.addLast(new DefaultChannelInboundHandler(future.channel()));
+                    if (pipeline.get(RemoteFrontendHandler.class) != null) {
+                        pipeline.remove(RemoteFrontendHandler.class.getSimpleName());
+                        ctx.fireChannelRead(buff);
+                    }
                 } else {
                     logger.error("Connect " + remoteAddress + " failed");
                     localChannel.close();
