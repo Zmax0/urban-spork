@@ -4,6 +4,8 @@ import java.security.SecureRandom;
 
 public interface Cipher {
 
+    static byte[] empty = new byte[0];
+
     byte[] encrypt(byte[] in, byte[] key) throws Exception;
 
     byte[] decrypt(byte[] in, byte[] key) throws Exception;

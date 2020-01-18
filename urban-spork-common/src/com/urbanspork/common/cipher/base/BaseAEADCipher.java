@@ -24,6 +24,10 @@ import io.netty.buffer.ByteBufUtil;
  */
 public class BaseAEADCipher implements Cipher {
 
+    /*
+     * [encrypted payload length][length tag][encrypted payload][payload tag]
+     */
+
     private static final int nonceSize = 12;
     private static final int tagSize = 16;
     private static final int payloadSize = 0x3FFF;
@@ -32,13 +36,13 @@ public class BaseAEADCipher implements Cipher {
     private final int saltSize;
     private final int macSize;
     private final AEADCipher cipher;
+    private final ByteBuf nonce = buffer(nonceSize);
 
-    private volatile boolean inited;
-    private ByteBuf nonce = buffer(nonceSize);
-
-    private byte[] subkey;
-    private byte[] temp;
     private int payloadLength;
+    private KeyParameter subkey;
+
+    private boolean inited;
+    private byte[] temp;
 
     public BaseAEADCipher(AEADCipher cipher, int saltSize, int macSize) {
         this.saltSize = saltSize;
@@ -54,15 +58,17 @@ public class BaseAEADCipher implements Cipher {
             byte[] salt = randomBytes(saltSize);
             buf.writeBytes(salt);
             subkey = generateSubkey(key, salt);
-            temp = new byte[2 + tagSize + payloadSize + tagSize];
         }
         ByteBuf _in = buffer(in.length);
         _in.writeBytes(in);
         while (_in.isReadable()) {
             int payloadLength = Math.min(_in.readableBytes(), payloadSize);
+            byte[] temp = new byte[2 + tagSize + payloadLength + tagSize];
+            // Payload length is a 2-byte big-endian unsigned integer
             ByteBuf encryptBuff = buffer(2);
             encryptBuff.writeShort(payloadLength);
             encryptBuff.readBytes(temp, 0, 2);
+            encryptBuff.release();
             cipher.init(true, generateCipherParameters());
             cipher.doFinal(temp, cipher.processBytes(temp, 0, 2, temp, 0));
             buf.writeBytes(temp, 0, 2 + tagSize);
@@ -79,52 +85,62 @@ public class BaseAEADCipher implements Cipher {
     @Override
     public byte[] decrypt(byte[] in, byte[] key) throws Exception {
         ByteBuf buf = buffer();
-        ByteBuf _in = buffer();
+        ByteBuf _in = buffer(in.length + (temp != null ? temp.length : 0));
         if (temp != null) {
             _in.writeBytes(temp);
+            temp = null;
         }
         _in.writeBytes(in);
         if (!inited) {
-            inited = true;
-            byte[] salt = new byte[saltSize];
-            _in.readBytes(salt, 0, salt.length);
-            subkey = generateSubkey(key, salt);
+            if (_in.readableBytes() < saltSize) {
+                cache(_in);
+                return empty;
+            } else {
+                byte[] salt = new byte[saltSize];
+                _in.readBytes(salt, 0, salt.length);
+                subkey = generateSubkey(key, salt);
+                inited = true;
+            }
         }
         while (_in.isReadable()) {
-            if (_in.readableBytes() < 2 + tagSize) {
-                temp = new byte[_in.readableBytes()];
-                _in.readBytes(temp);
-                break;
-            }
-            byte[] payloadLengthBytes = new byte[2 + tagSize];
-            if (payloadLength == 0) {
+            if (payloadLength <= 0) {
+                if (_in.readableBytes() < 2 + tagSize) {
+                    cache(_in);
+                    break;
+                }
+                byte[] payloadLengthBytes = new byte[2 + tagSize];
                 _in.readBytes(payloadLengthBytes, 0, 2 + tagSize);
                 cipher.init(false, generateCipherParameters());
                 cipher.doFinal(payloadLengthBytes, cipher.processBytes(payloadLengthBytes, 0, 2 + tagSize, payloadLengthBytes, 0));
                 ByteBuf _payloadLength = buffer(payloadLengthBytes.length);
                 _payloadLength.writeBytes(payloadLengthBytes);
                 payloadLength = _payloadLength.getShort(0);
+                _payloadLength.release();
             }
             if (_in.readableBytes() < payloadLength + tagSize) {
-                temp = new byte[_in.readableBytes()];
-                _in.readBytes(temp);
+                cache(_in);
                 break;
             }
-            byte[] payloadBytes = new byte[payloadLength + tagSize];
-            _in.readBytes(payloadBytes, 0, payloadLength + tagSize);
+            byte[] payload = new byte[payloadLength + tagSize];
+            _in.readBytes(payload, 0, payloadLength + tagSize);
             cipher.init(false, generateCipherParameters());
-            cipher.doFinal(payloadBytes, cipher.processBytes(payloadBytes, 0, payloadLength + tagSize, payloadBytes, 0));
-            buf.writeBytes(payloadBytes, 0, payloadLength);
+            cipher.doFinal(payload, cipher.processBytes(payload, 0, payloadLength + tagSize, payload, 0));
+            buf.writeBytes(payload, 0, payloadLength);
             payloadLength = 0;
-            temp = null;
         }
         byte[] out = ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.readableBytes(), false);
         buf.release();
+        _in.release();
         return out;
     }
 
+    private void cache(ByteBuf _in) {
+        temp = new byte[_in.readableBytes()];
+        _in.readBytes(temp);
+    }
+
     private CipherParameters generateCipherParameters() {
-        CipherParameters parameters = new AEADParameters(new KeyParameter(subkey), macSize, nonce.array());
+        CipherParameters parameters = new AEADParameters(subkey, macSize, nonce.array());
         increaseNonce(nonce);
         return parameters;
     }
@@ -135,12 +151,12 @@ public class BaseAEADCipher implements Cipher {
         nonce.setIntLE(0, i);
     }
 
-    private byte[] generateSubkey(byte[] key, byte[] salt) {
+    private KeyParameter generateSubkey(byte[] key, byte[] salt) {
         byte[] out = new byte[salt.length];
         HKDFBytesGenerator generator = new HKDFBytesGenerator(new SHA1Digest());
         generator.init(new HKDFParameters(key, salt, info));
         generator.generateBytes(out, 0, out.length);
-        return out;
+        return new KeyParameter(out);
     }
 
 }
