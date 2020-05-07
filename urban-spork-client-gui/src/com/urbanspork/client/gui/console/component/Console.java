@@ -274,57 +274,81 @@ public class Console extends Application {
         GridPane gridPane0 = new GridPane();
         // ----------- ColumnConstraints -----------
         // corner grid
-        ColumnConstraints ccConner = new ConsoleColumnConstraints(20);
+        ColumnConstraints cConner = new ConsoleColumnConstraints(20);
         // gap grid
-        ColumnConstraints ccGap1 = new ConsoleColumnConstraints(10);
+        ColumnConstraints cGap1 = new ConsoleColumnConstraints(10);
         // container grid
-        ColumnConstraints ccContainer0 = new ColumnConstraints();
-        ObservableList<ColumnConstraints> columnConstraints0 = gridPane0.getColumnConstraints();
-        columnConstraints0.add(ccConner);
-        columnConstraints0.add(ccContainer0);
-        columnConstraints0.add(ccGap1);
-        columnConstraints0.add(ccContainer0);
-        columnConstraints0.add(ccGap1);
-        columnConstraints0.add(ccContainer0);
-        columnConstraints0.add(ccGap1);
-        columnConstraints0.add(ccContainer0);
-        columnConstraints0.add(ccGap1);
-        columnConstraints0.add(ccContainer0);
-        columnConstraints0.add(ccGap1);
-        columnConstraints0.add(ccContainer0);
-        columnConstraints0.add(ccConner);
+        ColumnConstraints cContainer0 = new ColumnConstraints();
+        ObservableList<ColumnConstraints> cConstraints0 = gridPane0.getColumnConstraints();
+        cConstraints0.add(cConner);
+        for (int i = 0; i < 5; i++) {
+            cConstraints0.add(cContainer0);
+            cConstraints0.add(cGap1);
+        }
+        cConstraints0.add(cContainer0);
+        cConstraints0.add(cConner);
         // ----------- RowConstraints -----------
         // corner grid
-        RowConstraints rcCorner = new ConsoleRowConstraints(20);
+        RowConstraints rCorner = new ConsoleRowConstraints(20);
         // gap grid
-        RowConstraints rcGap0 = new ConsoleRowConstraints(20);
-        RowConstraints rcGap1 = new ConsoleRowConstraints(10);
+        RowConstraints rGap0 = new ConsoleRowConstraints(20);
+        RowConstraints rGap1 = new ConsoleRowConstraints(10);
         // container grid
-        RowConstraints rcContainer0 = new ConsoleRowConstraints(35);
-        RowConstraints rcContainer1 = new RowConstraints();
-        RowConstraints rcContainer2 = new RowConstraints();
-        rcContainer2.setVgrow(Priority.ALWAYS);
-        ObservableList<RowConstraints> rowConstraints0 = gridPane0.getRowConstraints();
-        rowConstraints0.add(rcCorner);
-        rowConstraints0.add(rcContainer0);
-        rowConstraints0.add(rcGap0);
-        rowConstraints0.add(rcContainer0);
-        rowConstraints0.add(rcGap0);
-        rowConstraints0.add(rcContainer0);
-        rowConstraints0.add(rcGap0);
-        rowConstraints0.add(rcContainer0);
-        rowConstraints0.add(rcGap0);
-        rowConstraints0.add(rcContainer0);
-        rowConstraints0.add(rcGap0);
-        rowConstraints0.add(rcContainer0);
-        rowConstraints0.add(rcGap0);
-        rowConstraints0.add(rcContainer0);
-        rowConstraints0.add(rcGap1);
-        rowConstraints0.add(rcGap1);
-        rowConstraints0.add(rcContainer1);
-        rowConstraints0.add(rcGap1);
-        rowConstraints0.add(rcContainer1);
-        rowConstraints0.add(rcCorner);
+        RowConstraints rContainer0 = new ConsoleRowConstraints(35);
+        RowConstraints rContainer1 = new RowConstraints();
+        RowConstraints rContainer2 = new RowConstraints();
+        rContainer2.setVgrow(Priority.ALWAYS);
+        ObservableList<RowConstraints> rConstraints0 = gridPane0.getRowConstraints();
+        rConstraints0.add(rCorner);
+        for (int i = 0; i < 6; i++) {
+            rConstraints0.add(rContainer0);
+            rConstraints0.add(rGap0);
+        }
+        rConstraints0.add(rContainer0);
+        rConstraints0.add(rGap1);
+        for (int i = 0; i < 2; i++) {
+            rConstraints0.add(rGap1);
+            rConstraints0.add(rContainer1);
+        }
+        rConstraints0.add(rCorner);
+        // grid children
+        addGridPane0Children(gridPane0);
+        // tab0
+        Tab tab0 = new Tab(I18n.CONSOLE_TAB0_TEXT);
+        tab0.setContent(gridPane0);
+        tab0.setClosable(false);
+        // ====================
+        // tab1 gridPane1
+        // ====================
+        GridPane gridPane1 = new GridPane();
+        // ----------- ColumnConstraints -----------
+        ObservableList<ColumnConstraints> cConstraints1 = gridPane1.getColumnConstraints();
+        ColumnConstraints cContainer2 = new ColumnConstraints();
+        cContainer2.setHgrow(Priority.ALWAYS);
+        cConstraints1.add(cGap1);
+        cConstraints1.add(cContainer2);
+        cConstraints1.add(cGap1);
+        // ----------- RowConstraints -----------
+        ObservableList<RowConstraints> rConstraints1 = gridPane1.getRowConstraints();
+        rConstraints1.add(rGap1);
+        rConstraints1.add(rContainer2);
+        rConstraints1.add(rGap1);
+        // grid children
+        gridPane1.add(logTextArea, 1, 1);
+        // tab1
+        Tab tab1 = new Tab(I18n.CONSOLE_TAB1_TEXT);
+        tab1.setContent(gridPane1);
+        tab1.setClosable(false);
+        // ====================
+        // main tab pane
+        // ====================
+        JFXTabPane tabPane = new JFXTabPane();
+        tabPane.getTabs().addAll(tab0, tab1);
+        tabPane.getStylesheets().add(Resource.CONSOLE_CSS.toExternalForm());
+        return tabPane;
+    }
+
+    private void addGridPane0Children(GridPane gridPane0) {
         // ---------- Grid Children ----------
         gridPane0.add(addServerConfigButton, 1, 13);
         gridPane0.add(copyServerConfigButton, 3, 13);
@@ -348,34 +372,6 @@ public class Console extends Application {
         gridPane0.add(currentConfigPasswordToggleButton, 11, 5);
         gridPane0.add(currentConfigCipherChoiceBox, 9, 7, 3, 1);
         gridPane0.add(clientConfigPortTextField, 9, 13, 3, 1);
-        Tab tab0 = new Tab(I18n.CONSOLE_TAB0_TEXT);
-        tab0.setContent(gridPane0);
-        tab0.setClosable(false);
-        // ====================
-        // tab1 gridPane1
-        // ====================
-        GridPane gridPane1 = new GridPane();
-        ObservableList<ColumnConstraints> columnConstraints1 = gridPane1.getColumnConstraints();
-        ColumnConstraints ccContainer2 = new ColumnConstraints();
-        ccContainer2.setHgrow(Priority.ALWAYS);
-        columnConstraints1.add(ccGap1);
-        columnConstraints1.add(ccContainer2);
-        columnConstraints1.add(ccGap1);
-        ObservableList<RowConstraints> rowConstraints1 = gridPane1.getRowConstraints();
-        rowConstraints1.add(rcGap1);
-        rowConstraints1.add(rcContainer2);
-        rowConstraints1.add(rcGap1);
-        gridPane1.add(logTextArea, 1, 1);
-        Tab tab1 = new Tab(I18n.CONSOLE_TAB1_TEXT);
-        tab1.setContent(gridPane1);
-        tab1.setClosable(false);
-        // ====================
-        // main tab pane
-        // ====================
-        JFXTabPane tabPane = new JFXTabPane();
-        tabPane.getTabs().addAll(tab0, tab1);
-        tabPane.getStylesheets().add(Resource.CONSOLE_CSS.toExternalForm());
-        return tabPane;
     }
 
     private void initModule() {

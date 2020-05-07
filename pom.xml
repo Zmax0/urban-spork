@@ -19,7 +19,7 @@
     <logback.version>1.2.3</logback.version>
     <netty.version>4.1.44.Final</netty.version>
     <bouncycastle.version>1.63</bouncycastle.version>
-    <jfoenix.version>9.0.8</jfoenix.version>
+    <jfoenix.version>9.0.9</jfoenix.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -72,7 +72,7 @@
       <dependency>
         <groupId>org.openjfx</groupId>
         <artifactId>javafx-controls</artifactId>
-        <version>13</version>
+        <version>14</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -94,25 +94,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M3</version>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-toolchains-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>toolchain</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <toolchains>
-            <jdk>
-              <version>11</version>
-              <vendor>oracle</vendor>
-            </jdk>
-          </toolchains>
-        </configuration>
       </plugin>
     </plugins>
   </build>

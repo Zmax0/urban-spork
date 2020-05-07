@@ -37,12 +37,12 @@ public class BaseAEADCipher implements Cipher {
     private final int macSize;
     private final AEADCipher cipher;
     private final ByteBuf nonce = buffer(nonceSize);
+    private final ByteBuf temp = buffer();
 
     private int payloadLength;
     private KeyParameter subkey;
 
     private boolean inited;
-    private byte[] temp;
 
     public BaseAEADCipher(AEADCipher cipher, int saltSize, int macSize) {
         this.saltSize = saltSize;
@@ -85,27 +85,26 @@ public class BaseAEADCipher implements Cipher {
     @Override
     public byte[] decrypt(byte[] in, byte[] key) throws Exception {
         ByteBuf buf = buffer();
-        ByteBuf _in = buffer(in.length + (temp != null ? temp.length : 0));
-        if (temp != null) {
+        ByteBuf _in = buffer(in.length + temp.readableBytes());
+        if (temp.isReadable()) {
             _in.writeBytes(temp);
-            temp = null;
         }
         _in.writeBytes(in);
         if (!inited) {
             if (_in.readableBytes() < saltSize) {
-                cache(_in);
+                temp.writeBytes(_in);
                 return empty;
             } else {
                 byte[] salt = new byte[saltSize];
-                _in.readBytes(salt, 0, salt.length);
+                _in.readBytes(salt, 0, saltSize);
                 subkey = generateSubkey(key, salt);
                 inited = true;
             }
         }
         while (_in.isReadable()) {
-            if (payloadLength <= 0) {
+            if (payloadLength == 0) {
                 if (_in.readableBytes() < 2 + tagSize) {
-                    cache(_in);
+                    temp.writeBytes(_in);
                     break;
                 }
                 byte[] payloadLengthBytes = new byte[2 + tagSize];
@@ -118,7 +117,7 @@ public class BaseAEADCipher implements Cipher {
                 _payloadLength.release();
             }
             if (_in.readableBytes() < payloadLength + tagSize) {
-                cache(_in);
+                temp.writeBytes(_in);
                 break;
             }
             byte[] payload = new byte[payloadLength + tagSize];
@@ -134,11 +133,6 @@ public class BaseAEADCipher implements Cipher {
         return out;
     }
 
-    private void cache(ByteBuf _in) {
-        temp = new byte[_in.readableBytes()];
-        _in.readBytes(temp);
-    }
-
     private CipherParameters generateCipherParameters() {
         CipherParameters parameters = new AEADParameters(subkey, macSize, nonce.array());
         increaseNonce(nonce);
@@ -146,9 +140,9 @@ public class BaseAEADCipher implements Cipher {
     }
 
     private void increaseNonce(ByteBuf nonce) {
-        int i = nonce.getIntLE(0);
+        int i = nonce.getShortLE(0);
         i++;
-        nonce.setIntLE(0, i);
+        nonce.setShortLE(0, i);
     }
 
     private KeyParameter generateSubkey(byte[] key, byte[] salt) {

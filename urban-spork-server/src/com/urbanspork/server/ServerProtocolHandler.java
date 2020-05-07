@@ -25,8 +25,6 @@ public class ServerProtocolHandler extends ChannelInboundHandlerAdapter implemen
                 channel.pipeline().addLast(new RemoteFrontendHandler()).remove(this);
                 ctx.fireChannelActive();
                 ctx.fireChannelRead(_msg);
-            } else {
-                ctx.fireExceptionCaught(new IllegalStateException("Msg length is less than 2"));
             }
         }
     }
