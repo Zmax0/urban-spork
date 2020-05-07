@@ -49,7 +49,7 @@ public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
                     ChannelPipeline pipeline = localChannel.pipeline();
                     pipeline.addLast(new DefaultChannelInboundHandler(future.channel()));
                     if (pipeline.get(RemoteFrontendHandler.class) != null) {
-                        pipeline.remove(RemoteFrontendHandler.class.getSimpleName());
+                        pipeline.remove(RemoteFrontendHandler.this);
                         ctx.fireChannelRead(buff);
                     }
                 } else {

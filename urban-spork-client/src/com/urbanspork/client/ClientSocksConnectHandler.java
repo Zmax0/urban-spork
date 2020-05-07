@@ -16,7 +16,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse;
@@ -36,8 +35,6 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
         new Bootstrap()
             .group(localChannel.eventLoop())
             .channel(localChannel.getClass())
-            .option(ChannelOption.TCP_NODELAY, true)
-            .option(ChannelOption.SO_KEEPALIVE, true)
             .handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel remoteChannel) throws Exception {
