@@ -3,12 +3,10 @@
     -fx-secondary-color: derive(black, 90%);
     -fx-primary-text: #000000;
 }
-
 .root {
     -fx-font-family: 'Microsoft YaHei UI';
     -fx-font-size: 12px;
 }
-
 .jfx-tab-pane {
     /* -fx-padding: 1px; */
     /* -fx-background-color: -fx-secondary-color, -fx-primary-color; */
@@ -16,34 +14,27 @@
     -fx-pref-width: 500;
     -fx-pref-height: 500;
 }
-
 .jfx-tab-pane .headers-region {
     -fx-background-color: -fx-secondary-color;
 }
-
 .jfx-tab-pane .tab-header-background {
     -fx-background-color: -fx-secondary-color;
 }
-
 .jfx-tab-pane .tab-header-area .jfx-rippler {
     -jfx-rippler-fill: black;
 }
-
 .jfx-tab-pane .tab-header-area .tab-selected-line {
     -fx-background-color: black;
 }
-
 GridPane {
     /* debug */
     /* -fx-grid-lines-visible: true; */
 }
-
 .label {
     /* -fx-border-color: -fx-secondary-color; */
     -fx-min-width: 65;
     -fx-alignment: center-right;
 }
-
 .jfx-button {
     -jfx-button-type: RAISED;
     -fx-border-radius: 5px;
@@ -57,17 +48,14 @@ GridPane {
     -fx-content-display: center;
     -fx-graphic-text-gap: 20;
 }
-
 .hide-show.toggle-button {
     -fx-background-image: url("image/eye.png");
     -fx-background-repeat: no-repeat;
     -fx-background-position: 100% 50%;
 }
-
 .hide-show.toggle-button:selected {
     -fx-background-image: url("image/eye-close.png");
 }
-
 .choice-box .label {
     /* -fx-font-family: 'Georgia'; */
     -fx-font-size: 13px;
@@ -76,51 +64,42 @@ GridPane {
     /* -fx-background-color: black; */
     /* -fx-mark-color: orange; */
 }
-
 .list-view {
     -fx-border-color: #d3d3d3;
     -fx-background-insets: 0;
     -fx-background-color: transparent, white, transparent, white;
 }
-
 .list-view:focused {
     -fx-background-color: transparent, white, transparent, white;
 }
-
 .list-view .list-cell:selected {
     -fx-font-weight: 700;
 }
-
 .jfx-list-view .scroll-bar:horizontal .track, .jfx-list-view .scroll-bar:vertical .track {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
     -fx-background-radius: 0em;
     -fx-border-radius: 2em;
 }
-
 .jfx-list-view .scroll-bar:horizontal .increment-button, .jfx-list-view .scroll-bar:horizontal .decrement-button {
     -fx-background-color: transparent;
     -fx-background-radius: 0em;
     -fx-padding: 0 0 10 0;
 }
-
 .jfx-list-view .scroll-bar:vertical .increment-button, .jfx-list-view .scroll-bar:vertical .decrement-button {
     -fx-background-color: transparent;
     -fx-background-radius: 0em;
     -fx-padding: 0 10 0 0;
 }
-
 .jfx-list-view .scroll-bar .increment-arrow, .jfx-list-view .scroll-bar .decrement-arrow {
     -fx-shape: " ";
     -fx-padding: 0;
 }
-
 .jfx-list-view .scroll-bar:horizontal .thumb, .jfx-list-view .scroll-bar:vertical .thumb {
     -fx-background-color: derive(black, 90%);
     -fx-background-insets: 2, 0, 0;
     -fx-background-radius: 2em;
 }
-
 .text-area {
     -fx-font-family: 'Consolas';
     -fx-font-size: 13px;
@@ -131,11 +110,9 @@ GridPane {
     -fx-background-insets: 0;
     -fx-background-color: transparent, white, transparent, white;
 }
-
 .text-area:focused {
     -fx-background-color: transparent, white, transparent, white;
 }
-
 .text-area .content {
     -fx-background-color: #000000;
 }
