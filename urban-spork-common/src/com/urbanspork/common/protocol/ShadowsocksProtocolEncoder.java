@@ -16,7 +16,7 @@ public class ShadowsocksProtocolEncoder extends MessageToMessageEncoder<ByteBuf>
 
     private final Logger logger = LoggerFactory.getLogger(ShadowsocksProtocolEncoder.class);
 
-    protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
         Socks5CommandRequest request = ctx.channel().attr(AttributeKeys.REQUEST).get();
         if (request != null) {
             logger.debug("Encode request: {}", request.dstAddr() + ':' + request.dstPort());

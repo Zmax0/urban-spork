@@ -19,7 +19,7 @@ public class Client {
 
     public static void launch(ClientConfig clientConfig) throws Exception {
         logger.info("Launching proxy client ~> {}", clientConfig);
-        int port = Integer.valueOf(clientConfig.getPort());
+        int port = Integer.parseInt(clientConfig.getPort());
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {

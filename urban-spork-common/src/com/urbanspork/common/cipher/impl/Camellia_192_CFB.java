@@ -9,8 +9,8 @@ import com.urbanspork.common.cipher.base.BaseStreamCipher;
 
 public class Camellia_192_CFB implements ShadowsocksCipher {
 
-    private Cipher encrypter = new BaseStreamCipher(new CFBBlockCipher(new CamelliaEngine(), 128), 16);
-    private Cipher decrypter = new BaseStreamCipher(new CFBBlockCipher(new CamelliaEngine(), 128), 16);
+    private final Cipher encrypter = new BaseStreamCipher(new CFBBlockCipher(new CamelliaEngine(), 128), 16);
+    private final Cipher decrypter = new BaseStreamCipher(new CFBBlockCipher(new CamelliaEngine(), 128), 16);
 
     @Override
     public String getName() {

@@ -26,7 +26,7 @@ public class BaseStreamCipher implements Cipher {
     }
 
     @Override
-    public byte[] encrypt(byte[] in, byte[] key) throws Exception {
+    public byte[] encrypt(byte[] in, byte[] key) {
         ByteBuf buf = buffer();
         if (!inited) {
             byte[] iv = randomBytes(ivSize);
@@ -44,7 +44,7 @@ public class BaseStreamCipher implements Cipher {
     }
 
     @Override
-    public byte[] decrypt(byte[] in, byte[] key) throws Exception {
+    public byte[] decrypt(byte[] in, byte[] key) {
         if (temp != null) {
             byte[] bytes = new byte[in.length + temp.length];
             System.arraycopy(temp, 0, bytes, 0, temp.length);
@@ -68,15 +68,15 @@ public class BaseStreamCipher implements Cipher {
                 inited = true;
             }
         }
+        byte[] out;
         if (_in == null) {
-            byte[] out = new byte[in.length];
+            out = new byte[in.length];
             cipher.processBytes(in, 0, in.length, out, 0);
-            return out;
         } else {
-            byte[] out = new byte[_in.length];
+            out = new byte[_in.length];
             cipher.processBytes(_in, 0, _in.length, out, 0);
-            return out;
         }
+        return out;
     }
 
 }

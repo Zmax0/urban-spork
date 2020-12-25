@@ -1,12 +1,5 @@
 package com.urbanspork.client.gui.console.component;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jfoenix.controls.JFXListView;
 import com.jfoenix.controls.JFXPasswordField;
@@ -14,36 +7,20 @@ import com.jfoenix.controls.JFXTabPane;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.validation.RequiredFieldValidator;
 import com.urbanspork.client.gui.Resource;
-import com.urbanspork.client.gui.console.unit.ConsoleButton;
-import com.urbanspork.client.gui.console.unit.ConsoleColumnConstraints;
-import com.urbanspork.client.gui.console.unit.ConsoleLabel;
-import com.urbanspork.client.gui.console.unit.ConsoleLogTextArea;
-import com.urbanspork.client.gui.console.unit.ConsolePasswordTextField;
-import com.urbanspork.client.gui.console.unit.ConsoleRowConstraints;
-import com.urbanspork.client.gui.console.unit.ConsoleTextField;
-import com.urbanspork.client.gui.console.unit.CurrentConfigCipherChoiceBox;
-import com.urbanspork.client.gui.console.unit.CurrentConfigPasswordToggleButton;
-import com.urbanspork.client.gui.console.unit.ServerConfigListView;
+import com.urbanspork.client.gui.console.unit.*;
 import com.urbanspork.client.gui.i18n.I18n;
 import com.urbanspork.common.cipher.ShadowsocksCiphers;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ServerConfig;
-
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.MultipleSelectionModel;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.ToggleButton;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -51,6 +28,12 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 public class Console extends Application {
 
@@ -103,13 +86,13 @@ public class Console extends Application {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
         initModule();
         initController();
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) {
         Proxy.launch();
         Console.primaryStage = primaryStage;
         Platform.setImplicitExit(false);
@@ -151,7 +134,7 @@ public class Console extends Application {
         return serverConfigListView;
     }
 
-    public void addServerConfig(ActionEvent event) {
+    public void addServerConfig() {
         if (validate()) {
             ServerConfig newValue = new ServerConfig();
             newValue.setCipher(ShadowsocksCiphers.AES_256_CFB);
@@ -161,7 +144,7 @@ public class Console extends Application {
         }
     }
 
-    public void deleteServerConfig(ActionEvent event) {
+    public void deleteServerConfig() {
         int index = serverConfigListView.getSelectionModel().getSelectedIndex();
         if (index > 0) {
             serverConfigObservableList.remove(index);
@@ -171,11 +154,11 @@ public class Console extends Application {
         }
     }
 
-    public void copyServerConfig(ActionEvent event) {
+    public void copyServerConfig() {
         ServerConfig config = serverConfigListView.getSelectionModel().getSelectedItem();
         if (config != null) {
             ObjectMapper mapper = new ObjectMapper();
-            ServerConfig copyed = null;
+            ServerConfig copyed;
             try {
                 copyed = mapper.readValue(mapper.writeValueAsBytes(config), ServerConfig.class);
                 serverConfigObservableList.add(copyed);
@@ -185,7 +168,7 @@ public class Console extends Application {
         }
     }
 
-    public void moveUpServerConfig(ActionEvent event) {
+    public void moveUpServerConfig() {
         MultipleSelectionModel<ServerConfig> selectionModel = serverConfigListView.getSelectionModel();
         int index = selectionModel.getSelectedIndex();
         if (index > 0) {
@@ -196,7 +179,7 @@ public class Console extends Application {
         }
     }
 
-    public void moveDownServerConfig(ActionEvent event) {
+    public void moveDownServerConfig() {
         MultipleSelectionModel<ServerConfig> selectionModel = serverConfigListView.getSelectionModel();
         int index = selectionModel.getSelectedIndex();
         if (index < serverConfigObservableList.size() - 1) {
@@ -207,12 +190,12 @@ public class Console extends Application {
         }
     }
 
-    public void showCurrentConfigPassword(ActionEvent event) {
+    public void showCurrentConfigPassword() {
         currentConfigPasswordPasswordField.visibleProperty().set(!currentConfigPasswordToggleButton.isSelected());
         currentConfigPasswordTextField.visibleProperty().set(currentConfigPasswordToggleButton.isSelected());
     }
 
-    public void confirmServerConfig(ActionEvent event) {
+    public void confirmServerConfig() {
         if (validate()) {
             MultipleSelectionModel<ServerConfig> selectionModel = serverConfigListView.getSelectionModel();
             ServerConfig config = selectionModel.getSelectedItem();
@@ -235,7 +218,7 @@ public class Console extends Application {
         }
     }
 
-    public void cancelServerConfig(ActionEvent event) {
+    public void cancelServerConfig() {
         hide();
         int lastIndex = serverConfigObservableList.size() - 1;
         if (lastIndex > -1) {
@@ -250,19 +233,19 @@ public class Console extends Application {
     private void initElement() {
         serverConfigListView = new ServerConfigListView();
         logTextArea = new ConsoleLogTextArea();
-        addServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_ADD, event -> addServerConfig(event));
-        delServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_DEL, event -> deleteServerConfig(event));
-        copyServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_COPY, event -> copyServerConfig(event));
-        moveUpServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_UP, event -> moveUpServerConfig(event));
-        moveDownServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_DOWN, event -> moveDownServerConfig(event));
-        confirmServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_CONFIRM, event -> confirmServerConfig(event));
-        cancelServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_CANCEL, event -> cancelServerConfig(event));
+        addServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_ADD, event -> addServerConfig());
+        delServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_DEL, event -> deleteServerConfig());
+        copyServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_COPY, event -> copyServerConfig());
+        moveUpServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_UP, event -> moveUpServerConfig());
+        moveDownServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_DOWN, event -> moveDownServerConfig());
+        confirmServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_CONFIRM, event -> confirmServerConfig());
+        cancelServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_CANCEL, event -> cancelServerConfig());
         currentConfigHostTextField = new ConsoleTextField();
         currentConfigPortTextField = new ConsoleTextField();
         currentConfigPasswordPasswordField = new JFXPasswordField();
         currentConfigPasswordTextField = new ConsolePasswordTextField();
         currentConfigRemarkTextField = new ConsoleTextField();
-        currentConfigPasswordToggleButton = new CurrentConfigPasswordToggleButton(event -> showCurrentConfigPassword(event));
+        currentConfigPasswordToggleButton = new CurrentConfigPasswordToggleButton(event -> showCurrentConfigPassword());
         currentConfigCipherChoiceBox = new CurrentConfigCipherChoiceBox();
         clientConfigPortTextField = new ConsoleTextField();
     }
@@ -389,7 +372,7 @@ public class Console extends Application {
         MultipleSelectionModel<ServerConfig> selectionModel = serverConfigListView.getSelectionModel();
         selectionModel.select(clientConfig.getIndex());
         selectionModel.selectedItemProperty().addListener(
-            new ChangeListener<ServerConfig>() {
+            new ChangeListener<>() {
 
                 private boolean changing = false;
 
@@ -444,9 +427,7 @@ public class Console extends Application {
                 }
             });
         currentConfigPasswordTextField.textProperty().addListener(
-            (o, oldValue, newValue) -> {
-                currentConfigPasswordPasswordField.setText(newValue);
-            });
+            (o, oldValue, newValue) -> currentConfigPasswordPasswordField.setText(newValue));
         // currentConfigPasswordPasswordField
         currentConfigPasswordPasswordField.getValidators().add(requiredFieldValidator);
         currentConfigPasswordPasswordField.focusedProperty().addListener(
@@ -456,9 +437,7 @@ public class Console extends Application {
                 }
             });
         currentConfigPasswordPasswordField.textProperty().addListener(
-            (o, oldValue, newValue) -> {
-                currentConfigPasswordTextField.setText(newValue);
-            });
+            (o, oldValue, newValue) -> currentConfigPasswordTextField.setText(newValue));
         // clientConfigPortTextField
         clientConfigPortTextField.getValidators().add(requiredFieldValidator);
         clientConfigPortTextField.focusedProperty().addListener(
@@ -496,7 +475,7 @@ public class Console extends Application {
 
     private void display(ClientConfig c) {
         if (c.getPort() != null) {
-            clientConfigPortTextField.setText(c.getPort().toString());
+            clientConfigPortTextField.setText(c.getPort());
         }
         display(c.getCurrent());
     }

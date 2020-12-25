@@ -19,7 +19,7 @@ import io.netty.handler.codec.socksx.v5.Socks5PasswordAuthStatus;
 public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<SocksMessage> {
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, SocksMessage msg) throws Exception {
+    public void channelRead0(ChannelHandlerContext ctx, SocksMessage msg) {
         switch (msg.version()) {
         case SOCKS5:
             if (msg instanceof Socks5InitialRequest) {
@@ -49,7 +49,7 @@ public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks
     }
 
     @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+    public void channelReadComplete(ChannelHandlerContext ctx) {
         ctx.flush();
     }
 }

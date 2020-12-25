@@ -55,7 +55,7 @@ public class ServerConfig {
     }
 
     public boolean check() {
-        return !isEmpty(host) && !isEmpty(port) && !isEmpty(password) && cipher != null;
+        return isEmpty(host) && isEmpty(port) && isEmpty(password) && cipher != null;
     }
 
     @Override
@@ -74,6 +74,6 @@ public class ServerConfig {
     }
 
     private boolean isEmpty(String s) {
-        return s == null || s.isEmpty();
+        return s != null && !s.isEmpty();
     }
 }

@@ -19,20 +19,20 @@ public class ClientChannelInitializer extends ChannelInitializer<NioSocketChanne
 
     private static final Logger logger = LoggerFactory.getLogger(ClientChannelInitializer.class);
 
-    private ClientConfig clientConfig;
+    private final ClientConfig clientConfig;
 
     public ClientChannelInitializer(ClientConfig clientConfig) {
         this.clientConfig = clientConfig;
     }
 
     @Override
-    protected void initChannel(NioSocketChannel channel) throws Exception {
+    protected void initChannel(NioSocketChannel channel) {
         ServerConfig config = clientConfig.getCurrent();
         if (config == null) {
             logger.error("Proxy server configuration is unreachale");
             channel.disconnect();
         } else {
-            channel.attr(AttributeKeys.SERVER_ADDRESS).set(new InetSocketAddress(config.getHost(), Integer.valueOf(config.getPort())));
+            channel.attr(AttributeKeys.SERVER_ADDRESS).set(new InetSocketAddress(config.getHost(), Integer.parseInt(config.getPort())));
             ShadowsocksCipher cipher = config.getCipher().newShadowsocksCipher();
             channel.attr(AttributeKeys.CIPHER).set(cipher);
             channel.attr(AttributeKeys.KEY).set(new ShadowsocksKey(config.getPassword(), cipher.getKeySize()));

@@ -26,10 +26,10 @@ public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(RemoteFrontendHandler.class);
 
-    private ByteBuf buff = Unpooled.directBuffer();
+    private final ByteBuf buff = Unpooled.directBuffer();
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    public void channelActive(ChannelHandlerContext ctx) {
         Channel localChannel = ctx.channel();
         InetSocketAddress remoteAddress = localChannel.attr(AttributeKeys.REMOTE_ADDRESS).get();
         Bootstrap bootstrap = new Bootstrap();
@@ -39,7 +39,7 @@ public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
             .option(ChannelOption.AUTO_READ, false)
             .handler(new ChannelInitializer<SocketChannel>() {
                 @Override
-                public void initChannel(SocketChannel remoteChannel) throws Exception {
+                public void initChannel(SocketChannel remoteChannel) {
                     remoteChannel.pipeline().addLast(new RemoteBackendHandler(localChannel));
                 }
             })
@@ -60,7 +60,7 @@ public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
         buff.writeBytes((ByteBuf) msg);
         ReferenceCountUtil.release(msg);
     }
@@ -71,7 +71,7 @@ public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         logger.error("Exception on channel " + ctx.channel() + " ~>", cause);
         ChannelCloseUtils.closeOnFlush(ctx.channel());
     }

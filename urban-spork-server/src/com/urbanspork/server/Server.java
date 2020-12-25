@@ -9,7 +9,9 @@ import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -25,24 +27,23 @@ public class Server {
         }
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        serverConfigs.forEach(serverConfig -> {
-            new Thread(() -> {
-                try {
-                    int port = Integer.valueOf(serverConfig.getPort());
-                    ServerBootstrap b = new ServerBootstrap();
-                    b.group(bossGroup, workerGroup)
-                        .channel(NioServerSocketChannel.class)
-                        .childHandler(new ServerInitializer(serverConfig));
-                    ChannelFuture f = b.bind(port).sync();
-                    f.channel().closeFuture().sync();
-                } catch (InterruptedException e) {
-                    // skip
-                } finally {
-                    workerGroup.shutdownGracefully();
-                    bossGroup.shutdownGracefully();
-                }
-            }, "UrbanSporkServer-" + serverConfig.getPort()).start();
-        });
+        serverConfigs.forEach(serverConfig -> new Thread(() -> {
+            try {
+                int port = Integer.parseInt(serverConfig.getPort());
+                ServerBootstrap b = new ServerBootstrap();
+                b.group(bossGroup, workerGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                    .childHandler(new ServerInitializer(serverConfig));
+                ChannelFuture f = b.bind(port).sync();
+                f.channel().closeFuture().sync();
+            } catch (InterruptedException e) {
+                // skip
+            } finally {
+                workerGroup.shutdownGracefully();
+                bossGroup.shutdownGracefully();
+            }
+        }, "UrbanSporkServer-" + serverConfig.getPort()).start());
     }
 
 }

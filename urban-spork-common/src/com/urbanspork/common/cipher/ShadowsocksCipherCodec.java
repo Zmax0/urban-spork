@@ -32,7 +32,7 @@ public class ShadowsocksCipherCodec extends MessageToMessageCodec<ByteBuf, ByteB
         out.add(Unpooled.buffer(decrypt.length).writeBytes(decrypt));
     }
 
-    private class CipherNotFoundException extends IllegalStateException {
+    private static class CipherNotFoundException extends IllegalStateException {
 
         private static final long serialVersionUID = 20190124L;
 

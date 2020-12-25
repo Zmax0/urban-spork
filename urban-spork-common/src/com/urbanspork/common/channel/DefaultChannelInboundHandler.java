@@ -20,12 +20,12 @@ public class DefaultChannelInboundHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    public void channelActive(ChannelHandlerContext ctx) {
         ctx.writeAndFlush(Unpooled.EMPTY_BUFFER);
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if (channel.isActive()) {
             channel.writeAndFlush(msg);
         } else {
@@ -34,13 +34,13 @@ public class DefaultChannelInboundHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         logger.error("Exception caught on channel " + ctx.channel() + " ~>", cause);
         ChannelCloseUtils.closeOnFlush(channel);
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    public void channelInactive(ChannelHandlerContext ctx) {
         logger.trace("Inbound channel {} inactive", ctx.channel());
         ChannelCloseUtils.closeOnFlush(channel);
     }

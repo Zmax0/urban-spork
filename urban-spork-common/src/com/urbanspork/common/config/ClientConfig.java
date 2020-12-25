@@ -65,9 +65,7 @@ public class ClientConfig {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append(getCurrent()).append(' ').append('@').append("localhost:").append(getPort());
-        return builder.toString();
+        return String.valueOf(getCurrent()) + ' ' + '@' + "localhost:" + getPort();
     }
 
 }
