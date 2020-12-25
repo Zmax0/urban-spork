@@ -8,8 +8,8 @@ import com.urbanspork.common.cipher.base.BaseStreamCipher;
 
 public class ChaCha20_IETF implements ShadowsocksCipher {
 
-    private Cipher encrypter = new BaseStreamCipher(new ChaCha7539Engine(), 12);
-    private Cipher decrypter = new BaseStreamCipher(new ChaCha7539Engine(), 12);
+    private final Cipher encrypter = new BaseStreamCipher(new ChaCha7539Engine(), 12);
+    private final Cipher decrypter = new BaseStreamCipher(new ChaCha7539Engine(), 12);
 
     @Override
     public String getName() {

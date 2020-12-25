@@ -26,7 +26,7 @@ public interface ShadowsocksProtocol {
     default InetSocketAddress decodeAddress(ByteBuf msg) throws Exception {
         Socks5AddressType addressType = Socks5AddressType.valueOf(msg.getByte(0));
         if (addressType == Socks5AddressType.DOMAIN) {
-            int length = (int) msg.getByte(1);
+            int length = msg.getByte(1);
             if (msg.readableBytes() >= length + 4) {
                 msg.readerIndex(msg.readerIndex() + 2);
                 String host = msg.readCharSequence(length, CharsetUtil.US_ASCII).toString();

@@ -22,10 +22,6 @@ public class ConsoleMenuItem implements TrayMenuItemBuilder {
 
     @Override
     public ActionListener getActionListener() {
-        return e -> {
-            Platform.runLater(() -> {
-                Console.show();
-            });
-        };
+        return e -> Platform.runLater(Console::show);
     }
 }

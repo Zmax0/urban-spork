@@ -1,18 +1,17 @@
 package com.urbanspork.common.cipher;
 
-import static java.lang.System.arraycopy;
-
-import java.io.UnsupportedEncodingException;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import javax.crypto.SecretKey;
+import static java.lang.System.arraycopy;
 
 public class ShadowsocksKey implements SecretKey {
 
     private static final long serialVersionUID = 20181226;
 
-    private static MessageDigest MD5 = null;
+    private static final MessageDigest MD5;
 
     static {
         try {
@@ -32,10 +31,6 @@ public class ShadowsocksKey implements SecretKey {
         this.password = password;
         this.length = length;
         this.key = getEncode();
-    }
-
-    public String getPassword() {
-        return password;
     }
 
     @Override
@@ -60,15 +55,10 @@ public class ShadowsocksKey implements SecretKey {
 
     private byte[] getEncode() {
         byte[] key = new byte[length];
-        byte[] passwordBytes = null;
         byte[] passwordDigest = null;
         byte[] container = null;
         int index = 0;
-        try {
-            passwordBytes = password.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new UnsupportedOperationException(e);
-        }
+        byte[] passwordBytes = password.getBytes(StandardCharsets.UTF_8);
         while (index < length) {
             if (index == 0) {
                 passwordDigest = MD5.digest(passwordBytes);

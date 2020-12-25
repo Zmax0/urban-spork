@@ -25,7 +25,7 @@ public class Tray {
 
     private static final TrayIcon trayIcon = isSupported ? new TrayIcon(icon.getImage(), I18n.PROGRAM_TITLE, menu) : null;
 
-    public static void launch(String[] args) {
+    public static void launch() {
         start();
     }
 
@@ -37,9 +37,7 @@ public class Tray {
 
     public static void setToolTip(String tooltip) {
         if (isSupported) {
-            StringBuilder builder = new StringBuilder(I18n.TRAY_TOOLTIP);
-            builder.append(System.lineSeparator()).append(tooltip);
-            trayIcon.setToolTip(builder.toString());
+            trayIcon.setToolTip(I18n.TRAY_TOOLTIP + System.lineSeparator() + tooltip);
         }
     }
 

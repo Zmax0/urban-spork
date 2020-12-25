@@ -18,7 +18,7 @@
     <jackson.version>2.10.1</jackson.version>
     <logback.version>1.2.3</logback.version>
     <netty.version>4.1.44.Final</netty.version>
-    <bouncycastle.version>1.63</bouncycastle.version>
+    <bouncycastle.version>1.68</bouncycastle.version>
     <jfoenix.version>9.0.9</jfoenix.version>
   </properties>
   <dependencyManagement>

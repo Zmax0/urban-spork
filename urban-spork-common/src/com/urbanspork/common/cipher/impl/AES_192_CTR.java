@@ -9,8 +9,8 @@ import com.urbanspork.common.cipher.base.BaseStreamCipher;
 
 public class AES_192_CTR implements ShadowsocksCipher {
 
-    private Cipher encrypter = new BaseStreamCipher(new SICBlockCipher(new AESEngine()), 16);
-    private Cipher decrypter = new BaseStreamCipher(new SICBlockCipher(new AESEngine()), 16);
+    private final Cipher encrypter = new BaseStreamCipher(new SICBlockCipher(new AESEngine()), 16);
+    private final Cipher decrypter = new BaseStreamCipher(new SICBlockCipher(new AESEngine()), 16);
 
     @Override
     public String getName() {

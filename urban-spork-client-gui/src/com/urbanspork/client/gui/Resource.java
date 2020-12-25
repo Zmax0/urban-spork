@@ -44,7 +44,7 @@ public class Resource {
             config.setServers(new ArrayList<>(16));
         }
         String language = config.getLanguage();
-        ResourceBundle bundle = null;
+        ResourceBundle bundle;
         try {
             if (language == null) {
                 Locale locale = Locale.getDefault();

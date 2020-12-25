@@ -1,9 +1,7 @@
 package com.urbanspork.server;
 
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
-
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -20,14 +18,11 @@ public class RemoteBackendHandler extends DefaultChannelInboundHandler {
 
     @Override
     public void channelRead(final ChannelHandlerContext ctx, Object msg) {
-        channel.writeAndFlush(msg).addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture future) {
-                if (future.isSuccess()) {
-                    ctx.channel().read();
-                } else {
-                    future.channel().close();
-                }
+        channel.writeAndFlush(msg).addListener((ChannelFutureListener) future -> {
+            if (future.isSuccess()) {
+                ctx.channel().read();
+            } else {
+                future.channel().close();
             }
         });
     }

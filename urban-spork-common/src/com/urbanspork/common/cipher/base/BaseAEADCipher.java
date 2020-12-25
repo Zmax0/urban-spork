@@ -1,7 +1,8 @@
 package com.urbanspork.common.cipher.base;
 
-import static io.netty.buffer.Unpooled.buffer;
-
+import com.urbanspork.common.cipher.Cipher;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
@@ -9,28 +10,28 @@ import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.urbanspork.common.cipher.Cipher;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
+import static io.netty.buffer.Unpooled.buffer;
 
 /**
  * AEAD Cipher
- * 
+ *
  * @author Zmax0
- * 
- * @see <a href=https://shadowsocks.org/en/spec/AEAD-Ciphers.html">https://shadowsocks.org/en/spec/AEAD-Ciphers.html</a>
+ *
+ * @see <a href=https://shadowsocks.org/en/wiki/AEAD-Ciphers.html">https://shadowsocks.org/en/wiki/AEAD-Ciphers.html</a>
  */
 public class BaseAEADCipher implements Cipher {
 
+    private static final Logger logger = LoggerFactory.getLogger(BaseAEADCipher.class);
     /*
      * [encrypted payload length][length tag][encrypted payload][payload tag]
      */
 
     private static final int nonceSize = 12;
     private static final int tagSize = 16;
-    private static final int payloadSize = 0x3FFF;
+    private static final int payloadSize = 16 * 1024 - 1;
     private static final byte[] info = new byte[] { 115, 115, 45, 115, 117, 98, 107, 101, 121 };
 
     private final int saltSize;
@@ -39,7 +40,7 @@ public class BaseAEADCipher implements Cipher {
     private final ByteBuf nonce = buffer(nonceSize);
     private final ByteBuf temp = buffer();
 
-    private int payloadLength;
+    private int payloadLength = -1;
     private KeyParameter subkey;
 
     private boolean inited;
@@ -102,7 +103,7 @@ public class BaseAEADCipher implements Cipher {
             }
         }
         while (_in.isReadable()) {
-            if (payloadLength == 0) {
+            if (payloadLength == -1) {
                 if (_in.readableBytes() < 2 + tagSize) {
                     temp.writeBytes(_in);
                     break;
@@ -110,7 +111,12 @@ public class BaseAEADCipher implements Cipher {
                 byte[] payloadLengthBytes = new byte[2 + tagSize];
                 _in.readBytes(payloadLengthBytes, 0, 2 + tagSize);
                 cipher.init(false, generateCipherParameters());
-                cipher.doFinal(payloadLengthBytes, cipher.processBytes(payloadLengthBytes, 0, 2 + tagSize, payloadLengthBytes, 0));
+                try {
+                    cipher.doFinal(payloadLengthBytes, cipher.processBytes(payloadLengthBytes, 0, 2 + tagSize, payloadLengthBytes, 0));
+                } catch (Exception e) {
+                    logger.error("doFinal ERROR ==> {}", e.getMessage());
+                    return empty;
+                }
                 ByteBuf _payloadLength = buffer(payloadLengthBytes.length);
                 _payloadLength.writeBytes(payloadLengthBytes);
                 payloadLength = _payloadLength.getShort(0);
@@ -125,7 +131,7 @@ public class BaseAEADCipher implements Cipher {
             cipher.init(false, generateCipherParameters());
             cipher.doFinal(payload, cipher.processBytes(payload, 0, payloadLength + tagSize, payload, 0));
             buf.writeBytes(payload, 0, payloadLength);
-            payloadLength = 0;
+            payloadLength = -1;
         }
         byte[] out = ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.readableBytes(), false);
         buf.release();
@@ -140,7 +146,7 @@ public class BaseAEADCipher implements Cipher {
     }
 
     private void increaseNonce(ByteBuf nonce) {
-        int i = nonce.getShortLE(0);
+        short i = nonce.getShortLE(0);
         i++;
         nonce.setShortLE(0, i);
     }

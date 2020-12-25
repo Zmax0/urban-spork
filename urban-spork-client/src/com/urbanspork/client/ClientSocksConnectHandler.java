@@ -28,7 +28,7 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
     private static final Logger logger = LoggerFactory.getLogger(ClientSocksConnectHandler.class);
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Socks5CommandRequest request) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, Socks5CommandRequest request) {
         Channel localChannel = ctx.channel();
         InetSocketAddress serverAddress = localChannel.attr(AttributeKeys.SERVER_ADDRESS).get();
         logger.debug("Connect proxy server {}", serverAddress);
@@ -37,7 +37,7 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
             .channel(localChannel.getClass())
             .handler(new ChannelInitializer<SocketChannel>() {
                 @Override
-                public void initChannel(SocketChannel remoteChannel) throws Exception {
+                public void initChannel(SocketChannel remoteChannel) {
                     remoteChannel.attr(AttributeKeys.KEY).set(localChannel.attr(AttributeKeys.KEY).get());
                     remoteChannel.attr(AttributeKeys.CIPHER).set(localChannel.attr(AttributeKeys.CIPHER).get());
                     remoteChannel.attr(AttributeKeys.REQUEST).set(request);
@@ -47,19 +47,19 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
                         .addLast(new DefaultChannelInboundHandler(localChannel));
                 }
             }).connect(serverAddress).addListener((ChannelFutureListener) future -> {
-                localChannel.pipeline().remove(ClientSocksConnectHandler.this);
-                if (future.isSuccess()) {
-                    localChannel.pipeline().addLast(new DefaultChannelInboundHandler(future.channel()));
-                    localChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.IPv4));
-                } else {
-                    localChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, Socks5AddressType.IPv4));
-                    logger.error("Connect proxy server {} failed", serverAddress);
-                }
-            });
+            localChannel.pipeline().remove(ClientSocksConnectHandler.this);
+            if (future.isSuccess()) {
+                localChannel.pipeline().addLast(new DefaultChannelInboundHandler(future.channel()));
+                localChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.IPv4));
+            } else {
+                localChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, Socks5AddressType.IPv4));
+                logger.error("Connect proxy server {} failed", serverAddress);
+            }
+        });
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         logger.error("Exception caught on channel " + ctx.channel() + " ~>", cause);
         ChannelCloseUtils.closeOnFlush(ctx.channel());
     }
