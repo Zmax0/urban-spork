@@ -108,12 +108,12 @@ public class BaseAEADCipher implements Cipher {
                 byte[] payloadLengthBytes = new byte[2 + tagSize];
                 _in.readBytes(payloadLengthBytes, 0, 2 + tagSize);
                 cipher.init(false, generateCipherParameters());
-                try {
-                    cipher.doFinal(payloadLengthBytes, cipher.processBytes(payloadLengthBytes, 0, 2 + tagSize, payloadLengthBytes, 0));
-                } catch (Exception e) {
-                    buffer.writeBytes(_in);
-                    return empty;
-                }
+                //                try {
+                cipher.doFinal(payloadLengthBytes, cipher.processBytes(payloadLengthBytes, 0, 2 + tagSize, payloadLengthBytes, 0));
+                //                } catch (Exception e) {
+                //                    buffer.writeBytes(_in);
+                //                    return empty;
+                //                }
                 ByteBuf _payloadLength = buffer(payloadLengthBytes.length);
                 _payloadLength.writeBytes(payloadLengthBytes);
                 payloadLength = _payloadLength.getShort(0);
