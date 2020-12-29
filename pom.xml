@@ -17,7 +17,7 @@
     <fastjson.version>1.2.62</fastjson.version>
     <jackson.version>2.10.1</jackson.version>
     <logback.version>1.2.3</logback.version>
-    <netty.version>4.1.44.Final</netty.version>
+    <netty.version>4.1.56.Final</netty.version>
     <bouncycastle.version>1.68</bouncycastle.version>
     <jfoenix.version>9.0.9</jfoenix.version>
   </properties>
@@ -102,7 +102,7 @@
       <id>nexus-aliyun</id>
       <name>Nexus aliyun</name>
       <layout>default</layout>
-      <url>http://maven.aliyun.com/nexus/content/groups/public</url>
+      <url>https://maven.aliyun.com/repository/central</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>

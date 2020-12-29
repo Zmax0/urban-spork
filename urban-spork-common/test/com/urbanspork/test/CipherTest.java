@@ -1,13 +1,8 @@
 package com.urbanspork.test;
 
 import java.security.SecureRandom;
-import java.util.Random;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -20,6 +15,8 @@ import com.urbanspork.common.cipher.ShadowsocksKey;
 @TestInstance(Lifecycle.PER_CLASS)
 public class CipherTest {
 
+    private static final String str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
     private String password;
     private ShadowsocksCipher cipher;
     private byte[] in;
@@ -27,8 +24,8 @@ public class CipherTest {
 
     @BeforeAll
     public void beforeAll() {
-        password = randomString(64);
-        in = randomBytes(100);
+        password = randomString(str.length());
+        in = randomBytes(new SecureRandom().nextInt(100));
     }
 
     @ParameterizedTest
@@ -44,11 +41,10 @@ public class CipherTest {
     }
 
     private static String randomString(int length) {
-        String str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        Random random = new Random();
+        SecureRandom random = new SecureRandom();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < length; i++) {
-            int number = random.nextInt(62);
+            int number = random.nextInt(str.length());
             sb.append(str.charAt(number));
         }
         return sb.toString();
