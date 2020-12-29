@@ -47,6 +47,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
+        <version>3.2.0</version>
         <configuration>
           <archive>
             <addMavenDescriptor>false</addMavenDescriptor>
@@ -75,21 +76,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.openjfx</groupId>
-        <artifactId>javafx-maven-plugin</artifactId>
-        <version>0.0.3</version>
-        <configuration>
-          <launcher>launcher</launcher>
-          <mainClass>com.urbanspork.client.gui.Main</mainClass>
-          <stripDebug>true</stripDebug>
-          <compress>2</compress>
-          <noHeaderFiles>true</noHeaderFiles>
-          <noManPages>true</noManPages>
-          <jlinkImageName>urbanspork</jlinkImageName>
-          <jlinkZipName>urbanspork_zip</jlinkZipName>
-        </configuration>
       </plugin>
     </plugins>
   </build>

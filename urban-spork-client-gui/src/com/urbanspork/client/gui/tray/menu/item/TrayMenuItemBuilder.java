@@ -13,10 +13,10 @@ public interface TrayMenuItemBuilder {
     ActionListener getActionListener();
 
     default MenuItem build() {
-        return Optional.ofNullable(getMenuItem()).orElse(bulid(getLabel(), getActionListener()));
+        return Optional.ofNullable(getMenuItem()).orElse(build(getLabel(), getActionListener()));
     }
 
-    default MenuItem bulid(String label, ActionListener listener) {
+    default MenuItem build(String label, ActionListener listener) {
         MenuItem item = new MenuItem();
         item.setLabel(label);
         item.addActionListener(listener);

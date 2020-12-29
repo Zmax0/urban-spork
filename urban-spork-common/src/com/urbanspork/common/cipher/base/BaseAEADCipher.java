@@ -10,8 +10,6 @@ import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static io.netty.buffer.Unpooled.buffer;
 
@@ -24,7 +22,6 @@ import static io.netty.buffer.Unpooled.buffer;
  */
 public class BaseAEADCipher implements Cipher {
 
-    private static final Logger logger = LoggerFactory.getLogger(BaseAEADCipher.class);
     /*
      * [encrypted payload length][length tag][encrypted payload][payload tag]
      */
@@ -38,12 +35,12 @@ public class BaseAEADCipher implements Cipher {
     private final int macSize;
     private final AEADCipher cipher;
     private final ByteBuf nonce = buffer(nonceSize);
-    private final ByteBuf temp = buffer();
+    private final ByteBuf buffer = buffer();
 
     private int payloadLength = -1;
     private KeyParameter subkey;
 
-    private boolean inited;
+    private boolean initialized;
 
     public BaseAEADCipher(AEADCipher cipher, int saltSize, int macSize) {
         this.saltSize = saltSize;
@@ -54,11 +51,11 @@ public class BaseAEADCipher implements Cipher {
     @Override
     public byte[] encrypt(byte[] in, byte[] key) throws Exception {
         ByteBuf buf = buffer();
-        if (!inited) {
-            inited = true;
+        if (!initialized) {
             byte[] salt = randomBytes(saltSize);
             buf.writeBytes(salt);
             subkey = generateSubkey(key, salt);
+            initialized = true;
         }
         ByteBuf _in = buffer(in.length);
         _in.writeBytes(in);
@@ -86,26 +83,26 @@ public class BaseAEADCipher implements Cipher {
     @Override
     public byte[] decrypt(byte[] in, byte[] key) throws Exception {
         ByteBuf buf = buffer();
-        ByteBuf _in = buffer(in.length + temp.readableBytes());
-        if (temp.isReadable()) {
-            _in.writeBytes(temp);
+        ByteBuf _in = buffer(in.length + buffer.readableBytes());
+        if (buffer.isReadable()) {
+            _in.writeBytes(buffer);
         }
         _in.writeBytes(in);
-        if (!inited) {
+        if (!initialized) {
             if (_in.readableBytes() < saltSize) {
-                temp.writeBytes(_in);
+                buffer.writeBytes(_in);
                 return empty;
             } else {
                 byte[] salt = new byte[saltSize];
                 _in.readBytes(salt, 0, saltSize);
                 subkey = generateSubkey(key, salt);
-                inited = true;
+                initialized = true;
             }
         }
         while (_in.isReadable()) {
             if (payloadLength == -1) {
                 if (_in.readableBytes() < 2 + tagSize) {
-                    temp.writeBytes(_in);
+                    buffer.writeBytes(_in);
                     break;
                 }
                 byte[] payloadLengthBytes = new byte[2 + tagSize];
@@ -114,7 +111,7 @@ public class BaseAEADCipher implements Cipher {
                 try {
                     cipher.doFinal(payloadLengthBytes, cipher.processBytes(payloadLengthBytes, 0, 2 + tagSize, payloadLengthBytes, 0));
                 } catch (Exception e) {
-                    logger.error("doFinal ERROR ==> {}", e.getMessage());
+                    buffer.writeBytes(_in);
                     return empty;
                 }
                 ByteBuf _payloadLength = buffer(payloadLengthBytes.length);
@@ -123,7 +120,7 @@ public class BaseAEADCipher implements Cipher {
                 _payloadLength.release();
             }
             if (_in.readableBytes() < payloadLength + tagSize) {
-                temp.writeBytes(_in);
+                buffer.writeBytes(_in);
                 break;
             }
             byte[] payload = new byte[payloadLength + tagSize];

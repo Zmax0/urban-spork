@@ -46,6 +46,10 @@ public class Tray {
         menu.insert(new ServersMenuItem().build(), 0);
     }
 
+    public static void exit() {
+        SystemTray.getSystemTray().remove(trayIcon);
+    }
+
     private static void start() {
         if (isSupported) {
             // ==============================

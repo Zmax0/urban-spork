@@ -3,6 +3,7 @@ package com.urbanspork.client.gui.tray.menu.item;
 import java.awt.MenuItem;
 import java.awt.event.ActionListener;
 
+import com.urbanspork.client.gui.console.component.Tray;
 import com.urbanspork.client.gui.i18n.I18n;
 
 import javafx.application.Platform;
@@ -23,7 +24,7 @@ public class ExitMenuItem implements TrayMenuItemBuilder {
     public ActionListener getActionListener() {
         return e -> {
             Platform.exit();
-            System.exit(0);
+            Tray.exit();
         };
     }
 
