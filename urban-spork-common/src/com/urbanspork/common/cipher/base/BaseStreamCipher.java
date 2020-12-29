@@ -1,16 +1,13 @@
-
 package com.urbanspork.common.cipher.base;
 
-import static io.netty.buffer.Unpooled.buffer;
-
+import com.urbanspork.common.cipher.Cipher;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
-import com.urbanspork.common.cipher.Cipher;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
+import static io.netty.buffer.Unpooled.buffer;
 
 public class BaseStreamCipher implements Cipher {
 
