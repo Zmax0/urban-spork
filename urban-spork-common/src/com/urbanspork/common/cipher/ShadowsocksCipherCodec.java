@@ -1,10 +1,6 @@
 package com.urbanspork.common.cipher;
 
-import java.util.List;
-import java.util.Optional;
-
 import com.urbanspork.common.channel.AttributeKeys;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
@@ -12,7 +8,12 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 
+import java.util.List;
+import java.util.Optional;
+
 public class ShadowsocksCipherCodec extends MessageToMessageCodec<ByteBuf, ByteBuf> {
+
+    //    private static final Logger logger = LoggerFactory.getLogger(ShadowsocksCipherCodec.class);
 
     @Override
     protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {

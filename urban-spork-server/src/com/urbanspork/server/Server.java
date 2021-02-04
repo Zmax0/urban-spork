@@ -1,13 +1,8 @@
 package com.urbanspork.server;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
@@ -16,10 +11,15 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+
 public class Server {
 
     public static void main(String[] args) throws IOException {
-        List<ServerConfig> serverConfigs = Optional.of(ConfigHandler.read(ClientConfig.class))
+        List<ServerConfig> serverConfigs = Optional
+            .ofNullable(ConfigHandler.read(ClientConfig.class))
             .orElseThrow(() -> new IllegalArgumentException("Please put the 'config.json' file into the folder"))
             .getServers();
         if (serverConfigs.isEmpty()) {
