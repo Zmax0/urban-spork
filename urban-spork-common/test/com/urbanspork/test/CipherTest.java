@@ -31,8 +31,7 @@ public class CipherTest {
     public void beforeAll() {
         password = randomString();
         SecureRandom random = new SecureRandom();
-        int length = random.nextInt(2048);
-        in = new byte[length];
+        in = new byte[10485760]; // 10M
         random.nextBytes(in);
     }
 
@@ -66,7 +65,7 @@ public class CipherTest {
     private byte[] cipherTest(ShadowsocksCipher cipher, ShadowsocksKey key, byte[] in) throws Exception {
         ByteBuf buff = Unpooled.directBuffer();
         byte[] temp = in;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 100; i++) {
             byte[][] divided = randomDivide(temp);
             buff.writeBytes(cipher.encrypt(divided[0], key));
             temp = divided[1];
@@ -75,7 +74,7 @@ public class CipherTest {
         byte[] encrypt = new byte[buff.readableBytes()];
         buff.readBytes(encrypt);
         temp = encrypt;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 100; i++) {
             byte[][] divided = randomDivide(temp);
             buff.writeBytes(cipher.decrypt(divided[0], key));
             temp = divided[1];

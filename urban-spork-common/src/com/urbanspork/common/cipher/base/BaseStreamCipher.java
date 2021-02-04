@@ -14,7 +14,7 @@ public class BaseStreamCipher implements Cipher {
     private final StreamCipher cipher;
     private final int ivSize;
 
-    private boolean inited;
+    private boolean initialized;
     private byte[] temp;
 
     public BaseStreamCipher(StreamCipher cipher, int ivSize) {
@@ -25,12 +25,12 @@ public class BaseStreamCipher implements Cipher {
     @Override
     public byte[] encrypt(byte[] in, byte[] key) {
         ByteBuf buf = buffer();
-        if (!inited) {
+        if (!initialized) {
             byte[] iv = randomBytes(ivSize);
             ParametersWithIV parametersWithIV = new ParametersWithIV(new KeyParameter(key), iv);
             cipher.init(true, parametersWithIV);
             buf.writeBytes(iv);
-            inited = true;
+            initialized = true;
         }
         byte[] out = new byte[in.length];
         cipher.processBytes(in, 0, in.length, out, 0);
@@ -42,38 +42,34 @@ public class BaseStreamCipher implements Cipher {
 
     @Override
     public byte[] decrypt(byte[] in, byte[] key) {
+        byte[] _in;
         if (temp != null) {
-            byte[] bytes = new byte[in.length + temp.length];
-            System.arraycopy(temp, 0, bytes, 0, temp.length);
-            System.arraycopy(in, 0, bytes, temp.length, in.length);
-            in = bytes;
+            _in = new byte[in.length + temp.length];
+            System.arraycopy(temp, 0, _in, 0, temp.length);
+            System.arraycopy(in, 0, _in, temp.length, in.length);
             temp = null;
+        } else {
+            _in = in;
         }
-        byte[] _in = null;
-        if (!inited) {
-            if (in.length < ivSize) {
-                temp = in;
+        if (!initialized) {
+            if (_in.length < ivSize) {
+                temp = _in;
                 return empty;
             } else {
                 byte[] iv = new byte[ivSize];
-                System.arraycopy(in, 0, iv, 0, iv.length);
-                int length = in.length - iv.length;
-                _in = new byte[length];
-                System.arraycopy(in, ivSize, _in, 0, length);
+                System.arraycopy(_in, 0, iv, 0, iv.length);
                 ParametersWithIV parametersWithIV = new ParametersWithIV(new KeyParameter(key), iv);
                 cipher.init(false, parametersWithIV);
-                inited = true;
+                initialized = true;
+                byte[] out = new byte[_in.length - iv.length];
+                cipher.processBytes(_in, iv.length, _in.length - iv.length, out, 0);
+                return out;
             }
-        }
-        byte[] out;
-        if (_in == null) {
-            out = new byte[in.length];
-            cipher.processBytes(in, 0, in.length, out, 0);
         } else {
-            out = new byte[_in.length];
+            byte[] out = new byte[_in.length];
             cipher.processBytes(_in, 0, _in.length, out, 0);
+            return out;
         }
-        return out;
     }
 
 }

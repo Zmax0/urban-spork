@@ -76,4 +76,10 @@ public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
         ChannelCloseUtils.closeOnFlush(ctx.channel());
     }
 
+    @Override
+    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+        logger.debug("channel unregistered");
+        buff.release();
+        super.channelUnregistered(ctx);
+    }
 }
