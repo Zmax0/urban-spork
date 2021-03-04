@@ -112,7 +112,6 @@ public class Console extends Application {
         Platform.setImplicitExit(false);
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
-        primaryStage.initStyle(StageStyle.UNIFIED);
         primaryStage.setResizable(false);
         primaryStage.getIcons().add(new Image(Resource.PROGRAM_ICON.toString()));
         primaryStage.setTitle(I18n.PROGRAM_TITLE);
@@ -151,7 +150,7 @@ public class Console extends Application {
     public void addServerConfig() {
         if (validate()) {
             ServerConfig newValue = new ServerConfig();
-            newValue.setCipher(ShadowsocksCiphers.AES_256_CFB);
+            newValue.setCipher(ShadowsocksCiphers.AES_256_GCM);
             serverConfigObservableList.add(newValue);
             serverConfigListView.getSelectionModel().select(newValue);
             display(newValue);
@@ -216,7 +215,7 @@ public class Console extends Application {
             boolean isNew = config == null;
             if (config == null) {
                 config = new ServerConfig();
-                config.setCipher(ShadowsocksCiphers.AES_256_CFB);
+                config.setCipher(ShadowsocksCiphers.AES_256_GCM);
             }
             pack(config);
             if (isNew) {
@@ -415,7 +414,7 @@ public class Console extends Application {
         // currentConfigCipherChoiceBox
         List<ShadowsocksCiphers> ciphers = Arrays.asList(ShadowsocksCiphers.values());
         currentConfigCipherChoiceBox.setItems(FXCollections.observableArrayList(ciphers));
-        currentConfigCipherChoiceBox.setValue(ShadowsocksCiphers.AES_256_CFB);
+        currentConfigCipherChoiceBox.setValue(ShadowsocksCiphers.AES_256_GCM);
         // currentConfigHostTextField
         currentConfigHostTextField.getValidators().add(requiredFieldValidator);
         currentConfigHostTextField.focusedProperty().addListener(

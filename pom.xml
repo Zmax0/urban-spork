@@ -19,7 +19,7 @@
     <logback.version>1.2.3</logback.version>
     <netty.version>4.1.56.Final</netty.version>
     <bouncycastle.version>1.68</bouncycastle.version>
-    <jfoenix.version>9.0.9</jfoenix.version>
+    <jfoenix.version>9.0.10</jfoenix.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -72,7 +72,7 @@
       <dependency>
         <groupId>org.openjfx</groupId>
         <artifactId>javafx-controls</artifactId>
-        <version>14</version>
+        <version>15</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
