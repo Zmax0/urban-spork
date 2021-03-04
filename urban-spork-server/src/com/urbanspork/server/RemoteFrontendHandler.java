@@ -78,7 +78,6 @@ public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        logger.debug("channel unregistered");
         buff.release();
         super.channelUnregistered(ctx);
     }

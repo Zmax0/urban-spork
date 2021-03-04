@@ -47,7 +47,9 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
                         .addLast(new DefaultChannelInboundHandler(localChannel));
                 }
             }).connect(serverAddress).addListener((ChannelFutureListener) future -> {
-            localChannel.pipeline().remove(ClientSocksConnectHandler.this);
+            if (localChannel.pipeline().get(ClientSocksConnectHandler.class) != null) {
+                localChannel.pipeline().remove(ClientSocksConnectHandler.this);
+            }
             if (future.isSuccess()) {
                 localChannel.pipeline().addLast(new DefaultChannelInboundHandler(future.channel()));
                 localChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.IPv4));

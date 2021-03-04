@@ -1,5 +1,6 @@
 package com.urbanspork.server;
 
+import com.urbanspork.common.channel.ChannelCloseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,8 +32,7 @@ public class ServerProtocolHandler extends ChannelInboundHandlerAdapter implemen
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        logger.error("Protocol error", cause);
-        ctx.close();
+        ChannelCloseUtils.closeOnFlush(ctx.channel());
     }
 
 }

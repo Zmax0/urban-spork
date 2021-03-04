@@ -11,7 +11,7 @@ Java 11
 ## Build
 
     mvn clean install
-      
+
 ### Server config
 put *config.json* file into the unpacked folder
   
@@ -26,16 +26,7 @@ put *config.json* file into the unpacked folder
     }
 
 ### Supported Ciphers
--  [x] aes-128-cfb
--  [x] aes-192-cfb
--  [x] aes-256-cfb
--  [x] aes-128-ctr
--  [x] aes-192-ctr
--  [x] aes-256-ctr
--  [x] chacha20-ietf
--  [x] camellia-128-cfb
--  [x] camellia-192-cfb
--  [x] camellia-256-cfb
+
 -  [x] aes-128-gcm
 -  [x] aes-192-gcm
 -  [x] aes-256-gcm
