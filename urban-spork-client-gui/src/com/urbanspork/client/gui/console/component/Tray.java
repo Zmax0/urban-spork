@@ -25,7 +25,7 @@ public class Tray {
 
     private static final TrayIcon trayIcon = isSupported ? new TrayIcon(icon.getImage(), I18n.PROGRAM_TITLE, menu) : null;
 
-    public static void launch() {
+    public static void main(String[] args) {
         start();
     }
 
