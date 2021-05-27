@@ -6,8 +6,8 @@ import com.urbanspork.client.gui.console.component.Tray;
 public final class Main {
 
     public static void main(String[] args) {
-        Tray.launch();
-        Console.launch(args);
+        Tray.main(args);
+        Console.main(args);
     }
 
 }

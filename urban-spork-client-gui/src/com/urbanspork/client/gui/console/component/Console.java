@@ -95,7 +95,7 @@ public class Console extends Application {
 
     private JFXTextField clientConfigPortTextField;
 
-    public static void launch(String... args) {
+    public static void main(String... args) {
         Application.launch(args);
     }
 
@@ -171,10 +171,10 @@ public class Console extends Application {
         ServerConfig config = serverConfigListView.getSelectionModel().getSelectedItem();
         if (config != null) {
             ObjectMapper mapper = new ObjectMapper();
-            ServerConfig copyed;
+            ServerConfig copied;
             try {
-                copyed = mapper.readValue(mapper.writeValueAsBytes(config), ServerConfig.class);
-                serverConfigObservableList.add(copyed);
+                copied = mapper.readValue(mapper.writeValueAsBytes(config), ServerConfig.class);
+                serverConfigObservableList.add(copied);
             } catch (IOException e) {
                 logger.error("Copy server config error", e);
             }
