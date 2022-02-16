@@ -67,6 +67,7 @@ public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
+        buff.release();
         ChannelCloseUtils.closeOnFlush(ctx.channel());
     }
 
@@ -76,9 +77,4 @@ public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
         ChannelCloseUtils.closeOnFlush(ctx.channel());
     }
 
-    @Override
-    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        buff.release();
-        super.channelUnregistered(ctx);
-    }
 }

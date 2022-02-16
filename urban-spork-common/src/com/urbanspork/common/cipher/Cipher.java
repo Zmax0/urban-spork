@@ -1,14 +1,16 @@
 package com.urbanspork.common.cipher;
 
+import io.netty.buffer.ByteBuf;
+
 import java.security.SecureRandom;
 
 public interface Cipher {
 
-    byte[] empty = new byte[0];
+    ByteBuf encrypt(ByteBuf in, byte[] key) throws Exception;
 
-    byte[] encrypt(byte[] in, byte[] key) throws Exception;
+    ByteBuf decrypt(ByteBuf in, byte[] key) throws Exception;
 
-    byte[] decrypt(byte[] in, byte[] key) throws Exception;
+    void releaseBuffer();
 
     default byte[] randomBytes(int length) {
         byte[] bytes = new byte[length];

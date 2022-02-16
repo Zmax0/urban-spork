@@ -1,6 +1,5 @@
 package com.urbanspork.server;
 
-import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.cipher.ShadowsocksCipher;
 import com.urbanspork.common.cipher.ShadowsocksCipherCodec;
 import com.urbanspork.common.cipher.ShadowsocksKey;
@@ -20,11 +19,10 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
     @Override
     protected void initChannel(Channel c) {
         ShadowsocksCipher cipher = serverConfig.getCipher().newShadowsocksCipher();
-        c.attr(AttributeKeys.CIPHER).set(cipher);
-        c.attr(AttributeKeys.KEY).set(new ShadowsocksKey(serverConfig.getPassword(), cipher.getKeySize()));
+        ShadowsocksKey key = new ShadowsocksKey(serverConfig.getPassword(), cipher.getKeySize());
         c.pipeline()
-            .addLast(new ShadowsocksCipherCodec())
-            .addLast(new ServerProtocolHandler());
+                .addLast(new ShadowsocksCipherCodec(cipher, key))
+                .addLast(new ServerProtocolHandler());
     }
 
 }

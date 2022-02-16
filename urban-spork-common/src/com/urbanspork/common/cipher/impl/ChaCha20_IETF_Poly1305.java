@@ -8,22 +8,17 @@ import com.urbanspork.common.cipher.base.BaseAEADCipher;
 
 public class ChaCha20_IETF_Poly1305 implements ShadowsocksCipher {
 
-    private final Cipher encrypter = new BaseAEADCipher(new ChaCha20Poly1305(), 32, 128);
-    private final Cipher decrypter = new BaseAEADCipher(new ChaCha20Poly1305(), 32, 128);
+    private final Cipher encryptCipher = new BaseAEADCipher(new ChaCha20Poly1305(), 32, 128);
+    private final Cipher decryptCipher = new BaseAEADCipher(new ChaCha20Poly1305(), 32, 128);
 
     @Override
-    public String getName() {
-        return "chacha20-ietf-poly1305";
+    public Cipher encryptCipher() {
+        return encryptCipher;
     }
 
     @Override
-    public Cipher encrypter() {
-        return encrypter;
-    }
-
-    @Override
-    public Cipher decrypter() {
-        return decrypter;
+    public Cipher decryptCipher() {
+        return decryptCipher;
     }
 
     @Override

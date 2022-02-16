@@ -41,7 +41,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -150,7 +149,7 @@ public class Console extends Application {
     public void addServerConfig() {
         if (validate()) {
             ServerConfig newValue = new ServerConfig();
-            newValue.setCipher(ShadowsocksCiphers.AES_256_GCM);
+            newValue.setCipher(ShadowsocksCiphers.aes_256_gcm);
             serverConfigObservableList.add(newValue);
             serverConfigListView.getSelectionModel().select(newValue);
             display(newValue);
@@ -161,9 +160,7 @@ public class Console extends Application {
         int index = serverConfigListView.getSelectionModel().getSelectedIndex();
         if (index > 0) {
             serverConfigObservableList.remove(index);
-            if (!serverConfigObservableList.isEmpty()) {
-                serverConfigListView.getSelectionModel().select(index);
-            }
+            serverConfigListView.getSelectionModel().select(index);
         }
     }
 
@@ -215,7 +212,7 @@ public class Console extends Application {
             boolean isNew = config == null;
             if (config == null) {
                 config = new ServerConfig();
-                config.setCipher(ShadowsocksCiphers.AES_256_GCM);
+                config.setCipher(ShadowsocksCiphers.aes_256_gcm);
             }
             pack(config);
             if (isNew) {
@@ -385,85 +382,85 @@ public class Console extends Application {
         MultipleSelectionModel<ServerConfig> selectionModel = serverConfigListView.getSelectionModel();
         selectionModel.select(clientConfig.getIndex());
         selectionModel.selectedItemProperty().addListener(
-            new ChangeListener<>() {
+                new ChangeListener<>() {
 
-                private boolean changing = false;
+                    private boolean changing = false;
 
-                @Override
-                public void changed(ObservableValue<? extends ServerConfig> observable, ServerConfig oldValue, ServerConfig newValue) {
-                    if (serverConfigObservableList.contains(oldValue)) {
-                        if (validate()) {
+                    @Override
+                    public void changed(ObservableValue<? extends ServerConfig> observable, ServerConfig oldValue, ServerConfig newValue) {
+                        if (serverConfigObservableList.contains(oldValue)) {
+                            if (validate()) {
+                                resetValidation();
+                                pack(oldValue);
+                                serverConfigListView.refresh();
+                                display(newValue);
+                            } else if (!changing) {
+                                changing = true;
+                                Platform.runLater(() -> {
+                                    selectionModel.select(oldValue);
+                                    changing = false;
+                                });
+                            }
+                        } else {
                             resetValidation();
-                            pack(oldValue);
-                            serverConfigListView.refresh();
                             display(newValue);
-                        } else if (!changing) {
-                            changing = true;
-                            Platform.runLater(() -> {
-                                selectionModel.select(oldValue);
-                                changing = false;
-                            });
                         }
-                    } else {
-                        resetValidation();
-                        display(newValue);
-                    }
 
-                }
-            });
+                    }
+                });
         // currentConfigCipherChoiceBox
         List<ShadowsocksCiphers> ciphers = Arrays.asList(ShadowsocksCiphers.values());
         currentConfigCipherChoiceBox.setItems(FXCollections.observableArrayList(ciphers));
-        currentConfigCipherChoiceBox.setValue(ShadowsocksCiphers.AES_256_GCM);
+        currentConfigCipherChoiceBox.setValue(ShadowsocksCiphers.aes_256_gcm);
         // currentConfigHostTextField
         currentConfigHostTextField.getValidators().add(requiredFieldValidator);
         currentConfigHostTextField.focusedProperty().addListener(
-            (o, oldValue, newValue) -> {
-                if (!newValue) {
-                    currentConfigHostTextField.validate();
-                }
-            });
+                (o, oldValue, newValue) -> {
+                    if (!newValue) {
+                        currentConfigHostTextField.validate();
+                    }
+                });
         // currentConfigPortTextField
         currentConfigPortTextField.getValidators().add(requiredFieldValidator);
         currentConfigPortTextField.focusedProperty().addListener(
-            (o, oldValue, newValue) -> {
-                if (!newValue) {
-                    currentConfigPortTextField.validate();
-                }
-            });
+                (o, oldValue, newValue) -> {
+                    if (!newValue) {
+                        currentConfigPortTextField.validate();
+                    }
+                });
         // currentConfigPasswordTextField
         currentConfigPasswordTextField.getValidators().add(requiredFieldValidator);
         currentConfigPasswordTextField.focusedProperty().addListener(
-            (o, oldValue, newValue) -> {
-                if (!newValue) {
-                    currentConfigPasswordTextField.validate();
-                }
-            });
+                (o, oldValue, newValue) -> {
+                    if (!newValue) {
+                        currentConfigPasswordTextField.validate();
+                    }
+                });
         currentConfigPasswordTextField.textProperty().addListener(
-            (o, oldValue, newValue) -> currentConfigPasswordPasswordField.setText(newValue));
+                (o, oldValue, newValue) -> currentConfigPasswordPasswordField.setText(newValue));
         // currentConfigPasswordPasswordField
         currentConfigPasswordPasswordField.getValidators().add(requiredFieldValidator);
         currentConfigPasswordPasswordField.focusedProperty().addListener(
-            (o, oldValue, newValue) -> {
-                if (!newValue) {
-                    currentConfigPasswordPasswordField.validate();
-                }
-            });
+                (o, oldValue, newValue) -> {
+                    if (!newValue) {
+                        currentConfigPasswordPasswordField.validate();
+                    }
+                });
         currentConfigPasswordPasswordField.textProperty().addListener(
-            (o, oldValue, newValue) -> currentConfigPasswordTextField.setText(newValue));
+                (o, oldValue, newValue) -> currentConfigPasswordTextField.setText(newValue));
         // clientConfigPortTextField
         clientConfigPortTextField.getValidators().add(requiredFieldValidator);
         clientConfigPortTextField.focusedProperty().addListener(
-            (o, oldValue, newValue) -> {
-                if (!newValue) {
-                    clientConfigPortTextField.validate();
-                    if (!clientConfig.getPort().equals(clientConfigPortTextField.getText())) {
-                        clientConfig.setPort(clientConfigPortTextField.getText());
-                        Proxy.relaunch();
-                        saveConfig();
+                (o, oldValue, newValue) -> {
+                    if (!newValue) {
+                        clientConfigPortTextField.validate();
+                        if (!clientConfig.getPort().equals(clientConfigPortTextField.getText())) {
+                            clientConfig.setPort(clientConfigPortTextField.getText());
+                            Proxy.relaunch();
+                            saveConfig();
+                        }
                     }
-                }
-            });
+                });
         // display file
         display(clientConfig);
     }

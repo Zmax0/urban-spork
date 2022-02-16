@@ -2,10 +2,7 @@ package com.urbanspork.client.gui;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,9 +27,9 @@ public class Resource {
 
     static {
         ClassLoader classLoader = Resource.class.getClassLoader();
-        PROGRAM_ICON = classLoader.getResource(RESOURCE + "/" + PROGRAM_ICON_NAME);
-        TRAY_ICON = classLoader.getResource(RESOURCE + "/" + TRAY_ICON_NAME);
-        CONSOLE_CSS = classLoader.getResource(RESOURCE + "/" + CONSOLE_CSS_NAME);
+        PROGRAM_ICON = Objects.requireNonNull(classLoader.getResource(RESOURCE + "/" + PROGRAM_ICON_NAME));
+        TRAY_ICON = Objects.requireNonNull(classLoader.getResource(RESOURCE + "/" + TRAY_ICON_NAME));
+        CONSOLE_CSS = Objects.requireNonNull(classLoader.getResource(RESOURCE + "/" + CONSOLE_CSS_NAME));
         ClientConfig config = null;
         try {
             config = ConfigHandler.read(ClientConfig.class);

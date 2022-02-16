@@ -2,6 +2,7 @@ package com.urbanspork.client;
 
 import java.net.InetSocketAddress;
 
+import io.netty.channel.nio.NioEventLoopGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,13 +30,14 @@ public class ClientChannelInitializer extends ChannelInitializer<NioSocketChanne
     protected void initChannel(NioSocketChannel channel) {
         ServerConfig config = clientConfig.getCurrent();
         if (config == null) {
-            logger.error("Proxy server configuration is unreachale");
+            logger.error("Proxy server configuration is unreachable");
             channel.disconnect();
         } else {
             channel.attr(AttributeKeys.SERVER_ADDRESS).set(new InetSocketAddress(config.getHost(), Integer.parseInt(config.getPort())));
             ShadowsocksCipher cipher = config.getCipher().newShadowsocksCipher();
             channel.attr(AttributeKeys.CIPHER).set(cipher);
             channel.attr(AttributeKeys.KEY).set(new ShadowsocksKey(config.getPassword(), cipher.getKeySize()));
+            channel.attr(AttributeKeys.WORKER).set(new NioEventLoopGroup());
             channel.pipeline()
                 .addLast(new SocksPortUnificationServerHandler())
                 .addLast(new ClientSocksMessageHandler());

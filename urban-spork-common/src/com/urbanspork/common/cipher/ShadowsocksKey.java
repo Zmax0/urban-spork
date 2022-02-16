@@ -1,6 +1,7 @@
 package com.urbanspork.common.cipher;
 
 import javax.crypto.SecretKey;
+import java.io.Serial;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -9,6 +10,7 @@ import static java.lang.System.arraycopy;
 
 public class ShadowsocksKey implements SecretKey {
 
+    @Serial
     private static final long serialVersionUID = 20181226;
 
     private static final MessageDigest MD5;

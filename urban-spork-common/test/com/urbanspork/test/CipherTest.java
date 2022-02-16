@@ -5,11 +5,7 @@ import com.urbanspork.common.cipher.ShadowsocksCiphers;
 import com.urbanspork.common.cipher.ShadowsocksKey;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -63,23 +59,23 @@ public class CipherTest {
     }
 
     private byte[] cipherTest(ShadowsocksCipher cipher, ShadowsocksKey key, byte[] in) throws Exception {
-        ByteBuf buff = Unpooled.directBuffer();
+        ByteBuf buff = Unpooled.buffer();
         byte[] temp = in;
         for (int i = 0; i < 100; i++) {
             byte[][] divided = randomDivide(temp);
-            buff.writeBytes(cipher.encrypt(divided[0], key));
+            buff.writeBytes(cipher.encrypt(Unpooled.buffer().readBytes(divided[0]), key));
             temp = divided[1];
         }
-        buff.writeBytes(cipher.encrypt(temp, key));
+        buff.writeBytes(cipher.encrypt(Unpooled.buffer().readBytes(temp), key));
         byte[] encrypt = new byte[buff.readableBytes()];
         buff.readBytes(encrypt);
         temp = encrypt;
         for (int i = 0; i < 100; i++) {
             byte[][] divided = randomDivide(temp);
-            buff.writeBytes(cipher.decrypt(divided[0], key));
+            buff.writeBytes(cipher.decrypt(Unpooled.buffer().readBytes(divided[0]), key));
             temp = divided[1];
         }
-        buff.writeBytes(cipher.decrypt(temp, key));
+        buff.writeBytes(cipher.decrypt(Unpooled.buffer().readBytes(temp), key));
         byte[] out = new byte[buff.readableBytes()];
         buff.readBytes(out);
         buff.release();

@@ -2,7 +2,7 @@ package com.urbanspork.common.cipher.base;
 
 import com.urbanspork.common.cipher.Cipher;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
@@ -12,13 +12,11 @@ import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 import static io.netty.buffer.Unpooled.buffer;
-import static io.netty.buffer.Unpooled.directBuffer;
 
 /**
  * AEAD Cipher
  *
  * @author Zmax0
- *
  * @see <a href=https://shadowsocks.org/en/wiki/AEAD-Ciphers.html">https://shadowsocks.org/en/wiki/AEAD-Ciphers.html</a>
  */
 public class BaseAEADCipher implements Cipher {
@@ -30,7 +28,7 @@ public class BaseAEADCipher implements Cipher {
     private static final int nonceSize = 12;
     private static final int tagSize = 16;
     private static final int payloadSize = 16 * 1024 - 1;
-    private static final byte[] info = new byte[] { 115, 115, 45, 115, 117, 98, 107, 101, 121 };
+    private static final byte[] info = new byte[]{115, 115, 45, 115, 117, 98, 107, 101, 121};
 
     private final int saltSize;
     private final int macSize;
@@ -50,7 +48,7 @@ public class BaseAEADCipher implements Cipher {
     }
 
     @Override
-    public byte[] encrypt(byte[] in, byte[] key) throws Exception {
+    public ByteBuf encrypt(ByteBuf in, byte[] key) throws Exception {
         ByteBuf buf = buffer();
         if (!initialized) {
             byte[] salt = randomBytes(saltSize);
@@ -58,7 +56,7 @@ public class BaseAEADCipher implements Cipher {
             subKey = generateSubKey(key, salt);
             initialized = true;
         }
-        ByteBuf _in = buffer(in.length);
+        ByteBuf _in = buffer(in.readableBytes());
         _in.writeBytes(in);
         while (_in.isReadable()) {
             int payloadLength = Math.min(_in.readableBytes(), payloadSize);
@@ -76,17 +74,15 @@ public class BaseAEADCipher implements Cipher {
             cipher.doFinal(temp, 2 + tagSize + cipher.processBytes(temp, 2 + tagSize, payloadLength, temp, 2 + tagSize));
             buf.writeBytes(temp, 2 + tagSize, payloadLength + tagSize);
         }
-        byte[] out = ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.readableBytes(), false);
-        buf.release();
-        return out;
+        return buf;
     }
 
     @Override
-    public byte[] decrypt(byte[] in, byte[] key) throws Exception {
+    public ByteBuf decrypt(ByteBuf in, byte[] key) throws Exception {
         buffer.writeBytes(in);
         if (!initialized) {
             if (buffer.readableBytes() < saltSize) {
-                return empty;
+                return Unpooled.EMPTY_BUFFER;
             } else {
                 byte[] salt = new byte[saltSize];
                 buffer.readBytes(salt, 0, saltSize);
@@ -94,7 +90,7 @@ public class BaseAEADCipher implements Cipher {
                 initialized = true;
             }
         }
-        ByteBuf buf = directBuffer();
+        ByteBuf buf = buffer();
         while (buffer.isReadable()) {
             if (payloadLength == -1) {
                 if (buffer.readableBytes() < 2 + tagSize) {
@@ -103,12 +99,7 @@ public class BaseAEADCipher implements Cipher {
                 byte[] payloadLengthBytes = new byte[2 + tagSize];
                 buffer.readBytes(payloadLengthBytes, 0, 2 + tagSize);
                 cipher.init(false, generateCipherParameters());
-                try {
-                    cipher.doFinal(payloadLengthBytes, cipher.processBytes(payloadLengthBytes, 0, 2 + tagSize, payloadLengthBytes, 0));
-                } catch (Exception e) {
-                    buf.release();
-                    return empty;
-                }
+                cipher.doFinal(payloadLengthBytes, cipher.processBytes(payloadLengthBytes, 0, 2 + tagSize, payloadLengthBytes, 0));
                 ByteBuf _payloadLength = buffer(payloadLengthBytes.length);
                 _payloadLength.writeBytes(payloadLengthBytes);
                 payloadLength = _payloadLength.getShort(0);
@@ -124,9 +115,13 @@ public class BaseAEADCipher implements Cipher {
             buf.writeBytes(payload, 0, payloadLength);
             payloadLength = -1;
         }
-        byte[] out = ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.readableBytes(), false);
-        buf.release();
-        return out;
+        return buf;
+    }
+
+    @Override
+    public void releaseBuffer() {
+        buffer.release();
+        nonce.release();
     }
 
     private CipherParameters generateCipherParameters() {

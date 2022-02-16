@@ -9,22 +9,17 @@ import com.urbanspork.common.cipher.base.BaseAEADCipher;
 
 public class AES_192_GCM implements ShadowsocksCipher {
 
-    private final Cipher encrypter = new BaseAEADCipher(new GCMBlockCipher(new AESEngine()), 24, 128);
-    private final Cipher decrypter = new BaseAEADCipher(new GCMBlockCipher(new AESEngine()), 24, 128);
+    private final Cipher encryptCipher = new BaseAEADCipher(new GCMBlockCipher(new AESEngine()), 24, 128);
+    private final Cipher decryptCipher = new BaseAEADCipher(new GCMBlockCipher(new AESEngine()), 24, 128);
 
     @Override
-    public String getName() {
-        return "aes-192-gcm";
+    public Cipher encryptCipher() {
+        return encryptCipher;
     }
 
     @Override
-    public Cipher encrypter() {
-        return encrypter;
-    }
-
-    @Override
-    public Cipher decrypter() {
-        return decrypter;
+    public Cipher decryptCipher() {
+        return decryptCipher;
     }
 
     @Override

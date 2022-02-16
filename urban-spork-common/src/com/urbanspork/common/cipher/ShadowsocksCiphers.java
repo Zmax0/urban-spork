@@ -7,16 +7,16 @@ import com.urbanspork.common.cipher.impl.ChaCha20_IETF_Poly1305;
 
 public enum ShadowsocksCiphers {
 
-    AES_128_GCM, AES_192_GCM, AES_256_GCM,
+    aes_128_gcm, aes_192_gcm, aes_256_gcm,
 
-    ChaCha20_IETF_Poly1305;
+    chacha20_ietf_poly1305;
 
     public ShadowsocksCipher newShadowsocksCipher() {
         return switch (this) {
-            case AES_128_GCM -> new AES_128_GCM();
-            case AES_192_GCM -> new AES_192_GCM();
-            case AES_256_GCM -> new AES_256_GCM();
-            case ChaCha20_IETF_Poly1305 -> new ChaCha20_IETF_Poly1305();
+            case aes_128_gcm -> new AES_128_GCM();
+            case aes_192_gcm -> new AES_192_GCM();
+            case aes_256_gcm -> new AES_256_GCM();
+            case chacha20_ietf_poly1305 -> new ChaCha20_IETF_Poly1305();
         };
     }
 

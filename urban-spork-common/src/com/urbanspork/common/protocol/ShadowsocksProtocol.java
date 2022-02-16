@@ -2,25 +2,26 @@ package com.urbanspork.common.protocol;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.util.CharsetUtil;
 
 public interface ShadowsocksProtocol {
 
-    default ByteBuf encodeRequest(Socks5CommandRequest request) {
-        ByteBuf buf = Unpooled.directBuffer();
+    default byte[] encodeRequest(Socks5CommandRequest request) {
         String host = request.dstAddr();
         int port = request.dstPort();
-        buf.writeByte(request.dstAddrType().byteValue());
-        byte[] hostBytes = host.getBytes(CharsetUtil.US_ASCII);
-        buf.writeByte(hostBytes.length);
-        buf.writeBytes(hostBytes);
-        buf.writeShort(port);
-        return buf;
+        byte[] hostBytes = host.getBytes(StandardCharsets.US_ASCII);
+        byte[] encoded = new byte[hostBytes.length + 4];
+        encoded[0] = request.dstAddrType().byteValue();
+        encoded[1] = (byte) hostBytes.length;
+        System.arraycopy(hostBytes, 0, encoded, 2, hostBytes.length);
+        encoded[hostBytes.length + 2] = (byte) (port >>> 8);
+        encoded[hostBytes.length + 3] = (byte) port;
+        return encoded;
     }
 
     default InetSocketAddress decodeAddress(ByteBuf msg) throws Exception {
