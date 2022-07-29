@@ -15,7 +15,7 @@
     <urban-spork.version>1.0.0-SNAPSHOT</urban-spork.version>
     <junit.jupiter.version>5.5.2</junit.jupiter.version>
     <jackson.version>2.12.6.1</jackson.version>
-    <logback.version>1.2.3</logback.version>
+    <logback.version>1.2.9</logback.version>
     <netty.version>4.1.74.Final</netty.version>
     <bouncycastle.version>1.68</bouncycastle.version>
     <javafx.version>18.0.2</javafx.version>
