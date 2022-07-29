@@ -24,37 +24,39 @@ public class LanguageMenuItem implements TrayMenuItemBuilder {
         ClientConfig config = Resource.config();
         String language = config.getLanguage();
         final Locale configLanguage = new Locale(language);
-        List<CheckboxMenuItem> items = new ArrayList<>(I18n.LANGUAGES.length);
-        for (Locale locale : I18n.LANGUAGES) {
+        List<CheckboxMenuItem> items = new ArrayList<>(I18n.languages().length);
+        for (Locale locale : I18n.languages()) {
             CheckboxMenuItem item = new CheckboxMenuItem();
             item.setName(locale.getLanguage());
             item.setLabel(locale.getDisplayLanguage(configLanguage));
             if (locale.equals(configLanguage)) {
                 item.setState(true);
             }
-            item.addItemListener(l -> {
-                if (item.getState()) {
-                    config.setLanguage(item.getName());
-                    try {
-                        ConfigHandler.write(config);
-                    } catch (IOException e) {
-                        Tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
-                        return;
-                    }
-                    Tray.displayMessage("Config is saved", "Take effect after restart", MessageType.INFO);
-                    for (CheckboxMenuItem i : items) {
-                        if (!i.equals(item) && i.getState()) {
-                            i.setState(false);
-                        }
-                    }
-                } else {
-                    item.setState(true);
-                }
-            });
+            item.addItemListener(l -> itemStateChanged(config, items, item));
             items.add(item);
             menu.add(item);
         }
         return menu;
+    }
+
+    private void itemStateChanged(ClientConfig config, List<CheckboxMenuItem> items, CheckboxMenuItem item) {
+        if (item.getState()) {
+            config.setLanguage(item.getName());
+            try {
+                ConfigHandler.write(config);
+            } catch (IOException e) {
+                Tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
+                return;
+            }
+            Tray.displayMessage("Config is saved", "Take effect after restart", MessageType.INFO);
+            for (CheckboxMenuItem i : items) {
+                if (!i.equals(item) && i.getState()) {
+                    i.setState(false);
+                }
+            }
+        } else {
+            item.setState(true);
+        }
     }
 
     @Override

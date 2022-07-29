@@ -49,11 +49,11 @@ public class ClientConfig {
 
     public ServerConfig getCurrent() {
         ServerConfig current = null;
-        List<ServerConfig> servers = getServers();
-        if (servers != null && !servers.isEmpty()) {
-            int index = getIndex();
-            if (index < servers.size()) {
-                current = servers.get(index);
+        List<ServerConfig> s = getServers();
+        if (s != null && !s.isEmpty()) {
+            int i = getIndex();
+            if (i < s.size()) {
+                current = s.get(i);
             }
         }
         return current;

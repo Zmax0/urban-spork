@@ -6,6 +6,10 @@ public class ConfigLocation {
 
     private static final String LIB = "lib";
 
+    private ConfigLocation() {
+
+    }
+
     public static String getPath(Class<?> clazz) {
         File file = new File(clazz.getProtectionDomain().getCodeSource().getLocation().getFile());
         File parentFile = file.getParentFile();

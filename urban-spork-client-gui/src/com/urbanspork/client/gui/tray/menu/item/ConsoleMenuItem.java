@@ -10,6 +10,12 @@ import javafx.application.Platform;
 
 public class ConsoleMenuItem implements TrayMenuItemBuilder {
 
+    private final Console console;
+
+    public ConsoleMenuItem(Console console) {
+        this.console = console;
+    }
+
     @Override
     public Menu getMenuItem() {
         return null;
@@ -22,6 +28,6 @@ public class ConsoleMenuItem implements TrayMenuItemBuilder {
 
     @Override
     public ActionListener getActionListener() {
-        return e -> Platform.runLater(Console::show);
+        return e -> Platform.runLater(console::show);
     }
 }

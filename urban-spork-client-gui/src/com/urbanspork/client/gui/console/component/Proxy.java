@@ -18,6 +18,10 @@ public class Proxy {
 
     private static Thread launcher;
 
+    private Proxy() {
+
+    }
+
     public static void relaunch() {
         if (launcher != null) {
             launcher.interrupt();
@@ -33,7 +37,8 @@ public class Proxy {
                     Client.launch(config);
                 } catch (InterruptedException e) {
                     Thread thread = Thread.currentThread();
-                    logger.info("[{}-{}] was interrupted by relaunch", thread.getName(), thread.getId());
+                    logger.info("Interrupt thread [{}]", thread.getName());
+                    thread.interrupt();
                 } catch (Exception e) {
                     logger.error("Launching proxy client launching error", e);
                     String message = e.getMessage();
@@ -52,6 +57,10 @@ public class Proxy {
         } else {
             Tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
         }
+    }
+
+    public static void exit() {
+        launcher.interrupt();
     }
 
 }

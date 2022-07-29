@@ -3,13 +3,10 @@ package com.urbanspork.common.cipher;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
-import io.netty.util.ReferenceCounted;
 
 import java.util.List;
 
 public class ShadowsocksCipherCodec extends MessageToMessageCodec<ByteBuf, ByteBuf> {
-
-    //    private static final Logger logger = LoggerFactory.getLogger(ShadowsocksCipherCodec.class);
 
     private final ShadowsocksCipher cipher;
 

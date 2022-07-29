@@ -1,9 +1,9 @@
 package com.urbanspork.common.cipher;
 
-import com.urbanspork.common.cipher.impl.AES_128_GCM;
-import com.urbanspork.common.cipher.impl.AES_192_GCM;
-import com.urbanspork.common.cipher.impl.AES_256_GCM;
-import com.urbanspork.common.cipher.impl.ChaCha20_IETF_Poly1305;
+import com.urbanspork.common.cipher.impl.AES128GCM;
+import com.urbanspork.common.cipher.impl.AES192GCM;
+import com.urbanspork.common.cipher.impl.AES256GCM;
+import com.urbanspork.common.cipher.impl.ChaCha20IETFPoly1305;
 
 public enum ShadowsocksCiphers {
 
@@ -13,10 +13,10 @@ public enum ShadowsocksCiphers {
 
     public ShadowsocksCipher newShadowsocksCipher() {
         return switch (this) {
-            case aes_128_gcm -> new AES_128_GCM();
-            case aes_192_gcm -> new AES_192_GCM();
-            case aes_256_gcm -> new AES_256_GCM();
-            case chacha20_ietf_poly1305 -> new ChaCha20_IETF_Poly1305();
+            case aes_128_gcm -> new AES128GCM();
+            case aes_192_gcm -> new AES192GCM();
+            case aes_256_gcm -> new AES256GCM();
+            case chacha20_ietf_poly1305 -> new ChaCha20IETFPoly1305();
         };
     }
 

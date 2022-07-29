@@ -28,8 +28,7 @@ public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks
                     ctx.close();
                 }
                 break;
-            case SOCKS4a:
-            case UNKNOWN:
+            case SOCKS4a, UNKNOWN:
             default:
                 ctx.close();
                 break;

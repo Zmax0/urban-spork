@@ -11,6 +11,10 @@ public class ConfigHandler {
     private static final String NAME = "config.json";
     private static final File FILE = new File(ConfigLocation.getPath(ConfigHandler.class) + File.separatorChar + NAME);
 
+    private ConfigHandler() {
+
+    }
+
     public static void write(Object object) throws IOException {
         if (!FILE.exists() && !FILE.getParentFile().mkdirs() && !FILE.createNewFile()) {
             throw new IllegalStateException("failed to create config file");

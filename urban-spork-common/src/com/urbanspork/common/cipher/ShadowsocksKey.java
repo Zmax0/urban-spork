@@ -56,11 +56,11 @@ public class ShadowsocksKey implements SecretKey {
     }
 
     private byte[] getEncode() {
-        byte[] key = new byte[length];
         byte[] passwordDigest = null;
         byte[] container = null;
         int index = 0;
         byte[] passwordBytes = password.getBytes(StandardCharsets.UTF_8);
+        byte[] encoded = new byte[length];
         while (index < length) {
             if (index == 0) {
                 passwordDigest = MD5.digest(passwordBytes);
@@ -70,9 +70,9 @@ public class ShadowsocksKey implements SecretKey {
                 arraycopy(passwordBytes, 0, container, passwordDigest.length, passwordBytes.length);
                 passwordDigest = MD5.digest(container);
             }
-            arraycopy(passwordDigest, 0, key, index, Math.min(length - index, passwordDigest.length));
+            arraycopy(passwordDigest, 0, encoded, index, Math.min(length - index, passwordDigest.length));
             index += passwordDigest.length;
         }
-        return key;
+        return encoded;
     }
 }

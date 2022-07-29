@@ -10,16 +10,14 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 
 public class ServerProtocolHandler extends ChannelInboundHandlerAdapter implements ShadowsocksProtocol {
 
-//    private static final Logger logger = LoggerFactory.getLogger(ServerProtocolHandler.class);
-
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (msg instanceof ByteBuf _msg) {
+        if (msg instanceof ByteBuf byteBuf) {
             Channel channel = ctx.channel();
-            channel.attr(AttributeKeys.REMOTE_ADDRESS).set(decodeAddress(_msg));
+            channel.attr(AttributeKeys.REMOTE_ADDRESS).set(decodeAddress(byteBuf));
             channel.pipeline().addLast(new RemoteFrontendHandler()).remove(this);
             ctx.fireChannelActive();
-            ctx.fireChannelRead(_msg);
+            ctx.fireChannelRead(byteBuf);
         }
     }
 

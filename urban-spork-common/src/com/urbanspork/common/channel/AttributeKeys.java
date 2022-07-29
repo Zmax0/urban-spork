@@ -17,4 +17,7 @@ public class AttributeKeys {
     public static final AttributeKey<Socks5CommandRequest> REQUEST = AttributeKey.newInstance("REQUEST");
     public static final AttributeKey<EventLoopGroup> WORKER = AttributeKey.newInstance("WORKER");
 
+    private AttributeKeys() {
+
+    }
 }

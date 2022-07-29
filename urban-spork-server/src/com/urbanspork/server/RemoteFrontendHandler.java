@@ -26,7 +26,7 @@ public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(RemoteFrontendHandler.class);
 
-    private final ByteBuf buff = Unpooled.directBuffer();
+    private final ByteBuf buff = Unpooled.buffer();
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
@@ -34,29 +34,30 @@ public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
         InetSocketAddress remoteAddress = localChannel.attr(AttributeKeys.REMOTE_ADDRESS).get();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap
-            .group(localChannel.eventLoop())
-            .channel(localChannel.getClass())
-            .option(ChannelOption.AUTO_READ, false)
-            .handler(new ChannelInitializer<SocketChannel>() {
-                @Override
-                public void initChannel(SocketChannel remoteChannel) {
-                    remoteChannel.pipeline().addLast(new RemoteBackendHandler(localChannel));
-                }
-            })
-            .connect(remoteAddress)
-            .addListener((ChannelFutureListener) future -> {
-                if (future.isSuccess()) {
-                    ChannelPipeline pipeline = localChannel.pipeline();
-                    pipeline.addLast(new DefaultChannelInboundHandler(future.channel()));
-                    if (pipeline.get(RemoteFrontendHandler.class) != null) {
-                        pipeline.remove(RemoteFrontendHandler.this);
-                        ctx.fireChannelRead(buff);
+                .group(localChannel.eventLoop())
+                .channel(localChannel.getClass())
+                .option(ChannelOption.AUTO_READ, false)
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    public void initChannel(SocketChannel remoteChannel) {
+                        remoteChannel.pipeline().addLast(new RemoteBackendHandler(localChannel));
                     }
-                } else {
-                    logger.error("Connect " + remoteAddress + " failed");
-                    localChannel.close();
-                }
-            });
+                })
+                .connect(remoteAddress)
+                .addListener((ChannelFutureListener) future -> {
+                    if (future.isSuccess()) {
+                        ChannelPipeline pipeline = localChannel.pipeline();
+                        pipeline.addLast(new DefaultChannelInboundHandler(future.channel()));
+                        if (pipeline.get(RemoteFrontendHandler.class) != null) {
+                            pipeline.remove(RemoteFrontendHandler.this);
+                            ctx.fireChannelRead(buff);
+                        }
+                    } else {
+                        logger.error("Connect {} failed", remoteAddress);
+                        localChannel.close();
+                        ChannelCloseUtils.closeOnFlush(ctx.channel());
+                    }
+                });
     }
 
     @Override
@@ -68,12 +69,6 @@ public class RemoteFrontendHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
         buff.release();
-        ChannelCloseUtils.closeOnFlush(ctx.channel());
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        logger.error("Exception on channel " + ctx.channel() + " ~>", cause);
         ChannelCloseUtils.closeOnFlush(ctx.channel());
     }
 

@@ -63,7 +63,6 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        logger.error("Exception caught on channel " + ctx.channel() + " ~>", cause);
         ChannelCloseUtils.closeOnFlush(ctx.channel());
     }
 

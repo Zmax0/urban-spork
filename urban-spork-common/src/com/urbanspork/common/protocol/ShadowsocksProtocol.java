@@ -2,6 +2,7 @@ package com.urbanspork.common.protocol;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
 import io.netty.buffer.ByteBuf;
@@ -24,7 +25,7 @@ public interface ShadowsocksProtocol {
         return encoded;
     }
 
-    default InetSocketAddress decodeAddress(ByteBuf msg) throws Exception {
+    default InetSocketAddress decodeAddress(ByteBuf msg) throws UnknownHostException {
         Socks5AddressType addressType = Socks5AddressType.valueOf(msg.getByte(0));
         if (addressType == Socks5AddressType.DOMAIN) {
             int length = msg.getByte(1);

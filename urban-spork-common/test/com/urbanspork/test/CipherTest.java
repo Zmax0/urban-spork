@@ -14,7 +14,7 @@ import java.security.SecureRandom;
 
 @DisplayName("Cipher Test")
 @TestInstance(Lifecycle.PER_CLASS)
-public class CipherTest {
+class CipherTest {
 
     private static final String str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-=_+";
 
@@ -33,7 +33,7 @@ public class CipherTest {
 
     @ParameterizedTest
     @EnumSource(ShadowsocksCiphers.class)
-    public void start(ShadowsocksCiphers cipher) throws Exception {
+    void start(ShadowsocksCiphers cipher) throws Exception {
         this.cipher = cipher.newShadowsocksCipher();
         cipherTest();
     }
