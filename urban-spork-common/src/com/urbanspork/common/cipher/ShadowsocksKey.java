@@ -1,7 +1,7 @@
 package com.urbanspork.common.cipher;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import java.io.Serial;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -9,6 +9,7 @@ import static java.lang.System.arraycopy;
 
 public class ShadowsocksKey implements SecretKey {
 
+    @Serial
     private static final long serialVersionUID = 20181226;
 
     private static final MessageDigest MD5;
@@ -21,13 +22,13 @@ public class ShadowsocksKey implements SecretKey {
         }
     }
 
-    private final String password;
+    private final byte[] password;
 
     private final int length;
 
     private final transient byte[] key;
 
-    public ShadowsocksKey(String password, int length) {
+    public ShadowsocksKey(byte[] password, int length) {
         this.password = password;
         this.length = length;
         this.key = getEncode();
@@ -35,7 +36,7 @@ public class ShadowsocksKey implements SecretKey {
 
     @Override
     public String toString() {
-        return password;
+        return new String(password);
     }
 
     @Override
@@ -54,23 +55,22 @@ public class ShadowsocksKey implements SecretKey {
     }
 
     private byte[] getEncode() {
-        byte[] key = new byte[length];
         byte[] passwordDigest = null;
         byte[] container = null;
         int index = 0;
-        byte[] passwordBytes = password.getBytes(StandardCharsets.UTF_8);
+        byte[] encoded = new byte[length];
         while (index < length) {
             if (index == 0) {
-                passwordDigest = MD5.digest(passwordBytes);
-                container = new byte[passwordBytes.length + passwordDigest.length];
+                passwordDigest = MD5.digest(password);
+                container = new byte[password.length + passwordDigest.length];
             } else {
                 arraycopy(passwordDigest, 0, container, 0, passwordDigest.length);
-                arraycopy(passwordBytes, 0, container, passwordDigest.length, passwordBytes.length);
+                arraycopy(password, 0, container, passwordDigest.length, password.length);
                 passwordDigest = MD5.digest(container);
             }
-            arraycopy(passwordDigest, 0, key, index, Math.min(length - index, passwordDigest.length));
+            arraycopy(passwordDigest, 0, encoded, index, Math.min(length - index, passwordDigest.length));
             index += passwordDigest.length;
         }
-        return key;
+        return encoded;
     }
 }

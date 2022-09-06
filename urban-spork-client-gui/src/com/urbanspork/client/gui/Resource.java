@@ -1,23 +1,18 @@
 package com.urbanspork.client.gui;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-
+import com.urbanspork.common.config.ClientConfig;
+import com.urbanspork.common.config.ConfigHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.urbanspork.common.config.ClientConfig;
-import com.urbanspork.common.config.ConfigHandler;
+import java.io.IOException;
+import java.net.URL;
+import java.util.*;
 
 public class Resource {
 
     private static final Logger logger = LoggerFactory.getLogger(Resource.class);
 
-    private static final String RESOURCE = "resource";
     private static final String TRAY_ICON_NAME = "ticon.png";
     private static final String PROGRAM_ICON_NAME = "picon.png";
     private static final String CONSOLE_CSS_NAME = "console.css";
@@ -30,9 +25,10 @@ public class Resource {
 
     static {
         ClassLoader classLoader = Resource.class.getClassLoader();
-        PROGRAM_ICON = classLoader.getResource(RESOURCE + "/" + PROGRAM_ICON_NAME);
-        TRAY_ICON = classLoader.getResource(RESOURCE + "/" + TRAY_ICON_NAME);
-        CONSOLE_CSS = classLoader.getResource(RESOURCE + "/" + CONSOLE_CSS_NAME);
+        String resourcePath = "resource/";
+        PROGRAM_ICON = Objects.requireNonNull(classLoader.getResource(resourcePath + PROGRAM_ICON_NAME));
+        TRAY_ICON = Objects.requireNonNull(classLoader.getResource(resourcePath + TRAY_ICON_NAME));
+        CONSOLE_CSS = Objects.requireNonNull(classLoader.getResource(resourcePath + CONSOLE_CSS_NAME));
         ClientConfig config = null;
         try {
             config = ConfigHandler.read(ClientConfig.class);
@@ -45,19 +41,24 @@ public class Resource {
         }
         String language = config.getLanguage();
         ResourceBundle bundle;
+        String baseName = "com.urbanspork.client.gui.i18n.language";
         try {
             if (language == null) {
                 Locale locale = Locale.getDefault();
-                bundle = ResourceBundle.getBundle("com.urbanspork.client.gui.i18n.language", locale);
+                bundle = ResourceBundle.getBundle(baseName, locale);
                 config.setLanguage(locale.getLanguage());
             } else {
-                bundle = ResourceBundle.getBundle("com.urbanspork.client.gui.i18n.language", new Locale(language));
+                bundle = ResourceBundle.getBundle(baseName, new Locale(language));
             }
         } catch (MissingResourceException e) {
-            bundle = ResourceBundle.getBundle("com.urbanspork.client.gui.i18n.language", Locale.ENGLISH);
+            bundle = ResourceBundle.getBundle(baseName, Locale.ENGLISH);
         }
         CONFIG = config;
         BUNDLE = bundle;
+    }
+
+    private Resource() {
+
     }
 
     public static ClientConfig config() {

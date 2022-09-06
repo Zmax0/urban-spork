@@ -1,14 +1,19 @@
 package com.urbanspork.client.gui.tray.menu.item;
 
-import java.awt.Menu;
-import java.awt.event.ActionListener;
-
 import com.urbanspork.client.gui.console.component.Console;
 import com.urbanspork.client.gui.i18n.I18n;
-
 import javafx.application.Platform;
 
+import java.awt.*;
+import java.awt.event.ActionListener;
+
 public class ConsoleMenuItem implements TrayMenuItemBuilder {
+
+    private final Console console;
+
+    public ConsoleMenuItem(Console console) {
+        this.console = console;
+    }
 
     @Override
     public Menu getMenuItem() {
@@ -22,6 +27,6 @@ public class ConsoleMenuItem implements TrayMenuItemBuilder {
 
     @Override
     public ActionListener getActionListener() {
-        return e -> Platform.runLater(Console::show);
+        return e -> Platform.runLater(console::show);
     }
 }

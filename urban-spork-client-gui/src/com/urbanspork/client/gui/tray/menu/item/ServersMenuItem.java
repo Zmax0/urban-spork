@@ -1,14 +1,5 @@
 package com.urbanspork.client.gui.tray.menu.item;
 
-import java.awt.CheckboxMenuItem;
-import java.awt.Menu;
-import java.awt.MenuItem;
-import java.awt.TrayIcon.MessageType;
-import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.urbanspork.client.gui.Resource;
 import com.urbanspork.client.gui.console.component.Console;
 import com.urbanspork.client.gui.console.component.Proxy;
@@ -17,7 +8,20 @@ import com.urbanspork.client.gui.i18n.I18n;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ServerConfig;
 
+import java.awt.*;
+import java.awt.TrayIcon.MessageType;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 public class ServersMenuItem implements TrayMenuItemBuilder {
+
+    private final Console console;
+
+    public ServersMenuItem(Console console) {
+        this.console = console;
+    }
 
     @Override
     public MenuItem getMenuItem() {
@@ -33,38 +37,40 @@ public class ServersMenuItem implements TrayMenuItemBuilder {
                 if (config.getIndex() == j) {
                     item.setState(true);
                 }
-                item.addItemListener(l -> {
-                    if (item.getState()) {
-                        for (int k = 0; k < items.size(); k++) {
-                            CheckboxMenuItem i = items.get(k);
-                            if (i.equals(item)) {
-                                config.setIndex(k);
-                                Console.getServerConfigListView().getSelectionModel().select(k);
-                            }
-                            if (!i.equals(item) && i.getState()) {
-                                i.setState(false);
-                            }
-                        }
-                        try {
-                            config.save();
-                        } catch (IOException e) {
-                            Tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
-                            return;
-                        }
-                        Proxy.relaunch();
-                        String message = config.getCurrent().toString();
-                        Tray.displayMessage("Proxy is running", message, MessageType.INFO);
-                        Tray.setToolTip(message);
-                    } else {
-                        item.setState(true);
-                    }
-                });
+                item.addItemListener(listener -> itemStateChanged(config, items, item));
                 items.add(item);
                 menu.add(item);
             }
         }
         return menu;
 
+    }
+
+    private void itemStateChanged(ClientConfig config, List<CheckboxMenuItem> items, CheckboxMenuItem item) {
+        if (item.getState()) {
+            for (int k = 0; k < items.size(); k++) {
+                CheckboxMenuItem i = items.get(k);
+                if (i.equals(item)) {
+                    config.setIndex(k);
+                    console.getServerConfigJFXListView().getSelectionModel().select(k);
+                }
+                if (!i.equals(item) && i.getState()) {
+                    i.setState(false);
+                }
+            }
+            try {
+                config.save();
+            } catch (IOException e) {
+                Tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
+                return;
+            }
+            Proxy.relaunch();
+            String message = config.getCurrent().toString();
+            Tray.displayMessage("Proxy is running", message, MessageType.INFO);
+            Tray.setToolTip(message);
+        } else {
+            item.setState(true);
+        }
     }
 
     @Override

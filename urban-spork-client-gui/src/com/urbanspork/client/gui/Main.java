@@ -1,13 +1,13 @@
 package com.urbanspork.client.gui;
 
 import com.urbanspork.client.gui.console.component.Console;
-import com.urbanspork.client.gui.console.component.Tray;
+import javafx.application.Application;
 
 public final class Main {
 
     public static void main(String[] args) {
-        Tray.main(args);
-        Console.main(args);
+        System.setProperty("javafx.preloader", "com.urbanspork.client.gui.console.component.Console");
+        Application.launch(Console.class, args);
     }
 
 }

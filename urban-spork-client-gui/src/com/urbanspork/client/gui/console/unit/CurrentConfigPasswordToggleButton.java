@@ -1,7 +1,6 @@
 package com.urbanspork.client.gui.console.unit;
 
 import com.jfoenix.controls.JFXToggleButton;
-
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.HPos;

@@ -1,14 +1,17 @@
 package com.urbanspork.common.cipher;
 
+import io.netty.buffer.ByteBuf;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+
 import java.security.SecureRandom;
 
 public interface Cipher {
 
-    byte[] empty = new byte[0];
+    ByteBuf encrypt(ByteBuf in, byte[] key) throws InvalidCipherTextException;
 
-    byte[] encrypt(byte[] in, byte[] key) throws Exception;
+    ByteBuf decrypt(ByteBuf in, byte[] key) throws InvalidCipherTextException;
 
-    byte[] decrypt(byte[] in, byte[] key) throws Exception;
+    void releaseBuffer();
 
     default byte[] randomBytes(int length) {
         byte[] bytes = new byte[length];
