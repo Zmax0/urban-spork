@@ -1,7 +1,6 @@
 package com.urbanspork.client.gui.console.unit;
 
 import com.urbanspork.common.cipher.ShadowsocksCiphers;
-
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.effect.BlendMode;
 

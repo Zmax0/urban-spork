@@ -1,14 +1,13 @@
 package com.urbanspork.client.gui.console.component;
 
-import java.awt.TrayIcon.MessageType;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.urbanspork.client.Client;
 import com.urbanspork.client.gui.Resource;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ServerConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.awt.TrayIcon.MessageType;
 
 public class Proxy {
 
@@ -17,6 +16,10 @@ public class Proxy {
     private static final ClientConfig config = Resource.config();
 
     private static Thread launcher;
+
+    private Proxy() {
+
+    }
 
     public static void relaunch() {
         if (launcher != null) {
@@ -33,7 +36,8 @@ public class Proxy {
                     Client.launch(config);
                 } catch (InterruptedException e) {
                     Thread thread = Thread.currentThread();
-                    logger.info("[{}-{}] was interrupted by relaunch", thread.getName(), thread.getId());
+                    logger.info("Interrupt thread [{}]", thread.getName());
+                    thread.interrupt();
                 } catch (Exception e) {
                     logger.error("Launching proxy client launching error", e);
                     String message = e.getMessage();
@@ -52,6 +56,10 @@ public class Proxy {
         } else {
             Tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
         }
+    }
+
+    public static void exit() {
+        launcher.interrupt();
     }
 
 }

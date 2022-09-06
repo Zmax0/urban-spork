@@ -1,21 +1,27 @@
 package com.urbanspork.common.cipher;
 
-public interface ShadowsocksCipher {
+import io.netty.buffer.ByteBuf;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 
-    String getName();
+public interface ShadowsocksCipher {
 
     int getKeySize();
 
-    Cipher encrypter();
+    Cipher encryptCipher();
 
-    Cipher decrypter();
+    Cipher decryptCipher();
 
-    default byte[] encrypt(byte[] in, ShadowsocksKey key) throws Exception {
-        return encrypter().encrypt(in, key.getEncoded());
+    default ByteBuf encrypt(ByteBuf in, ShadowsocksKey key) throws InvalidCipherTextException {
+        return encryptCipher().encrypt(in, key.getEncoded());
     }
 
-    default byte[] decrypt(byte[] in, ShadowsocksKey key) throws Exception {
-        return decrypter().decrypt(in, key.getEncoded());
+    default ByteBuf decrypt(ByteBuf in, ShadowsocksKey key) throws InvalidCipherTextException {
+        return decryptCipher().decrypt(in, key.getEncoded());
+    }
+
+    default void releaseBuffer() {
+        encryptCipher().releaseBuffer();
+        decryptCipher().releaseBuffer();
     }
 
 }

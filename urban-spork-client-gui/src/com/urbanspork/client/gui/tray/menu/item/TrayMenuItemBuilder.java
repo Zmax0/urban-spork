@@ -1,6 +1,6 @@
 package com.urbanspork.client.gui.tray.menu.item;
 
-import java.awt.MenuItem;
+import java.awt.*;
 import java.awt.event.ActionListener;
 import java.util.Optional;
 

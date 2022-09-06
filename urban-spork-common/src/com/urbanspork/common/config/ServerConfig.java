@@ -8,7 +8,7 @@ public class ServerConfig {
 
     private String port;
 
-    private String password;
+    private byte[] password;
 
     private ShadowsocksCiphers cipher;
 
@@ -38,11 +38,11 @@ public class ServerConfig {
         this.cipher = cipher;
     }
 
-    public String getPassword() {
+    public byte[] getPassword() {
         return password;
     }
 
-    public void setPassword(String password) {
+    public void setPassword(byte[] password) {
         this.password = password;
     }
 
@@ -68,12 +68,16 @@ public class ServerConfig {
             builder.append(' ').append(host).append(':').append(port);
         }
         if (builder.length() == 0) {
-            builder.append("未配置的服务器");
+            builder.append(" XX ");
         }
         return builder.toString();
     }
 
     private boolean isEmpty(String s) {
         return s != null && !s.isEmpty();
+    }
+
+    private boolean isEmpty(byte[] bytes) {
+        return bytes != null && bytes.length > 0;
     }
 }

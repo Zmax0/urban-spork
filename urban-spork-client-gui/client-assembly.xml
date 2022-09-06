@@ -12,6 +12,13 @@
   </dependencySets>
   <fileSets>
     <fileSet>
+      <directory>resource</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>*.cmd</include>
+      </includes>
+    </fileSet>
+    <fileSet>
       <directory>${project.build.directory}</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
