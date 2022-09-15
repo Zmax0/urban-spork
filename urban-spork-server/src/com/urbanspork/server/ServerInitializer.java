@@ -17,7 +17,7 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
 
     @Override
     protected void initChannel(Channel c) {
-        ShadowsocksCipher cipher = serverConfig.getCipher().newShadowsocksCipher();
+        ShadowsocksCipher cipher = serverConfig.getCipher().newCipher();
         ShadowsocksKey key = new ShadowsocksKey(serverConfig.getPassword(), cipher.getKeySize());
         c.pipeline()
                 .addLast(new ShadowsocksCipherCodec(cipher, key))

@@ -6,7 +6,7 @@ Shadowsocks proxy
 
 ## Require
 
-Java 11
+Java 17
 
 ## Build
 

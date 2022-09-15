@@ -34,7 +34,7 @@ class CipherTest {
     @ParameterizedTest
     @EnumSource(ShadowsocksCiphers.class)
     void start(ShadowsocksCiphers cipher) throws Exception {
-        this.cipher = cipher.newShadowsocksCipher();
+        this.cipher = cipher.newCipher();
         cipherTest();
     }
 

@@ -8,6 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.TrayIcon.MessageType;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 public class Proxy {
 
@@ -15,51 +18,44 @@ public class Proxy {
 
     private static final ClientConfig config = Resource.config();
 
-    private static Thread launcher;
+    private static final ExecutorService executor = Executors.newSingleThreadExecutor(new ProxyThreadFactory(config));
 
     private Proxy() {
 
     }
 
-    public static void relaunch() {
-        if (launcher != null) {
-            launcher.interrupt();
-        }
-        launch();
-    }
-
     public static void launch() {
         ServerConfig currentConfig = config.getCurrent();
         if (currentConfig != null) {
-            launcher = new Thread(() -> {
+            executor.submit(() -> {
                 try {
                     Client.launch(config);
-                } catch (InterruptedException e) {
-                    Thread thread = Thread.currentThread();
-                    logger.info("Interrupt thread [{}]", thread.getName());
-                    thread.interrupt();
                 } catch (Exception e) {
                     logger.error("Launching proxy client launching error", e);
                     String message = e.getMessage();
                     Tray.displayMessage("Error", message, MessageType.ERROR);
                     Tray.setToolTip(message);
-                    launcher = null;
                 }
             });
             String message = currentConfig.toString();
             Tray.displayMessage("Proxy is running", message, MessageType.INFO);
             Tray.setToolTip(message);
-            launcher.setName("UrbanSporkClient-" + currentConfig.getHost() + ':' + currentConfig.getPort());
-            launcher.setDaemon(true);
-            launcher.start();
-            logger.debug("[{}-{}] launched", launcher.getName(), launcher.getId());
         } else {
             Tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
         }
     }
 
     public static void exit() {
-        launcher.interrupt();
+        executor.shutdownNow();
+    }
+
+    private record ProxyThreadFactory(ClientConfig config) implements ThreadFactory {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r);
+            thread.setName("UrbanSporkClient-localhost:" + config.getPort());
+            return thread;
+        }
     }
 
 }

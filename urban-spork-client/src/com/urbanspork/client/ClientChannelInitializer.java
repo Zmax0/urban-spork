@@ -32,7 +32,7 @@ public class ClientChannelInitializer extends ChannelInitializer<NioSocketChanne
             channel.disconnect();
         } else {
             channel.attr(AttributeKeys.SERVER_ADDRESS).set(new InetSocketAddress(config.getHost(), Integer.parseInt(config.getPort())));
-            ShadowsocksCipher cipher = config.getCipher().newShadowsocksCipher();
+            ShadowsocksCipher cipher = config.getCipher().newCipher();
             channel.attr(AttributeKeys.CIPHER).set(cipher);
             channel.attr(AttributeKeys.KEY).set(new ShadowsocksKey(config.getPassword(), cipher.getKeySize()));
             channel.attr(AttributeKeys.WORKER).set(new NioEventLoopGroup());

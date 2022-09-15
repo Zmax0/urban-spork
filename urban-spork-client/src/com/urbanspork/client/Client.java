@@ -15,7 +15,7 @@ public class Client {
 
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
-    public static void launch(ClientConfig clientConfig) throws InterruptedException {
+    public static void launch(ClientConfig clientConfig) {
         logger.info("Launching proxy client ~> {}", clientConfig);
         int port = Integer.parseInt(clientConfig.getPort());
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
@@ -23,12 +23,16 @@ public class Client {
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
-                .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childOption(ChannelOption.TCP_NODELAY, true)
-                .childHandler(new ClientChannelInitializer(clientConfig));
+                    .channel(NioServerSocketChannel.class)
+                    .childOption(ChannelOption.SO_KEEPALIVE, true)
+                    .childOption(ChannelOption.TCP_NODELAY, true)
+                    .childHandler(new ClientChannelInitializer(clientConfig));
             ChannelFuture f = b.bind(port).sync();
             f.channel().closeFuture().sync();
+        } catch (InterruptedException e) {
+            logger.info("Interrupt thread [{}]", Thread.currentThread().getName());
+            workerGroup.shutdownGracefully();
+            bossGroup.shutdownGracefully();
         } finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();

@@ -43,7 +43,6 @@ public class ServersMenuItem implements TrayMenuItemBuilder {
             }
         }
         return menu;
-
     }
 
     private void itemStateChanged(ClientConfig config, List<CheckboxMenuItem> items, CheckboxMenuItem item) {
@@ -64,7 +63,7 @@ public class ServersMenuItem implements TrayMenuItemBuilder {
                 Tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
                 return;
             }
-            Proxy.relaunch();
+            Proxy.launch();
             String message = config.getCurrent().toString();
             Tray.displayMessage("Proxy is running", message, MessageType.INFO);
             Tray.setToolTip(message);

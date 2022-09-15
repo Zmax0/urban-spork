@@ -11,13 +11,17 @@ public enum ShadowsocksCiphers {
 
     chacha20_ietf_poly1305;
 
-    public ShadowsocksCipher newShadowsocksCipher() {
+    public ShadowsocksCipher newCipher() {
         return switch (this) {
             case aes_128_gcm -> new AES128GCM();
             case aes_192_gcm -> new AES192GCM();
             case aes_256_gcm -> new AES256GCM();
             case chacha20_ietf_poly1305 -> new ChaCha20IETFPoly1305();
         };
+    }
+
+    public static ShadowsocksCiphers defaultCipher() {
+        return aes_256_gcm;
     }
 
 }
