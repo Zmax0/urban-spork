@@ -12,16 +12,6 @@ public class ShadowsocksKey implements SecretKey {
     @Serial
     private static final long serialVersionUID = 20181226;
 
-    private static final MessageDigest MD5;
-
-    static {
-        try {
-            MD5 = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw new UnsupportedOperationException(e);
-        }
-    }
-
     private final byte[] password;
 
     private final int length;
@@ -59,6 +49,12 @@ public class ShadowsocksKey implements SecretKey {
         byte[] container = null;
         int index = 0;
         byte[] encoded = new byte[length];
+        MessageDigest MD5;
+        try {
+            MD5 = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            throw new UnsupportedOperationException(e);
+        }
         while (index < length) {
             if (index == 0) {
                 passwordDigest = MD5.digest(password);

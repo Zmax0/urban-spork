@@ -12,6 +12,8 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
 
@@ -25,7 +27,8 @@ public class Server {
         }
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        serverConfigs.forEach(serverConfig -> new Thread(() -> {
+        ExecutorService threadPool = Executors.newFixedThreadPool(serverConfigs.size());
+        serverConfigs.forEach(serverConfig -> threadPool.submit(() -> {
             try {
                 int port = Integer.parseInt(serverConfig.getPort());
                 ServerBootstrap b = new ServerBootstrap();
@@ -41,7 +44,8 @@ public class Server {
                 workerGroup.shutdownGracefully();
                 bossGroup.shutdownGracefully();
             }
-        }, "UrbanSporkServer-" + serverConfig.getPort()).start());
+        }, "UrbanSporkServer-" + serverConfig.getPort()));
+        threadPool.shutdown();
     }
 
 }

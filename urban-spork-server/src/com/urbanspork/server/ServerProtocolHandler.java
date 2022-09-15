@@ -15,8 +15,7 @@ public class ServerProtocolHandler extends ChannelInboundHandlerAdapter implemen
         if (msg instanceof ByteBuf byteBuf) {
             Channel channel = ctx.channel();
             channel.attr(AttributeKeys.REMOTE_ADDRESS).set(decodeAddress(byteBuf));
-            channel.pipeline().addLast(new RemoteFrontendHandler()).remove(this);
-            ctx.fireChannelActive();
+            channel.pipeline().addLast(new RemoteConnectionHandler()).remove(this);
             ctx.fireChannelRead(byteBuf);
         }
     }

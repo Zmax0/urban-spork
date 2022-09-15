@@ -128,6 +128,8 @@ public class Console extends Preloader {
             }
             if (!primaryStage.isShowing()) {
                 primaryStage.show();
+            } else {
+                primaryStage.toFront();
             }
         }
     }
@@ -206,7 +208,7 @@ public class Console extends Preloader {
             boolean isNew = config == null;
             if (config == null) {
                 config = new ServerConfig();
-                config.setCipher(ShadowsocksCiphers.aes_256_gcm);
+                config.setCipher(ShadowsocksCiphers.defaultCipher());
             }
             pack(config);
             if (isNew) {
@@ -218,7 +220,7 @@ public class Console extends Preloader {
             clientConfig.setPort(clientConfigPortTextField.getText());
             clientConfig.setIndex(selectionModel.getSelectedIndex());
             saveConfig();
-            Proxy.relaunch();
+            Proxy.launch();
         }
     }
 
@@ -384,7 +386,7 @@ public class Console extends Preloader {
                         clientConfigPortTextField.validate();
                         if (!clientConfig.getPort().equals(clientConfigPortTextField.getText())) {
                             clientConfig.setPort(clientConfigPortTextField.getText());
-                            Proxy.relaunch();
+                            Proxy.launch();
                             saveConfig();
                         }
                     }
@@ -505,9 +507,11 @@ public class Console extends Preloader {
             currentConfigHostTextField.setText(c.getHost());
             currentConfigPortTextField.setText(c.getPort());
             currentConfigRemarkTextField.setText(c.getRemark());
-            String password = new String(c.getPassword());
-            currentConfigPasswordPasswordField.setText(password);
-            currentConfigPasswordTextField.setText(password);
+            if (c.getPassword() != null) {
+                String password = new String(c.getPassword());
+                currentConfigPasswordPasswordField.setText(password);
+                currentConfigPasswordTextField.setText(password);
+            }
             currentConfigPasswordToggleButton.setSelected(false);
             currentConfigCipherChoiceBox.setValue(c.getCipher());
         }

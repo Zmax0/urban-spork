@@ -34,7 +34,7 @@ public class DefaultChannelInboundHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        logger.error("Exception caught on channel {}", ctx.channel());
+        logger.error("Exception caught on channel {}, message {}", ctx.channel(), cause.getMessage());
         ChannelCloseUtils.closeOnFlush(channel);
     }
 
