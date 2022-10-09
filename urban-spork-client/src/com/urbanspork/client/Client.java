@@ -3,8 +3,6 @@ package com.urbanspork.client;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -21,14 +19,10 @@ public class Client {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
+            new ServerBootstrap().group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true)
-                    .childOption(ChannelOption.TCP_NODELAY, true)
-                    .childHandler(new ClientChannelInitializer(clientConfig));
-            ChannelFuture f = b.bind(port).sync();
-            f.channel().closeFuture().sync();
+                    .childHandler(new ClientChannelInitializer(clientConfig))
+                    .bind(port).sync().channel().closeFuture().sync();
         } catch (InterruptedException e) {
             logger.info("Interrupt thread [{}]", Thread.currentThread().getName());
             workerGroup.shutdownGracefully();

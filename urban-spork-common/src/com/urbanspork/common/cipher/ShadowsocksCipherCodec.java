@@ -28,9 +28,8 @@ public class ShadowsocksCipherCodec extends MessageToMessageCodec<ByteBuf, ByteB
     }
 
     @Override
-    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+    public void channelUnregistered(ChannelHandlerContext ctx) {
         cipher.releaseBuffer();
-        super.channelUnregistered(ctx);
     }
 
 }

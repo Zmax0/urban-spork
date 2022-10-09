@@ -6,7 +6,6 @@ import com.urbanspork.common.cipher.ShadowsocksKey;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ServerConfig;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler;
 import org.slf4j.Logger;
@@ -35,10 +34,10 @@ public class ClientChannelInitializer extends ChannelInitializer<NioSocketChanne
             ShadowsocksCipher cipher = config.getCipher().newCipher();
             channel.attr(AttributeKeys.CIPHER).set(cipher);
             channel.attr(AttributeKeys.KEY).set(new ShadowsocksKey(config.getPassword(), cipher.getKeySize()));
-            channel.attr(AttributeKeys.WORKER).set(new NioEventLoopGroup());
             channel.pipeline()
-                .addLast(new SocksPortUnificationServerHandler())
-                .addLast(new ClientSocksMessageHandler());
+                    .addLast(new SocksPortUnificationServerHandler())
+                    .addLast(ClientSocksMessageHandler.INSTANCE)
+            ;
         }
     }
 
