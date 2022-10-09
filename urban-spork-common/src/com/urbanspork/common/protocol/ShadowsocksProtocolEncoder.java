@@ -14,11 +14,7 @@ public class ShadowsocksProtocolEncoder extends MessageToByteEncoder<ByteBuf> im
         if (request != null) {
             ctx.channel().attr(AttributeKeys.REQUEST).set(null);
             out.writeBytes(encodeRequest(request));
-            if (msg.isReadable()) {
-                out.writeBytes(msg);
-            }
-        } else {
-            out.writeBytes(msg);
         }
+        out.writeBytes(msg);
     }
 }
