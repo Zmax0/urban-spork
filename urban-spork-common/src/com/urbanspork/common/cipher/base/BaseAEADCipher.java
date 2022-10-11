@@ -12,7 +12,8 @@ import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 
-import static io.netty.buffer.Unpooled.buffer;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * AEAD Cipher
@@ -29,17 +30,16 @@ public class BaseAEADCipher implements Cipher {
     private static final int NONCE_SIZE = 12;
     private static final int TAG_SIZE = 16;
     private static final int PAYLOAD_SIZE = 16 * 1024 - 1;
+    private static final int INIT_PAYLOAD_LENGTH = Integer.MIN_VALUE;
     private static final byte[] info = new byte[]{115, 115, 45, 115, 117, 98, 107, 101, 121};
-    private static final int DEFAULT_PAYLOAD_LENGTH = Integer.MIN_VALUE;
 
     private final int saltSize;
     private final int macSize;
     private final AEADCipher cipher;
-    private final ByteBuf nonce = buffer(NONCE_SIZE);
-    private final ByteBuf buffer = buffer();
+    private final byte[] nonce = new byte[NONCE_SIZE];
 
-    private int payloadLength = DEFAULT_PAYLOAD_LENGTH;
     private KeyParameter subKey;
+    int payloadLength = INIT_PAYLOAD_LENGTH;
 
     private boolean initialized;
 
@@ -51,88 +51,67 @@ public class BaseAEADCipher implements Cipher {
 
     @Override
     public ByteBuf encrypt(ByteBuf in, byte[] key) throws InvalidCipherTextException {
-        ByteBuf buf = buffer();
+        ByteBuf out = in.alloc().buffer();
         if (!initialized) {
             byte[] salt = randomBytes(saltSize);
-            buf.writeBytes(salt);
+            out.writeBytes(salt);
             subKey = generateSubKey(key, salt);
             initialized = true;
         }
-        ByteBuf in0 = buffer(in.readableBytes());
-        in0.writeBytes(in);
-        while (in0.isReadable()) {
-            int len = Math.min(in0.readableBytes(), PAYLOAD_SIZE);
+        while (in.isReadable()) {
+            int len = Math.min(in.readableBytes(), PAYLOAD_SIZE);
             byte[] temp = new byte[2 + TAG_SIZE + len + TAG_SIZE];
-            // Payload length is a 2-byte big-endian unsigned integer
-            ByteBuf encryptBuff = buffer(2);
-            encryptBuff.writeShort(len);
-            encryptBuff.readBytes(temp, 0, 2);
-            encryptBuff.release();
+            Unpooled.wrappedBuffer(temp).setShort(0, len);
             cipher.init(true, generateCipherParameters());
             cipher.doFinal(temp, cipher.processBytes(temp, 0, 2, temp, 0));
-            buf.writeBytes(temp, 0, 2 + TAG_SIZE);
-            in0.readBytes(temp, 2 + TAG_SIZE, len);
+            out.writeBytes(temp, 0, 2 + TAG_SIZE);
+            in.readBytes(temp, 2 + TAG_SIZE, len);
             cipher.init(true, generateCipherParameters());
             cipher.doFinal(temp, 2 + TAG_SIZE + cipher.processBytes(temp, 2 + TAG_SIZE, len, temp, 2 + TAG_SIZE));
-            buf.writeBytes(temp, 2 + TAG_SIZE, len + TAG_SIZE);
+            out.writeBytes(temp, 2 + TAG_SIZE, len + TAG_SIZE);
         }
-        return buf;
+        return out;
     }
 
     @Override
-    public ByteBuf decrypt(ByteBuf in, byte[] key) throws InvalidCipherTextException {
-        buffer.writeBytes(in);
-        if (!initialized) {
-            if (buffer.readableBytes() < saltSize) {
-                return Unpooled.EMPTY_BUFFER;
-            } else {
-                byte[] salt = new byte[saltSize];
-                buffer.readBytes(salt, 0, saltSize);
-                subKey = generateSubKey(key, salt);
-                initialized = true;
-            }
+    public List<ByteBuf> decrypt(ByteBuf in, byte[] key) throws InvalidCipherTextException {
+        List<ByteBuf> out = new LinkedList<>();
+        if (!initialized && in.readableBytes() >= saltSize) {
+            byte[] salt = new byte[saltSize];
+            in.readBytes(salt, 0, saltSize);
+            subKey = generateSubKey(key, salt);
+            initialized = true;
         }
-        ByteBuf buf = buffer();
-        while (buffer.isReadable()) {
-            if (payloadLength == DEFAULT_PAYLOAD_LENGTH && buffer.readableBytes() >= 2 + TAG_SIZE) {
+        while (initialized && in.readableBytes() >= (payloadLength == INIT_PAYLOAD_LENGTH ? 2 + TAG_SIZE : payloadLength + TAG_SIZE)) {
+            if (payloadLength == INIT_PAYLOAD_LENGTH) {
                 byte[] payloadLengthBytes = new byte[2 + TAG_SIZE];
-                buffer.readBytes(payloadLengthBytes, 0, 2 + TAG_SIZE);
+                in.readBytes(payloadLengthBytes);
                 cipher.init(false, generateCipherParameters());
                 cipher.doFinal(payloadLengthBytes, cipher.processBytes(payloadLengthBytes, 0, 2 + TAG_SIZE, payloadLengthBytes, 0));
-                ByteBuf len0 = buffer(payloadLengthBytes.length);
-                len0.writeBytes(payloadLengthBytes);
-                payloadLength = len0.getShort(0);
-                len0.release();
+                payloadLength = Unpooled.wrappedBuffer(payloadLengthBytes).readShort();
+            } else {
+                byte[] payload = new byte[payloadLength + TAG_SIZE];
+                in.readBytes(payload);
+                cipher.init(false, generateCipherParameters());
+                cipher.doFinal(payload, cipher.processBytes(payload, 0, payloadLength + TAG_SIZE, payload, 0));
+                out.add(in.alloc().buffer(payloadLength).writeBytes(payload, 0, payloadLength));
+                payloadLength = INIT_PAYLOAD_LENGTH;
             }
-            if (buffer.readableBytes() < (payloadLength == DEFAULT_PAYLOAD_LENGTH ? 2 + TAG_SIZE : payloadLength + TAG_SIZE)) {
-                break;
-            }
-            byte[] payload = new byte[payloadLength + TAG_SIZE];
-            buffer.readBytes(payload, 0, payloadLength + TAG_SIZE);
-            cipher.init(false, generateCipherParameters());
-            cipher.doFinal(payload, cipher.processBytes(payload, 0, payloadLength + TAG_SIZE, payload, 0));
-            buf.writeBytes(payload, 0, payloadLength);
-            payloadLength = DEFAULT_PAYLOAD_LENGTH;
         }
-        return buf;
-    }
-
-    @Override
-    public void releaseBuffer() {
-        buffer.release();
-        nonce.release();
+        return out;
     }
 
     private CipherParameters generateCipherParameters() {
-        CipherParameters parameters = new AEADParameters(subKey, macSize, nonce.array());
-        increaseNonce(nonce);
+        CipherParameters parameters = new AEADParameters(subKey, macSize, nonce);
+        increaseNonce();
         return parameters;
     }
 
-    private void increaseNonce(ByteBuf nonce) {
-        short i = nonce.getShortLE(0);
+    private void increaseNonce() {
+        ByteBuf buf = Unpooled.wrappedBuffer(nonce);
+        short i = buf.getShortLE(0);
         i++;
-        nonce.setShortLE(0, i);
+        buf.setShortLE(0, i);
     }
 
     private KeyParameter generateSubKey(byte[] key, byte[] salt) {
