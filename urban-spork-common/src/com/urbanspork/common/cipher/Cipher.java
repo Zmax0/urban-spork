@@ -8,9 +8,9 @@ import java.util.List;
 
 public interface Cipher {
 
-    ByteBuf encrypt(ByteBuf in, byte[] key) throws InvalidCipherTextException;
+    void encrypt(ByteBuf in, byte[] key, ByteBuf out) throws InvalidCipherTextException;
 
-    List<ByteBuf> decrypt(ByteBuf in, byte[] key) throws InvalidCipherTextException;
+    void decrypt(ByteBuf in, byte[] key, List<Object> out) throws InvalidCipherTextException;
 
     default byte[] randomBytes(int length) {
         byte[] bytes = new byte[length];

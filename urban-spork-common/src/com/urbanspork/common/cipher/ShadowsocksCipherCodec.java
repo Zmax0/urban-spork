@@ -19,15 +19,12 @@ public class ShadowsocksCipherCodec extends ByteToMessageCodec<ByteBuf> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
-        out.writeBytes(cipher.encrypt(msg, key));
+        cipher.encrypt(msg, key, out);
     }
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
-        List<ByteBuf> decrypt = cipher.decrypt(msg, key);
-        if (!decrypt.isEmpty()) {
-            out.addAll(decrypt);
-        }
+        cipher.decrypt(msg, key, out);
     }
 
 }

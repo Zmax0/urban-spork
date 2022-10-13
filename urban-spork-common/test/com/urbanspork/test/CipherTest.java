@@ -6,10 +6,7 @@ import com.urbanspork.common.cipher.ShadowsocksKey;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -35,19 +32,6 @@ class CipherTest {
         random.nextBytes(in);
     }
 
-    @ParameterizedTest
-    @EnumSource(ShadowsocksCiphers.class)
-    void parameterizedTest(ShadowsocksCiphers ciphers) throws Exception {
-        ShadowsocksCipher cipher = ciphers.newCipher();
-        ByteBuf inBuf = Unpooled.copiedBuffer(in);
-        ShadowsocksKey key = new ShadowsocksKey(password.getBytes(), cipher.getKeySize());
-        ByteBuf outBuf = cipherTest(cipher, key, inBuf);
-        byte[] out = new byte[in.length];
-        outBuf.readBytes(out, 0, outBuf.readableBytes());
-        outBuf.release();
-        Assertions.assertArrayEquals(in, out);
-    }
-
     private static String randomString() {
         SecureRandom random = new SecureRandom();
         StringBuilder sb = new StringBuilder();
@@ -58,28 +42,49 @@ class CipherTest {
         return sb.toString();
     }
 
-    private ByteBuf cipherTest(ShadowsocksCipher cipher, ShadowsocksKey key, ByteBuf inBuf) throws Exception {
-        CompositeByteBuf encrypt = Unpooled.compositeBuffer();
-        for (ByteBuf inBuf0 : randomDivide(inBuf)) {
-            ByteBuf encrypt0 = cipher.encryptCipher().encrypt(inBuf0, key.getEncoded());
-            encrypt.addComponent(true, encrypt0);
-        }
-        List<ByteBuf> divided = randomDivide(encrypt.consolidate());
-        CompositeByteBuf out = Unpooled.compositeBuffer();
-        CompositeByteBuf temp = Unpooled.compositeBuffer();
-        for (ByteBuf divided0 : divided) {
-            temp.addComponent(true, divided0);
-            List<ByteBuf> decrypt = cipher.decryptCipher().decrypt(temp, key.getEncoded());
-            if (!decrypt.isEmpty()) {
-                for (ByteBuf decrypt0 : decrypt) {
-                    out.addComponent(true, decrypt0);
-                }
+    @RepeatedTest(10)
+    void repeatedTest() throws Exception {
+        cipherTest(ShadowsocksCiphers.defaultCipher().newCipher());
+    }
+
+    @ParameterizedTest
+    @EnumSource(ShadowsocksCiphers.class)
+    void parameterizedTest(ShadowsocksCiphers ciphers) throws Exception {
+        cipherTest(ciphers.newCipher());
+    }
+
+    private void cipherTest(ShadowsocksCipher cipher) throws Exception {
+        List<Object> list = cipherTest(cipher, new ShadowsocksKey(password.getBytes(), cipher.getKeySize()), Unpooled.copiedBuffer(in));
+        byte[] out = new byte[in.length];
+        int len = 0;
+        for (Object obj : list) {
+            if (obj instanceof ByteBuf outBuf) {
+                int readableBytes = outBuf.readableBytes();
+                outBuf.readBytes(out, len, readableBytes);
+                outBuf.release();
+                len += readableBytes;
             }
+        }
+        Assertions.assertArrayEquals(in, out);
+    }
+
+    private List<Object> cipherTest(ShadowsocksCipher cipher, ShadowsocksKey key, ByteBuf inBuf) throws Exception {
+        ByteBuf encrypt = Unpooled.buffer();
+        for (ByteBuf inBuf0 : randomSlice(inBuf)) {
+            cipher.encryptCipher().encrypt(inBuf0, key.getEncoded(), encrypt);
+        }
+        inBuf.release();
+        List<ByteBuf> sliced = randomSlice(encrypt);
+        List<Object> out = new ArrayList<>();
+        CompositeByteBuf temp = Unpooled.compositeBuffer();
+        for (ByteBuf slice : sliced) {
+            temp.addComponent(true, slice);
+            cipher.decryptCipher().decrypt(temp, key.getEncoded(), out);
         }
         return out;
     }
 
-    private List<ByteBuf> randomDivide(ByteBuf src) {
+    private List<ByteBuf> randomSlice(ByteBuf src) {
         SecureRandom random = new SecureRandom();
         int i = random.nextInt(10);
         List<ByteBuf> list = new ArrayList<>();
