@@ -21,7 +21,7 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
         ShadowsocksKey key = new ShadowsocksKey(serverConfig.getPassword(), cipher.getKeySize());
         c.pipeline()
                 .addLast(new ShadowsocksCipherCodec(cipher, key))
-                .addLast(new ServerProtocolHandler());
+                .addLast(new RemoteConnectionHandler());
     }
 
 }

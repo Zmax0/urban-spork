@@ -12,7 +12,6 @@ import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -50,8 +49,7 @@ public class BaseAEADCipher implements Cipher {
     }
 
     @Override
-    public ByteBuf encrypt(ByteBuf in, byte[] key) throws InvalidCipherTextException {
-        ByteBuf out = in.alloc().buffer();
+    public void encrypt(ByteBuf in, byte[] key, ByteBuf out) throws InvalidCipherTextException {
         if (!initialized) {
             byte[] salt = randomBytes(saltSize);
             out.writeBytes(salt);
@@ -70,12 +68,10 @@ public class BaseAEADCipher implements Cipher {
             cipher.doFinal(temp, 2 + TAG_SIZE + cipher.processBytes(temp, 2 + TAG_SIZE, len, temp, 2 + TAG_SIZE));
             out.writeBytes(temp, 2 + TAG_SIZE, len + TAG_SIZE);
         }
-        return out;
     }
 
     @Override
-    public List<ByteBuf> decrypt(ByteBuf in, byte[] key) throws InvalidCipherTextException {
-        List<ByteBuf> out = new LinkedList<>();
+    public void decrypt(ByteBuf in, byte[] key, List<Object> out) throws InvalidCipherTextException {
         if (!initialized && in.readableBytes() >= saltSize) {
             byte[] salt = new byte[saltSize];
             in.readBytes(salt, 0, saltSize);
@@ -98,7 +94,6 @@ public class BaseAEADCipher implements Cipher {
                 payloadLength = INIT_PAYLOAD_LENGTH;
             }
         }
-        return out;
     }
 
     private CipherParameters generateCipherParameters() {

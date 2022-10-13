@@ -1,7 +1,21 @@
 <configuration debug="false">
+  <property name="defaultPattern" value="%d{yyyy-MM-dd HH:mm:ss} %level [%thread] %logger{5} - %msg%n"/>
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss} %level [%thread] %logger{5} - %msg%n</pattern>
+      <pattern>${defaultPattern}</pattern>
+    </encoder>
+  </appender>
+  <appender name="ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>logs/server.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>logs/server.%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+      <maxHistory>7</maxHistory>
+      <maxFileSize>500MB</maxFileSize>
+      <totalSizeCap>1GB</totalSizeCap>
+      <cleanHistoryOnStart>true</cleanHistoryOnStart>
+    </rollingPolicy>
+    <encoder>
+      <pattern>${defaultPattern}</pattern>
     </encoder>
   </appender>
 
@@ -10,5 +24,6 @@
 
   <root level="WARN">
     <appender-ref ref="STDOUT"/>
+    <appender-ref ref="ROLLING"/>
   </root>
 </configuration>

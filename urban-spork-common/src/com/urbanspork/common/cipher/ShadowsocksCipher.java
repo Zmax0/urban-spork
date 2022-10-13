@@ -13,12 +13,12 @@ public interface ShadowsocksCipher {
 
     Cipher decryptCipher();
 
-    default ByteBuf encrypt(ByteBuf in, ShadowsocksKey key) throws InvalidCipherTextException {
-        return encryptCipher().encrypt(in, key.getEncoded());
+    default void encrypt(ByteBuf in, ShadowsocksKey key, ByteBuf out) throws InvalidCipherTextException {
+        encryptCipher().encrypt(in, key.getEncoded(), out);
     }
 
-    default List<ByteBuf> decrypt(ByteBuf in, ShadowsocksKey key) throws InvalidCipherTextException {
-        return decryptCipher().decrypt(in, key.getEncoded());
+    default void decrypt(ByteBuf in, ShadowsocksKey key, List<Object> out) throws InvalidCipherTextException {
+        decryptCipher().decrypt(in, key.getEncoded(), out);
     }
 
 }
