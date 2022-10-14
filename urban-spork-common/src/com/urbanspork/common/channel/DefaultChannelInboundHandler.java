@@ -1,6 +1,5 @@
 package com.urbanspork.common.channel;
 
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -12,11 +11,6 @@ public class DefaultChannelInboundHandler extends ChannelInboundHandlerAdapter {
 
     public DefaultChannelInboundHandler(Channel channel) {
         this.channel = channel;
-    }
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) {
-        ctx.writeAndFlush(Unpooled.EMPTY_BUFFER);
     }
 
     @Override
@@ -37,6 +31,9 @@ public class DefaultChannelInboundHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        if (channel.isActive()) {
+            channel.close();
+        }
         ctx.close();
     }
 
