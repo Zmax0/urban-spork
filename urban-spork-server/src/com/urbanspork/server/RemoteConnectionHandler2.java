@@ -27,12 +27,12 @@ public class RemoteConnectionHandler2 extends ChannelInboundHandlerAdapter imple
         Promise<Channel> promise = ctx.executor().newPromise();
         promise.addListener(
                 (FutureListener<Channel>) future -> {
-                    final Channel outboundChannel = future.getNow();
+                    final Channel outboundChannel = future.get();
                     outboundChannel.writeAndFlush(msg).addListener(outboundFuture -> {
-                                ctx.pipeline().addLast(new DefaultChannelInboundHandler(outboundChannel));
-                                outboundChannel.pipeline().addLast(new DefaultChannelInboundHandler(localChannel));
-                                if (ctx.pipeline().get(RemoteConnectionHandler2.class) != null) {
-                                    ctx.pipeline().remove(RemoteConnectionHandler2.this);
+                                synchronized (localChannel.pipeline()) {
+                                    localChannel.pipeline().addLast(new DefaultChannelInboundHandler(outboundChannel));
+                                    outboundChannel.pipeline().addLast(new DefaultChannelInboundHandler(localChannel));
+                                    localChannel.pipeline().remove(RemoteConnectionHandler2.this);
                                 }
                             }
                     );
@@ -50,10 +50,5 @@ public class RemoteConnectionHandler2 extends ChannelInboundHandlerAdapter imple
                         ChannelCloseUtils.closeOnFlush(localChannel);
                     }
                 });
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        ChannelCloseUtils.closeOnFlush(ctx.channel());
     }
 }
