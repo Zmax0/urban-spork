@@ -35,7 +35,7 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
             Promise<Channel> promise = ctx.executor().newPromise();
             promise.addListener(
                     (FutureListener<Channel>) future -> {
-                        final Channel outboundChannel = future.getNow();
+                        final Channel outboundChannel = future.get();
                         if (future.isSuccess()) {
                             ChannelFuture responseFuture = localChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, request.dstAddrType(), request.dstAddr(), request.dstPort()));
                             responseFuture.addListener((ChannelFutureListener) channelFuture -> {
@@ -55,7 +55,7 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
                     .handler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel remoteChannel) {
-                            remoteChannel.attr(AttributeKeys.REQUEST).set(request);
+                            remoteChannel.attr(AttributeKeys.REQUEST).setIfAbsent(request);
                             remoteChannel.pipeline()
                                     .addLast(new ShadowsocksCipherCodec(localChannel.attr(AttributeKeys.CIPHER).get(), localChannel.attr(AttributeKeys.KEY).get()))
                                     .addLast(new ShadowsocksProtocolEncoder())
@@ -72,10 +72,4 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
             ctx.close();
         }
     }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        ChannelCloseUtils.closeOnFlush(ctx.channel());
-    }
-
 }

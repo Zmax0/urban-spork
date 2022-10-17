@@ -5,8 +5,10 @@ import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.protocol.ShadowsocksProtocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.*;
-import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,31 +26,20 @@ public class RemoteConnectionHandler extends ChannelInboundHandlerAdapter implem
         final InetSocketAddress remoteAddress = decodeAddress((ByteBuf) msg);
         b.group(localChannel.eventLoop())
                 .channel(localChannel.getClass())
-                .handler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    public void initChannel(SocketChannel remoteChannel) {
-                        remoteChannel.pipeline().addLast(new DefaultChannelInboundHandler(localChannel));
-                    }
-                })
+                .handler(new DefaultChannelInboundHandler(localChannel))
                 .connect(remoteAddress)
                 .addListener((ChannelFutureListener) future -> {
                     if (future.isSuccess()) {
-                        ChannelPipeline pipeline = localChannel.pipeline();
-                        pipeline.addLast(new DefaultChannelInboundHandler(future.channel()));
-                        if (pipeline.get(RemoteConnectionHandler.class) != null) {
-                            pipeline.remove(RemoteConnectionHandler.this);
-                        }
                         logger.info("Connect success [id: {}, L: {} - R: /{}]", localChannel.id(), localChannel.localAddress(), remoteAddress.getHostName());
-                        ctx.fireChannelRead(msg);
+                        synchronized (localChannel.pipeline()) {
+                            localChannel.pipeline().addLast(new DefaultChannelInboundHandler(future.channel()));
+                            localChannel.pipeline().remove(RemoteConnectionHandler.this);
+                            ctx.fireChannelRead(msg);
+                        }
                     } else {
                         logger.error("Connect remote address failed {}", remoteAddress);
                         ChannelCloseUtils.closeOnFlush(ctx.channel());
                     }
                 });
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        ChannelCloseUtils.closeOnFlush(ctx.channel());
     }
 }
