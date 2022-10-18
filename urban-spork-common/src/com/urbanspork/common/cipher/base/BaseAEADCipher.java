@@ -18,7 +18,7 @@ import java.util.List;
  * AEAD Cipher
  *
  * @author Zmax0
- * @see <a href=https://shadowsocks.org/en/wiki/AEAD-Ciphers.html">https://shadowsocks.org/en/wiki/AEAD-Ciphers.html</a>
+ * @see <a href=https://shadowsocks.org/guide/aead.html">https://shadowsocks.org/guide/aead.html</a>
  */
 public class BaseAEADCipher implements Cipher {
 

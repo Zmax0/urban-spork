@@ -4,6 +4,7 @@ import com.urbanspork.common.cipher.ShadowsocksCipher;
 import com.urbanspork.common.cipher.ShadowsocksCipherCodec;
 import com.urbanspork.common.cipher.ShadowsocksKey;
 import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.protocol.ShadowsocksProtocolDecoder;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 
@@ -21,7 +22,8 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
         ShadowsocksKey key = new ShadowsocksKey(serverConfig.getPassword(), cipher.getKeySize());
         c.pipeline()
                 .addLast(new ShadowsocksCipherCodec(cipher, key))
-                .addLast(new RemoteConnectionHandler2());
+                .addLast(new ShadowsocksProtocolDecoder())
+                .addLast(new RemoteConnectionHandler());
     }
 
 }
