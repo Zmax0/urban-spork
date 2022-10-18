@@ -29,9 +29,8 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, SocksMessage message) {
-        Channel localChannel = ctx.channel();
-        InetSocketAddress serverAddress = localChannel.attr(AttributeKeys.SERVER_ADDRESS).get();
         if (message instanceof Socks5CommandRequest request) {
+            Channel localChannel = ctx.channel();
             Promise<Channel> promise = ctx.executor().newPromise();
             promise.addListener(
                     (FutureListener<Channel>) future -> {
@@ -48,6 +47,7 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
                             ChannelCloseUtils.closeOnFlush(localChannel);
                         }
                     });
+            InetSocketAddress serverAddress = localChannel.attr(AttributeKeys.SERVER_ADDRESS).get();
             b.group(localChannel.eventLoop())
                     .channel(NioSocketChannel.class)
                     .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
@@ -55,10 +55,9 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
                     .handler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel remoteChannel) {
-                            remoteChannel.attr(AttributeKeys.REQUEST).setIfAbsent(request);
                             remoteChannel.pipeline()
                                     .addLast(new ShadowsocksCipherCodec(localChannel.attr(AttributeKeys.CIPHER).get(), localChannel.attr(AttributeKeys.KEY).get()))
-                                    .addLast(new ShadowsocksProtocolEncoder())
+                                    .addLast(new ShadowsocksProtocolEncoder(request))
                                     .addLast(new ClientPromiseHandler(promise));
                         }
                     }).connect(serverAddress).addListener((ChannelFutureListener) future -> {
