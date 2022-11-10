@@ -38,7 +38,9 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
                         if (future.isSuccess()) {
                             ChannelFuture responseFuture = localChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, request.dstAddrType(), request.dstAddr(), request.dstPort()));
                             responseFuture.addListener((ChannelFutureListener) channelFuture -> {
-                                ctx.pipeline().remove(ClientSocksConnectHandler.this);
+                                if (!ctx.isRemoved()) {
+                                    ctx.pipeline().remove(ClientSocksConnectHandler.this);
+                                }
                                 outboundChannel.pipeline().addLast(new DefaultChannelInboundHandler(localChannel));
                                 ctx.pipeline().addLast(new DefaultChannelInboundHandler(outboundChannel));
                             });

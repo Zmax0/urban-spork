@@ -34,7 +34,6 @@ public class RemoteConnectionHandler extends ChannelInboundHandlerAdapter implem
                     .connect(remoteAddress).addListener((ChannelFutureListener) future -> {
                         if (future.isSuccess()) {
                             logger.info("Connect success [id: {}, L: {} - R: /{}]", localChannel.id(), localChannel.localAddress(), remoteAddress.getHostName());
-                            localChannel.pipeline().remove(RemoteConnectionHandler.this);
                             p.setSuccess(future.channel());
                         } else {
                             p.setFailure(future.cause());
@@ -45,6 +44,9 @@ public class RemoteConnectionHandler extends ChannelInboundHandlerAdapter implem
                         Channel outboundChannel = future.get();
                         if (future.isSuccess()) {
                             localChannel.pipeline().addLast(new DefaultChannelInboundHandler(outboundChannel));
+                            if (!ctx.isRemoved()) {
+                                localChannel.pipeline().remove(RemoteConnectionHandler.this);
+                            }
                             outboundChannel.writeAndFlush(msg);
                         } else {
                             ReferenceCountUtil.release(msg);

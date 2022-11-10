@@ -30,7 +30,7 @@ public class BaseAEADCipher implements Cipher {
     private static final int TAG_SIZE = 16;
     private static final int PAYLOAD_SIZE = 16 * 1024 - 1;
     private static final int INIT_PAYLOAD_LENGTH = Integer.MIN_VALUE;
-    private static final byte[] info = new byte[]{115, 115, 45, 115, 117, 98, 107, 101, 121};
+    private static final byte[] INFO = new byte[]{115, 115, 45, 115, 117, 98, 107, 101, 121};
 
     private final int saltSize;
     private final int macSize;
@@ -38,7 +38,7 @@ public class BaseAEADCipher implements Cipher {
     private final byte[] nonce = new byte[NONCE_SIZE];
 
     private KeyParameter subKey;
-    int payloadLength = INIT_PAYLOAD_LENGTH;
+    private int payloadLength = INIT_PAYLOAD_LENGTH;
 
     private boolean initialized;
 
@@ -112,7 +112,7 @@ public class BaseAEADCipher implements Cipher {
     private KeyParameter generateSubKey(byte[] key, byte[] salt) {
         byte[] out = new byte[salt.length];
         HKDFBytesGenerator generator = new HKDFBytesGenerator(new SHA1Digest());
-        generator.init(new HKDFParameters(key, salt, info));
+        generator.init(new HKDFParameters(key, salt, INFO));
         generator.generateBytes(out, 0, out.length);
         return new KeyParameter(out);
     }
