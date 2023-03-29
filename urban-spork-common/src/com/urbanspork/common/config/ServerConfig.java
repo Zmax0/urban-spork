@@ -1,6 +1,7 @@
 package com.urbanspork.common.config;
 
-import com.urbanspork.common.cipher.ShadowsocksCiphers;
+import com.urbanspork.common.codec.SupportedCipher;
+import com.urbanspork.common.protocol.Protocols;
 
 public class ServerConfig {
 
@@ -10,7 +11,9 @@ public class ServerConfig {
 
     private byte[] password;
 
-    private ShadowsocksCiphers cipher;
+    private SupportedCipher cipher;
+
+    private Protocols protocol;
 
     private String remark;
 
@@ -30,11 +33,11 @@ public class ServerConfig {
         this.port = port;
     }
 
-    public ShadowsocksCiphers getCipher() {
+    public SupportedCipher getCipher() {
         return cipher;
     }
 
-    public void setCipher(ShadowsocksCiphers cipher) {
+    public void setCipher(SupportedCipher cipher) {
         this.cipher = cipher;
     }
 
@@ -44,6 +47,15 @@ public class ServerConfig {
 
     public void setPassword(byte[] password) {
         this.password = password;
+    }
+
+    public Protocols getProtocol() {
+        return protocol;
+    }
+
+    public ServerConfig setProtocol(Protocols protocol) {
+        this.protocol = protocol;
+        return this;
     }
 
     public String getRemark() {
@@ -66,6 +78,9 @@ public class ServerConfig {
         }
         if (host != null) {
             builder.append(' ').append(host).append(':').append(port);
+        }
+        if (protocol != null) {
+            builder.append(" [").append(protocol).append(']');
         }
         if (builder.length() == 0) {
             builder.append(" XX ");

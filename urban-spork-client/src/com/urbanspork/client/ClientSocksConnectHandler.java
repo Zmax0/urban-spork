@@ -1,13 +1,13 @@
 package com.urbanspork.client;
 
+import com.urbanspork.client.shadowsocks.ShadowsocksChannelInitializer;
+import com.urbanspork.client.vmess.VMessChannelInitializer;
 import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.channel.ChannelCloseUtils;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
-import com.urbanspork.common.cipher.ShadowsocksCipherCodec;
-import com.urbanspork.common.protocol.ShadowsocksProtocolEncoder;
+import com.urbanspork.common.protocol.Protocols;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.socksx.SocksMessage;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse;
@@ -50,25 +50,23 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
                         }
                     });
             InetSocketAddress serverAddress = localChannel.attr(AttributeKeys.SERVER_ADDRESS).get();
-            b.group(localChannel.eventLoop())
+            Bootstrap bootstrap = b.group(localChannel.eventLoop())
                     .channel(NioSocketChannel.class)
                     .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
-                    .option(ChannelOption.SO_KEEPALIVE, true)
-                    .handler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        public void initChannel(SocketChannel remoteChannel) {
-                            remoteChannel.pipeline()
-                                    .addLast(new ShadowsocksCipherCodec(localChannel.attr(AttributeKeys.CIPHER).get(), localChannel.attr(AttributeKeys.KEY).get()))
-                                    .addLast(new ShadowsocksProtocolEncoder(request))
-                                    .addLast(new ClientPromiseHandler(promise));
-                        }
-                    }).connect(serverAddress).addListener((ChannelFutureListener) future -> {
-                        if (!future.isSuccess()) {
-                            logger.error("Connect proxy server {} failed", serverAddress);
-                            localChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()));
-                            ChannelCloseUtils.closeOnFlush(localChannel);
-                        }
-                    });
+                    .option(ChannelOption.SO_KEEPALIVE, true);
+            Protocols protocol = localChannel.attr(AttributeKeys.PROTOCOL).get();
+            if (Protocols.vmess == protocol) {
+                bootstrap.handler(new VMessChannelInitializer(request, localChannel, promise));
+            } else {
+                bootstrap.handler(new ShadowsocksChannelInitializer(request, localChannel, promise));
+            }
+            bootstrap.connect(serverAddress).addListener((ChannelFutureListener) future -> {
+                if (!future.isSuccess()) {
+                    logger.error("Connect proxy server {} failed", serverAddress);
+                    localChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()));
+                    ChannelCloseUtils.closeOnFlush(localChannel);
+                }
+            });
         } else {
             ctx.close();
         }
