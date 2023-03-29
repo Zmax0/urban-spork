@@ -3,6 +3,7 @@ package com.urbanspork.server;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.protocol.Protocols;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
@@ -28,7 +29,7 @@ public class Server {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         ExecutorService threadPool = Executors.newFixedThreadPool(serverConfigs.size());
-        serverConfigs.forEach(serverConfig -> threadPool.submit(() -> {
+        serverConfigs.stream().filter(config -> Protocols.shadowsocks == config.getProtocol()).forEach(serverConfig -> threadPool.submit(() -> {
             try {
                 int port = Integer.parseInt(serverConfig.getPort());
                 ServerBootstrap b = new ServerBootstrap();

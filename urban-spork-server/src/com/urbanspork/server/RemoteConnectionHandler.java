@@ -2,7 +2,7 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.channel.ChannelCloseUtils;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
-import com.urbanspork.common.protocol.ShadowsocksProtocol;
+import com.urbanspork.common.protocol.shadowsocks.ShadowsocksProtocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;

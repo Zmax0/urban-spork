@@ -7,11 +7,12 @@ import com.jfoenix.controls.JFXTabPane;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.validation.RequiredFieldValidator;
 import com.urbanspork.client.gui.Resource;
-import com.urbanspork.client.gui.console.unit.*;
+import com.urbanspork.client.gui.console.widget.*;
 import com.urbanspork.client.gui.i18n.I18n;
-import com.urbanspork.common.cipher.ShadowsocksCiphers;
+import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.protocol.Protocols;
 import javafx.application.Platform;
 import javafx.application.Preloader;
 import javafx.beans.value.ChangeListener;
@@ -79,7 +80,9 @@ public class Console extends Preloader {
 
     private ToggleButton currentConfigPasswordToggleButton;
 
-    private ChoiceBox<ShadowsocksCiphers> currentConfigCipherChoiceBox;
+    private ChoiceBox<SupportedCipher> currentConfigCipherChoiceBox;
+
+    private ChoiceBox<Protocols> currentConfigProtocolChoiceBox;
 
     private JFXTextField clientConfigPortTextField;
 
@@ -145,7 +148,7 @@ public class Console extends Preloader {
     public void addServerConfig() {
         if (validate()) {
             ServerConfig newValue = new ServerConfig();
-            newValue.setCipher(ShadowsocksCiphers.aes_256_gcm);
+            newValue.setCipher(SupportedCipher.aes_256_gcm);
             serverConfigObservableList.add(newValue);
             serverConfigJFXListView.getSelectionModel().select(newValue);
             display(newValue);
@@ -208,7 +211,7 @@ public class Console extends Preloader {
             boolean isNew = config == null;
             if (config == null) {
                 config = new ServerConfig();
-                config.setCipher(ShadowsocksCiphers.defaultCipher());
+                config.setCipher(SupportedCipher.aes_128_gcm);
             }
             pack(config);
             if (isNew) {
@@ -253,6 +256,7 @@ public class Console extends Preloader {
         currentConfigRemarkTextField = new ConsoleTextField();
         currentConfigPasswordToggleButton = new CurrentConfigPasswordToggleButton(event -> showCurrentConfigPassword());
         currentConfigCipherChoiceBox = new CurrentConfigCipherChoiceBox();
+        currentConfigProtocolChoiceBox = new CurrentConfigProtocolChoiceBox();
         clientConfigPortTextField = new ConsoleTextField();
     }
 
@@ -351,15 +355,17 @@ public class Console extends Preloader {
         gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_PORT), 7, 3);
         gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_PASSWORD), 7, 5);
         gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_CIPHER), 7, 7);
-        gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_REMARK), 7, 9);
+        gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_PROTOCOL), 7, 9);
+        gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_REMARK), 7, 11);
         gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_PROXY_PORT), 7, 13);
         gridPane0.add(currentConfigHostTextField, 9, 1, 3, 1);
         gridPane0.add(currentConfigPortTextField, 9, 3, 3, 1);
         gridPane0.add(currentConfigPasswordTextField, 9, 5, 3, 1);
         gridPane0.add(currentConfigPasswordPasswordField, 9, 5, 3, 1);
-        gridPane0.add(currentConfigRemarkTextField, 9, 9, 3, 1);
         gridPane0.add(currentConfigPasswordToggleButton, 11, 5);
         gridPane0.add(currentConfigCipherChoiceBox, 9, 7, 3, 1);
+        gridPane0.add(currentConfigProtocolChoiceBox, 9, 9, 3, 1);
+        gridPane0.add(currentConfigRemarkTextField, 9, 11, 3, 1);
         gridPane0.add(clientConfigPortTextField, 9, 13, 3, 1);
     }
 
@@ -371,6 +377,7 @@ public class Console extends Preloader {
     private void initController() {
         initServerConfigListView();
         initCurrentConfigCipherChoiceBox();
+        initCurrentConfigProtocolChoiceBox();
         initCurrentConfigPortTextField();
         initCurrentConfigPasswordTextField();
         initCurrentConfigPasswordPasswordField();
@@ -428,9 +435,9 @@ public class Console extends Preloader {
     }
 
     private void initCurrentConfigCipherChoiceBox() {
-        List<ShadowsocksCiphers> ciphers = Arrays.asList(ShadowsocksCiphers.values());
+        List<SupportedCipher> ciphers = Arrays.asList(SupportedCipher.values());
         currentConfigCipherChoiceBox.setItems(FXCollections.observableArrayList(ciphers));
-        currentConfigCipherChoiceBox.setValue(ShadowsocksCiphers.aes_256_gcm);
+        currentConfigCipherChoiceBox.setValue(SupportedCipher.aes_128_gcm);
         // currentConfigHostTextField
         currentConfigHostTextField.getValidators().add(requiredFieldValidator);
         currentConfigHostTextField.focusedProperty().addListener(
@@ -439,6 +446,12 @@ public class Console extends Preloader {
                         currentConfigHostTextField.validate();
                     }
                 });
+    }
+
+    private void initCurrentConfigProtocolChoiceBox() {
+        List<Protocols> ciphers = Arrays.asList(Protocols.values());
+        currentConfigProtocolChoiceBox.setItems(FXCollections.observableArrayList(ciphers));
+        currentConfigProtocolChoiceBox.setValue(Protocols.shadowsocks);
     }
 
     private void initServerConfigListView() {
@@ -514,6 +527,7 @@ public class Console extends Preloader {
             }
             currentConfigPasswordToggleButton.setSelected(false);
             currentConfigCipherChoiceBox.setValue(c.getCipher());
+            currentConfigProtocolChoiceBox.setValue(c.getProtocol());
         }
     }
 
@@ -523,6 +537,7 @@ public class Console extends Preloader {
         config.setPassword(currentConfigPasswordTextField.getText().getBytes(StandardCharsets.UTF_8));
         config.setRemark(currentConfigRemarkTextField.getText());
         config.setCipher(currentConfigCipherChoiceBox.getValue());
+        config.setProtocol(currentConfigProtocolChoiceBox.getValue());
     }
 
     private void saveConfig() {

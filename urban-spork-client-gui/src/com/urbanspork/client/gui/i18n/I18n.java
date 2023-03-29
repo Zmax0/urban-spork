@@ -30,6 +30,7 @@ public final class I18n {
     public static final String CONSOLE_LABEL_PORT = BUNDLE.getString("console.label.port");
     public static final String CONSOLE_LABEL_PASSWORD = BUNDLE.getString("console.label.password");
     public static final String CONSOLE_LABEL_CIPHER = BUNDLE.getString("console.label.cipher");
+    public static final String CONSOLE_LABEL_PROTOCOL = BUNDLE.getString("console.label.protocol");
     public static final String CONSOLE_LABEL_REMARK = BUNDLE.getString("console.label.remark");
     public static final String CONSOLE_LABEL_PROXY_PORT = BUNDLE.getString("console.label.proxy.port");
     public static final String CONSOLE_VALIDATOR_REQUIRED_FIELD_MESSAGE = BUNDLE.getString("console.validator.required.field.message");
