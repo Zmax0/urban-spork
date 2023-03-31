@@ -1,6 +1,5 @@
-package com.urbanspork.common.codec.aead;
+package com.urbanspork.common.protocol.vmess;
 
-import com.urbanspork.common.protocol.vmess.aead.ID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

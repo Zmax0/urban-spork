@@ -1,9 +1,11 @@
 package com.urbanspork.client.vmess;
 
 import com.urbanspork.common.codec.CipherCodec;
+import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.codec.vmess.VMessAEADHeaderCodec;
-import com.urbanspork.common.protocol.vmess.VMessProtocol;
-import com.urbanspork.common.protocol.vmess.aead.ID;
+import com.urbanspork.common.lang.Go;
+import com.urbanspork.common.protocol.vmess.ID;
+import com.urbanspork.common.protocol.vmess.VMess;
 import com.urbanspork.common.protocol.vmess.aead.KDF;
 import com.urbanspork.common.protocol.vmess.cons.AddressType;
 import com.urbanspork.common.protocol.vmess.cons.RequestCommand;
@@ -24,30 +26,36 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class ClientCodec extends ByteToMessageCodec<ByteBuf> implements VMessAEADHeaderCodec {
+abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements VMessAEADHeaderCodec {
 
-    private static final Logger logger = LoggerFactory.getLogger(ClientCodec.class);
+    private static final Logger logger = LoggerFactory.getLogger(ClientAEADCodec.class);
 
-    private final AEADCipher cipher = new GCMBlockCipher(new AESEngine());
-    private final Socks5CommandRequest address;
+    private final AEADCipher headerCipher = new GCMBlockCipher(new AESEngine());
     private final byte[] cmdKey;
-    private final ClientSession session;
+    private final SupportedCipher bodyCipher;
+    private final Socks5CommandRequest address;
+    final ClientSession session;
     private ClientBodyEncoder clientBodyEncoder;
     private ClientBodyDecoder clientBodyDecoder;
 
-    public ClientCodec(String uuid, Socks5CommandRequest address, ClientSession session) {
-        this(ID.newID(uuid), address, session);
+    protected ClientAEADCodec(String uuid, Socks5CommandRequest address, ClientSession session, SupportedCipher cipher) {
+        this(ID.newID(uuid), address, session, cipher);
     }
 
-    public ClientCodec(byte[] cmdKey, Socks5CommandRequest address, ClientSession session) {
+    protected ClientAEADCodec(byte[] cmdKey, Socks5CommandRequest address, ClientSession session, SupportedCipher cipher) {
         this.cmdKey = cmdKey;
         this.address = address;
         this.session = session;
+        this.bodyCipher = cipher;
     }
+
+    protected abstract ClientBodyEncoder newClientBodyEncoder();
+
+    protected abstract ClientBodyDecoder newClientBodyDecoder();
 
     @Override
     public AEADCipher cipher() {
-        return cipher;
+        return headerCipher;
     }
 
     @Override
@@ -64,13 +72,13 @@ public class ClientCodec extends ByteToMessageCodec<ByteBuf> implements VMessAEA
     public void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
         if (clientBodyEncoder == null) {
             ByteBuf header = out.alloc().buffer();
-            header.writeByte(VMessProtocol.VERSION); // version
+            header.writeByte(VMess.VERSION); // version
             header.writeBytes(session.requestBodyIV); // requestBodyIV
             header.writeBytes(session.requestBodyKey); // requestBodyKey
             header.writeByte(session.responseHeader); // responseHeader
             header.writeByte(RequestOption.ChunkStream.getValue() | RequestOption.AuthenticatedLength.getValue()); // option
             int paddingLen = ThreadLocalRandom.current().nextInt(0, 16); // dice roll 16
-            int security = ((paddingLen << 4) | SecurityType.AES128_GCM.getValue());
+            int security = (paddingLen << 4) | SecurityType.from(bodyCipher).getValue();
             header.writeByte(security);
             header.writeByte(0);
             header.writeByte(RequestCommand.TCP.getValue());
@@ -78,11 +86,11 @@ public class ClientCodec extends ByteToMessageCodec<ByteBuf> implements VMessAEA
             if (paddingLen > 0) {
                 header.writeBytes(CipherCodec.randomBytes(paddingLen)); // padding
             }
-            header.writeBytes(VMessProtocol.fnv1a32(ByteBufUtil.getBytes(header, header.readerIndex(), header.writerIndex(), false)));
+            header.writeBytes(Go.fnv1a32(ByteBufUtil.getBytes(header, header.readerIndex(), header.writerIndex(), false)));
             sealVMessAEADHeader(cmdKey, header, out);
-            clientBodyEncoder = new ClientBodyEncoder(this, session);
+            clientBodyEncoder = newClientBodyEncoder();
         }
-        clientBodyEncoder.encode(ctx, msg, out);
+        clientBodyEncoder.encodePayload(msg, out);
     }
 
     @Override
@@ -96,31 +104,31 @@ public class ClientCodec extends ByteToMessageCodec<ByteBuf> implements VMessAEA
             int decryptedResponseHeaderLength = Unpooled.wrappedBuffer(decrypt(aeadResponseHeaderLengthEncryptionKey, aeadResponseHeaderLengthEncryptionIV, null, aeadEncryptedResponseHeaderLength)).readShort();
             if (in.readableBytes() < decryptedResponseHeaderLength + TAG_SIZE) {
                 in.resetReaderIndex();
-                logger.warn("Unable to Read Header Data {}", ctx.channel());
+                logger.info("Unexpected readable bytes for decoding client header: expecting {} but actually {}", decryptedResponseHeaderLength + TAG_SIZE, in.readableBytes());
                 return;
             }
             byte[] aeadResponseHeaderPayloadEncryptionKey = KDF.kdf16(session.responseBodyKey, KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY);
             byte[] aeadResponseHeaderPayloadEncryptionIV = KDF.kdf(session.responseBodyIV, nonceSize(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV);
-            ByteBuf encryptedResponseHeaderBuffer = in.alloc().buffer(decryptedResponseHeaderLength + TAG_SIZE);
             byte[] msg = new byte[decryptedResponseHeaderLength + TAG_SIZE];
             in.readBytes(msg);
-            encryptedResponseHeaderBuffer.writeBytes(decrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, null, msg));
+            ByteBuf encryptedResponseHeaderBuffer = Unpooled.wrappedBuffer(decrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, null, msg));
             byte responseHeader = encryptedResponseHeaderBuffer.getByte(0);
             if (session.responseHeader != responseHeader) { // v[1]
-                throw new IllegalStateException("Unexpected response header. Expecting " + session.responseHeader + " but actually " + responseHeader);
+                logger.error("Unexpected response header: expecting {} but actually {}", session.responseHeader, responseHeader);
+                ctx.close();
+                return;
             }
-            encryptedResponseHeaderBuffer.getByte(1);// opt[1]
-            encryptedResponseHeaderBuffer.getByte(2); // cmd[1]
-            byte cmdLength = encryptedResponseHeaderBuffer.getByte(3);// cmd length M[1]
-            if (cmdLength > 0 && encryptedResponseHeaderBuffer.readableBytes() >= 4 + cmdLength) {
-                byte[] cmdContent = new byte[cmdLength];
-                encryptedResponseHeaderBuffer.getBytes(4, cmdContent, 0, cmdLength); // instruction content[M]
-                // TODO handle command
-                encryptedResponseHeaderBuffer.readBytes(4 + cmdLength);
-            }
-            clientBodyDecoder = new ClientBodyDecoder(this, session);
+            // not support handling command now
+            encryptedResponseHeaderBuffer.release();
+            clientBodyDecoder = newClientBodyDecoder();
         }
-        clientBodyDecoder.decode(ctx, in, out);
+        clientBodyDecoder.decodePayload(in, out);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        logger.error("VMess client codec error", cause);
+        super.exceptionCaught(ctx, cause);
     }
 
     // port[2] + type[1] + domain_len[1] + domain_bytes[n]

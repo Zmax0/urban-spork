@@ -2,6 +2,7 @@ package com.urbanspork.client.vmess;
 
 import com.urbanspork.client.ClientPromiseHandler;
 import com.urbanspork.common.channel.AttributeKeys;
+import com.urbanspork.common.codec.SupportedCipher;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -24,10 +25,11 @@ public class VMessChannelInitializer extends ChannelInitializer<SocketChannel> {
 
     @Override
     public void initChannel(SocketChannel remoteChannel) {
-        ClientSession session = new ClientSession();
         String uuid = new String(localChannel.attr(AttributeKeys.PASSWORD).get());
+        SupportedCipher cipher = localChannel.attr(AttributeKeys.CIPHER).get();
         remoteChannel.pipeline()
-                .addLast(new ClientCodec(uuid, request, session))
+                .addLast(ClientCodecs.get(uuid, request, cipher))
                 .addLast(new ClientPromiseHandler(promise));
     }
+
 }
