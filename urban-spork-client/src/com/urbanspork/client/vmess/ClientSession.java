@@ -1,7 +1,7 @@
 package com.urbanspork.client.vmess;
 
 import com.urbanspork.common.codec.CipherCodec;
-import com.urbanspork.common.protocol.vmess.VMess;
+import com.urbanspork.common.crypto.GeneralDigests;
 
 import java.util.Arrays;
 
@@ -21,7 +21,7 @@ class ClientSession {
         this.responseHeader = bytes[32];
         this.requestBodyIV = Arrays.copyOf(bytes, 16);
         this.requestBodyKey = Arrays.copyOfRange(bytes, 16, 32);
-        responseBodyIV = Arrays.copyOf(VMess.sha256(requestBodyIV), 16);
-        responseBodyKey = Arrays.copyOf(VMess.sha256(requestBodyKey), 16);
+        responseBodyIV = Arrays.copyOf(GeneralDigests.sha256.get(requestBodyIV), 16);
+        responseBodyKey = Arrays.copyOf(GeneralDigests.sha256.get(requestBodyKey), 16);
     }
 }

@@ -6,11 +6,11 @@ import com.urbanspork.common.codec.aead.AEADAuthenticator;
 import com.urbanspork.common.codec.aead.AEADCipherCodec;
 import com.urbanspork.common.codec.aead.AEADPayloadDecoder;
 import com.urbanspork.common.codec.aead.AEADPayloadEncoder;
+import com.urbanspork.common.crypto.GeneralDigests;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
-import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
@@ -109,27 +109,18 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
 
     private byte[] generateKey(byte[] password, int size) {
         byte[] encoded = new byte[size];
-        MD5Digest digest = new MD5Digest();
-        byte[] passwordDigest = md5digest(digest, password);
+        byte[] passwordDigest = GeneralDigests.md5.get(password);
         byte[] container = new byte[password.length + passwordDigest.length];
         arraycopy(passwordDigest, 0, encoded, 0, Math.min(size, passwordDigest.length));
         int index = passwordDigest.length;
         while (index < size) {
             arraycopy(passwordDigest, 0, container, 0, passwordDigest.length);
             arraycopy(password, 0, container, passwordDigest.length, password.length);
-            passwordDigest = md5digest(digest, container);
+            passwordDigest = GeneralDigests.md5.get(container);
             arraycopy(passwordDigest, 0, encoded, index, Math.min(size - index, passwordDigest.length));
             index += passwordDigest.length;
         }
         return encoded;
-    }
-
-    private byte[] md5digest(MD5Digest digest, byte[] in) {
-        digest.reset();
-        digest.update(in, 0, in.length);
-        byte[] out = new byte[digest.getDigestSize()];
-        digest.doFinal(out, 0);
-        return out;
     }
 
     private byte[] hkdf(byte[] key, byte[] salt) {

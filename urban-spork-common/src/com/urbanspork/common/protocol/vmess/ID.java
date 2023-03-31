@@ -1,4 +1,4 @@
-package com.urbanspork.common.protocol.vmess.aead;
+package com.urbanspork.common.protocol.vmess;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -7,7 +7,6 @@ import org.bouncycastle.crypto.digests.MD5Digest;
 import java.util.Arrays;
 import java.util.UUID;
 
-@SuppressWarnings("unused")
 public class ID {
 
     public static byte[] newID(String uuid) {
@@ -31,9 +30,8 @@ public class ID {
     private static byte[] getBytes(UUID uuid) {
         byte[] uid = new byte[16];
         ByteBuf buf = Unpooled.wrappedBuffer(uid);
-        buf.resetWriterIndex();
-        buf.writeLong(uuid.getMostSignificantBits());
-        buf.writeLong(uuid.getLeastSignificantBits());
+        buf.setLong(0, uuid.getMostSignificantBits());
+        buf.setLong(Long.BYTES, uuid.getLeastSignificantBits());
         return uid;
     }
 

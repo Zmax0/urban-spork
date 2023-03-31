@@ -35,7 +35,6 @@ public class AuthID {
         }
         buf.readUnsignedInt(); // rand
         int crc32 = buf.readInt();
-        // TODO check replay
         return crc32 == (int) VMess.crc32(Arrays.copyOf(decrypt, decrypt.length - Integer.BYTES));
     }
 

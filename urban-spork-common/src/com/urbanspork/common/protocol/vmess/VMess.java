@@ -1,9 +1,5 @@
 package com.urbanspork.common.protocol.vmess;
 
-import com.urbanspork.common.lang.Go;
-import org.bouncycastle.crypto.digests.MD5Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-
 import java.time.Instant;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.zip.CRC32;
@@ -27,50 +23,10 @@ public interface VMess {
         return Instant.now().getEpochSecond() + rangeInDelta;
     }
 
-    static byte[] md5(byte[] in) {
-        MD5Digest digest = new MD5Digest();
-        digest.update(in, 0, in.length);
-        byte[] out = new byte[digest.getDigestSize()];
-        digest.doFinal(out, 0);
-        return out;
-    }
-
-    static byte[] sha256(byte[] in) {
-        SHA256Digest digest = new SHA256Digest();
-        digest.update(in, 0, in.length);
-        byte[] out = new byte[digest.getDigestSize()];
-        digest.doFinal(out, 0);
-        return out;
-    }
-
-//    static byte[] shake(byte[] in) {
-//        byte[] out = new byte[in.length];
-//        SHAKEDigest digest = new SHAKEDigest();
-//        digest.update(in, 0, in.length);
-//        digest.doFinal(out, 0);
-//        return out;
-//    }
-
-    /**
-     * 32 bits FNV-1a hash function using golang implementation
-     *
-     * @param data data
-     * @return hash
-     */
-    static byte[] fnv1a32(byte[] data) {
-        long hash = 2166136261L;
-        for (byte b : data) {
-            hash ^= Byte.toUnsignedInt(b);
-            hash *= 16777619L;
-        }
-        hash = hash & 0xffffffffL;
-        return Go.getUnsignedInt(hash);
-    }
-
     static long crc32(byte[] bytes) {
-        CRC32 check = new CRC32();
-        check.update(bytes);
-        return check.getValue();
+        CRC32 checksum = new CRC32();
+        checksum.update(bytes);
+        return checksum.getValue();
     }
 
 }

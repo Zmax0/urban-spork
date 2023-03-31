@@ -3,8 +3,9 @@ package com.urbanspork.client.vmess;
 import com.urbanspork.common.codec.CipherCodec;
 import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.codec.vmess.VMessAEADHeaderCodec;
+import com.urbanspork.common.lang.Go;
+import com.urbanspork.common.protocol.vmess.ID;
 import com.urbanspork.common.protocol.vmess.VMess;
-import com.urbanspork.common.protocol.vmess.aead.ID;
 import com.urbanspork.common.protocol.vmess.aead.KDF;
 import com.urbanspork.common.protocol.vmess.cons.AddressType;
 import com.urbanspork.common.protocol.vmess.cons.RequestCommand;
@@ -85,7 +86,7 @@ abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements VM
             if (paddingLen > 0) {
                 header.writeBytes(CipherCodec.randomBytes(paddingLen)); // padding
             }
-            header.writeBytes(VMess.fnv1a32(ByteBufUtil.getBytes(header, header.readerIndex(), header.writerIndex(), false)));
+            header.writeBytes(Go.fnv1a32(ByteBufUtil.getBytes(header, header.readerIndex(), header.writerIndex(), false)));
             sealVMessAEADHeader(cmdKey, header, out);
             clientBodyEncoder = newClientBodyEncoder();
         }
@@ -103,28 +104,22 @@ abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements VM
             int decryptedResponseHeaderLength = Unpooled.wrappedBuffer(decrypt(aeadResponseHeaderLengthEncryptionKey, aeadResponseHeaderLengthEncryptionIV, null, aeadEncryptedResponseHeaderLength)).readShort();
             if (in.readableBytes() < decryptedResponseHeaderLength + TAG_SIZE) {
                 in.resetReaderIndex();
-                logger.warn("Unable to Read Header Data {}", ctx.channel());
+                logger.info("Unexpected readable bytes for decoding client header: expecting {} but actually {}", decryptedResponseHeaderLength + TAG_SIZE, in.readableBytes());
                 return;
             }
             byte[] aeadResponseHeaderPayloadEncryptionKey = KDF.kdf16(session.responseBodyKey, KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY);
             byte[] aeadResponseHeaderPayloadEncryptionIV = KDF.kdf(session.responseBodyIV, nonceSize(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV);
-            ByteBuf encryptedResponseHeaderBuffer = in.alloc().buffer(decryptedResponseHeaderLength + TAG_SIZE);
             byte[] msg = new byte[decryptedResponseHeaderLength + TAG_SIZE];
             in.readBytes(msg);
-            encryptedResponseHeaderBuffer.writeBytes(decrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, null, msg));
+            ByteBuf encryptedResponseHeaderBuffer = Unpooled.wrappedBuffer(decrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, null, msg));
             byte responseHeader = encryptedResponseHeaderBuffer.getByte(0);
             if (session.responseHeader != responseHeader) { // v[1]
-                throw new IllegalStateException("Unexpected response header. Expecting " + session.responseHeader + " but actually " + responseHeader);
+                logger.error("Unexpected response header: expecting {} but actually {}", session.responseHeader, responseHeader);
+                ctx.close();
+                return;
             }
-            encryptedResponseHeaderBuffer.getByte(1);// opt[1]
-            encryptedResponseHeaderBuffer.getByte(2); // cmd[1]
-            byte cmdLength = encryptedResponseHeaderBuffer.getByte(3);// cmd length M[1]
-            if (cmdLength > 0 && encryptedResponseHeaderBuffer.readableBytes() >= 4 + cmdLength) {
-                byte[] cmdContent = new byte[cmdLength];
-                encryptedResponseHeaderBuffer.getBytes(4, cmdContent, 0, cmdLength); // instruction content[M]
-                // TODO handle command
-                encryptedResponseHeaderBuffer.readBytes(4 + cmdLength);
-            }
+            // not support handling command now
+            encryptedResponseHeaderBuffer.release();
             clientBodyDecoder = newClientBodyDecoder();
         }
         clientBodyDecoder.decodePayload(in, out);

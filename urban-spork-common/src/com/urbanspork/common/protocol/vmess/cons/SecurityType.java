@@ -23,10 +23,10 @@ public enum SecurityType {
     }
 
     public static SecurityType from(SupportedCipher cipher) {
-        return switch (cipher) {
-            case aes_128_gcm -> AES128_GCM;
-            case chacha20_poly1305 -> CHACHA20_POLY1305;
-            default -> AUTO;
-        };
+        if (SupportedCipher.chacha20_poly1305 == cipher) {
+            return CHACHA20_POLY1305;
+        } else {
+            return AES128_GCM;
+        }
     }
 }
