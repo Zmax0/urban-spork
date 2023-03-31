@@ -4,38 +4,30 @@ import com.urbanspork.common.codec.ChunkSizeCodec;
 import com.urbanspork.common.codec.aead.AEADAuthenticator;
 import com.urbanspork.common.codec.aead.AEADCipherCodec;
 import com.urbanspork.common.codec.aead.AEADPayloadEncoder;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToByteEncoder;
 
 
-public class ClientBodyEncoder extends MessageToByteEncoder<ByteBuf> implements AEADPayloadEncoder {
+class ClientBodyEncoder implements AEADPayloadEncoder {
 
     private final AEADAuthenticator authenticator;
-    private final ChunkSizeCodec chunkSizeCodec;
+    private final ChunkSizeCodec chunkSizeEncoder;
 
-    public ClientBodyEncoder(AEADCipherCodec codec, ClientSession session) {
-        chunkSizeCodec = new ClientAEADChunkSizeCodec(codec, session);
-        authenticator = new AEADAuthenticator(codec, session.requestBodyKey, session.requestBodyIV);
+    ClientBodyEncoder(AEADCipherCodec codec, byte[] key, byte[] nonce, byte[] chunkSizeKey, byte[] chunkSizeNonce) {
+        chunkSizeEncoder = new ClientAEADChunkSizeCodec(codec, chunkSizeKey, chunkSizeNonce);
+        authenticator = new AEADAuthenticator(codec, key, nonce);
     }
 
     @Override
-    public void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
-        encodePayload(msg, out);
+    public ChunkSizeCodec chunkSizeEncoder() {
+        return chunkSizeEncoder;
     }
 
     @Override
-    public ChunkSizeCodec chunkSizeCodec() {
-        return chunkSizeCodec;
-    }
-
-    @Override
-    public AEADAuthenticator authenticator() {
+    public AEADAuthenticator payloadEncoder() {
         return authenticator;
     }
 
     @Override
     public int maxPayloadLength() {
-        return 65535;
+        return 0xffff;
     }
 }

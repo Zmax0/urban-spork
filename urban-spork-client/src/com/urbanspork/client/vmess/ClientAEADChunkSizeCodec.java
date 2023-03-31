@@ -5,22 +5,21 @@ import com.urbanspork.common.codec.ChunkSizeCodec;
 import com.urbanspork.common.codec.NonceGenerator;
 import com.urbanspork.common.codec.aead.AEADAuthenticator;
 import com.urbanspork.common.codec.aead.AEADCipherCodec;
-import com.urbanspork.common.protocol.vmess.aead.KDF;
 import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
-public class ClientAEADChunkSizeCodec implements ChunkSizeCodec {
+class ClientAEADChunkSizeCodec implements ChunkSizeCodec {
 
-    private static final byte[] AUTH_LEN = "auth_len".getBytes();
+    static final byte[] AUTH_LEN = "auth_len".getBytes();
 
     private final AEADAuthenticator auth;
 
-    public ClientAEADChunkSizeCodec(AEADCipherCodec codec, ClientSession session) {
-        this(codec, session, NonceGenerator.generateCountingNonce(session.requestBodyIV, codec.nonceSize()));
+    ClientAEADChunkSizeCodec(AEADCipherCodec codec, byte[] key, byte[] nonce) {
+        this(codec, key, NonceGenerator.generateCountingNonce(nonce, codec.nonceSize()));
     }
 
-    public ClientAEADChunkSizeCodec(AEADCipherCodec codec, ClientSession session, NonceGenerator nonceGenerator) {
-        auth = new AEADAuthenticator(codec, KDF.kdf16(session.requestBodyKey, AUTH_LEN), nonceGenerator, BytesGenerator.generateEmptyBytes());
+    ClientAEADChunkSizeCodec(AEADCipherCodec codec, byte[] key, NonceGenerator nonceGenerator) {
+        auth = new AEADAuthenticator(codec, key, nonceGenerator, BytesGenerator.generateEmptyBytes());
     }
 
     @Override

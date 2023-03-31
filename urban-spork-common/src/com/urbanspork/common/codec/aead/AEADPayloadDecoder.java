@@ -5,7 +5,7 @@ import io.netty.buffer.ByteBuf;
 
 import java.util.List;
 
-public interface AEADPayloadDecoder extends AEADPayloadCodec {
+public interface AEADPayloadDecoder {
 
     int INIT_PAYLOAD_LENGTH = -1;
 
@@ -13,19 +13,22 @@ public interface AEADPayloadDecoder extends AEADPayloadCodec {
 
     void updatePayloadLength(int payloadLength);
 
+    AEADAuthenticator payloadDecoder();
+
+    ChunkSizeCodec chunkSizeDecoder();
+
     default void decodePayload(ByteBuf in, List<Object> out) throws Exception {
-        ChunkSizeCodec chunkSizeCodec = chunkSizeCodec();
-        AEADAuthenticator authenticator = authenticator();
+        ChunkSizeCodec chunkSizeDecoder = chunkSizeDecoder();
         int payloadLength = payloadLength();
-        while (in.readableBytes() >= (payloadLength == INIT_PAYLOAD_LENGTH ? chunkSizeCodec.sizeBytes() + AEADCipherCodec.TAG_SIZE : payloadLength + AEADCipherCodec.TAG_SIZE)) {
+        while (in.readableBytes() >= (payloadLength == INIT_PAYLOAD_LENGTH ? chunkSizeDecoder.sizeBytes() + AEADCipherCodec.TAG_SIZE : payloadLength + AEADCipherCodec.TAG_SIZE)) {
             if (payloadLength == INIT_PAYLOAD_LENGTH) {
-                byte[] payloadSizeBytes = new byte[chunkSizeCodec.sizeBytes() + AEADCipherCodec.TAG_SIZE];
+                byte[] payloadSizeBytes = new byte[chunkSizeDecoder.sizeBytes() + AEADCipherCodec.TAG_SIZE];
                 in.readBytes(payloadSizeBytes);
-                updatePayloadLength(chunkSizeCodec.decode(payloadSizeBytes));
+                updatePayloadLength(chunkSizeDecoder.decode(payloadSizeBytes));
             } else {
                 byte[] payloadBytes = new byte[payloadLength + AEADCipherCodec.TAG_SIZE];
                 in.readBytes(payloadBytes);
-                out.add(in.alloc().buffer().writeBytes(authenticator.open(payloadBytes)));
+                out.add(in.alloc().buffer().writeBytes(payloadDecoder().open(payloadBytes)));
                 updatePayloadLength(INIT_PAYLOAD_LENGTH);
             }
             payloadLength = payloadLength();

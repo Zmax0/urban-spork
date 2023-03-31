@@ -1,11 +1,14 @@
 package com.urbanspork.common.protocol.vmess;
 
-import com.urbanspork.common.golang.Golang;
+import com.urbanspork.common.lang.Go;
+import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 
+import java.time.Instant;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.zip.CRC32;
 
-public interface VMessProtocol {
+public interface VMess {
 
     byte VERSION = 1;
     byte[] KDF_SALT_AUTH_ID_ENCRYPTION_KEY = "AES Auth ID Encryption".getBytes();
@@ -18,6 +21,19 @@ public interface VMessProtocol {
     byte[] KDF_SALT_AEAD_RESP_HEADER_LEN_IV = "AEAD Resp Header Len IV".getBytes();
     byte[] KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY = "AEAD Resp Header Key".getBytes();
     byte[] KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV = "AEAD Resp Header IV".getBytes();
+
+    static long timestamp(int delta) {
+        int rangeInDelta = ThreadLocalRandom.current().nextInt(delta * 2) - delta;
+        return Instant.now().getEpochSecond() + rangeInDelta;
+    }
+
+    static byte[] md5(byte[] in) {
+        MD5Digest digest = new MD5Digest();
+        digest.update(in, 0, in.length);
+        byte[] out = new byte[digest.getDigestSize()];
+        digest.doFinal(out, 0);
+        return out;
+    }
 
     static byte[] sha256(byte[] in) {
         SHA256Digest digest = new SHA256Digest();
@@ -48,7 +64,7 @@ public interface VMessProtocol {
             hash *= 16777619L;
         }
         hash = hash & 0xffffffffL;
-        return Golang.getUnsignedInt(hash);
+        return Go.getUnsignedInt(hash);
     }
 
     static long crc32(byte[] bytes) {

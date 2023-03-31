@@ -1,8 +1,9 @@
 package com.urbanspork.client.vmess;
 
 import com.urbanspork.common.codec.CipherCodec;
+import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.codec.vmess.VMessAEADHeaderCodec;
-import com.urbanspork.common.protocol.vmess.VMessProtocol;
+import com.urbanspork.common.protocol.vmess.VMess;
 import com.urbanspork.common.protocol.vmess.aead.ID;
 import com.urbanspork.common.protocol.vmess.aead.KDF;
 import com.urbanspork.common.protocol.vmess.cons.AddressType;
@@ -24,30 +25,36 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class ClientCodec extends ByteToMessageCodec<ByteBuf> implements VMessAEADHeaderCodec {
+abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements VMessAEADHeaderCodec {
 
-    private static final Logger logger = LoggerFactory.getLogger(ClientCodec.class);
+    private static final Logger logger = LoggerFactory.getLogger(ClientAEADCodec.class);
 
-    private final AEADCipher cipher = new GCMBlockCipher(new AESEngine());
-    private final Socks5CommandRequest address;
+    private final AEADCipher headerCipher = new GCMBlockCipher(new AESEngine());
     private final byte[] cmdKey;
-    private final ClientSession session;
+    private final SupportedCipher bodyCipher;
+    private final Socks5CommandRequest address;
+    final ClientSession session;
     private ClientBodyEncoder clientBodyEncoder;
     private ClientBodyDecoder clientBodyDecoder;
 
-    public ClientCodec(String uuid, Socks5CommandRequest address, ClientSession session) {
-        this(ID.newID(uuid), address, session);
+    protected ClientAEADCodec(String uuid, Socks5CommandRequest address, ClientSession session, SupportedCipher cipher) {
+        this(ID.newID(uuid), address, session, cipher);
     }
 
-    public ClientCodec(byte[] cmdKey, Socks5CommandRequest address, ClientSession session) {
+    protected ClientAEADCodec(byte[] cmdKey, Socks5CommandRequest address, ClientSession session, SupportedCipher cipher) {
         this.cmdKey = cmdKey;
         this.address = address;
         this.session = session;
+        this.bodyCipher = cipher;
     }
+
+    protected abstract ClientBodyEncoder newClientBodyEncoder();
+
+    protected abstract ClientBodyDecoder newClientBodyDecoder();
 
     @Override
     public AEADCipher cipher() {
-        return cipher;
+        return headerCipher;
     }
 
     @Override
@@ -64,13 +71,13 @@ public class ClientCodec extends ByteToMessageCodec<ByteBuf> implements VMessAEA
     public void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
         if (clientBodyEncoder == null) {
             ByteBuf header = out.alloc().buffer();
-            header.writeByte(VMessProtocol.VERSION); // version
+            header.writeByte(VMess.VERSION); // version
             header.writeBytes(session.requestBodyIV); // requestBodyIV
             header.writeBytes(session.requestBodyKey); // requestBodyKey
             header.writeByte(session.responseHeader); // responseHeader
             header.writeByte(RequestOption.ChunkStream.getValue() | RequestOption.AuthenticatedLength.getValue()); // option
             int paddingLen = ThreadLocalRandom.current().nextInt(0, 16); // dice roll 16
-            int security = ((paddingLen << 4) | SecurityType.AES128_GCM.getValue());
+            int security = (paddingLen << 4) | SecurityType.from(bodyCipher).getValue();
             header.writeByte(security);
             header.writeByte(0);
             header.writeByte(RequestCommand.TCP.getValue());
@@ -78,11 +85,11 @@ public class ClientCodec extends ByteToMessageCodec<ByteBuf> implements VMessAEA
             if (paddingLen > 0) {
                 header.writeBytes(CipherCodec.randomBytes(paddingLen)); // padding
             }
-            header.writeBytes(VMessProtocol.fnv1a32(ByteBufUtil.getBytes(header, header.readerIndex(), header.writerIndex(), false)));
+            header.writeBytes(VMess.fnv1a32(ByteBufUtil.getBytes(header, header.readerIndex(), header.writerIndex(), false)));
             sealVMessAEADHeader(cmdKey, header, out);
-            clientBodyEncoder = new ClientBodyEncoder(this, session);
+            clientBodyEncoder = newClientBodyEncoder();
         }
-        clientBodyEncoder.encode(ctx, msg, out);
+        clientBodyEncoder.encodePayload(msg, out);
     }
 
     @Override
@@ -118,9 +125,15 @@ public class ClientCodec extends ByteToMessageCodec<ByteBuf> implements VMessAEA
                 // TODO handle command
                 encryptedResponseHeaderBuffer.readBytes(4 + cmdLength);
             }
-            clientBodyDecoder = new ClientBodyDecoder(this, session);
+            clientBodyDecoder = newClientBodyDecoder();
         }
-        clientBodyDecoder.decode(ctx, in, out);
+        clientBodyDecoder.decodePayload(in, out);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        logger.error("VMess client codec error", cause);
+        super.exceptionCaught(ctx, cause);
     }
 
     // port[2] + type[1] + domain_len[1] + domain_bytes[n]
