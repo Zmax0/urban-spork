@@ -1,4 +1,4 @@
-package com.urbanspork.common.codec.shadowsocks.impl;
+package com.urbanspork.common.codec.shadowsocks;
 
 import com.urbanspork.common.codec.EmptyChannelHandlerContext;
 import com.urbanspork.common.codec.SupportedCipher;
@@ -25,7 +25,7 @@ class CipherCodecTest {
     private byte[] password;
     private byte[] in;
 
-    private final int maxChunkSize = 65535;
+    private final int maxChunkSize = 0xffff;
 
     @BeforeAll
     public void beforeAll() {
@@ -47,16 +47,16 @@ class CipherCodecTest {
 
     @RepeatedTest(10)
     void repeatedTest() throws Exception {
-        cipherTest(ShadowsocksCipherCodecs.get(SupportedCipher.aes_128_gcm, password));
+        cipherTest(ShadowsocksAEADCipherCodecs.get(SupportedCipher.aes_128_gcm, password));
     }
 
     @ParameterizedTest
     @EnumSource(SupportedCipher.class)
     void parameterizedTest(SupportedCipher cipher) throws Exception {
-        cipherTest(ShadowsocksCipherCodecs.get(cipher, password));
+        cipherTest(ShadowsocksAEADCipherCodecs.get(cipher, password));
     }
 
-    private void cipherTest(ShadowsocksCipherCodec codec) throws Exception {
+    private void cipherTest(ShadowsocksAEADCipherCodec codec) throws Exception {
         List<Object> list = cipherTest(codec, Unpooled.copiedBuffer(in));
         byte[] out = new byte[in.length];
         int len = 0;
@@ -71,7 +71,7 @@ class CipherCodecTest {
         Assertions.assertArrayEquals(in, out);
     }
 
-    private List<Object> cipherTest(ShadowsocksCipherCodec codec, ByteBuf inBuf) throws Exception {
+    private List<Object> cipherTest(ShadowsocksAEADCipherCodec codec, ByteBuf inBuf) throws Exception {
         ByteBuf trans = Unpooled.buffer();
         for (ByteBuf slice : randomSlice(inBuf)) {
             codec.encode(EmptyChannelHandlerContext.INSTANCE, slice, trans);

@@ -2,7 +2,6 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.channel.ChannelCloseUtils;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
-import com.urbanspork.common.protocol.shadowsocks.ShadowsocksProtocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -14,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
-public class RemoteConnectionHandler extends ChannelInboundHandlerAdapter implements ShadowsocksProtocol {
+public class RemoteConnectionHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(RemoteConnectionHandler.class);
 

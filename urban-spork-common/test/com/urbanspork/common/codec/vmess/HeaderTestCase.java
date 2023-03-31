@@ -1,6 +1,6 @@
-package com.urbanspork.common.codec.aead;
+package com.urbanspork.common.codec.vmess;
 
-import com.urbanspork.common.codec.vmess.VMessAEADHeaderCodec;
+import com.urbanspork.common.codec.aead.AuthIDTestCase;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.engines.AESEngine;

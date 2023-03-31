@@ -5,7 +5,6 @@ import io.netty.buffer.Unpooled;
 
 import java.util.Arrays;
 
-@SuppressWarnings("unused")
 public interface NonceGenerator extends BytesGenerator {
 
     static NonceGenerator generateIncreasingNonce(byte[] nonce) {
@@ -20,8 +19,8 @@ public interface NonceGenerator extends BytesGenerator {
         };
     }
 
-    static NonceGenerator generateInitialAEADNonce(byte[] nonce) {
-        return generateIncreasingNonce(new byte[]{(byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+    static NonceGenerator generateInitialAEADNonce() {
+        return generateIncreasingNonce(new byte[]{(byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff});
     }
 
     static NonceGenerator generateStaticBytes(byte[] nonce) {

@@ -1,5 +1,7 @@
 package com.urbanspork.common.protocol.vmess.cons;
 
+import com.urbanspork.common.codec.SupportedCipher;
+
 public enum SecurityType {
 
     UNKNOWN(0),
@@ -18,5 +20,13 @@ public enum SecurityType {
 
     public int getValue() {
         return value;
+    }
+
+    public static SecurityType from(SupportedCipher cipher) {
+        if (SupportedCipher.chacha20_poly1305 == cipher) {
+            return CHACHA20_POLY1305;
+        } else {
+            return AES128_GCM;
+        }
     }
 }
