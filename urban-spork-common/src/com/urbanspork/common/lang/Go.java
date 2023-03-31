@@ -4,6 +4,26 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public interface Go {
 
+    /**
+     * 32 bits FNV-1a hash function using golang implementation
+     *
+     * @param data data
+     * @return hash
+     */
+    static byte[] fnv1a32(byte[] data) {
+        long hash = 2166136261L;
+        for (byte b : data) {
+            hash ^= Byte.toUnsignedInt(b);
+            hash *= 16777619L;
+        }
+        hash = hash & 0xffffffffL;
+        return getUnsignedInt(hash);
+    }
+
+    static byte[] nextUnsignedInt() {
+        return getUnsignedInt(Integer.toUnsignedLong(ThreadLocalRandom.current().nextInt()));
+    }
+
     static byte[] getUnsignedInt(long u32) {
         byte[] bytes = new byte[4];
         bytes[0] = (byte) (u32 >> 24);
@@ -12,9 +32,4 @@ public interface Go {
         bytes[3] = (byte) u32;
         return bytes;
     }
-
-    static byte[] nextUnsignedInt() {
-        return getUnsignedInt(Integer.toUnsignedLong(ThreadLocalRandom.current().nextInt()));
-    }
-
 }

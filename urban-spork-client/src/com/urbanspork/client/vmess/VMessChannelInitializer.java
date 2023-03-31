@@ -31,4 +31,5 @@ public class VMessChannelInitializer extends ChannelInitializer<SocketChannel> {
                 .addLast(ClientCodecs.get(uuid, request, cipher))
                 .addLast(new ClientPromiseHandler(promise));
     }
+
 }

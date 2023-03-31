@@ -23,7 +23,7 @@ public class AuthIDTestCase {
         Assertions.assertTrue(AuthID.match(authID, key));
     }
 
-    static byte[] createKey() {
+    public static byte[] createKey() {
         return KDF.kdf16("Demo Key for Auth ID Test".getBytes(), "Demo Path for Auth ID Test".getBytes());
     }
 }

@@ -1,14 +1,14 @@
-package com.urbanspork.common.protocol.vmess.aead;
+package com.urbanspork.common.protocol.vmess.encoding;
 
-import com.urbanspork.common.protocol.vmess.VMess;
+import com.urbanspork.common.crypto.GeneralDigests;
 
 public class Auth {
 
     public static byte[] generateChacha20Poly1305Key(byte[] raw) {
         byte[] key = new byte[32];
-        byte[] temp = VMess.md5(raw);
+        byte[] temp = GeneralDigests.md5.get(raw);
         System.arraycopy(temp, 0, key, 0, temp.length);
-        temp = VMess.md5(temp);
+        temp = GeneralDigests.md5.get(temp);
         System.arraycopy(temp, 0, key, 16, temp.length);
         return key;
     }

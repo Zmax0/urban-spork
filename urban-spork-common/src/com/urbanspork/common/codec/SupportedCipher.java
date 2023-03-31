@@ -12,7 +12,7 @@ public enum SupportedCipher {
     private final String value;
 
     SupportedCipher() {
-        value = name().replace('_', '-');
+        value = name().replace('_', '-'); //  aes_128_gcm ->  aes-128-gcm
     }
 
     @JsonValue
