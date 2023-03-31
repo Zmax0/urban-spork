@@ -1,8 +1,8 @@
-package com.urbanspork.common.golang;
+package com.urbanspork.common.lang;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-public interface Golang {
+public interface Go {
 
     static byte[] getUnsignedInt(long u32) {
         byte[] bytes = new byte[4];

@@ -4,16 +4,18 @@ package com.urbanspork.common.protocol.shadowsocks;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ReplayingDecoder;
+import io.netty.handler.codec.socksx.v5.Socks5AddressDecoder;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 
+import java.net.InetSocketAddress;
 import java.util.List;
 
-import static com.urbanspork.common.protocol.shadowsocks.ShadowsocksProtocolDecoder.State.INIT;
-import static com.urbanspork.common.protocol.shadowsocks.ShadowsocksProtocolDecoder.State.SUCCESS;
+import static com.urbanspork.common.protocol.shadowsocks.ShadowsocksAddressDecoder.State.INIT;
+import static com.urbanspork.common.protocol.shadowsocks.ShadowsocksAddressDecoder.State.SUCCESS;
 
-public class ShadowsocksProtocolDecoder extends ReplayingDecoder<ShadowsocksProtocolDecoder.State> implements ShadowsocksProtocol {
+public class ShadowsocksAddressDecoder extends ReplayingDecoder<ShadowsocksAddressDecoder.State> {
 
-    public ShadowsocksProtocolDecoder() {
+    public ShadowsocksAddressDecoder() {
         super(INIT);
     }
 
@@ -53,5 +55,9 @@ public class ShadowsocksProtocolDecoder extends ReplayingDecoder<ShadowsocksProt
             }
             default -> in.skipBytes(actualReadableBytes());
         }
+    }
+
+    private InetSocketAddress decodeAddress(Socks5AddressType addressType, ByteBuf in) throws Exception {
+        return new InetSocketAddress(Socks5AddressDecoder.DEFAULT.decodeAddress(addressType, in), in.readUnsignedShort());
     }
 }
