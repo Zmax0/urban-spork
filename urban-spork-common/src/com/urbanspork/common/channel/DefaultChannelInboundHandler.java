@@ -7,7 +7,7 @@ import io.netty.util.ReferenceCountUtil;
 
 public class DefaultChannelInboundHandler extends ChannelInboundHandlerAdapter {
 
-    protected final Channel channel;
+    private final Channel channel;
 
     public DefaultChannelInboundHandler(Channel channel) {
         this.channel = channel;

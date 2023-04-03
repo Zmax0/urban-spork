@@ -15,6 +15,9 @@ public class CurrentConfigPasswordToggleButton extends JFXToggleButton {
         setOnAction(value);
         GridPane.setHalignment(this, HPos.RIGHT);
         GridPane.setValignment(this, VPos.CENTER);
+        setVisible(false);
+        setOnMouseEntered(event -> setVisible(true));
+        setOnMouseExited(event -> setVisible(false));
     }
 
 }

@@ -4,10 +4,7 @@ import com.urbanspork.common.codec.EmptyChannelHandlerContext;
 import com.urbanspork.common.codec.SupportedCipher;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -17,19 +14,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+@DisplayName("Shadowsocks - Cipher Codec")
 @TestInstance(Lifecycle.PER_CLASS)
 class CipherCodecTest {
 
     private static final String str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-=_+";
 
-    private byte[] password;
+    private String password;
     private byte[] in;
 
     private final int maxChunkSize = 0xffff;
 
     @BeforeAll
     public void beforeAll() {
-        password = randomString().getBytes();
+        password = randomString();
         SecureRandom random = new SecureRandom();
         in = new byte[maxChunkSize * 10]; // 1M
         random.nextBytes(in);
@@ -45,12 +43,14 @@ class CipherCodecTest {
         return sb.toString();
     }
 
+    @DisplayName("Single supported cipher repeat")
     @RepeatedTest(10)
     void repeatedTest() throws Exception {
         cipherTest(ShadowsocksAEADCipherCodecs.get(SupportedCipher.aes_128_gcm, password));
     }
 
     @ParameterizedTest
+    @DisplayName("All supported cipher iterate")
     @EnumSource(SupportedCipher.class)
     void parameterizedTest(SupportedCipher cipher) throws Exception {
         cipherTest(ShadowsocksAEADCipherCodecs.get(cipher, password));

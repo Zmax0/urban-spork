@@ -1,12 +1,11 @@
 package com.urbanspork.common.codec.aead;
 
-import com.urbanspork.common.codec.CipherCodec;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 
-public interface AEADCipherCodec extends CipherCodec {
+public interface AEADCipherCodec {
 
     int TAG_SIZE = 16;
 

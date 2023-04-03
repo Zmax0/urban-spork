@@ -9,7 +9,7 @@ public class ServerConfig {
 
     private String port;
 
-    private byte[] password;
+    private String password;
 
     private SupportedCipher cipher;
 
@@ -41,11 +41,11 @@ public class ServerConfig {
         this.cipher = cipher;
     }
 
-    public byte[] getPassword() {
+    public String getPassword() {
         return password;
     }
 
-    public void setPassword(byte[] password) {
+    public void setPassword(String password) {
         this.password = password;
     }
 
@@ -72,15 +72,9 @@ public class ServerConfig {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        if (remark != null) {
-            builder.append(remark);
-        }
-        if (host != null) {
-            builder.append(' ').append(host).append(':').append(port);
-        }
+        StringBuilder builder = new StringBuilder(listItemText());
         if (protocol != null) {
-            builder.append(" [").append(protocol).append(']');
+            builder.append('|').append(protocol).append('|').append(cipher.toString());
         }
         if (builder.length() == 0) {
             builder.append(" XX ");
@@ -88,11 +82,12 @@ public class ServerConfig {
         return builder.toString();
     }
 
+    public String listItemText() {
+        return remark == null || remark.isEmpty() ? host + ':' + port : remark;
+    }
+
     private boolean isEmpty(String s) {
         return s != null && !s.isEmpty();
     }
 
-    private boolean isEmpty(byte[] bytes) {
-        return bytes != null && bytes.length > 0;
-    }
 }

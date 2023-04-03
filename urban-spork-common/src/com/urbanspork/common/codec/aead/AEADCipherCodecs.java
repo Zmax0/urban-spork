@@ -7,7 +7,7 @@ import org.bouncycastle.crypto.modes.GCMBlockCipher;
 
 import java.util.function.Supplier;
 
-public enum AEADCipherCodecSupplier implements Supplier<AEADCipherCodec> {
+public enum AEADCipherCodecs implements Supplier<AEADCipherCodec> {
 
     AES_GCM, CHACHA20_POLY1305;
 

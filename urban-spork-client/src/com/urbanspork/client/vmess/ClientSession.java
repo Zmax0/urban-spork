@@ -1,7 +1,7 @@
 package com.urbanspork.client.vmess;
 
-import com.urbanspork.common.codec.CipherCodec;
 import com.urbanspork.common.crypto.GeneralDigests;
+import com.urbanspork.common.util.Dice;
 
 import java.util.Arrays;
 
@@ -14,7 +14,7 @@ class ClientSession {
     final byte responseHeader;
 
     ClientSession() {
-        this(CipherCodec.randomBytes(33));
+        this(Dice.randomBytes(33));
     }
 
     ClientSession(byte[] bytes) {

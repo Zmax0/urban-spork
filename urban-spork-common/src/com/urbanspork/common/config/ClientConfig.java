@@ -65,7 +65,7 @@ public class ClientConfig {
 
     @Override
     public String toString() {
-        return String.format("%s @ localhost:%s", getCurrent(), getPort());
+        return String.format("localhost:%s - %s", getPort(), getCurrent());
     }
 
 }

@@ -6,11 +6,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.concurrent.Promise;
 
-public final class ClientPromiseHandler extends ChannelInboundHandlerAdapter {
+public final class ConnectPromiseHandler extends ChannelInboundHandlerAdapter {
 
     private final Promise<Channel> promise;
 
-    public ClientPromiseHandler(Promise<Channel> promise) {
+    public ConnectPromiseHandler(Promise<Channel> promise) {
         this.promise = promise;
     }
 
@@ -28,6 +28,7 @@ public final class ClientPromiseHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable throwable) {
+        ctx.pipeline().remove(this);
         promise.setFailure(throwable);
     }
 }

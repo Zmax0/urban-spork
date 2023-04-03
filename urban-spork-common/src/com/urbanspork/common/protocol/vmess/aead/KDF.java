@@ -25,7 +25,7 @@ public class KDF {
     }
 
     public static byte[] kdf(byte[] key, int len, byte[]... paths) {
-        return Arrays.copyOf(kdf(key, paths), len);
+        return len == 32 ? kdf(key, paths) : Arrays.copyOf(kdf(key, paths), len);
     }
 
     public static byte[] kdf16(byte[] key, byte[]... paths) {

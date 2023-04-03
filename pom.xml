@@ -1,8 +1,9 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>urban-spork</groupId>
   <artifactId>urban-spork</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>2.1.0</version>
   <packaging>pom</packaging>
   <modules>
     <module>urban-spork-common</module>
@@ -12,12 +13,15 @@
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <urban-spork.version>1.0.0-SNAPSHOT</urban-spork.version>
-    <junit.jupiter.version>5.5.2</junit.jupiter.version>
-    <jackson.version>2.14.0-rc1</jackson.version>
-    <logback.version>1.2.9</logback.version>
-    <netty.version>4.1.80.Final</netty.version>
-    <bouncycastle.version>1.70</bouncycastle.version>
+    <urban-spork.version>2.1.0</urban-spork.version>
+    <maven-surefire-plugin>3.0.0</maven-surefire-plugin>
+    <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
+    <maven-compiler-plugin>3.11.0</maven-compiler-plugin>
+    <junit.jupiter.version>5.9.2</junit.jupiter.version>
+    <jackson.version>2.14.2</jackson.version>
+    <logback.version>1.4.6</logback.version>
+    <netty.version>4.1.90.Final</netty.version>
+    <bouncycastle.version>1.72</bouncycastle.version>
     <javafx.version>18.0.2</javafx.version>
     <jfoenix.version>9.0.10</jfoenix.version>
   </properties>
@@ -66,7 +70,7 @@
       </dependency>
       <dependency>
         <groupId>org.bouncycastle</groupId>
-        <artifactId>bcprov-jdk15on</artifactId>
+        <artifactId>bcprov-jdk18on</artifactId>
         <version>${bouncycastle.version}</version>
       </dependency>
       <dependency>
@@ -85,11 +89,19 @@
     <finalName>${project.name}</finalName>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+    <testResources>
+      <testResource>
+        <directory>test</directory>
+        <includes>
+          <include>*.xml</include>
+        </includes>
+      </testResource>
+    </testResources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.11.0</version>
+        <version>${maven-compiler-plugin}</version>
         <configuration>
           <source>17</source>
           <target>17</target>
@@ -98,22 +110,8 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.0.0-M7</version>
+        <version>${maven-surefire-plugin}</version>
       </plugin>
     </plugins>
   </build>
-  <repositories>
-    <repository>
-      <id>nexus-aliyun</id>
-      <name>Nexus aliyun</name>
-      <layout>default</layout>
-      <url>https://maven.aliyun.com/repository/central</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-    </repository>
-  </repositories>
 </project>
