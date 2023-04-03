@@ -1,12 +1,12 @@
 package com.urbanspork.common.codec.shadowsocks;
 
 import com.urbanspork.common.codec.ChunkSizeCodec;
-import com.urbanspork.common.codec.CipherCodec;
 import com.urbanspork.common.codec.aead.AEADAuthenticator;
 import com.urbanspork.common.codec.aead.AEADCipherCodec;
 import com.urbanspork.common.codec.aead.AEADPayloadDecoder;
 import com.urbanspork.common.codec.aead.AEADPayloadEncoder;
 import com.urbanspork.common.crypto.GeneralDigests;
+import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -44,8 +44,8 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
     private AEADAuthenticator payloadEncoder;
     private AEADAuthenticator payloadDecoder;
 
-    ShadowsocksAEADCipherCodec(byte[] password, int saltSize, AEADCipherCodec codec) {
-        this.key = generateKey(password, saltSize);
+    ShadowsocksAEADCipherCodec(String password, int saltSize, AEADCipherCodec codec) {
+        this.key = generateKey(password.getBytes(), saltSize);
         this.saltSize = saltSize;
         this.codec = codec;
     }
@@ -53,7 +53,7 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
     @Override
     protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
         if (payloadEncoder == null) {
-            byte[] salt = CipherCodec.randomBytes(saltSize);
+            byte[] salt = Dice.randomBytes(saltSize);
             out.writeBytes(salt);
             payloadEncoder = new AEADAuthenticator(codec, hkdf(key, salt), nonce);
         }
@@ -107,6 +107,7 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
         return PAYLOAD_SIZE;
     }
 
+    // ensure key.length equals salt.length
     private byte[] generateKey(byte[] password, int size) {
         byte[] encoded = new byte[size];
         byte[] passwordDigest = GeneralDigests.md5.get(password);

@@ -8,18 +8,16 @@ import com.urbanspork.common.codec.aead.AEADCipherCodec;
 import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
-class ClientAEADChunkSizeCodec implements ChunkSizeCodec {
+record ClientAEADChunkSizeCodec(AEADAuthenticator auth) implements ChunkSizeCodec {
 
     static final byte[] AUTH_LEN = "auth_len".getBytes();
-
-    private final AEADAuthenticator auth;
 
     ClientAEADChunkSizeCodec(AEADCipherCodec codec, byte[] key, byte[] nonce) {
         this(codec, key, NonceGenerator.generateCountingNonce(nonce, codec.nonceSize()));
     }
 
     ClientAEADChunkSizeCodec(AEADCipherCodec codec, byte[] key, NonceGenerator nonceGenerator) {
-        auth = new AEADAuthenticator(codec, key, nonceGenerator, BytesGenerator.generateEmptyBytes());
+        this(new AEADAuthenticator(codec, key, nonceGenerator, BytesGenerator.generateEmptyBytes()));
     }
 
     @Override

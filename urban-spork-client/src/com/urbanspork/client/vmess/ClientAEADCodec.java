@@ -1,7 +1,8 @@
 package com.urbanspork.client.vmess;
 
-import com.urbanspork.common.codec.CipherCodec;
 import com.urbanspork.common.codec.SupportedCipher;
+import com.urbanspork.common.codec.aead.AEADCipherCodec;
+import com.urbanspork.common.codec.aead.AEADCipherCodecs;
 import com.urbanspork.common.codec.vmess.VMessAEADHeaderCodec;
 import com.urbanspork.common.lang.Go;
 import com.urbanspork.common.protocol.vmess.ID;
@@ -11,32 +12,33 @@ import com.urbanspork.common.protocol.vmess.cons.AddressType;
 import com.urbanspork.common.protocol.vmess.cons.RequestCommand;
 import com.urbanspork.common.protocol.vmess.cons.RequestOption;
 import com.urbanspork.common.protocol.vmess.cons.SecurityType;
+import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.modes.AEADCipher;
-import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
 
-abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements VMessAEADHeaderCodec {
+import static com.urbanspork.common.codec.vmess.VMessAEADHeaderCodec.*;
+
+abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements Supplier<AEADCipherCodec> {
 
     private static final Logger logger = LoggerFactory.getLogger(ClientAEADCodec.class);
 
-    private final AEADCipher headerCipher = new GCMBlockCipher(new AESEngine());
-    private final byte[] cmdKey;
-    private final SupportedCipher bodyCipher;
-    private final Socks5CommandRequest address;
     final ClientSession session;
-    private ClientBodyEncoder clientBodyEncoder;
-    private ClientBodyDecoder clientBodyDecoder;
+    private final byte[] cmdKey;
+    private final Socks5CommandRequest address;
+    private final VMessAEADHeaderCodec headerCodec = new VMessAEADHeaderCodec(AEADCipherCodecs.AES_GCM.get());
+    private final SupportedCipher bodyCipher;
+    private ClientBodyEncoder bodyEncoder;
+    private ClientBodyDecoder bodyDecoder;
 
     protected ClientAEADCodec(String uuid, Socks5CommandRequest address, ClientSession session, SupportedCipher cipher) {
         this(ID.newID(uuid), address, session, cipher);
@@ -54,64 +56,51 @@ abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements VM
     protected abstract ClientBodyDecoder newClientBodyDecoder();
 
     @Override
-    public AEADCipher cipher() {
-        return headerCipher;
-    }
-
-    @Override
-    public int macSize() {
-        return 128;
-    }
-
-    @Override
-    public int nonceSize() {
-        return 12;
-    }
-
-    @Override
     public void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
-        if (clientBodyEncoder == null) {
-            ByteBuf header = out.alloc().buffer();
-            header.writeByte(VMess.VERSION); // version
-            header.writeBytes(session.requestBodyIV); // requestBodyIV
-            header.writeBytes(session.requestBodyKey); // requestBodyKey
-            header.writeByte(session.responseHeader); // responseHeader
-            header.writeByte(RequestOption.ChunkStream.getValue() | RequestOption.AuthenticatedLength.getValue()); // option
-            int paddingLen = ThreadLocalRandom.current().nextInt(0, 16); // dice roll 16
+        if (bodyEncoder == null) {
+            ByteBuf buffer = out.duplicate();
+            buffer.writeByte(VMess.VERSION); // version
+            buffer.writeBytes(session.requestBodyIV); // requestBodyIV
+            buffer.writeBytes(session.requestBodyKey); // requestBodyKey
+            buffer.writeByte(session.responseHeader); // responseHeader
+            buffer.writeByte(RequestOption.ChunkStream.getValue() | RequestOption.AuthenticatedLength.getValue()); // option
+            int paddingLen = ThreadLocalRandom.current().nextInt(16); // dice roll 16
             int security = (paddingLen << 4) | SecurityType.from(bodyCipher).getValue();
-            header.writeByte(security);
-            header.writeByte(0);
-            header.writeByte(RequestCommand.TCP.getValue());
-            writeAddressBytes(header, address); // address
+            buffer.writeByte(security);
+            buffer.writeByte(0);
+            buffer.writeByte(RequestCommand.TCP.getValue());
+            writeAddressBytes(buffer, address); // address
             if (paddingLen > 0) {
-                header.writeBytes(CipherCodec.randomBytes(paddingLen)); // padding
+                buffer.writeBytes(Dice.randomBytes(paddingLen)); // padding
             }
-            header.writeBytes(Go.fnv1a32(ByteBufUtil.getBytes(header, header.readerIndex(), header.writerIndex(), false)));
-            sealVMessAEADHeader(cmdKey, header, out);
-            clientBodyEncoder = newClientBodyEncoder();
+            buffer.writeBytes(Go.fnv1a32(ByteBufUtil.getBytes(buffer, buffer.readerIndex(), buffer.writerIndex(), false)));
+            byte[] header = new byte[buffer.readableBytes()];
+            buffer.readBytes(header);
+            headerCodec.sealVMessAEADHeader(cmdKey, header, out);
+            bodyEncoder = newClientBodyEncoder();
         }
-        clientBodyEncoder.encodePayload(msg, out);
+        bodyEncoder.encodePayload(msg, out);
     }
 
     @Override
     public void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        if (clientBodyDecoder == null) {
+        if (bodyDecoder == null) {
             byte[] aeadResponseHeaderLengthEncryptionKey = KDF.kdf16(session.responseBodyKey, KDF_SALT_AEAD_RESP_HEADER_LEN_KEY);
-            byte[] aeadResponseHeaderLengthEncryptionIV = KDF.kdf(session.responseBodyIV, nonceSize(), KDF_SALT_AEAD_RESP_HEADER_LEN_IV);
-            byte[] aeadEncryptedResponseHeaderLength = new byte[Short.BYTES + TAG_SIZE];
+            byte[] aeadResponseHeaderLengthEncryptionIV = KDF.kdf(session.responseBodyIV, headerCodec.codec().nonceSize(), KDF_SALT_AEAD_RESP_HEADER_LEN_IV);
+            byte[] aeadEncryptedResponseHeaderLength = new byte[Short.BYTES + headerCodec.codec().TAG_SIZE];
             in.markReaderIndex();
             in.readBytes(aeadEncryptedResponseHeaderLength);
-            int decryptedResponseHeaderLength = Unpooled.wrappedBuffer(decrypt(aeadResponseHeaderLengthEncryptionKey, aeadResponseHeaderLengthEncryptionIV, null, aeadEncryptedResponseHeaderLength)).readShort();
-            if (in.readableBytes() < decryptedResponseHeaderLength + TAG_SIZE) {
+            int decryptedResponseHeaderLength = Unpooled.wrappedBuffer(headerCodec.codec().decrypt(aeadResponseHeaderLengthEncryptionKey, aeadResponseHeaderLengthEncryptionIV, null, aeadEncryptedResponseHeaderLength)).readShort();
+            if (in.readableBytes() < decryptedResponseHeaderLength + headerCodec.codec().TAG_SIZE) {
                 in.resetReaderIndex();
-                logger.info("Unexpected readable bytes for decoding client header: expecting {} but actually {}", decryptedResponseHeaderLength + TAG_SIZE, in.readableBytes());
+                logger.info("Unexpected readable bytes for decoding client header: expecting {} but actually {}", decryptedResponseHeaderLength + headerCodec.codec().TAG_SIZE, in.readableBytes());
                 return;
             }
             byte[] aeadResponseHeaderPayloadEncryptionKey = KDF.kdf16(session.responseBodyKey, KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY);
-            byte[] aeadResponseHeaderPayloadEncryptionIV = KDF.kdf(session.responseBodyIV, nonceSize(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV);
-            byte[] msg = new byte[decryptedResponseHeaderLength + TAG_SIZE];
+            byte[] aeadResponseHeaderPayloadEncryptionIV = KDF.kdf(session.responseBodyIV, headerCodec.codec().nonceSize(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV);
+            byte[] msg = new byte[decryptedResponseHeaderLength + headerCodec.codec().TAG_SIZE];
             in.readBytes(msg);
-            ByteBuf encryptedResponseHeaderBuffer = Unpooled.wrappedBuffer(decrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, null, msg));
+            ByteBuf encryptedResponseHeaderBuffer = Unpooled.wrappedBuffer(headerCodec.codec().decrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, null, msg));
             byte responseHeader = encryptedResponseHeaderBuffer.getByte(0);
             if (session.responseHeader != responseHeader) { // v[1]
                 logger.error("Unexpected response header: expecting {} but actually {}", session.responseHeader, responseHeader);
@@ -120,9 +109,14 @@ abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements VM
             }
             // not support handling command now
             encryptedResponseHeaderBuffer.release();
-            clientBodyDecoder = newClientBodyDecoder();
+            bodyDecoder = newClientBodyDecoder();
         }
-        clientBodyDecoder.decodePayload(in, out);
+        bodyDecoder.decodePayload(in, out);
+    }
+
+    @Override
+    public AEADCipherCodec get() {
+        return headerCodec.codec();
     }
 
     @Override

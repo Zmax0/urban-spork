@@ -35,7 +35,7 @@ public interface NonceGenerator extends BytesGenerator {
             public byte[] generate() {
                 ByteBuf buf = Unpooled.wrappedBuffer(nonce);
                 buf.setShort(0, count++);
-                return Arrays.copyOf(nonce, nonceSize);
+                return Arrays.copyOf(nonce, nonceSize); // should copy always
             }
         };
     }

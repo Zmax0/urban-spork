@@ -1,8 +1,8 @@
-package com.urbanspork.common.codec;
+package com.urbanspork.common.util;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-public interface CipherCodec {
+public interface Dice {
 
     static byte[] randomBytes(int length) {
         byte[] bytes = new byte[length];

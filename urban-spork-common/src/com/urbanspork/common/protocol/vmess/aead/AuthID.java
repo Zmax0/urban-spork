@@ -10,8 +10,6 @@ import io.netty.buffer.Unpooled;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import java.security.InvalidKeyException;
-import java.time.Instant;
-import java.util.Arrays;
 
 public class AuthID {
 
@@ -24,18 +22,6 @@ public class AuthID {
         int crc32 = (int) VMess.crc32(ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.writerIndex(), false));
         buf.writeInt(crc32);
         return AES.ECB_NoPadding.encrypt(KDF.kdf16(key, VMess.KDF_SALT_AUTH_ID_ENCRYPTION_KEY), authID);
-    }
-
-    public static boolean match(byte[] authID, byte[] key) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
-        byte[] decrypt = AES.ECB_NoPadding.decrypt(KDF.kdf16(key, VMess.KDF_SALT_AUTH_ID_ENCRYPTION_KEY), authID);
-        ByteBuf buf = Unpooled.wrappedBuffer(decrypt);
-        long time = buf.readLong();
-        if (Math.abs(time - Instant.now().getEpochSecond()) > 120) {
-            return false;
-        }
-        buf.readUnsignedInt(); // rand
-        int crc32 = buf.readInt();
-        return crc32 == (int) VMess.crc32(Arrays.copyOf(decrypt, decrypt.length - Integer.BYTES));
     }
 
 }

@@ -28,8 +28,12 @@ public class Server {
         }
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+        serverConfigs = serverConfigs.stream().filter(config -> Protocols.shadowsocks == config.getProtocol()).toList();
+        if (serverConfigs.isEmpty()) {
+            throw new IllegalArgumentException("Shadowsocks server config is empty");
+        }
         ExecutorService threadPool = Executors.newFixedThreadPool(serverConfigs.size());
-        serverConfigs.stream().filter(config -> Protocols.shadowsocks == config.getProtocol()).forEach(serverConfig -> threadPool.submit(() -> {
+        serverConfigs.forEach(serverConfig -> threadPool.submit(() -> {
             try {
                 int port = Integer.parseInt(serverConfig.getPort());
                 ServerBootstrap b = new ServerBootstrap();

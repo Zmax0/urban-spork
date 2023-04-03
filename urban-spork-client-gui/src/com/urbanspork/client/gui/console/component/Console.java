@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -200,6 +199,13 @@ public class Console extends Preloader {
     }
 
     public void showCurrentConfigPassword() {
+        if (currentConfigPasswordPasswordField.isVisible()) {
+            currentConfigPasswordTextField.setText(currentConfigPasswordPasswordField.getText());
+            currentConfigPasswordTextField.validate();
+        } else {
+            currentConfigPasswordPasswordField.setText(currentConfigPasswordTextField.getText());
+            currentConfigPasswordPasswordField.validate();
+        }
         currentConfigPasswordPasswordField.visibleProperty().set(!currentConfigPasswordToggleButton.isSelected());
         currentConfigPasswordTextField.visibleProperty().set(currentConfigPasswordToggleButton.isSelected());
     }
@@ -408,8 +414,7 @@ public class Console extends Preloader {
                         currentConfigPasswordPasswordField.validate();
                     }
                 });
-        currentConfigPasswordPasswordField.textProperty().addListener(
-                (o, oldValue, newValue) -> currentConfigPasswordTextField.setText(newValue));
+        initCurrentConfigPasswordCommonEvent(currentConfigPasswordPasswordField);
     }
 
     private void initCurrentConfigPasswordTextField() {
@@ -420,8 +425,21 @@ public class Console extends Preloader {
                         currentConfigPasswordTextField.validate();
                     }
                 });
-        currentConfigPasswordTextField.textProperty().addListener(
-                (o, oldValue, newValue) -> currentConfigPasswordPasswordField.setText(newValue));
+        initCurrentConfigPasswordCommonEvent(currentConfigPasswordTextField);
+    }
+
+    private void initCurrentConfigPasswordCommonEvent(TextField field) {
+        field.textProperty().addListener((o, oldValue, newValue) -> field.setText(newValue));
+        field.setOnMouseEntered(event -> {
+            if (field.isVisible()) {
+                currentConfigPasswordToggleButton.setVisible(true);
+            }
+        });
+        field.setOnMouseExited(event -> {
+            if (field.isVisible()) {
+                currentConfigPasswordToggleButton.setVisible(false);
+            }
+        });
     }
 
     private void initCurrentConfigPortTextField() {
@@ -484,7 +502,6 @@ public class Console extends Preloader {
                             resetValidation();
                             display(newValue);
                         }
-
                     }
                 });
     }
@@ -520,11 +537,9 @@ public class Console extends Preloader {
             currentConfigHostTextField.setText(c.getHost());
             currentConfigPortTextField.setText(c.getPort());
             currentConfigRemarkTextField.setText(c.getRemark());
-            if (c.getPassword() != null) {
-                String password = new String(c.getPassword());
-                currentConfigPasswordPasswordField.setText(password);
-                currentConfigPasswordTextField.setText(password);
-            }
+            String password = c.getPassword();
+            currentConfigPasswordPasswordField.setText(password);
+            currentConfigPasswordTextField.setText(password);
             currentConfigPasswordToggleButton.setSelected(false);
             currentConfigCipherChoiceBox.setValue(c.getCipher());
             currentConfigProtocolChoiceBox.setValue(c.getProtocol());
@@ -534,7 +549,7 @@ public class Console extends Preloader {
     private void pack(ServerConfig config) {
         config.setHost(currentConfigHostTextField.getText());
         config.setPort(currentConfigPortTextField.getText());
-        config.setPassword(currentConfigPasswordTextField.getText().getBytes(StandardCharsets.UTF_8));
+        config.setPassword(currentConfigPasswordTextField.getText());
         config.setRemark(currentConfigRemarkTextField.getText());
         config.setCipher(currentConfigCipherChoiceBox.getValue());
         config.setProtocol(currentConfigProtocolChoiceBox.getValue());

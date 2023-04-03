@@ -11,7 +11,7 @@ public class AttributeKeys {
     public static final AttributeKey<Protocols> PROTOCOL = AttributeKey.newInstance("PROTOCOL");
     public static final AttributeKey<SupportedCipher> CIPHER = AttributeKey.newInstance("CIPHER");
     public static final AttributeKey<InetSocketAddress> SERVER_ADDRESS = AttributeKey.newInstance("SERVER_ADDRESS");
-    public static final AttributeKey<byte[]> PASSWORD = AttributeKey.newInstance("PASSWORD");
+    public static final AttributeKey<String> PASSWORD = AttributeKey.newInstance("PASSWORD");
 
     private AttributeKeys() {
 
