@@ -28,7 +28,9 @@ public class Server {
         }
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        serverConfigs = serverConfigs.stream().filter(config -> Protocols.shadowsocks == config.getProtocol()).toList();
+        serverConfigs = serverConfigs.stream()
+                .filter(config -> config.getHost().matches("localhost|127.*|[:1]|0.0.0.0|[:0]"))
+                .filter(config -> Protocols.shadowsocks == config.getProtocol()).toList();
         if (serverConfigs.isEmpty()) {
             throw new IllegalArgumentException("Shadowsocks server config is empty");
         }

@@ -35,7 +35,7 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
 
     private static final int NONCE_SIZE = 12;
     private static final int PAYLOAD_LIMIT = 0xffff;
-    private static final byte[] INFO = new byte[]{115, 115, 45, 115, 117, 98, 107, 101, 121}; // ss-subkey
+    private static final byte[] INFO = new byte[]{115, 115, 45, 115, 117, 98, 107, 101, 121}; // "ss-subkey"
     private final byte[] nonce = new byte[NONCE_SIZE];
     private final ChunkSizeCodec chunkSizeCodec = generateChunkSizeCodec();
 
@@ -66,7 +66,7 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         if (payloadDecoder == null && in.readableBytes() >= saltSize) {
             byte[] salt = new byte[saltSize];
-            in.readBytes(salt, 0, saltSize);
+            in.readBytes(salt);
             payloadDecoder = newAuthenticator(salt);
         }
         if (payloadDecoder != null) {
