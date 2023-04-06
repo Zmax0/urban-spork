@@ -5,7 +5,7 @@ import io.netty.buffer.ByteBuf;
 
 public interface AEADPayloadEncoder {
 
-    int maxPayloadLength();
+    int payloadLimit();
 
     AEADAuthenticator payloadEncoder();
 
@@ -13,7 +13,7 @@ public interface AEADPayloadEncoder {
 
     default void encodePayload(ByteBuf msg, ByteBuf out) throws Exception {
         while (msg.isReadable()) {
-            int length = Math.min(msg.readableBytes(), maxPayloadLength());
+            int length = Math.min(msg.readableBytes(), payloadLimit());
             out.writeBytes(chunkSizeEncoder().encode(length));
             byte[] in = new byte[length];
             msg.readBytes(in);

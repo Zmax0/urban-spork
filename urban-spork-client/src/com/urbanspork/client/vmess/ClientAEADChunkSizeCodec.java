@@ -13,7 +13,7 @@ record ClientAEADChunkSizeCodec(AEADAuthenticator auth) implements ChunkSizeCode
     static final byte[] AUTH_LEN = "auth_len".getBytes();
 
     ClientAEADChunkSizeCodec(AEADCipherCodec codec, byte[] key, byte[] nonce) {
-        this(codec, key, NonceGenerator.generateCountingNonce(nonce, codec.nonceSize()));
+        this(codec, key, NonceGenerator.generateCountingNonce(nonce, codec.nonceSize(), true));
     }
 
     ClientAEADChunkSizeCodec(AEADCipherCodec codec, byte[] key, NonceGenerator nonceGenerator) {

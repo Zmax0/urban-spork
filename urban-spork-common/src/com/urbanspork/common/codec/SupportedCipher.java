@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum SupportedCipher {
 
     aes_128_gcm,
-    aes_192_gcm,
     aes_256_gcm,
     chacha20_poly1305;
 
