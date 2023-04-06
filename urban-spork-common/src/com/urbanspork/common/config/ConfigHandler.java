@@ -1,19 +1,23 @@
 package com.urbanspork.common.config;
 
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import java.io.*;
 import java.util.stream.Collectors;
 
 public class ConfigHandler {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER;
     private static final String NAME = "config.json";
     private static final File FILE = new File(ConfigLocation.getPath(ConfigHandler.class) + File.separatorChar + NAME);
 
     static {
-        MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        MAPPER = JsonMapper.builder()
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .enable(JsonReadFeature.ALLOW_JAVA_COMMENTS).build();
     }
 
     private ConfigHandler() {
@@ -33,7 +37,7 @@ public class ConfigHandler {
     public static <T> T read(Class<T> clazz) throws IOException {
         if (FILE.exists()) {
             try (BufferedReader reader = new BufferedReader(new FileReader(FILE))) {
-                return MAPPER.readValue(reader.lines().collect(Collectors.joining()), clazz);
+                return MAPPER.readValue(reader.lines().collect(Collectors.joining(System.lineSeparator())), clazz);
             }
         } else {
             return null;
