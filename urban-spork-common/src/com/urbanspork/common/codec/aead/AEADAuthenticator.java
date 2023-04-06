@@ -8,10 +8,6 @@ public record AEADAuthenticator(AEADCipherCodec codec, byte[] key,
                                 NonceGenerator nonceGenerator,
                                 BytesGenerator associatedTextGenerator) {
 
-    public AEADAuthenticator(AEADCipherCodec codec, byte[] key, byte[] nonce) {
-        this(codec, key, NonceGenerator.generateCountingNonce(nonce, codec.nonceSize()), BytesGenerator.generateEmptyBytes());
-    }
-
     public byte[] seal(byte[] in) throws InvalidCipherTextException {
         return codec.encrypt(key, nonceGenerator.generate(), associatedTextGenerator.generate(), in);
     }

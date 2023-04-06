@@ -27,15 +27,19 @@ public interface NonceGenerator extends BytesGenerator {
         return () -> nonce;
     }
 
-    static NonceGenerator generateCountingNonce(byte[] nonce, int nonceSize) {
+    static NonceGenerator generateCountingNonce(byte[] nonce, int nonceSize, boolean bigEndian) {
         return new NonceGenerator() {
             private short count;
 
             @Override
             public byte[] generate() {
                 ByteBuf buf = Unpooled.wrappedBuffer(nonce);
-                buf.setShort(0, count++);
-                return Arrays.copyOf(nonce, nonceSize); // should copy always
+                if (bigEndian) {
+                    buf.setShort(0, count++);
+                } else {
+                    buf.setShortLE(0, count++);
+                }
+                return Arrays.copyOf(nonce, nonceSize); // should always copy
             }
         };
     }

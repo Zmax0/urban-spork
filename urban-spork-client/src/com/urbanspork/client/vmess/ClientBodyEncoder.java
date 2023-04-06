@@ -7,7 +7,7 @@ import com.urbanspork.common.codec.aead.AEADPayloadEncoder;
 record ClientBodyEncoder(AEADAuthenticator payloadEncoder,
                          ChunkSizeCodec chunkSizeEncoder) implements AEADPayloadEncoder {
     @Override
-    public int maxPayloadLength() {
+    public int payloadLimit() {
         return 0xffff;
     }
 }

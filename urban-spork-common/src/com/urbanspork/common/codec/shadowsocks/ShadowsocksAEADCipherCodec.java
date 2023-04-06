@@ -1,6 +1,8 @@
 package com.urbanspork.common.codec.shadowsocks;
 
+import com.urbanspork.common.codec.BytesGenerator;
 import com.urbanspork.common.codec.ChunkSizeCodec;
+import com.urbanspork.common.codec.NonceGenerator;
 import com.urbanspork.common.codec.aead.AEADAuthenticator;
 import com.urbanspork.common.codec.aead.AEADCipherCodec;
 import com.urbanspork.common.codec.aead.AEADPayloadDecoder;
@@ -32,8 +34,8 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
      */
 
     private static final int NONCE_SIZE = 12;
-    private static final int PAYLOAD_SIZE = 0xffff;
-    private static final byte[] INFO = new byte[]{115, 115, 45, 115, 117, 98, 107, 101, 121};
+    private static final int PAYLOAD_LIMIT = 0xffff;
+    private static final byte[] INFO = new byte[]{115, 115, 45, 115, 117, 98, 107, 101, 121}; // ss-subkey
     private final byte[] nonce = new byte[NONCE_SIZE];
     private final ChunkSizeCodec chunkSizeCodec = generateChunkSizeCodec();
 
@@ -55,7 +57,7 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
         if (payloadEncoder == null) {
             byte[] salt = Dice.randomBytes(saltSize);
             out.writeBytes(salt);
-            payloadEncoder = new AEADAuthenticator(codec, hkdf(key, salt), nonce);
+            payloadEncoder = newAuthenticator(salt);
         }
         encodePayload(msg, out);
     }
@@ -65,7 +67,7 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
         if (payloadDecoder == null && in.readableBytes() >= saltSize) {
             byte[] salt = new byte[saltSize];
             in.readBytes(salt, 0, saltSize);
-            payloadDecoder = new AEADAuthenticator(codec, hkdf(key, salt), nonce);
+            payloadDecoder = newAuthenticator(salt);
         }
         if (payloadDecoder != null) {
             decodePayload(in, out);
@@ -103,8 +105,8 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
     }
 
     @Override
-    public int maxPayloadLength() {
-        return PAYLOAD_SIZE;
+    public int payloadLimit() {
+        return PAYLOAD_LIMIT;
     }
 
     // ensure key.length equals salt.length
@@ -124,7 +126,13 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
         return encoded;
     }
 
-    private byte[] hkdf(byte[] key, byte[] salt) {
+    private AEADAuthenticator newAuthenticator(byte[] salt) {
+        return new AEADAuthenticator(codec, hkdfsha1(key, salt),
+                NonceGenerator.generateCountingNonce(nonce, codec.nonceSize(), false),
+                BytesGenerator.generateEmptyBytes());
+    }
+
+    private byte[] hkdfsha1(byte[] key, byte[] salt) {
         byte[] out = new byte[salt.length];
         HKDFBytesGenerator generator = new HKDFBytesGenerator(new SHA1Digest());
         generator.init(new HKDFParameters(key, salt, INFO));
@@ -137,7 +145,7 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
             @Override
             public byte[] encode(int size) throws Exception {
                 byte[] bytes = new byte[chunkSizeCodec.sizeBytes()];
-                Unpooled.wrappedBuffer(bytes).setShort(0, Math.min(size, PAYLOAD_SIZE));
+                Unpooled.wrappedBuffer(bytes).setShort(0, Math.min(size, PAYLOAD_LIMIT));
                 return payloadEncoder.seal(bytes);
             }
 

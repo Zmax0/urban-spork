@@ -410,7 +410,7 @@ public class Console extends Preloader {
         currentConfigPasswordPasswordField.getValidators().add(requiredFieldValidator);
         currentConfigPasswordPasswordField.focusedProperty().addListener(
                 (o, oldValue, newValue) -> {
-                    if (Boolean.FALSE.equals(newValue)) {
+                    if (Boolean.TRUE.equals(oldValue) && Boolean.FALSE.equals(newValue)) {
                         currentConfigPasswordPasswordField.validate();
                     }
                 });
@@ -421,7 +421,7 @@ public class Console extends Preloader {
         currentConfigPasswordTextField.getValidators().add(requiredFieldValidator);
         currentConfigPasswordTextField.focusedProperty().addListener(
                 (o, oldValue, newValue) -> {
-                    if (Boolean.FALSE.equals(newValue)) {
+                    if (Boolean.TRUE.equals(oldValue) && Boolean.FALSE.equals(newValue)) {
                         currentConfigPasswordTextField.validate();
                     }
                 });
