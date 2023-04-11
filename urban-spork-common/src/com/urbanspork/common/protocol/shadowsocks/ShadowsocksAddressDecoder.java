@@ -10,13 +10,10 @@ import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import java.net.InetSocketAddress;
 import java.util.List;
 
-import static com.urbanspork.common.protocol.shadowsocks.ShadowsocksAddressDecoder.State.INIT;
-import static com.urbanspork.common.protocol.shadowsocks.ShadowsocksAddressDecoder.State.SUCCESS;
-
 public class ShadowsocksAddressDecoder extends ReplayingDecoder<ShadowsocksAddressDecoder.State> {
 
     public ShadowsocksAddressDecoder() {
-        super(INIT);
+        super(State.INIT);
     }
 
     enum State {
@@ -35,16 +32,16 @@ public class ShadowsocksAddressDecoder extends ReplayingDecoder<ShadowsocksAddre
                     if (in.readableBytes() >= length + 4) {
                         in.skipBytes(1);
                         out.add(decodeAddress(addressType, in));
-                        checkpoint(SUCCESS);
+                        checkpoint(State.SUCCESS);
                     }
                 } else if (addressType == Socks5AddressType.IPv4 && in.readableBytes() >= 7) {
                     in.skipBytes(1);
                     out.add(decodeAddress(addressType, in));
-                    checkpoint(SUCCESS);
+                    checkpoint(State.SUCCESS);
                 } else if (addressType == Socks5AddressType.IPv6 && in.readableBytes() >= 19) {
                     in.skipBytes(1);
                     out.add(decodeAddress(addressType, in));
-                    checkpoint(SUCCESS);
+                    checkpoint(State.SUCCESS);
                 }
             }
             case SUCCESS -> {
@@ -53,7 +50,7 @@ public class ShadowsocksAddressDecoder extends ReplayingDecoder<ShadowsocksAddre
                     out.add(in.readRetainedSlice(readableBytes));
                 }
             }
-            default -> in.skipBytes(actualReadableBytes());
+            case FAILURE -> in.skipBytes(actualReadableBytes());
         }
     }
 

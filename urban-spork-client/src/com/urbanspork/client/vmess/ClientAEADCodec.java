@@ -3,6 +3,7 @@ package com.urbanspork.client.vmess;
 import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.codec.aead.AEADCipherCodec;
 import com.urbanspork.common.codec.aead.AEADCipherCodecs;
+import com.urbanspork.common.codec.aead.AEADPayloadDecoder;
 import com.urbanspork.common.codec.vmess.VMessAEADHeaderCodec;
 import com.urbanspork.common.lang.Go;
 import com.urbanspork.common.protocol.vmess.ID;
@@ -38,7 +39,7 @@ abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements Su
     private final VMessAEADHeaderCodec headerCodec = new VMessAEADHeaderCodec(AEADCipherCodecs.AES_GCM.get());
     private final SupportedCipher bodyCipher;
     private ClientBodyEncoder bodyEncoder;
-    private ClientBodyDecoder bodyDecoder;
+    private AEADPayloadDecoder bodyDecoder;
 
     protected ClientAEADCodec(String uuid, Socks5CommandRequest address, ClientSession session, SupportedCipher cipher) {
         this(ID.newID(uuid), address, session, cipher);
@@ -53,7 +54,7 @@ abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements Su
 
     protected abstract ClientBodyEncoder newClientBodyEncoder();
 
-    protected abstract ClientBodyDecoder newClientBodyDecoder();
+    protected abstract AEADPayloadDecoder newClientBodyDecoder();
 
     @Override
     public void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
@@ -111,7 +112,7 @@ abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements Su
             encryptedResponseHeaderBuffer.release();
             bodyDecoder = newClientBodyDecoder();
         }
-        bodyDecoder.decodePayload(in, out);
+        bodyDecoder.decode(ctx, in, out);
     }
 
     @Override

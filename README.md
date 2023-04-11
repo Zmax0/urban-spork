@@ -2,8 +2,6 @@
 
 A sock5 proxy
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/3286f43f4c854b4da8c1058637343273)](https://www.codacy.com/manual/Zmax0/urban-spork?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Zmax0/urban-spork&amp;utm_campaign=Badge_Grade)
-
 ## Require
 
 Java 17+
@@ -16,7 +14,7 @@ put *config.json* file into the unpacked folder before running
 {
   "servers": [
     {
-      "cipher": "{cipher}", // see Features
+      "cipher": "{cipher}",
       "password": "{password}",
       "port": "{port}",
       "protocol": "{protocol}"
@@ -27,10 +25,15 @@ put *config.json* file into the unpacked folder before running
 
 ## Features
 
+### Transmission
+
+only support TCP now
+
+### Cipher
+
 | cipher            | Shadowsocks | VMess |
 |:------------------|:-----------:|:-----:|
 | aes-128-gcm       |   `C` `S`   |  `C`  |
-| aes-192-gcm       |   `C` `S`   |       |
 | aes-256-gcm       |   `C` `S`   |       |
 | chacha20-poly1305 |   `C` `S`   |  `C`  |
 
@@ -38,4 +41,14 @@ put *config.json* file into the unpacked folder before running
 
 ## Build
 
-    mvn clean install
+    mvn clean package
+
+### Build Output
+
+server
+
+    urban-spork-server/target/urban-spork-server.zip
+
+client
+
+    urban-spork-client-gui/target/urban-spork-client-gui.zip
