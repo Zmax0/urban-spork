@@ -9,6 +9,8 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -17,6 +19,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server {
+
+    private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
     public static void main(String[] args) throws IOException {
         List<ServerConfig> serverConfigs = Optional
@@ -45,8 +49,10 @@ public class Server {
                 ChannelFuture f = b.bind(port).sync();
                 f.channel().closeFuture().sync();
             } catch (InterruptedException e) {
+                logger.error("Server listening thread is interrupted", e);
                 workerGroup.shutdownGracefully();
                 bossGroup.shutdownGracefully();
+                Thread.currentThread().interrupt();
             } finally {
                 workerGroup.shutdownGracefully();
                 bossGroup.shutdownGracefully();

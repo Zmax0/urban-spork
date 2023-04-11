@@ -5,6 +5,10 @@ import com.urbanspork.common.codec.aead.AEADCipherCodecs;
 
 public class ShadowsocksAEADCipherCodecs {
 
+    private ShadowsocksAEADCipherCodecs() {
+
+    }
+
     public static ShadowsocksAEADCipherCodec get(SupportedCipher cipher, String password) {
         return switch (cipher) {
             case aes_128_gcm -> new ShadowsocksAEADCipherCodec(password, 16, AEADCipherCodecs.AES_GCM.get());

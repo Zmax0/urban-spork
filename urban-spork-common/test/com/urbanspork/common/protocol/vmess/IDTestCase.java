@@ -5,10 +5,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 
-public class IDTestCase {
+class IDTestCase {
 
     @Test
-    public void testNewID() {
+    void testNewID() {
         byte[] id = ID.newID("b831381d-6324-4d53-ad4f-8cda48b30811");
         Assertions.assertEquals("tQ2RasDOwGeYGvjl84p1jw==", Base64.getEncoder().encodeToString(id));
     }

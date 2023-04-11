@@ -24,9 +24,10 @@ public class Client {
                     .childHandler(new ClientChannelInitializer(clientConfig))
                     .bind(port).sync().channel().closeFuture().sync();
         } catch (InterruptedException e) {
-            logger.info("Interrupt thread [{}]", Thread.currentThread().getName());
+            logger.info("Interrupt thread [{}]", Thread.currentThread().getName(), e);
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
+            Thread.currentThread().interrupt();
         } finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();

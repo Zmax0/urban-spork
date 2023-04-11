@@ -4,6 +4,7 @@ import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.codec.aead.AEADCipherCodec;
 import com.urbanspork.common.codec.aead.AEADCipherCodecs;
 import com.urbanspork.common.codec.aead.AEADPayloadDecoder;
+import com.urbanspork.common.codec.aead.AEADPayloadEncoder;
 import com.urbanspork.common.codec.vmess.VMessAEADHeaderCodec;
 import com.urbanspork.common.lang.Go;
 import com.urbanspork.common.protocol.vmess.ID;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
+import static com.urbanspork.common.codec.aead.AEADCipherCodec.TAG_SIZE;
 import static com.urbanspork.common.codec.vmess.VMessAEADHeaderCodec.*;
 
 abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements Supplier<AEADCipherCodec> {
@@ -38,7 +40,7 @@ abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements Su
     private final Socks5CommandRequest address;
     private final VMessAEADHeaderCodec headerCodec = new VMessAEADHeaderCodec(AEADCipherCodecs.AES_GCM.get());
     private final SupportedCipher bodyCipher;
-    private ClientBodyEncoder bodyEncoder;
+    private AEADPayloadEncoder bodyEncoder;
     private AEADPayloadDecoder bodyDecoder;
 
     protected ClientAEADCodec(String uuid, Socks5CommandRequest address, ClientSession session, SupportedCipher cipher) {
@@ -52,7 +54,7 @@ abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements Su
         this.bodyCipher = cipher;
     }
 
-    protected abstract ClientBodyEncoder newClientBodyEncoder();
+    protected abstract AEADPayloadEncoder newClientBodyEncoder();
 
     protected abstract AEADPayloadDecoder newClientBodyDecoder();
 
@@ -88,18 +90,18 @@ abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements Su
         if (bodyDecoder == null) {
             byte[] aeadResponseHeaderLengthEncryptionKey = KDF.kdf16(session.responseBodyKey, KDF_SALT_AEAD_RESP_HEADER_LEN_KEY);
             byte[] aeadResponseHeaderLengthEncryptionIV = KDF.kdf(session.responseBodyIV, headerCodec.codec().nonceSize(), KDF_SALT_AEAD_RESP_HEADER_LEN_IV);
-            byte[] aeadEncryptedResponseHeaderLength = new byte[Short.BYTES + headerCodec.codec().TAG_SIZE];
+            byte[] aeadEncryptedResponseHeaderLength = new byte[Short.BYTES + TAG_SIZE];
             in.markReaderIndex();
             in.readBytes(aeadEncryptedResponseHeaderLength);
             int decryptedResponseHeaderLength = Unpooled.wrappedBuffer(headerCodec.codec().decrypt(aeadResponseHeaderLengthEncryptionKey, aeadResponseHeaderLengthEncryptionIV, null, aeadEncryptedResponseHeaderLength)).readShort();
-            if (in.readableBytes() < decryptedResponseHeaderLength + headerCodec.codec().TAG_SIZE) {
+            if (in.readableBytes() < decryptedResponseHeaderLength + TAG_SIZE) {
                 in.resetReaderIndex();
-                logger.info("Unexpected readable bytes for decoding client header: expecting {} but actually {}", decryptedResponseHeaderLength + headerCodec.codec().TAG_SIZE, in.readableBytes());
+                logger.info("Unexpected readable bytes for decoding client header: expecting {} but actually {}", decryptedResponseHeaderLength + TAG_SIZE, in.readableBytes());
                 return;
             }
             byte[] aeadResponseHeaderPayloadEncryptionKey = KDF.kdf16(session.responseBodyKey, KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY);
             byte[] aeadResponseHeaderPayloadEncryptionIV = KDF.kdf(session.responseBodyIV, headerCodec.codec().nonceSize(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV);
-            byte[] msg = new byte[decryptedResponseHeaderLength + headerCodec.codec().TAG_SIZE];
+            byte[] msg = new byte[decryptedResponseHeaderLength + TAG_SIZE];
             in.readBytes(msg);
             ByteBuf encryptedResponseHeaderBuffer = Unpooled.wrappedBuffer(headerCodec.codec().decrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, null, msg));
             byte responseHeader = encryptedResponseHeaderBuffer.getByte(0);
@@ -112,7 +114,7 @@ abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements Su
             encryptedResponseHeaderBuffer.release();
             bodyDecoder = newClientBodyDecoder();
         }
-        bodyDecoder.decode(ctx, in, out);
+        bodyDecoder.decodePayload(in, out);
     }
 
     @Override
