@@ -2,55 +2,37 @@ package com.urbanspork.common.codec.aead;
 
 import com.urbanspork.common.codec.ChunkSizeCodec;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ReplayingDecoder;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 
 import java.util.List;
 
-public class AEADPayloadDecoder extends ReplayingDecoder<AEADPayloadDecoder.State> {
+public interface AEADPayloadDecoder {
 
-    private final AEADAuthenticator authenticator;
-    private final int tagSize;
-    private final ChunkSizeCodec chunkSizeDecoder;
-    private final int sizeBytes;
+    int INIT_PAYLOAD_LENGTH = -1;
 
-    private int length;
+    int payloadLength();
 
-    public AEADPayloadDecoder(AEADAuthenticator authenticator, ChunkSizeCodec chunkSizeDecoder) {
-        super(State.READ_LENGTH);
-        this.authenticator = authenticator;
-        this.tagSize = authenticator.codec().TAG_SIZE;
-        this.chunkSizeDecoder = chunkSizeDecoder;
-        this.sizeBytes = chunkSizeDecoder.sizeBytes();
-    }
+    void updatePayloadLength(int payloadLength);
 
-    @Override
-    public void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        switch (state()) {
-            case READ_LENGTH -> {
-                if (in.readableBytes() >= sizeBytes + tagSize) {
-                    byte[] payloadSizeBytes = new byte[sizeBytes + tagSize];
-                    in.readBytes(payloadSizeBytes);
-                    checkpoint(State.READ_PAYLOAD);
-                    length = chunkSizeDecoder.decode(payloadSizeBytes);
-                }
+    AEADAuthenticator payloadDecoder();
+
+    ChunkSizeCodec chunkSizeDecoder();
+
+    default void decodePayload(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+        ChunkSizeCodec chunkSizeDecoder = chunkSizeDecoder();
+        int payloadLength = payloadLength();
+        while (in.readableBytes() >= (payloadLength == INIT_PAYLOAD_LENGTH ? chunkSizeDecoder.sizeBytes() + AEADCipherCodec.TAG_SIZE : payloadLength + AEADCipherCodec.TAG_SIZE)) {
+            if (payloadLength == INIT_PAYLOAD_LENGTH) {
+                byte[] payloadSizeBytes = new byte[chunkSizeDecoder.sizeBytes() + AEADCipherCodec.TAG_SIZE];
+                in.readBytes(payloadSizeBytes);
+                payloadLength = chunkSizeDecoder.decode(payloadSizeBytes);
+            } else {
+                byte[] payloadBytes = new byte[payloadLength + AEADCipherCodec.TAG_SIZE];
+                in.readBytes(payloadBytes);
+                out.add(in.alloc().buffer().writeBytes(payloadDecoder().open(payloadBytes)));
+                payloadLength = INIT_PAYLOAD_LENGTH;
             }
-            case READ_PAYLOAD -> {
-                if (in.readableBytes() >= length + tagSize) {
-                    byte[] payloadBytes = new byte[length + tagSize];
-                    in.readBytes(payloadBytes);
-                    checkpoint(State.READ_LENGTH);
-                    out.add(in.alloc().buffer().writeBytes(authenticator.open(payloadBytes)));
-                }
-            }
+            updatePayloadLength(payloadLength);
         }
-    }
-
-    public AEADAuthenticator authenticator() {
-        return authenticator;
-    }
-
-    enum State {
-        READ_LENGTH, READ_PAYLOAD
     }
 }

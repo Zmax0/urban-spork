@@ -6,15 +6,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 
-public class AuthIDTestCase {
+class AuthIDTestCase {
 
     @Test
-    public void testCreateAuthID() {
-        byte[] key = createKey();
+    void testCreateAuthID() {
+        byte[] key = KDF.kdf16("Demo Key for Auth ID Test".getBytes(), "Demo Path for Auth ID Test".getBytes());
         Assertions.assertEquals("ZuQa1H+nRfv9HpcyXpPb9A==", Base64.getEncoder().encodeToString(key));
-    }
-
-    public static byte[] createKey() {
-        return KDF.kdf16("Demo Key for Auth ID Test".getBytes(), "Demo Path for Auth ID Test".getBytes());
     }
 }

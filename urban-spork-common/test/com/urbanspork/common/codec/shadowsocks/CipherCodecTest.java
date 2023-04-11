@@ -26,7 +26,7 @@ class CipherCodecTest {
     private final int maxChunkSize = 0xffff;
 
     @BeforeAll
-    public void beforeAll() {
+    void beforeAll() {
         password = randomString();
         SecureRandom random = new SecureRandom();
         in = new byte[maxChunkSize * 10]; // 1M

@@ -13,6 +13,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
@@ -27,7 +28,7 @@ import static java.lang.System.arraycopy;
  * @author Zmax0
  * @see <a href=https://shadowsocks.org/guide/aead.html">https://shadowsocks.org/guide/aead.html</a>
  */
-class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements AEADPayloadEncoder {
+class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements AEADPayloadEncoder, AEADPayloadDecoder {
 
     /*
      * [encrypted payload length][length tag][encrypted payload][payload tag]
@@ -39,11 +40,12 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
     private final byte[] nonce = new byte[NONCE_SIZE];
     private final ChunkSizeCodec chunkSizeCodec = generateChunkSizeCodec();
 
+    private int payloadLength = INIT_PAYLOAD_LENGTH;
     private final int saltSize;
     private final byte[] key;
     private final AEADCipherCodec codec;
     private AEADAuthenticator payloadEncoder;
-    private AEADPayloadDecoder payloadDecoder;
+    private AEADAuthenticator payloadDecoder;
 
     ShadowsocksAEADCipherCodec(String password, int saltSize, AEADCipherCodec codec) {
         this.key = generateKey(password.getBytes(), saltSize);
@@ -66,10 +68,10 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
         if (payloadDecoder == null && in.readableBytes() >= saltSize) {
             byte[] salt = new byte[saltSize];
             in.readBytes(salt);
-            payloadDecoder = new AEADPayloadDecoder(newAuthenticator(salt), chunkSizeCodec);
+            payloadDecoder = newAuthenticator(salt);
         }
         if (payloadDecoder != null) {
-            payloadDecoder.decode(ctx, in, out);
+            decodePayload(in, out);
         }
     }
 
@@ -79,13 +81,33 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
     }
 
     @Override
+    public ChunkSizeCodec chunkSizeDecoder() {
+        return chunkSizeCodec;
+    }
+
+    @Override
     public AEADAuthenticator payloadEncoder() {
         return payloadEncoder;
     }
 
     @Override
+    public AEADAuthenticator payloadDecoder() {
+        return payloadDecoder;
+    }
+
+    @Override
     public int payloadLimit() {
         return PAYLOAD_LIMIT;
+    }
+
+    @Override
+    public int payloadLength() {
+        return payloadLength;
+    }
+
+    @Override
+    public void updatePayloadLength(int payloadLength) {
+        this.payloadLength = payloadLength;
     }
 
     // ensure key.length equals salt.length
@@ -122,15 +144,15 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
     private ChunkSizeCodec generateChunkSizeCodec() {
         return new ChunkSizeCodec() {
             @Override
-            public byte[] encode(int size) throws Exception {
+            public byte[] encode(int size) throws InvalidCipherTextException {
                 byte[] bytes = new byte[chunkSizeCodec.sizeBytes()];
                 Unpooled.wrappedBuffer(bytes).setShort(0, Math.min(size, PAYLOAD_LIMIT));
                 return payloadEncoder.seal(bytes);
             }
 
             @Override
-            public int decode(byte[] data) throws Exception {
-                return Unpooled.wrappedBuffer(payloadDecoder.authenticator().open(data)).getUnsignedShort(0);
+            public int decode(byte[] data) throws InvalidCipherTextException {
+                return Unpooled.wrappedBuffer(payloadDecoder.open(data)).getUnsignedShort(0);
             }
         };
     }

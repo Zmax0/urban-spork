@@ -29,23 +29,7 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
         if (message instanceof Socks5CommandRequest request) {
             Channel inboundChannel = ctx.channel();
             Promise<Channel> promise = ctx.executor().newPromise();
-            promise.addListener(
-                    (FutureListener<Channel>) future -> {
-                        final Channel outboundChannel = future.get();
-                        if (future.isSuccess()) {
-                            inboundChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, request.dstAddrType(), request.dstAddr(), request.dstPort()))
-                                    .addListener((ChannelFutureListener) channelFuture -> { // socks5 command success response feature
-                                        if (!ctx.isRemoved()) {
-                                            ctx.pipeline().remove(ClientSocksConnectHandler.this);
-                                        }
-                                        outboundChannel.pipeline().addLast(new DefaultChannelInboundHandler(inboundChannel)); // L -> R
-                                        ctx.pipeline().addLast(new DefaultChannelInboundHandler(outboundChannel)); // R -> L
-                                    });
-                        } else {
-                            ctx.channel().writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()));
-                            ChannelCloseUtils.closeOnFlush(inboundChannel);
-                        }
-                    });
+            promise.addListener(inboundResponseListener(ctx, request, inboundChannel));
             InetSocketAddress serverAddress = inboundChannel.attr(AttributeKeys.SERVER_ADDRESS).get();
             Bootstrap bootstrap = new Bootstrap().group(inboundChannel.eventLoop())
                     .channel(NioSocketChannel.class)
@@ -68,5 +52,24 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
         } else {
             ctx.close();
         }
+    }
+
+    private FutureListener<Channel> inboundResponseListener(ChannelHandlerContext ctx, Socks5CommandRequest request, Channel inboundChannel) {
+        return future -> {
+            final Channel outboundChannel = future.get();
+            if (future.isSuccess()) {
+                inboundChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, request.dstAddrType(), request.dstAddr(), request.dstPort()))
+                        .addListener((ChannelFutureListener) channelFuture -> { // socks5 command success response feature
+                            if (!ctx.isRemoved()) {
+                                ctx.pipeline().remove(ClientSocksConnectHandler.this);
+                            }
+                            outboundChannel.pipeline().addLast(new DefaultChannelInboundHandler(inboundChannel)); // L -> R
+                            ctx.pipeline().addLast(new DefaultChannelInboundHandler(outboundChannel)); // R -> L
+                        });
+            } else {
+                ctx.channel().writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()));
+                ChannelCloseUtils.closeOnFlush(inboundChannel);
+            }
+        };
     }
 }
