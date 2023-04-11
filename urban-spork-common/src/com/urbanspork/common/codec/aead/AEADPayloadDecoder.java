@@ -2,36 +2,55 @@ package com.urbanspork.common.codec.aead;
 
 import com.urbanspork.common.codec.ChunkSizeCodec;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.ReplayingDecoder;
 
 import java.util.List;
 
-public interface AEADPayloadDecoder {
+public class AEADPayloadDecoder extends ReplayingDecoder<AEADPayloadDecoder.State> {
 
-    int INIT_PAYLOAD_LENGTH = -1;
+    private final AEADAuthenticator authenticator;
+    private final int tagSize;
+    private final ChunkSizeCodec chunkSizeDecoder;
+    private final int sizeBytes;
 
-    int payloadLength();
+    private int length;
 
-    void updatePayloadLength(int payloadLength);
+    public AEADPayloadDecoder(AEADAuthenticator authenticator, ChunkSizeCodec chunkSizeDecoder) {
+        super(State.READ_LENGTH);
+        this.authenticator = authenticator;
+        this.tagSize = authenticator.codec().TAG_SIZE;
+        this.chunkSizeDecoder = chunkSizeDecoder;
+        this.sizeBytes = chunkSizeDecoder.sizeBytes();
+    }
 
-    AEADAuthenticator payloadDecoder();
-
-    ChunkSizeCodec chunkSizeDecoder();
-
-    default void decodePayload(ByteBuf in, List<Object> out) throws Exception {
-        ChunkSizeCodec chunkSizeDecoder = chunkSizeDecoder();
-        int payloadLength = payloadLength();
-        while (in.readableBytes() >= (payloadLength == INIT_PAYLOAD_LENGTH ? chunkSizeDecoder.sizeBytes() + AEADCipherCodec.TAG_SIZE : payloadLength + AEADCipherCodec.TAG_SIZE)) {
-            if (payloadLength == INIT_PAYLOAD_LENGTH) {
-                byte[] payloadSizeBytes = new byte[chunkSizeDecoder.sizeBytes() + AEADCipherCodec.TAG_SIZE];
-                in.readBytes(payloadSizeBytes);
-                updatePayloadLength(chunkSizeDecoder.decode(payloadSizeBytes));
-            } else {
-                byte[] payloadBytes = new byte[payloadLength + AEADCipherCodec.TAG_SIZE];
-                in.readBytes(payloadBytes);
-                out.add(in.alloc().buffer().writeBytes(payloadDecoder().open(payloadBytes)));
-                updatePayloadLength(INIT_PAYLOAD_LENGTH);
+    @Override
+    public void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        switch (state()) {
+            case READ_LENGTH -> {
+                if (in.readableBytes() >= sizeBytes + tagSize) {
+                    byte[] payloadSizeBytes = new byte[sizeBytes + tagSize];
+                    in.readBytes(payloadSizeBytes);
+                    checkpoint(State.READ_PAYLOAD);
+                    length = chunkSizeDecoder.decode(payloadSizeBytes);
+                }
             }
-            payloadLength = payloadLength();
+            case READ_PAYLOAD -> {
+                if (in.readableBytes() >= length + tagSize) {
+                    byte[] payloadBytes = new byte[length + tagSize];
+                    in.readBytes(payloadBytes);
+                    checkpoint(State.READ_LENGTH);
+                    out.add(in.alloc().buffer().writeBytes(authenticator.open(payloadBytes)));
+                }
+            }
         }
+    }
+
+    public AEADAuthenticator authenticator() {
+        return authenticator;
+    }
+
+    enum State {
+        READ_LENGTH, READ_PAYLOAD
     }
 }

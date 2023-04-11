@@ -27,7 +27,7 @@ import static java.lang.System.arraycopy;
  * @author Zmax0
  * @see <a href=https://shadowsocks.org/guide/aead.html">https://shadowsocks.org/guide/aead.html</a>
  */
-class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements AEADPayloadEncoder, AEADPayloadDecoder {
+class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements AEADPayloadEncoder {
 
     /*
      * [encrypted payload length][length tag][encrypted payload][payload tag]
@@ -39,12 +39,11 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
     private final byte[] nonce = new byte[NONCE_SIZE];
     private final ChunkSizeCodec chunkSizeCodec = generateChunkSizeCodec();
 
-    private int payloadLength = INIT_PAYLOAD_LENGTH;
     private final int saltSize;
     private final byte[] key;
     private final AEADCipherCodec codec;
     private AEADAuthenticator payloadEncoder;
-    private AEADAuthenticator payloadDecoder;
+    private AEADPayloadDecoder payloadDecoder;
 
     ShadowsocksAEADCipherCodec(String password, int saltSize, AEADCipherCodec codec) {
         this.key = generateKey(password.getBytes(), saltSize);
@@ -67,10 +66,10 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
         if (payloadDecoder == null && in.readableBytes() >= saltSize) {
             byte[] salt = new byte[saltSize];
             in.readBytes(salt);
-            payloadDecoder = newAuthenticator(salt);
+            payloadDecoder = new AEADPayloadDecoder(newAuthenticator(salt), chunkSizeCodec);
         }
         if (payloadDecoder != null) {
-            decodePayload(in, out);
+            payloadDecoder.decode(ctx, in, out);
         }
     }
 
@@ -80,28 +79,8 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
     }
 
     @Override
-    public ChunkSizeCodec chunkSizeDecoder() {
-        return chunkSizeCodec;
-    }
-
-    @Override
     public AEADAuthenticator payloadEncoder() {
         return payloadEncoder;
-    }
-
-    @Override
-    public AEADAuthenticator payloadDecoder() {
-        return payloadDecoder;
-    }
-
-    @Override
-    public int payloadLength() {
-        return payloadLength;
-    }
-
-    @Override
-    public void updatePayloadLength(int payloadLength) {
-        this.payloadLength = payloadLength;
     }
 
     @Override
@@ -151,7 +130,7 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
 
             @Override
             public int decode(byte[] data) throws Exception {
-                return Unpooled.wrappedBuffer(payloadDecoder.open(data)).getUnsignedShort(0);
+                return Unpooled.wrappedBuffer(payloadDecoder.authenticator().open(data)).getUnsignedShort(0);
             }
         };
     }

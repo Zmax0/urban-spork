@@ -6,6 +6,7 @@ import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.codec.aead.AEADAuthenticator;
 import com.urbanspork.common.codec.aead.AEADCipherCodec;
 import com.urbanspork.common.codec.aead.AEADCipherCodecs;
+import com.urbanspork.common.codec.aead.AEADPayloadDecoder;
 import com.urbanspork.common.protocol.vmess.aead.KDF;
 import com.urbanspork.common.protocol.vmess.encoding.Auth;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
@@ -33,15 +34,15 @@ class ClientCodecs {
         public ClientBodyEncoder newClientBodyEncoder() {
             return new ClientBodyEncoder(
                     newAEADAuthenticator(get(), session.requestBodyKey, session.requestBodyIV),
-                    new ClientAEADChunkSizeCodec(get(), KDF.kdf16(session.requestBodyKey, AUTH_LEN), session.requestBodyIV)
+                    newClientAEADChunkSizeCodec(get(), KDF.kdf16(session.requestBodyKey, AUTH_LEN), session.requestBodyIV)
             );
         }
 
         @Override
-        public ClientBodyDecoder newClientBodyDecoder() {
-            return new ClientBodyDecoder(
+        public AEADPayloadDecoder newClientBodyDecoder() {
+            return new AEADPayloadDecoder(
                     newAEADAuthenticator(get(), session.responseBodyKey, session.responseBodyIV),
-                    new ClientAEADChunkSizeCodec(get(), KDF.kdf16(session.requestBodyKey, AUTH_LEN), session.requestBodyIV)
+                    newClientAEADChunkSizeCodec(get(), KDF.kdf16(session.requestBodyKey, AUTH_LEN), session.requestBodyIV)
             );
         }
     }
@@ -57,22 +58,26 @@ class ClientCodecs {
             AEADCipherCodec codec = AEADCipherCodecs.CHACHA20_POLY1305.get();
             return new ClientBodyEncoder(
                     newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(session.requestBodyKey), session.requestBodyIV),
-                    new ClientAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.requestBodyKey, AUTH_LEN)), session.requestBodyIV)
+                    newClientAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.requestBodyKey, AUTH_LEN)), session.requestBodyIV)
             );
         }
 
         @Override
-        public ClientBodyDecoder newClientBodyDecoder() {
+        public AEADPayloadDecoder newClientBodyDecoder() {
             AEADCipherCodec codec = AEADCipherCodecs.CHACHA20_POLY1305.get();
-            return new ClientBodyDecoder(
+            return new AEADPayloadDecoder(
                     newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(session.responseBodyKey), session.responseBodyIV),
-                    new ClientAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.requestBodyKey, AUTH_LEN)), session.requestBodyIV)
+                    newClientAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.requestBodyKey, AUTH_LEN)), session.requestBodyIV)
             );
         }
     }
 
     private static AEADAuthenticator newAEADAuthenticator(AEADCipherCodec codec, byte[] key, byte[] nonce) {
         return new AEADAuthenticator(codec, key, NonceGenerator.generateCountingNonce(nonce, codec.nonceSize(), true), BytesGenerator.generateEmptyBytes());
+    }
+
+    private static ClientAEADChunkSizeCodec newClientAEADChunkSizeCodec(AEADCipherCodec codec, byte[] key, byte[] nonce) {
+        return new ClientAEADChunkSizeCodec(newAEADAuthenticator(codec, key, nonce));
     }
 
 }

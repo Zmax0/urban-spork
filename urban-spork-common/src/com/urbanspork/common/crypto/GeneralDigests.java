@@ -25,4 +25,12 @@ public enum GeneralDigests {
         return out;
     }
 
+    public void get(byte[] in, byte[] out, int outOff) {
+        GeneralDigest digest = provider.get();
+        digest.update(in, 0, in.length);
+        if (digest.getDigestSize() > out.length - outOff) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+        digest.doFinal(out, outOff);
+    }
 }
