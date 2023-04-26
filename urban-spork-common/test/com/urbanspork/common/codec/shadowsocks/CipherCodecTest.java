@@ -1,7 +1,9 @@
 package com.urbanspork.common.codec.shadowsocks;
 
+import com.urbanspork.common.TestDice;
 import com.urbanspork.common.codec.EmptyChannelHandlerContext;
 import com.urbanspork.common.codec.SupportedCipher;
+import com.urbanspork.common.protocol.shadowsocks.network.Network;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.*;
@@ -18,42 +20,31 @@ import java.util.concurrent.ThreadLocalRandom;
 @TestInstance(Lifecycle.PER_CLASS)
 class CipherCodecTest {
 
-    private static final String str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-=_+";
-
     private String password;
     private byte[] in;
-
     private final int maxChunkSize = 0xffff;
 
     @BeforeAll
     void beforeAll() {
-        password = randomString();
+        password = TestDice.randomString();
         SecureRandom random = new SecureRandom();
         in = new byte[maxChunkSize * 10]; // 1M
         random.nextBytes(in);
     }
 
-    private static String randomString() {
-        SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 256; i++) {
-            int number = random.nextInt(str.length());
-            sb.append(str.charAt(number));
-        }
-        return sb.toString();
-    }
-
     @DisplayName("Single supported cipher repeat")
     @RepeatedTest(10)
     void repeatedTest() throws Exception {
-        cipherTest(ShadowsocksAEADCipherCodecs.get(SupportedCipher.aes_128_gcm, password));
+        cipherTest(ShadowsocksAEADCipherCodecs.get(password, SupportedCipher.aes_128_gcm, Network.TCP));
+        cipherTest(ShadowsocksAEADCipherCodecs.get(password, SupportedCipher.aes_128_gcm, Network.UDP));
     }
 
     @ParameterizedTest
     @DisplayName("All supported cipher iterate")
     @EnumSource(SupportedCipher.class)
     void parameterizedTest(SupportedCipher cipher) throws Exception {
-        cipherTest(ShadowsocksAEADCipherCodecs.get(cipher, password));
+        cipherTest(ShadowsocksAEADCipherCodecs.get(password, cipher, Network.TCP));
+        cipherTest(ShadowsocksAEADCipherCodecs.get(password, cipher, Network.UDP));
     }
 
     private void cipherTest(ShadowsocksAEADCipherCodec codec) throws Exception {

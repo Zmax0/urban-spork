@@ -5,9 +5,7 @@ import java.util.List;
 
 public class ClientConfig {
 
-    private static final String DEFAULT_PORT = "1081";
-
-    private String port;
+    private int port = 1080;
 
     private String language;
 
@@ -15,11 +13,11 @@ public class ClientConfig {
 
     private List<ServerConfig> servers;
 
-    public String getPort() {
-        return port == null ? DEFAULT_PORT : port;
+    public int getPort() {
+        return port;
     }
 
-    public void setPort(String port) {
+    public void setPort(int port) {
         this.port = port;
     }
 

@@ -18,6 +18,12 @@ public interface AEADPayloadDecoder {
 
     ChunkSizeCodec chunkSizeDecoder();
 
+    /**
+     * decrypt payload for TCP
+     *
+     * @param in  [salt][encrypted payload length][length tag][encrypted payload][payload tag]
+     * @param out payload
+     */
     default void decodePayload(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
         ChunkSizeCodec chunkSizeDecoder = chunkSizeDecoder();
         int payloadLength = payloadLength();
@@ -33,6 +39,20 @@ public interface AEADPayloadDecoder {
                 payloadLength = INIT_PAYLOAD_LENGTH;
             }
             updatePayloadLength(payloadLength);
+        }
+    }
+
+    /**
+     * decrypt packet for UDP
+     *
+     * @param in  [salt][encrypted payload][tag]
+     * @param out payload
+     */
+    default void decodePacket(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+        if (in.isReadable()) {
+            byte[] payloadBytes = new byte[in.readableBytes()];
+            in.readBytes(payloadBytes);
+            out.add(in.alloc().buffer().writeBytes(payloadDecoder().open(payloadBytes)));
         }
     }
 }
