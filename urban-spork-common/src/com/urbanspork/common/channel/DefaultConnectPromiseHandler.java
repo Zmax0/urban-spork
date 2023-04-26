@@ -1,4 +1,4 @@
-package com.urbanspork.client;
+package com.urbanspork.common.channel;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -6,11 +6,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.concurrent.Promise;
 
-public final class ConnectPromiseHandler extends ChannelInboundHandlerAdapter {
+public final class DefaultConnectPromiseHandler extends ChannelInboundHandlerAdapter {
 
     private final Promise<Channel> promise;
 
-    public ConnectPromiseHandler(Promise<Channel> promise) {
+    public DefaultConnectPromiseHandler(Promise<Channel> promise) {
         this.promise = promise;
     }
 

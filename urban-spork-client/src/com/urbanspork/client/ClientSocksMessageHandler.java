@@ -1,5 +1,6 @@
 package com.urbanspork.client;
 
+import com.urbanspork.client.shadowsocks.ShadowsocksUDPAssociateHandler;
 import com.urbanspork.common.channel.ChannelCloseUtils;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -14,7 +15,6 @@ public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks
     public static final ClientSocksMessageHandler INSTANCE = new ClientSocksMessageHandler();
 
     private ClientSocksMessageHandler() {
-
     }
 
     @Override
@@ -27,16 +27,24 @@ public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks
                 ctx.pipeline().addFirst(new Socks5CommandRequestDecoder());
                 ctx.write(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.SUCCESS));
             } else if (msg instanceof Socks5CommandRequest request) {
-                if (request.type() == Socks5CommandType.CONNECT) {
-                    ctx.pipeline().addLast(new ClientSocksConnectHandler());
-                    ctx.pipeline().remove(this);
-                    ctx.fireChannelRead(request);
-                } else {
-                    ctx.close();
-                }
+                channelRead1(ctx, request);
             } else {
                 ctx.close();
             }
+        } else {
+            ctx.close();
+        }
+    }
+
+    private void channelRead1(ChannelHandlerContext ctx, Socks5CommandRequest request) {
+        if (request.type() == Socks5CommandType.CONNECT) {
+            ctx.pipeline().addLast(new ClientSocksConnectHandler());
+            ctx.pipeline().remove(this);
+            ctx.fireChannelRead(request);
+        } else if (request.type() == Socks5CommandType.UDP_ASSOCIATE) {
+            ctx.pipeline().addLast(ShadowsocksUDPAssociateHandler.INSTANCE);
+            ctx.pipeline().remove(this);
+            ctx.fireChannelRead(request);
         } else {
             ctx.close();
         }
@@ -51,4 +59,5 @@ public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable throwable) {
         ChannelCloseUtils.closeOnFlush(ctx.channel());
     }
+
 }

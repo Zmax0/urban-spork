@@ -69,7 +69,7 @@ public class Console extends Preloader {
 
     private JFXTextField currentConfigHostTextField;
 
-    private JFXTextField currentConfigPortTextField;
+    private NumericTextField currentConfigPortTextField;
 
     private JFXPasswordField currentConfigPasswordPasswordField;
 
@@ -83,7 +83,7 @@ public class Console extends Preloader {
 
     private ChoiceBox<Protocols> currentConfigProtocolChoiceBox;
 
-    private JFXTextField clientConfigPortTextField;
+    private NumericTextField clientConfigPortTextField;
 
     @Override
     public void handleStateChangeNotification(StateChangeNotification info) {
@@ -226,7 +226,7 @@ public class Console extends Preloader {
             } else {
                 serverConfigJFXListView.refresh();
             }
-            clientConfig.setPort(clientConfigPortTextField.getText());
+            clientConfig.setPort(clientConfigPortTextField.getIntValue());
             clientConfig.setIndex(selectionModel.getSelectedIndex());
             saveConfig();
             Proxy.launch();
@@ -256,14 +256,14 @@ public class Console extends Preloader {
         confirmServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_CONFIRM, event -> confirmServerConfig());
         cancelServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_CANCEL, event -> cancelServerConfig());
         currentConfigHostTextField = new ConsoleTextField();
-        currentConfigPortTextField = new ConsoleTextField();
+        currentConfigPortTextField = new NumericTextField();
         currentConfigPasswordPasswordField = new JFXPasswordField();
         currentConfigPasswordTextField = new ConsolePasswordTextField();
         currentConfigRemarkTextField = new ConsoleTextField();
         currentConfigPasswordToggleButton = new CurrentConfigPasswordToggleButton(event -> showCurrentConfigPassword());
         currentConfigCipherChoiceBox = new CurrentConfigCipherChoiceBox();
         currentConfigProtocolChoiceBox = new CurrentConfigProtocolChoiceBox();
-        clientConfigPortTextField = new ConsoleTextField();
+        clientConfigPortTextField = new NumericTextField();
     }
 
     private JFXTabPane initTabPane() {
@@ -393,15 +393,14 @@ public class Console extends Preloader {
 
     private void initClientConfigPortTextField() {
         clientConfigPortTextField.getValidators().add(requiredFieldValidator);
-        clientConfigPortTextField.focusedProperty().addListener(
+        clientConfigPortTextField.textProperty().addListener(
                 (o, oldValue, newValue) -> {
-                    if (Boolean.FALSE.equals(newValue)) {
-                        clientConfigPortTextField.validate();
-                        if (!clientConfig.getPort().equals(clientConfigPortTextField.getText())) {
-                            clientConfig.setPort(clientConfigPortTextField.getText());
-                            Proxy.launch();
-                            saveConfig();
-                        }
+                    clientConfigPortTextField.validate();
+                    int port = clientConfigPortTextField.getIntValue();
+                    if (clientConfig.getPort() != port) {
+                        clientConfig.setPort(port);
+                        Proxy.launch();
+                        saveConfig();
                     }
                 });
     }
@@ -444,12 +443,8 @@ public class Console extends Preloader {
 
     private void initCurrentConfigPortTextField() {
         currentConfigPortTextField.getValidators().add(requiredFieldValidator);
-        currentConfigPortTextField.focusedProperty().addListener(
-                (o, oldValue, newValue) -> {
-                    if (Boolean.FALSE.equals(newValue)) {
-                        currentConfigPortTextField.validate();
-                    }
-                });
+        currentConfigPortTextField.textProperty().addListener(
+                (o, oldValue, newValue) -> currentConfigPortTextField.validate());
     }
 
     private void initCurrentConfigCipherChoiceBox() {
@@ -458,12 +453,8 @@ public class Console extends Preloader {
         currentConfigCipherChoiceBox.setValue(SupportedCipher.aes_128_gcm);
         // currentConfigHostTextField
         currentConfigHostTextField.getValidators().add(requiredFieldValidator);
-        currentConfigHostTextField.focusedProperty().addListener(
-                (o, oldValue, newValue) -> {
-                    if (Boolean.FALSE.equals(newValue)) {
-                        currentConfigHostTextField.validate();
-                    }
-                });
+        currentConfigHostTextField.textProperty().addListener(
+                (o, oldValue, newValue) -> currentConfigHostTextField.validate());
     }
 
     private void initCurrentConfigProtocolChoiceBox() {
@@ -526,9 +517,7 @@ public class Console extends Preloader {
     }
 
     private void display(ClientConfig c) {
-        if (c.getPort() != null) {
-            clientConfigPortTextField.setText(c.getPort());
-        }
+        clientConfigPortTextField.setText(c.getPort());
         display(c.getCurrent());
     }
 
@@ -548,7 +537,7 @@ public class Console extends Preloader {
 
     private void pack(ServerConfig config) {
         config.setHost(currentConfigHostTextField.getText());
-        config.setPort(currentConfigPortTextField.getText());
+        config.setPort(currentConfigPortTextField.getIntValue());
         config.setPassword(currentConfigPasswordTextField.getText());
         config.setRemark(currentConfigRemarkTextField.getText());
         config.setCipher(currentConfigCipherChoiceBox.getValue());

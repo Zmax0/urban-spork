@@ -27,8 +27,8 @@ class ClientCodecs {
 
     static class AESClientCodec extends ClientAEADCodec {
 
-        AESClientCodec(String uuid, Socks5CommandRequest address, ClientSession session, SupportedCipher cipher) {
-            super(uuid, address, session, cipher);
+        AESClientCodec(String uuid, Socks5CommandRequest request, ClientSession session, SupportedCipher cipher) {
+            super(uuid, request, session, cipher);
         }
 
         @Override
@@ -50,8 +50,8 @@ class ClientCodecs {
 
     static class Chacha20Poly1305ClientCodec extends ClientAEADCodec {
 
-        Chacha20Poly1305ClientCodec(String uuid, Socks5CommandRequest address, ClientSession session, SupportedCipher cipher) {
-            super(uuid, address, session, cipher);
+        Chacha20Poly1305ClientCodec(String uuid, Socks5CommandRequest request, ClientSession session, SupportedCipher cipher) {
+            super(uuid, request, session, cipher);
         }
 
         @Override
