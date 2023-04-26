@@ -8,6 +8,7 @@ import com.urbanspork.common.codec.aead.AEADCipherCodec;
 import com.urbanspork.common.codec.aead.AEADPayloadDecoder;
 import com.urbanspork.common.codec.aead.AEADPayloadEncoder;
 import com.urbanspork.common.crypto.GeneralDigests;
+import com.urbanspork.common.protocol.shadowsocks.network.Network;
 import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -31,47 +32,65 @@ import static java.lang.System.arraycopy;
 class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements AEADPayloadEncoder, AEADPayloadDecoder {
 
     /*
-     * [encrypted payload length][length tag][encrypted payload][payload tag]
+     * TCP per-session [salt][encrypted payload length][length tag][encrypted payload][payload tag]
+     * UDP per-packet [salt][encrypted payload][payload tag]
      */
 
     private static final int NONCE_SIZE = 12;
     private static final int PAYLOAD_LIMIT = 0xffff;
     private static final byte[] INFO = new byte[]{115, 115, 45, 115, 117, 98, 107, 101, 121}; // "ss-subkey"
-    private final byte[] nonce = new byte[NONCE_SIZE];
-    private final ChunkSizeCodec chunkSizeCodec = generateChunkSizeCodec();
 
-    private int payloadLength = INIT_PAYLOAD_LENGTH;
-    private final int saltSize;
+    private final byte[] nonce = new byte[NONCE_SIZE];
     private final byte[] key;
+    private final int saltSize;
     private final AEADCipherCodec codec;
+    private final ChunkSizeCodec chunkSizeCodec;
+    private final Network network;
+    private int payloadLength = INIT_PAYLOAD_LENGTH;
     private AEADAuthenticator payloadEncoder;
     private AEADAuthenticator payloadDecoder;
 
-    ShadowsocksAEADCipherCodec(String password, int saltSize, AEADCipherCodec codec) {
+    ShadowsocksAEADCipherCodec(String password, int saltSize, AEADCipherCodec codec, Network network) {
         this.key = generateKey(password.getBytes(), saltSize);
         this.saltSize = saltSize;
         this.codec = codec;
+        this.chunkSizeCodec = Network.UDP != network ? generateChunkSizeCodec() : null;
+        this.network = network;
     }
 
     @Override
     protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
-        if (payloadEncoder == null) {
+        if (network == Network.UDP) {
             byte[] salt = Dice.randomBytes(saltSize);
             out.writeBytes(salt);
             payloadEncoder = newAuthenticator(salt);
+            encodePacket(msg, out);
+        } else {
+            if (payloadEncoder == null) {
+                byte[] salt = Dice.randomBytes(saltSize);
+                out.writeBytes(salt);
+                payloadEncoder = newAuthenticator(salt);
+            }
+            encodePayload(msg, out);
         }
-        encodePayload(msg, out);
     }
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        if (payloadDecoder == null && in.readableBytes() >= saltSize) {
-            byte[] salt = new byte[saltSize];
-            in.readBytes(salt);
-            payloadDecoder = newAuthenticator(salt);
-        }
-        if (payloadDecoder != null) {
-            decodePayload(in, out);
+        if (in.readableBytes() >= saltSize) {
+            if (network == Network.UDP) {
+                byte[] salt = new byte[saltSize];
+                in.readBytes(salt);
+                payloadDecoder = newAuthenticator(salt);
+                decodePacket(in, out);
+            } else {
+                if (payloadDecoder == null) {
+                    byte[] salt = new byte[saltSize];
+                    in.readBytes(salt);
+                    payloadDecoder = newAuthenticator(salt);
+                }
+                decodePayload(in, out);
+            }
         }
     }
 

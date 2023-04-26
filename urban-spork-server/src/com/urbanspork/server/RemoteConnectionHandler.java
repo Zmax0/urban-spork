@@ -16,9 +16,7 @@ import java.net.InetSocketAddress;
 public class RemoteConnectionHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(RemoteConnectionHandler.class);
-
     private final Bootstrap b = new Bootstrap();
-
     private Promise<Channel> p;
 
     @Override
@@ -32,7 +30,7 @@ public class RemoteConnectionHandler extends ChannelInboundHandlerAdapter {
                     .handler(new DefaultChannelInboundHandler(localChannel))
                     .connect(remoteAddress).addListener((ChannelFutureListener) future -> {
                         if (future.isSuccess()) {
-                            logger.info("Connect success [id: {}, L: {} - R: /{}]", localChannel.id(), localChannel.localAddress(), remoteAddress.getHostName());
+                            logger.info("Connect success [id: {}, L: {} - R: {}]", localChannel.id(), localChannel.localAddress(), remoteAddress);
                             p.setSuccess(future.channel());
                         } else {
                             p.setFailure(future.cause());

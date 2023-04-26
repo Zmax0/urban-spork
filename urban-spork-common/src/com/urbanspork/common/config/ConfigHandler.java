@@ -40,7 +40,7 @@ public class ConfigHandler {
                 return MAPPER.readValue(reader.lines().collect(Collectors.joining(System.lineSeparator())), clazz);
             }
         } else {
-            return null;
+            throw new IllegalArgumentException("Please put the 'config.json' file into the folder");
         }
     }
 }

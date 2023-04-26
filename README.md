@@ -27,11 +27,14 @@ put *config.json* file into the unpacked folder before running
 
 ### Transmission
 
-only support TCP now
+|     | Shadowsocks | VMess |
+|:----|:-----------:|:-----:|
+| TCP |      ✔      |   ✔   |
+| UDP |      ✔      |       |
 
 ### Cipher
 
-| cipher            | Shadowsocks | VMess |
+|                   | Shadowsocks | VMess |
 |:------------------|:-----------:|:-----:|
 | aes-128-gcm       |   `C` `S`   |  `C`  |
 | aes-256-gcm       |   `C` `S`   |       |

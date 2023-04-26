@@ -1,13 +1,11 @@
 package com.urbanspork.common.protocol.shadowsocks;
 
 
+import com.urbanspork.common.protocol.socks.Socks5Addressing;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ReplayingDecoder;
-import io.netty.handler.codec.socksx.v5.Socks5AddressDecoder;
-import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 
-import java.net.InetSocketAddress;
 import java.util.List;
 
 public class ShadowsocksAddressDecoder extends ReplayingDecoder<ShadowsocksAddressDecoder.State> {
@@ -26,23 +24,8 @@ public class ShadowsocksAddressDecoder extends ReplayingDecoder<ShadowsocksAddre
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         switch (state()) {
             case INIT -> {
-                Socks5AddressType addressType = Socks5AddressType.valueOf(in.getByte(0));
-                if (addressType == Socks5AddressType.DOMAIN) {
-                    int length = in.getByte(1);
-                    if (in.readableBytes() >= length + 4) {
-                        in.skipBytes(1);
-                        out.add(decodeAddress(addressType, in));
-                        checkpoint(State.SUCCESS);
-                    }
-                } else if (addressType == Socks5AddressType.IPv4 && in.readableBytes() >= 7) {
-                    in.skipBytes(1);
-                    out.add(decodeAddress(addressType, in));
-                    checkpoint(State.SUCCESS);
-                } else if (addressType == Socks5AddressType.IPv6 && in.readableBytes() >= 19) {
-                    in.skipBytes(1);
-                    out.add(decodeAddress(addressType, in));
-                    checkpoint(State.SUCCESS);
-                }
+                Socks5Addressing.decode(in, out);
+                checkpoint(State.SUCCESS);
             }
             case SUCCESS -> {
                 int readableBytes = actualReadableBytes();
@@ -52,9 +35,5 @@ public class ShadowsocksAddressDecoder extends ReplayingDecoder<ShadowsocksAddre
             }
             case FAILURE -> in.skipBytes(actualReadableBytes());
         }
-    }
-
-    private InetSocketAddress decodeAddress(Socks5AddressType addressType, ByteBuf in) throws Exception {
-        return new InetSocketAddress(Socks5AddressDecoder.DEFAULT.decodeAddress(addressType, in), in.readUnsignedShort());
     }
 }
