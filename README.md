@@ -17,11 +17,23 @@ put *config.json* file into the unpacked folder before running
       "cipher": "{cipher}",
       "password": "{password}",
       "port": "{port}",
-      "protocol": "{protocol}"
+      "protocol": "{protocol}",
+      "packetEncoding": "{packetEncoding}",
+      "networks": [
+        "{networks}"
+      ]
     }
   ]
 }
 ```
+
+> `protocol`: "shadowsocks" | "vmess"
+
+> `cipher`: see *Ciphers*
+
+> `networks`: see *Transmission*
+
+> `packetEncoding`: "None" | "Packet"
 
 ## Features
 
@@ -32,7 +44,7 @@ put *config.json* file into the unpacked folder before running
 | TCP |      ✔      |   ✔   |
 | UDP |      ✔      |       |
 
-### Cipher
+### Ciphers
 
 |                   | Shadowsocks | VMess |
 |:------------------|:-----------:|:-----:|

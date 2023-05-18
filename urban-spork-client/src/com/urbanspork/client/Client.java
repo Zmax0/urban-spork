@@ -4,8 +4,8 @@ import com.urbanspork.client.shadowsocks.ClientUDPReplayHandler;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.socks.udp.Socks5DatagramPacketDecoder;
-import com.urbanspork.common.protocol.socks.udp.Socks5DatagramPacketEncoder;
+import com.urbanspork.common.protocol.socks.Socks5DatagramPacketDecoder;
+import com.urbanspork.common.protocol.socks.Socks5DatagramPacketEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -29,20 +29,18 @@ public class Client {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         ServerConfig config = clientConfig.getCurrent();
         try {
-            if (config.udpEnabled()) {
-                new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
-                        .handler(new ChannelInitializer<>() {
-                            @Override
-                            protected void initChannel(Channel ch) {
-                                ch.pipeline().addLast(
-                                        new Socks5DatagramPacketEncoder(),
-                                        new Socks5DatagramPacketDecoder(),
-                                        new ClientUDPReplayHandler(config)
-                                );
-                            }
-                        })
-                        .bind(port).sync();
-            }
+            new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
+                    .handler(new ChannelInitializer<>() {
+                        @Override
+                        protected void initChannel(Channel ch) {
+                            ch.pipeline().addLast(
+                                    new Socks5DatagramPacketEncoder(),
+                                    new Socks5DatagramPacketDecoder(),
+                                    new ClientUDPReplayHandler(config)
+                            );
+                        }
+                    })
+                    .bind(port).sync();
             new ServerBootstrap().group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .childOption(ChannelOption.SO_KEEPALIVE, true) // socks5 require

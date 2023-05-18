@@ -35,9 +35,7 @@ public final class I18n {
     public static final String CONSOLE_LABEL_PROXY_PORT = BUNDLE.getString("console.label.proxy.port");
     public static final String CONSOLE_VALIDATOR_REQUIRED_FIELD_MESSAGE = BUNDLE.getString("console.validator.required.field.message");
 
-    private I18n() {
-
-    }
+    private I18n() {}
 
     public static Locale[] languages() {
         return LANGUAGES;

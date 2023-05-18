@@ -14,8 +14,7 @@ public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks
 
     public static final ClientSocksMessageHandler INSTANCE = new ClientSocksMessageHandler();
 
-    private ClientSocksMessageHandler() {
-    }
+    private ClientSocksMessageHandler() {}
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, SocksMessage msg) {

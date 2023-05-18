@@ -4,9 +4,7 @@ import com.urbanspork.common.codec.BytesGenerator;
 import com.urbanspork.common.codec.NonceGenerator;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
-public record AEADAuthenticator(AEADCipherCodec codec, byte[] key,
-                                NonceGenerator nonceGenerator,
-                                BytesGenerator associatedTextGenerator) {
+public record AEADAuthenticator(AEADCipherCodec codec, byte[] key, NonceGenerator nonceGenerator, BytesGenerator associatedTextGenerator) {
 
     public byte[] seal(byte[] in) throws InvalidCipherTextException {
         return codec.encrypt(key, nonceGenerator.generate(), associatedTextGenerator.generate(), in);

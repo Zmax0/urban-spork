@@ -23,8 +23,7 @@ public class ShadowsocksUDPAssociateHandler extends ChannelInboundHandlerAdapter
     public static final ShadowsocksUDPAssociateHandler INSTANCE = new ShadowsocksUDPAssociateHandler();
     private static final Logger logger = LoggerFactory.getLogger(ShadowsocksUDPAssociateHandler.class);
 
-    private ShadowsocksUDPAssociateHandler() {
-    }
+    private ShadowsocksUDPAssociateHandler() {}
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {

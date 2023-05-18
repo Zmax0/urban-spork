@@ -1,6 +1,6 @@
-package com.urbanspork.common.protocol.socks.udp;
+package com.urbanspork.common.protocol.socks;
 
-import com.urbanspork.common.protocol.socks.Socks5Addressing;
+import com.urbanspork.common.network.TernaryDatagramPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
@@ -22,10 +22,7 @@ public class Socks5DatagramPacketDecoder extends MessageToMessageDecoder<Datagra
             return;
         }
         content.skipBytes(3);
-        out.add(new Result(Socks5Addressing.decode(content), msg.replace(content.retainedSlice())));
+        InetSocketAddress address = Socks5Addressing.decode(content);
+        out.add(new TernaryDatagramPacket(msg.replace(content.retainedDuplicate()), address));
     }
-
-    public record Result(InetSocketAddress dstAddr, DatagramPacket data) {
-    }
-
 }

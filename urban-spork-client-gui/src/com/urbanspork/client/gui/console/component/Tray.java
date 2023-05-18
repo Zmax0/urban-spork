@@ -23,9 +23,7 @@ public class Tray {
 
     private static Console console;
 
-    private Tray() {
-
-    }
+    private Tray() {}
 
     public static void init(Console console) {
         Tray.console = console;

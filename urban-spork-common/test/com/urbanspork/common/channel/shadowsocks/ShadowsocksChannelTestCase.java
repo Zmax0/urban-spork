@@ -1,10 +1,10 @@
 package com.urbanspork.common.channel.shadowsocks;
 
 import com.urbanspork.common.TestDice;
-import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.codec.shadowsocks.ShadowsocksAEADCipherCodecs;
 import com.urbanspork.common.codec.shadowsocks.ShadowsocksUDPReplayCodec;
+import com.urbanspork.common.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.shadowsocks.ShadowsocksAddressDecoder;
 import com.urbanspork.common.protocol.shadowsocks.ShadowsocksAddressEncoder;
 import com.urbanspork.common.protocol.shadowsocks.network.Network;
@@ -51,13 +51,13 @@ class ShadowsocksChannelTestCase {
         EmbeddedChannel channel = new EmbeddedChannel();
         SupportedCipher cipher = TestDice.randomCipher();
         int port = TestDice.randomPort();
-        channel.attr(AttributeKeys.REPLAY_ADDRESS).set(new InetSocketAddress("192.168.1.1", port));
+        InetSocketAddress replay = new InetSocketAddress("192.168.1.1", port);
         channel.pipeline().addLast(new ShadowsocksUDPReplayCodec(
                 ShadowsocksAEADCipherCodecs.get(TestDice.randomString(), cipher, Network.UDP)));
         String host = "192.168.255.1";
         String message = TestDice.randomString();
         InetSocketAddress dst = new InetSocketAddress(host, port);
-        channel.writeOutbound(new DatagramPacket(Unpooled.wrappedBuffer(message.getBytes()), dst));
+        channel.writeOutbound(new TernaryDatagramPacket(new DatagramPacket(Unpooled.wrappedBuffer(message.getBytes()), dst), replay));
         DatagramPacket out = channel.readOutbound();
         channel.writeInbound(out);
         DatagramPacket in = channel.readInbound();

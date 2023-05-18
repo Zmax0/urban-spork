@@ -4,7 +4,7 @@ import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.server.shadowsocks.ShadowsocksUDPChannelInitializer;
+import com.urbanspork.server.shadowsocks.ServerUDPChannelInitializer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -46,7 +46,7 @@ public class Server {
                     new Bootstrap().group(bossGroup)
                             .option(ChannelOption.SO_BROADCAST, true)
                             .channel(NioDatagramChannel.class)
-                            .handler(new ShadowsocksUDPChannelInitializer(config))
+                            .handler(new ServerUDPChannelInitializer(config))
                             .bind(port).sync();
                 }
                 ServerBootstrap b = new ServerBootstrap();

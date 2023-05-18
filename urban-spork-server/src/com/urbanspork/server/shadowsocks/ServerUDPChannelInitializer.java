@@ -8,11 +8,11 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 
-public class ShadowsocksUDPChannelInitializer extends ChannelInitializer<Channel> {
+public class ServerUDPChannelInitializer extends ChannelInitializer<Channel> {
 
     private final ServerConfig config;
 
-    public ShadowsocksUDPChannelInitializer(ServerConfig config) {
+    public ServerUDPChannelInitializer(ServerConfig config) {
         this.config = config;
     }
 
@@ -20,8 +20,6 @@ public class ShadowsocksUDPChannelInitializer extends ChannelInitializer<Channel
     public void initChannel(Channel channel) {
         ChannelPipeline pipeline = channel.pipeline();
         pipeline.addLast(new ShadowsocksUDPReplayCodec(ShadowsocksAEADCipherCodecs.get(config.getPassword(), config.getCipher(), Network.UDP)))
-//                .addLast(new Socks5DatagramPacketDecoder())
-                .addLast(new ShadowsocksUDPReplayHandler())
-        ;
+                .addLast(new ServerUDPReplayHandler(config));
     }
 }

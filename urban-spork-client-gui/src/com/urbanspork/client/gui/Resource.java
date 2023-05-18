@@ -57,9 +57,7 @@ public class Resource {
         BUNDLE = bundle;
     }
 
-    private Resource() {
-
-    }
+    private Resource() {}
 
     public static ClientConfig config() {
         return CONFIG;

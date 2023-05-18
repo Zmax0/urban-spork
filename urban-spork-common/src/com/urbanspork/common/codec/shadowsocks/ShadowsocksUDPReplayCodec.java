@@ -1,6 +1,6 @@
 package com.urbanspork.common.codec.shadowsocks;
 
-import com.urbanspork.common.channel.AttributeKeys;
+import com.urbanspork.common.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.socks.Socks5Addressing;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -11,7 +11,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ShadowsocksUDPReplayCodec extends MessageToMessageCodec<DatagramPacket, DatagramPacket> {
+public class ShadowsocksUDPReplayCodec extends MessageToMessageCodec<DatagramPacket, TernaryDatagramPacket> {
 
     private final ShadowsocksAEADCipherCodec cipher;
 
@@ -20,19 +20,19 @@ public class ShadowsocksUDPReplayCodec extends MessageToMessageCodec<DatagramPac
     }
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, DatagramPacket msg, List<Object> out) throws Exception {
-        InetSocketAddress replayAddress = ctx.channel().attr(AttributeKeys.REPLAY_ADDRESS).get();
-        if (replayAddress == null) {
+    protected void encode(ChannelHandlerContext ctx, TernaryDatagramPacket msg, List<Object> out) throws Exception {
+        InetSocketAddress proxy = msg.third();
+        if (proxy == null) {
             ctx.fireExceptionCaught(new IllegalStateException("Replay address is null"));
             return;
         }
         ByteBuf in = ctx.alloc().buffer();
-        Socks5Addressing.encode(msg.recipient(), in);
-        in.writeBytes(msg.content());
+        DatagramPacket data = msg.packet();
+        Socks5Addressing.encode(data.recipient(), in);
+        in.writeBytes(data.content());
         ByteBuf content = ctx.alloc().buffer();
         cipher.encode(ctx, in, content);
-        DatagramPacket encoded = new DatagramPacket(content, replayAddress, msg.sender());
-        out.add(encoded);
+        out.add(new DatagramPacket(content, proxy, data.sender()));
     }
 
     @Override
@@ -41,7 +41,6 @@ public class ShadowsocksUDPReplayCodec extends MessageToMessageCodec<DatagramPac
         cipher.decode(ctx, msg.content(), list);
         ByteBuf in = (ByteBuf) list.get(0);
         InetSocketAddress recipient = Socks5Addressing.decode(in);
-        DatagramPacket decoded = new DatagramPacket(in.retainedSlice(), recipient, msg.sender());
-        out.add(decoded);
+        out.add(new DatagramPacket(in.retainedDuplicate(), recipient, msg.sender()));
     }
 }
