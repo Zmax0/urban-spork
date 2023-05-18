@@ -42,7 +42,7 @@ public enum AES {
         try {
             return Cipher.getInstance(transformation, BouncyCastleProvider.PROVIDER_NAME);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new UnsupportedOperationException(e);
         }
     }
 

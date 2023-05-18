@@ -44,10 +44,9 @@ public interface Socks5Addressing {
     }
 
     static InetSocketAddress decode(ByteBuf in) throws Exception {
-        return decode(Socks5AddressType.valueOf(in.readByte()), in);
+        Socks5AddressType addressType = Socks5AddressType.valueOf(in.readByte());
+        String hostname = Socks5AddressDecoder.DEFAULT.decodeAddress(addressType, in);
+        return new InetSocketAddress(hostname, in.readUnsignedShort());
     }
 
-    private static InetSocketAddress decode(Socks5AddressType addressType, ByteBuf in) throws Exception {
-        return new InetSocketAddress(Socks5AddressDecoder.DEFAULT.decodeAddress(addressType, in), in.readUnsignedShort());
-    }
 }

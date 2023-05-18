@@ -20,9 +20,7 @@ public class ConfigHandler {
                 .enable(JsonReadFeature.ALLOW_JAVA_COMMENTS).build();
     }
 
-    private ConfigHandler() {
-
-    }
+    private ConfigHandler() {}
 
     public static void write(Object object) throws IOException {
         if (!FILE.exists() && !FILE.getParentFile().mkdirs() && !FILE.createNewFile()) {

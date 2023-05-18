@@ -20,7 +20,10 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
+import io.netty.handler.codec.EncoderException;
+import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
+import io.netty.util.NetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,19 +126,42 @@ abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements Su
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         logger.error("VMess client codec error", cause);
-        super.exceptionCaught(ctx, cause);
+        ctx.close();
     }
 
     // port[2] + type[1] + domain_len[1] + domain_bytes[n]
     private void writeAddressBytes(ByteBuf buf, Socks5CommandRequest address) {
-        int port = address.dstPort();
-        byte[] domain = address.dstAddr().getBytes();
-        buf.writeShort(port);
-        buf.writeByte(AddressType.DOMAIN.getValue());
-        buf.writeByte(domain.length);
-        buf.writeBytes(domain);
+        buf.writeShort(address.dstPort());
+        Socks5AddressType addressType = address.dstAddrType();
+        String addressString = address.dstAddr();
+        if (Socks5AddressType.IPv4.equals(addressType)) {
+            if (addressString != null) {
+                buf.writeByte(AddressType.IPV4.getValue());
+                buf.writeBytes(NetUtil.createByteArrayFromIpAddressString(addressString));
+            } else {
+                buf.writeInt(0);
+            }
+        } else if (Socks5AddressType.IPv6.equals(addressType)) {
+            if (addressString != null) {
+                buf.writeByte(AddressType.IPV6.getValue());
+                buf.writeBytes(NetUtil.createByteArrayFromIpAddressString(addressString));
+            } else {
+                buf.writeLong(0);
+                buf.writeLong(0);
+            }
+        } else if (Socks5AddressType.DOMAIN.equals(addressType)) {
+            if (addressString != null) {
+                byte[] domain = addressString.getBytes();
+                buf.writeByte(AddressType.DOMAIN.getValue());
+                buf.writeByte(domain.length);
+                buf.writeBytes(domain);
+            } else {
+                buf.writeByte(0);
+            }
+        } else {
+            throw new EncoderException("Unsupported addressType: " + (addressType.byteValue() & 0xFF));
+        }
     }
-
 }

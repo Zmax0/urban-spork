@@ -18,7 +18,8 @@ import static com.urbanspork.common.codec.aead.AEADCipherCodec.TAG_SIZE;
 
 public record VMessAEADHeaderCodec(AEADCipherCodec codec) implements VMess {
 
-    public void sealVMessAEADHeader(byte[] key, byte[] header, ByteBuf out) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidCipherTextException {
+    public void sealVMessAEADHeader(byte[] key, byte[] header, ByteBuf out)
+            throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidCipherTextException {
         byte[] generatedAuthID = AuthID.createAuthID(key, VMess.timestamp(30));
         byte[] connectionNonce = Dice.randomBytes(8);
         byte[] aeadPayloadLengthSerializedByte = new byte[Short.BYTES];

@@ -20,9 +20,7 @@ public class Proxy {
 
     private static final ExecutorService executor = Executors.newSingleThreadExecutor(new ProxyThreadFactory(config));
 
-    private Proxy() {
-
-    }
+    private Proxy() {}
 
     public static void launch() {
         ServerConfig currentConfig = config.getCurrent();

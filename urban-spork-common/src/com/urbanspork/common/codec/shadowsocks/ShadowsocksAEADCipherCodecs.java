@@ -6,9 +6,7 @@ import com.urbanspork.common.protocol.shadowsocks.network.Network;
 
 public class ShadowsocksAEADCipherCodecs {
 
-    private ShadowsocksAEADCipherCodecs() {
-
-    }
+    private ShadowsocksAEADCipherCodecs() {}
 
     public static ShadowsocksAEADCipherCodec get(String password, SupportedCipher cipher, Network network) {
         return switch (cipher) {

@@ -57,6 +57,5 @@ public interface Socks5Handshaking {
         return promise;
     }
 
-    record Result(Channel sessionChannel, int bndPort) {
-    }
+    record Result(Channel sessionChannel, int bndPort) {}
 }

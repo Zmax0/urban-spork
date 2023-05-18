@@ -12,9 +12,7 @@ import static com.urbanspork.client.vmess.ClientAEADChunkSizeCodec.AUTH_LEN;
 
 class ClientCodecs {
 
-    private ClientCodecs() {
-
-    }
+    private ClientCodecs() {}
 
     static ClientAEADCodec get(String uuid, Socks5CommandRequest request, SupportedCipher cipher) {
         ClientSession session = new ClientSession();
