@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.awt.TrayIcon.MessageType;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 
 public class Proxy {
@@ -20,12 +21,17 @@ public class Proxy {
 
     private static final ExecutorService executor = Executors.newSingleThreadExecutor(new ProxyThreadFactory(config));
 
+    private static Future<?> future;
+
     private Proxy() {}
 
     public static void launch() {
         ServerConfig currentConfig = config.getCurrent();
         if (currentConfig != null) {
-            executor.submit(() -> {
+            if (future != null && !future.isCancelled()) {
+                future.cancel(true);
+            }
+            future = executor.submit(() -> {
                 try {
                     Client.launch(config);
                 } catch (Exception e) {
