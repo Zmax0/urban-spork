@@ -4,6 +4,7 @@ import com.urbanspork.client.shadowsocks.ClientUDPReplayHandler;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.socks.Socks5DatagramPacketDecoder;
 import com.urbanspork.common.protocol.socks.Socks5DatagramPacketEncoder;
 import io.netty.bootstrap.Bootstrap;
@@ -29,18 +30,20 @@ public class Client {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         ServerConfig config = clientConfig.getCurrent();
         try {
-            new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
-                    .handler(new ChannelInitializer<>() {
-                        @Override
-                        protected void initChannel(Channel ch) {
-                            ch.pipeline().addLast(
-                                    new Socks5DatagramPacketEncoder(),
-                                    new Socks5DatagramPacketDecoder(),
-                                    new ClientUDPReplayHandler(config)
-                            );
-                        }
-                    })
-                    .bind(port).sync();
+            if (Protocols.shadowsocks == config.getProtocol()) {
+                new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
+                        .handler(new ChannelInitializer<>() {
+                            @Override
+                            protected void initChannel(Channel ch) {
+                                ch.pipeline().addLast(
+                                        new Socks5DatagramPacketEncoder(),
+                                        new Socks5DatagramPacketDecoder(),
+                                        new ClientUDPReplayHandler(config)
+                                );
+                            }
+                        })
+                        .bind(port).sync();
+            }
             new ServerBootstrap().group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .childOption(ChannelOption.SO_KEEPALIVE, true) // socks5 require
@@ -49,7 +52,6 @@ public class Client {
                     .childHandler(new ClientSocksInitializer(config, port))
                     .bind(port).sync().channel().closeFuture().sync();
         } catch (InterruptedException e) {
-            logger.info("Interrupt thread [{}]", Thread.currentThread().getName(), e);
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
             Thread.currentThread().interrupt();

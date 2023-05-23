@@ -2,6 +2,7 @@ package com.urbanspork.client.shadowsocks;
 
 import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.socks.Socks5Addressing;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -35,7 +36,7 @@ public class ShadowsocksUDPAssociateHandler extends ChannelInboundHandlerAdapter
     private void channelRead0(ChannelHandlerContext ctx, Socks5CommandRequest request) {
         Channel channel = ctx.channel();
         ServerConfig config = channel.attr(AttributeKeys.SERVER_CONFIG).get();
-        if (!config.udpEnabled()) {
+        if (Protocols.shadowsocks != config.getProtocol()) {
             channel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()));
             logger.error("UDP is not enabled");
             return;
