@@ -38,12 +38,12 @@ public class ClientUDPReplayHandler extends SimpleChannelInboundHandler<TernaryD
     public void channelRead0(ChannelHandlerContext ctx, TernaryDatagramPacket msg) {
         DatagramPacket packet = msg.packet();
         InetSocketAddress sender = packet.sender();
-        get(ctx.channel(), sender).writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(packet.content(), msg.third()), replay));
+        getBindingChannel(ctx.channel(), sender).writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(packet.content(), msg.third()), replay));
     }
 
-    private Channel get(Channel inboundChannel, InetSocketAddress sender) {
+    private Channel getBindingChannel(Channel inboundChannel, InetSocketAddress sender) {
         return binding.computeIfAbsent(sender, key -> {
-            Channel channel = bind(inboundChannel, sender);
+            Channel channel = newBindingChannel(inboundChannel, sender);
             logger.info("New binding => {} - {}", sender, channel.localAddress());
             timer.newTimeout(timeout -> channel.close(), 10, TimeUnit.MINUTES);
             timer.newTimeout(timeout -> binding.remove(sender), 1, TimeUnit.MINUTES);
@@ -51,7 +51,7 @@ public class ClientUDPReplayHandler extends SimpleChannelInboundHandler<TernaryD
         });
     }
 
-    private Channel bind(Channel inboundChannel, InetSocketAddress sender) {
+    private Channel newBindingChannel(Channel inboundChannel, InetSocketAddress sender) {
         return new Bootstrap().group(workerGroup).channel(NioDatagramChannel.class)
                 .handler(new ChannelInitializer<>() {
                     @Override

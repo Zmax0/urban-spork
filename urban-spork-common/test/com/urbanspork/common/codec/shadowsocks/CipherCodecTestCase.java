@@ -1,9 +1,9 @@
 package com.urbanspork.common.codec.shadowsocks;
 
-import com.urbanspork.common.TestDice;
 import com.urbanspork.common.codec.EmptyChannelHandlerContext;
 import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.protocol.shadowsocks.network.Network;
+import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.*;
@@ -18,7 +18,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @DisplayName("Shadowsocks - Cipher Codec")
 @TestInstance(Lifecycle.PER_CLASS)
-class CipherCodecTest {
+class CipherCodecTestCase {
 
     private String password;
     private byte[] in;

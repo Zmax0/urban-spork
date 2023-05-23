@@ -1,4 +1,4 @@
-package com.urbanspork.test;
+package com.urbanspork.test.client;
 
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
@@ -6,6 +6,8 @@ import com.urbanspork.common.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.socks.Socks5DatagramPacketDecoder;
 import com.urbanspork.common.protocol.socks.Socks5DatagramPacketEncoder;
 import com.urbanspork.common.protocol.socks.Socks5Handshaking;
+import com.urbanspork.test.server.DelayedUDPTestServer;
+import com.urbanspork.test.server.SimpleUDPTestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -40,8 +42,8 @@ public class Socks5UDPProxyTestClient {
         InetSocketAddress dstAddress2 = new InetSocketAddress(hostname, DelayedUDPTestServer.PORT);
         Socks5Handshaking.Result result1 = Socks5Handshaking.udpAssociateNoAuth(proxyAddress, dstAddress1).await().get();
         Socks5Handshaking.Result result2 = Socks5Handshaking.udpAssociateNoAuth(proxyAddress, dstAddress2).await().get();
-        int bndPort1 = result1.bndPort();
-        int bndPort2 = result2.bndPort();
+        int bndPort1 = result1.response().bndPort();
+        int bndPort2 = result2.response().bndPort();
         logger.info("Associate ports: [{}, {}]", bndPort1, bndPort2);
         EventLoopGroup bossGroup = new NioEventLoopGroup(2);
         Channel channel = new Bootstrap().group(bossGroup)
@@ -67,27 +69,29 @@ public class Socks5UDPProxyTestClient {
                     }
                 })
                 .bind(0).sync().channel();
-        InetSocketAddress localAddress = (InetSocketAddress) channel.localAddress();
-        logger.info("Bind local address {}", localAddress);
+        logger.info("Bind local address {}", channel.localAddress());
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         System.err.println("Enter text (quit to end)");
+        InetSocketAddress socksAddress1 = new InetSocketAddress("localhost", bndPort1);
+        InetSocketAddress socksAddress2 = new InetSocketAddress("localhost", bndPort2);
         for (; ; ) {
             String line = in.readLine();
             if (line == null || "quit".equalsIgnoreCase(line)) {
                 break;
             }
             byte[] bytes = line.getBytes();
-            DatagramPacket data1 = new DatagramPacket(Unpooled.copiedBuffer(bytes), dstAddress1, localAddress);
-            TernaryDatagramPacket msg1 = new TernaryDatagramPacket(data1, new InetSocketAddress("localhost", bndPort1));
-            logger.info("Send msg {}", msg1);
-            channel.writeAndFlush(msg1);
-            DatagramPacket data2 = new DatagramPacket(Unpooled.copiedBuffer(bytes), dstAddress2, localAddress);
-            TernaryDatagramPacket msg2 = new TernaryDatagramPacket(data2, new InetSocketAddress("localhost", bndPort2));
-            logger.info("Send msg {}", msg2);
-            channel.writeAndFlush(msg2);
+            sendMsg(channel, dstAddress1, socksAddress1, bytes);
+            sendMsg(channel, dstAddress2, socksAddress2, bytes);
         }
         result1.sessionChannel().eventLoop().shutdownGracefully();
         result2.sessionChannel().eventLoop().shutdownGracefully();
         bossGroup.shutdownGracefully();
+    }
+
+    private static void sendMsg(Channel channel, InetSocketAddress dstAddress, InetSocketAddress socksAddress, byte[] bytes) {
+        DatagramPacket data = new DatagramPacket(Unpooled.copiedBuffer(bytes), dstAddress);
+        TernaryDatagramPacket msg = new TernaryDatagramPacket(data, socksAddress);
+        logger.info("Send msg {}", msg);
+        channel.writeAndFlush(msg);
     }
 }
