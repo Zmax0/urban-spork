@@ -1,4 +1,4 @@
-package com.urbanspork.common;
+package com.urbanspork.test;
 
 import com.urbanspork.common.codec.SupportedCipher;
 

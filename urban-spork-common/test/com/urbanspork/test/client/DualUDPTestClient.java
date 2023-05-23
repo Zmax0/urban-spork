@@ -1,5 +1,7 @@
-package com.urbanspork.test;
+package com.urbanspork.test.client;
 
+import com.urbanspork.test.server.DelayedUDPTestServer;
+import com.urbanspork.test.server.SimpleUDPTestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -16,14 +18,11 @@ import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
-public class MultiUDPTestClient {
+public class DualUDPTestClient {
 
-    private static final Logger logger = LoggerFactory.getLogger(MultiUDPTestClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(DualUDPTestClient.class);
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        String hostname = "localhost";
-        InetSocketAddress dstAddress = new InetSocketAddress(hostname, SimpleUDPTestServer.PORT);
-        InetSocketAddress dstAddress2 = new InetSocketAddress(hostname, DelayedUDPTestServer.PORT);
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         Channel channel = new Bootstrap().group(bossGroup)
                 .channel(NioDatagramChannel.class)
@@ -43,6 +42,13 @@ public class MultiUDPTestClient {
                 })
                 .bind(0).sync().channel();
         logger.info("Bind local address {}", channel.localAddress());
+        InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", SimpleUDPTestServer.PORT);
+        InetSocketAddress dstAddress2 = new InetSocketAddress("localhost", DelayedUDPTestServer.PORT);
+        sendMsg(channel, dstAddress1, dstAddress2);
+        bossGroup.shutdownGracefully();
+    }
+
+    private static void sendMsg(Channel channel, InetSocketAddress... dstAddress) throws IOException {
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         System.err.println("Enter text (quit to end)");
         for (; ; ) {
@@ -50,14 +56,11 @@ public class MultiUDPTestClient {
             if (line == null || "quit".equalsIgnoreCase(line)) {
                 break;
             }
-            ByteBuf data = Unpooled.wrappedBuffer(line.getBytes());
-            DatagramPacket msg = new DatagramPacket(data.retain(), dstAddress);
-            DatagramPacket msg2 = new DatagramPacket(data.retain(), dstAddress2);
-            logger.info("Send msg {}", msg);
-            channel.writeAndFlush(msg);
-            logger.info("Send msg {}", msg2);
-            channel.writeAndFlush(msg2);
+            for (InetSocketAddress address : dstAddress) {
+                DatagramPacket msg = new DatagramPacket(Unpooled.copiedBuffer(line.getBytes()), address);
+                logger.info("Send msg {}", msg);
+                channel.writeAndFlush(msg);
+            }
         }
-        bossGroup.shutdownGracefully();
     }
 }

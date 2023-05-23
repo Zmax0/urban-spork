@@ -1,7 +1,7 @@
 package com.urbanspork.common.protocol.socks;
 
-import com.urbanspork.common.TestDice;
 import com.urbanspork.common.network.TernaryDatagramPacket;
+import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -30,9 +30,10 @@ class Socks5DatagramPacketTestCase {
         DatagramPacket outbound = channel.readOutbound();
         Assertions.assertEquals(socksAddress, outbound.recipient());
         channel.writeInbound(outbound);
-        DatagramPacket inbound = channel.readInbound();
-        Assertions.assertEquals(dstAddress, inbound.sender());
-        ByteBuf content = inbound.content();
+        TernaryDatagramPacket inbound = channel.readInbound();
+        Assertions.assertEquals(dstAddress, inbound.third());
+        Assertions.assertEquals(socksAddress, inbound.packet().recipient());
+        ByteBuf content = inbound.packet().content();
         Assertions.assertEquals(str, content.readCharSequence(content.readableBytes(), StandardCharsets.UTF_8));
     }
 

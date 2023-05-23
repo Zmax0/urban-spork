@@ -18,8 +18,7 @@ public interface Socks5Handshaking {
         DefaultEventLoop executor = new DefaultEventLoop();
         Promise<Result> promise = new DefaultPromise<>(executor);
         try {
-            Bootstrap b = new Bootstrap();
-            b.group(worker).channel(NioSocketChannel.class)
+            new Bootstrap().group(worker).channel(NioSocketChannel.class)
                     .handler(new ChannelInitializer<>() {
                         @Override
                         protected void initChannel(Channel ch) {
@@ -42,20 +41,20 @@ public interface Socks5Handshaking {
                                     new SimpleChannelInboundHandler<Socks5CommandResponse>() {
                                         @Override
                                         protected void channelRead0(ChannelHandlerContext ctx, Socks5CommandResponse msg) {
-                                            promise.setSuccess(new Result(ch, msg.bndPort()));
+                                            promise.setSuccess(new Result(ch, msg));
                                             executor.shutdownGracefully();
                                         }
                                     }
                             );
                         }
-                    });
-            Channel channel = b.connect(proxyAddress).syncUninterruptibly().channel();
-            channel.writeAndFlush(new DefaultSocks5InitialRequest(Socks5AuthMethod.NO_AUTH)); // greeting
+                    })
+                    .connect(proxyAddress).syncUninterruptibly().channel()
+                    .writeAndFlush(new DefaultSocks5InitialRequest(Socks5AuthMethod.NO_AUTH)); // greeting
         } catch (Exception e) {
             promise.setFailure(e);
         }
         return promise;
     }
 
-    record Result(Channel sessionChannel, int bndPort) {}
+    record Result(Channel sessionChannel, Socks5CommandResponse response) {}
 }

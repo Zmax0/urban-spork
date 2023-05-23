@@ -1,31 +1,40 @@
-package com.urbanspork.test;
+package com.urbanspork.test.server;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.util.Date;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 public class DelayedUDPTestServer {
 
     public static final int PORT = 16801;
 
     public static void main(String[] args) throws IOException {
+        ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
         try (DatagramSocket socket = new DatagramSocket(PORT)) {
-            System.out.printf("UDP test server startup [%d]\n", socket.getLocalPort());
+            System.out.printf("%tc - UDP test server startup [%d]\n", new Date(), socket.getLocalPort());
             for (; ; ) {
                 byte[] data = new byte[1024];
                 DatagramPacket packet = new DatagramPacket(data, data.length);
                 socket.receive(packet);
                 String str = new String(data, 0, packet.getLength());
                 InetSocketAddress address = new InetSocketAddress(packet.getAddress().getHostAddress(), packet.getPort());
-                System.out.printf("Receive msg from [%s]: %s", address, str);
-                LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(10));
                 byte[] bytes = String.format("Received your msg [%s] ^_^", str).getBytes();
                 DatagramPacket msg = new DatagramPacket(bytes, bytes.length, address);
-                socket.send(msg);
-                System.out.println(" => Callback");
+                int id = System.identityHashCode(msg);
+                service.schedule(() -> {
+                    try {
+                        System.out.printf("%tc - Callback [%d]\n", new Date(), id);
+                        socket.send(msg);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }, 10, TimeUnit.SECONDS);
+                System.out.printf("%tc - Received msg from [%s]: %s [%d]\n", new Date(), address, str, id);
                 if ("close".equals(str)) {
                     break;
                 }

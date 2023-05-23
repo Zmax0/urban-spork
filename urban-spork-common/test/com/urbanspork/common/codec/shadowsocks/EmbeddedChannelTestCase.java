@@ -1,13 +1,11 @@
-package com.urbanspork.common.channel.shadowsocks;
+package com.urbanspork.common.codec.shadowsocks;
 
-import com.urbanspork.common.TestDice;
 import com.urbanspork.common.codec.SupportedCipher;
-import com.urbanspork.common.codec.shadowsocks.ShadowsocksAEADCipherCodecs;
-import com.urbanspork.common.codec.shadowsocks.ShadowsocksUDPReplayCodec;
 import com.urbanspork.common.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.shadowsocks.ShadowsocksAddressDecoder;
 import com.urbanspork.common.protocol.shadowsocks.ShadowsocksAddressEncoder;
 import com.urbanspork.common.protocol.shadowsocks.network.Network;
+import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -16,6 +14,7 @@ import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -23,7 +22,8 @@ import org.junit.jupiter.params.provider.EnumSource;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
-class ShadowsocksChannelTestCase {
+@DisplayName("Shadowsocks - Embedded Channel")
+class EmbeddedChannelTestCase {
 
     @ParameterizedTest
     @EnumSource(Network.class)
