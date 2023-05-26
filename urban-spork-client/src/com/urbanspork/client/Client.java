@@ -32,32 +32,30 @@ public class Client {
         try {
             if (Protocols.shadowsocks == config.getProtocol()) {
                 new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
-                        .handler(new ChannelInitializer<>() {
-                            @Override
-                            protected void initChannel(Channel ch) {
-                                ch.pipeline().addLast(
-                                        new Socks5DatagramPacketEncoder(),
-                                        new Socks5DatagramPacketDecoder(),
-                                        new ClientUDPReplayHandler(config)
-                                );
-                            }
-                        })
-                        .bind(port).sync();
+                    .handler(new ChannelInitializer<>() {
+                        @Override
+                        protected void initChannel(Channel ch) {
+                            ch.pipeline().addLast(
+                                new Socks5DatagramPacketEncoder(),
+                                new Socks5DatagramPacketDecoder(),
+                                new ClientUDPReplayHandler(config, workerGroup)
+                            );
+                        }
+                    })
+                    .bind(port).sync();
             }
             new ServerBootstrap().group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true) // socks5 require
-                    .childOption(ChannelOption.TCP_NODELAY, false)
-                    .childOption(ChannelOption.SO_LINGER, 1)
-                    .childHandler(new ClientSocksInitializer(config, port))
-                    .bind(port).sync().channel().closeFuture().sync();
+                .channel(NioServerSocketChannel.class)
+                .childOption(ChannelOption.SO_KEEPALIVE, true) // socks5 require
+                .childOption(ChannelOption.TCP_NODELAY, false)
+                .childOption(ChannelOption.SO_LINGER, 1)
+                .childHandler(new ClientSocksInitializer(config, port))
+                .bind(port).sync().channel().closeFuture().sync();
         } catch (InterruptedException e) {
-            workerGroup.shutdownGracefully();
-            bossGroup.shutdownGracefully();
             Thread.currentThread().interrupt();
         } finally {
-            workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
         }
     }
 

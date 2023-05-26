@@ -32,7 +32,7 @@ public class ShadowsocksUDPReplayCodec extends MessageToMessageCodec<DatagramPac
         ByteBuf in = ctx.alloc().buffer();
         DatagramPacket data = msg.packet();
         Socks5Addressing.encode(Socks5CommandType.CONNECT, data.recipient(), in);
-        in.writeBytes(data.content());
+        in.writeBytes(data.content().duplicate());
         ByteBuf content = ctx.alloc().buffer();
         cipher.encode(ctx, in, content);
         out.add(new DatagramPacket(content, proxy, data.sender()));

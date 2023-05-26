@@ -1,12 +1,12 @@
 package com.urbanspork.server.shadowsocks;
 
 import com.urbanspork.common.channel.AttributeKeys;
+import com.urbanspork.common.channel.ChannelCloseUtils;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.shadowsocks.network.PacketEncoding;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -18,15 +18,16 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-class ServerUDPReplayHandler extends ChannelInboundHandlerAdapter {
+public class ServerUDPReplayHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerUDPReplayHandler.class);
-    private static final EventLoopGroup workerGroup = new NioEventLoopGroup();
-    private static final Map<InetSocketAddress, Channel> workerChannels = new ConcurrentHashMap<>();
+    private final Map<InetSocketAddress, Channel> workerChannels = new ConcurrentHashMap<>();
+    private final EventLoopGroup workerGroup;
     private final ServerConfig config;
 
-    ServerUDPReplayHandler(ServerConfig config) {
+    public ServerUDPReplayHandler(ServerConfig config, EventLoopGroup workerGroup) {
         this.config = config;
+        this.workerGroup = workerGroup;
     }
 
     @Override
@@ -38,6 +39,12 @@ class ServerUDPReplayHandler extends ChannelInboundHandlerAdapter {
             logger.info("Replay {} -> {} via {} -> {}", packet.sender(), packet.recipient(), inboundChannel.localAddress(), outboundChannel.localAddress());
             outboundChannel.writeAndFlush(packet);
         }
+    }
+
+    @Override
+    public void channelUnregistered(ChannelHandlerContext ctx) {
+        ctx.fireChannelUnregistered();
+        ChannelCloseUtils.clearMap(workerChannels);
     }
 
     private Channel findWorkerChannel(InetSocketAddress callback, Channel inboundChannel) {
@@ -65,7 +72,7 @@ class ServerUDPReplayHandler extends ChannelInboundHandlerAdapter {
         return outboundChannel;
     }
 
-    static class InboundHandler extends SimpleChannelInboundHandler<DatagramPacket> {
+    private class InboundHandler extends SimpleChannelInboundHandler<DatagramPacket> {
 
         private final Channel inboundChannel;
 
