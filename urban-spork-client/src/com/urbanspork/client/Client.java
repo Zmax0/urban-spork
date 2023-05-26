@@ -23,14 +23,14 @@ public class Client {
 
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
-    public static void launch(ClientConfig clientConfig) {
-        logger.info("Launching client => {}", clientConfig);
-        int port = clientConfig.getPort();
+    public static void launch(ClientConfig config) {
+        logger.info("Launching client => {}", config);
+        int port = config.getPort();
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        ServerConfig config = clientConfig.getCurrent();
+        ServerConfig current = config.getCurrent();
         try {
-            if (Protocols.shadowsocks == config.getProtocol()) {
+            if (Protocols.shadowsocks == current.getProtocol()) {
                 new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
                     .handler(new ChannelInitializer<>() {
                         @Override
@@ -38,7 +38,7 @@ public class Client {
                             ch.pipeline().addLast(
                                 new Socks5DatagramPacketEncoder(),
                                 new Socks5DatagramPacketDecoder(),
-                                new ClientUDPReplayHandler(config, workerGroup)
+                                new ClientUDPReplayHandler(current, workerGroup)
                             );
                         }
                     })
@@ -49,7 +49,7 @@ public class Client {
                 .childOption(ChannelOption.SO_KEEPALIVE, true) // socks5 require
                 .childOption(ChannelOption.TCP_NODELAY, false)
                 .childOption(ChannelOption.SO_LINGER, 1)
-                .childHandler(new ClientSocksInitializer(config, port))
+                .childHandler(new ClientSocksInitializer(current, port))
                 .bind(port).sync().channel().closeFuture().sync();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

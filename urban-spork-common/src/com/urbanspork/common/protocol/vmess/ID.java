@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 public class ID {
+    private ID() {}
 
     public static byte[] newID(String uuid) {
         return newID(UUID.fromString(uuid));

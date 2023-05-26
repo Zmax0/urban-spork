@@ -12,6 +12,9 @@ import javax.crypto.IllegalBlockSizeException;
 import java.security.InvalidKeyException;
 
 public class AuthID {
+    private AuthID() {}
+
+    private static final byte[] KDF_SALT_AUTH_ID_ENCRYPTION_KEY = "AES Auth ID Encryption".getBytes();
 
     public static byte[] createAuthID(byte[] key, long time) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
         byte[] authID = new byte[16];
@@ -21,7 +24,6 @@ public class AuthID {
         buf.writeBytes(Go.nextUnsignedInt());
         int crc32 = (int) VMess.crc32(ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.writerIndex(), false));
         buf.writeInt(crc32);
-        return AES.ECB_NoPadding.encrypt(KDF.kdf16(key, VMess.KDF_SALT_AUTH_ID_ENCRYPTION_KEY), authID);
+        return AES.ECB_NoPadding.encrypt(KDF.kdf16(key, KDF_SALT_AUTH_ID_ENCRYPTION_KEY), authID);
     }
-
 }

@@ -5,6 +5,7 @@ import com.urbanspork.common.crypto.GeneralDigests;
 import java.util.Arrays;
 
 public class Auth {
+    private Auth() {}
 
     public static byte[] generateChacha20Poly1305Key(byte[] raw) {
         byte[] key = new byte[32];
@@ -12,5 +13,4 @@ public class Auth {
         GeneralDigests.md5.get(Arrays.copyOf(key, 16), key, 16);
         return key;
     }
-
 }
