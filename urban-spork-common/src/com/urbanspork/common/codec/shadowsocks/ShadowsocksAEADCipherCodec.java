@@ -148,8 +148,8 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> implements 
 
     private AEADAuthenticator newAuthenticator(byte[] salt) {
         return new AEADAuthenticator(codec, hkdfsha1(key, salt),
-                NonceGenerator.generateCountingNonce(nonce, codec.nonceSize(), false),
-                BytesGenerator.generateEmptyBytes());
+            NonceGenerator.generateCountingNonce(nonce, codec.nonceSize(), false),
+            BytesGenerator.generateEmptyBytes());
     }
 
     private byte[] hkdfsha1(byte[] key, byte[] salt) {
