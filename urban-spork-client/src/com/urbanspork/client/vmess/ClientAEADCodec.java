@@ -32,11 +32,14 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
 import static com.urbanspork.common.codec.aead.AEADCipherCodec.TAG_SIZE;
-import static com.urbanspork.common.codec.vmess.VMessAEADHeaderCodec.*;
 
 abstract class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> implements Supplier<AEADCipherCodec> {
 
     private static final Logger logger = LoggerFactory.getLogger(ClientAEADCodec.class);
+    private static final byte[] KDF_SALT_AEAD_RESP_HEADER_LEN_KEY = "AEAD Resp Header Len Key".getBytes();
+    private static final byte[] KDF_SALT_AEAD_RESP_HEADER_LEN_IV = "AEAD Resp Header Len IV".getBytes();
+    private static final byte[] KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY = "AEAD Resp Header Key".getBytes();
+    private static final byte[] KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV = "AEAD Resp Header IV".getBytes();
 
     final ClientSession session;
     private final byte[] cmdKey;

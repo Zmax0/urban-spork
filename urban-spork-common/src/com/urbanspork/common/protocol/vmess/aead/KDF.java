@@ -1,6 +1,5 @@
 package com.urbanspork.common.protocol.vmess.aead;
 
-import com.urbanspork.common.protocol.vmess.VMess;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.macs.HMac;
@@ -9,9 +8,12 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import java.util.Arrays;
 
 public class KDF {
+    private KDF() {}
+
+    private static final byte[] KDF_SALT_VMESS_AEAD_KDF = "VMess AEAD KDF".getBytes();
 
     public static byte[] kdf(byte[] key, byte[]... paths) {
-        HMacCreator hmacCreator = new HMacCreator(VMess.KDF_SALT_VMESS_AEAD_KDF);
+        HMacCreator hmacCreator = new HMacCreator(KDF_SALT_VMESS_AEAD_KDF);
         if (paths != null) {
             for (byte[] path : paths) {
                 hmacCreator = new HMacCreator(hmacCreator, path);

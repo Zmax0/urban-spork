@@ -33,12 +33,13 @@ public class Server {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         configs = configs.stream()
             .filter(config -> config.getHost().matches("localhost|127.*|[:1]|0.0.0.0|[:0]"))
-            .filter(config -> Protocols.shadowsocks == config.getProtocol()).toList();
+            .filter(config -> Protocols.shadowsocks == config.getProtocol())
+            .toList();
         if (configs.isEmpty()) {
             throw new IllegalArgumentException("None available shadowsocks server");
         }
-        ExecutorService threadPool = Executors.newFixedThreadPool(configs.size());
-        configs.forEach(config -> threadPool.submit(() -> {
+        ExecutorService pool = Executors.newFixedThreadPool(configs.size());
+        configs.forEach(config -> pool.submit(() -> {
             try {
                 int port = config.getPort();
                 if (config.udpEnabled()) {
@@ -64,15 +65,13 @@ public class Server {
                 f.channel().closeFuture().sync();
             } catch (InterruptedException e) {
                 logger.error("Server listening thread is interrupted", e);
-                workerGroup.shutdownGracefully();
-                bossGroup.shutdownGracefully();
                 Thread.currentThread().interrupt();
             } finally {
                 workerGroup.shutdownGracefully();
                 bossGroup.shutdownGracefully();
             }
         }, "UrbanSporkServer-" + config.getPort()));
-        threadPool.shutdown();
+        pool.shutdown();
     }
 
 }
