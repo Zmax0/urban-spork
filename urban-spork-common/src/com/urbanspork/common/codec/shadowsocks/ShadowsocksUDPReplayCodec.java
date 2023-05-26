@@ -1,11 +1,14 @@
 package com.urbanspork.common.codec.shadowsocks;
 
+import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.shadowsocks.network.Network;
 import com.urbanspork.common.protocol.socks.Socks5Addressing;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.MessageToMessageCodec;
+import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -15,8 +18,8 @@ public class ShadowsocksUDPReplayCodec extends MessageToMessageCodec<DatagramPac
 
     private final ShadowsocksAEADCipherCodec cipher;
 
-    public ShadowsocksUDPReplayCodec(ShadowsocksAEADCipherCodec cipher) {
-        this.cipher = cipher;
+    public ShadowsocksUDPReplayCodec(ServerConfig config) {
+        this.cipher = ShadowsocksAEADCipherCodecs.get(config.getPassword(), config.getCipher(), Network.UDP);
     }
 
     @Override
@@ -28,7 +31,7 @@ public class ShadowsocksUDPReplayCodec extends MessageToMessageCodec<DatagramPac
         }
         ByteBuf in = ctx.alloc().buffer();
         DatagramPacket data = msg.packet();
-        Socks5Addressing.encode(data.recipient(), in);
+        Socks5Addressing.encode(Socks5CommandType.CONNECT, data.recipient(), in);
         in.writeBytes(data.content());
         ByteBuf content = ctx.alloc().buffer();
         cipher.encode(ctx, in, content);

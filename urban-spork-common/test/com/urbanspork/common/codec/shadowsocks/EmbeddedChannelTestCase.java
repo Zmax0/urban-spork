@@ -1,6 +1,7 @@
 package com.urbanspork.common.codec.shadowsocks;
 
 import com.urbanspork.common.codec.SupportedCipher;
+import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.shadowsocks.ShadowsocksAddressDecoder;
 import com.urbanspork.common.protocol.shadowsocks.ShadowsocksAddressEncoder;
@@ -33,9 +34,9 @@ class EmbeddedChannelTestCase {
         String password = TestDice.randomString();
         EmbeddedChannel channel = new EmbeddedChannel();
         channel.pipeline()
-                .addLast(ShadowsocksAEADCipherCodecs.get(password, cipher, network))
-                .addLast(new ShadowsocksAddressEncoder(new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "localhost", port)))
-                .addLast(new ShadowsocksAddressDecoder());
+            .addLast(ShadowsocksAEADCipherCodecs.get(password, cipher, network))
+            .addLast(new ShadowsocksAddressEncoder(new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "localhost", port)))
+            .addLast(new ShadowsocksAddressDecoder());
         String message = TestDice.randomString();
         channel.writeOutbound(Unpooled.wrappedBuffer(message.getBytes()));
         ByteBuf out = channel.readOutbound();
@@ -52,8 +53,10 @@ class EmbeddedChannelTestCase {
         SupportedCipher cipher = TestDice.randomCipher();
         int port = TestDice.randomPort();
         InetSocketAddress replay = new InetSocketAddress("192.168.1.1", port);
-        channel.pipeline().addLast(new ShadowsocksUDPReplayCodec(
-                ShadowsocksAEADCipherCodecs.get(TestDice.randomString(), cipher, Network.UDP)));
+        ServerConfig config = new ServerConfig();
+        config.setPassword(TestDice.randomString());
+        config.setCipher(cipher);
+        channel.pipeline().addLast(new ShadowsocksUDPReplayCodec(config));
         String host = "192.168.255.1";
         String message = TestDice.randomString();
         InetSocketAddress dst = new InetSocketAddress(host, port);

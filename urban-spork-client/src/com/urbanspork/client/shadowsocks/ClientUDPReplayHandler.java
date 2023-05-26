@@ -1,10 +1,8 @@
 package com.urbanspork.client.shadowsocks;
 
-import com.urbanspork.common.codec.shadowsocks.ShadowsocksAEADCipherCodecs;
 import com.urbanspork.common.codec.shadowsocks.ShadowsocksUDPReplayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.network.TernaryDatagramPacket;
-import com.urbanspork.common.protocol.shadowsocks.network.Network;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -53,16 +51,16 @@ public class ClientUDPReplayHandler extends SimpleChannelInboundHandler<TernaryD
 
     private Channel newBindingChannel(Channel inboundChannel, InetSocketAddress sender) {
         return new Bootstrap().group(workerGroup).channel(NioDatagramChannel.class)
-                .handler(new ChannelInitializer<>() {
-                    @Override
-                    protected void initChannel(Channel ch) {
-                        ch.pipeline().addLast(
-                                new ShadowsocksUDPReplayCodec(ShadowsocksAEADCipherCodecs.get(config.getPassword(), config.getCipher(), Network.UDP)),
-                                new InboundHandler(inboundChannel, sender)// server->client->sender
-                        );
-                    }
-                }).bind(0) // automatically assigned port now, may have security implications
-                .syncUninterruptibly().channel();
+            .handler(new ChannelInitializer<>() {
+                @Override
+                protected void initChannel(Channel ch) {
+                    ch.pipeline().addLast(
+                        new ShadowsocksUDPReplayCodec(config),
+                        new InboundHandler(inboundChannel, sender)// server->client->sender
+                    );
+                }
+            }).bind(0) // automatically assigned port now, may have security implications
+            .syncUninterruptibly().channel();
     }
 
     private static class InboundHandler extends SimpleChannelInboundHandler<DatagramPacket> {

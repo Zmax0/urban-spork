@@ -49,18 +49,18 @@ class ServerUDPReplayHandler extends ChannelInboundHandlerAdapter {
 
     private Channel newWorkerChannel(InetSocketAddress callback, Channel inboundChannel) {
         Channel outboundChannel = new Bootstrap().group(workerGroup).channel(NioDatagramChannel.class)
-                .handler(new ChannelInitializer<>() {
-                    @Override
-                    protected void initChannel(Channel ch) {
-                        ch.attr(AttributeKeys.CALLBACK).set(new ConcurrentHashMap<>());
-                        ch.pipeline().addLast(
-                                new IdleStateHandler(0, 0, 120),
-                                new InboundHandler(inboundChannel)
-                        );
-                    }
-                })// callback->server->client
-                .bind(0) // automatically assigned port now, may have security implications
-                .syncUninterruptibly().channel();
+            .handler(new ChannelInitializer<>() {
+                @Override
+                protected void initChannel(Channel ch) {
+                    ch.attr(AttributeKeys.CALLBACK).set(new ConcurrentHashMap<>());
+                    ch.pipeline().addLast(
+                        new IdleStateHandler(0, 0, 120),
+                        new InboundHandler(inboundChannel)
+                    );
+                }
+            })// callback->server->client
+            .bind(0) // automatically assigned port now, may have security implications
+            .syncUninterruptibly().channel();
         logger.info("New working binding: {} == {}", callback, outboundChannel.localAddress());
         return outboundChannel;
     }

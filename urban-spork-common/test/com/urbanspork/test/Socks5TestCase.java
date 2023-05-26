@@ -44,23 +44,23 @@ class Socks5TestCase {
             dstHostname = config.getCurrent().getHost();
         } catch (Exception ignore) {}
         channel = new Bootstrap().group(group)
-                .channel(NioDatagramChannel.class)
-                .handler(new ChannelInitializer<>() {
-                    @Override
-                    protected void initChannel(Channel ch) {
-                        ch.pipeline().addLast(
-                                new Socks5DatagramPacketEncoder(),
-                                new Socks5DatagramPacketDecoder(),
-                                new SimpleChannelInboundHandler<TernaryDatagramPacket>(false) {
-                                    @Override
-                                    protected void channelRead0(ChannelHandlerContext ctx, TernaryDatagramPacket msg) {
-                                        consumer.accept(msg);
-                                    }
-                                }
-                        );
-                    }
-                })
-                .bind(TestDice.randomPort()).syncUninterruptibly().channel();
+            .channel(NioDatagramChannel.class)
+            .handler(new ChannelInitializer<>() {
+                @Override
+                protected void initChannel(Channel ch) {
+                    ch.pipeline().addLast(
+                        new Socks5DatagramPacketEncoder(),
+                        new Socks5DatagramPacketDecoder(),
+                        new SimpleChannelInboundHandler<TernaryDatagramPacket>(false) {
+                            @Override
+                            protected void channelRead0(ChannelHandlerContext ctx, TernaryDatagramPacket msg) {
+                                consumer.accept(msg);
+                            }
+                        }
+                    );
+                }
+            })
+            .bind(TestDice.randomPort()).syncUninterruptibly().channel();
     }
 
     @ParameterizedTest
@@ -91,7 +91,7 @@ class Socks5TestCase {
         DatagramPacket data = new DatagramPacket(Unpooled.copiedBuffer(TestDice.randomString().getBytes()), dstAddress);
         TernaryDatagramPacket msg = new TernaryDatagramPacket(data, socksAddress);
         channel.writeAndFlush(msg);
-        Assertions.assertTrue(promise.await(20, TimeUnit.SECONDS));
+        Assertions.assertTrue(promise.await(15, TimeUnit.SECONDS));
         executor.shutdownGracefully();
     }
 
