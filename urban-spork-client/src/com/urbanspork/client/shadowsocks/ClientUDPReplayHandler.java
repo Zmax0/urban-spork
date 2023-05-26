@@ -1,11 +1,11 @@
 package com.urbanspork.client.shadowsocks;
 
+import com.urbanspork.common.channel.ChannelCloseUtils;
 import com.urbanspork.common.codec.shadowsocks.ShadowsocksUDPReplayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.network.TernaryDatagramPacket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.util.HashedWheelTimer;
@@ -20,15 +20,16 @@ import java.util.concurrent.TimeUnit;
 public class ClientUDPReplayHandler extends SimpleChannelInboundHandler<TernaryDatagramPacket> {
 
     private static final Logger logger = LoggerFactory.getLogger(ClientUDPReplayHandler.class);
-    private static final EventLoopGroup workerGroup = new NioEventLoopGroup();
-    private static final Map<InetSocketAddress, Channel> binding = new ConcurrentHashMap<>();
-    private static final HashedWheelTimer timer = new HashedWheelTimer(1, TimeUnit.SECONDS);
+    private final HashedWheelTimer timer = new HashedWheelTimer(1, TimeUnit.SECONDS);
+    private final Map<InetSocketAddress, Channel> binding = new ConcurrentHashMap<>();
     private final ServerConfig config;
+    private final EventLoopGroup workerGroup;
     private final InetSocketAddress replay;
 
-    public ClientUDPReplayHandler(ServerConfig config) {
+    public ClientUDPReplayHandler(ServerConfig config, EventLoopGroup workerGroup) {
         super(false);
         this.config = config;
+        this.workerGroup = workerGroup;
         this.replay = new InetSocketAddress(config.getHost(), config.getPort());
     }
 
@@ -37,6 +38,14 @@ public class ClientUDPReplayHandler extends SimpleChannelInboundHandler<TernaryD
         DatagramPacket packet = msg.packet();
         InetSocketAddress sender = packet.sender();
         getBindingChannel(ctx.channel(), sender).writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(packet.content(), msg.third()), replay));
+    }
+
+    @Override
+    public void channelUnregistered(ChannelHandlerContext ctx) {
+        ctx.fireChannelUnregistered();
+        logger.info("Stop timer and clean binding");
+        timer.stop();
+        ChannelCloseUtils.clearMap(binding);
     }
 
     private Channel getBindingChannel(Channel inboundChannel, InetSocketAddress sender) {

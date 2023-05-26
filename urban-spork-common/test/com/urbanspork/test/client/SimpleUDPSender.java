@@ -1,4 +1,4 @@
-package com.urbanspork.test.server;
+package com.urbanspork.test.client;
 
 import java.io.BufferedReader;
 import java.io.IOException;
