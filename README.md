@@ -1,5 +1,7 @@
 # urban-spork
 
+[![codecov](https://codecov.io/gh/Zmax0/urban-spork/branch/master/graph/badge.svg?token=6QAZQ05HZV)](https://codecov.io/gh/Zmax0/urban-spork)
+
 A sock5 proxy
 
 ## Require
