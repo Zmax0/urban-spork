@@ -10,6 +10,7 @@
     <module>urban-spork-client</module>
     <module>urban-spork-client-gui</module>
     <module>urban-spork-server</module>
+    <module>urban-spork-test</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -36,6 +37,11 @@
       <dependency>
         <groupId>urban-spork</groupId>
         <artifactId>urban-spork-client</artifactId>
+        <version>${urban-spork.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>urban-spork</groupId>
+        <artifactId>urban-spork-server</artifactId>
         <version>${urban-spork.version}</version>
       </dependency>
       <dependency>
@@ -102,8 +108,18 @@
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>${maven-jar-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven-surefire-plugin}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco-maven-plugin}</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -120,19 +136,12 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>${jacoco-maven-plugin}</version>
         <executions>
           <execution>
             <id>prepare-agent</id>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>report</id>
             <phase>test</phase>
             <goals>
-              <goal>report</goal>
+              <goal>prepare-agent</goal>
             </goals>
           </execution>
         </executions>

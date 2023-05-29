@@ -1,7 +1,6 @@
 package com.urbanspork.server;
 
 import com.urbanspork.common.codec.shadowsocks.ShadowsocksUDPReplayCodec;
-import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
@@ -25,12 +24,10 @@ public class Server {
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
     public static void main(String[] args) throws IOException {
-        List<ServerConfig> configs = ConfigHandler.read(ClientConfig.class).getServers();
+        List<ServerConfig> configs = ConfigHandler.DEFAULT.read().getServers();
         if (configs.isEmpty()) {
             throw new IllegalArgumentException("Server config in the file is empty");
         }
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
         configs = configs.stream()
             .filter(config -> config.getHost().matches("localhost|127.*|[:1]|0.0.0.0|[:0]"))
             .filter(config -> Protocols.shadowsocks == config.getProtocol())
@@ -38,6 +35,12 @@ public class Server {
         if (configs.isEmpty()) {
             throw new IllegalArgumentException("None available shadowsocks server");
         }
+        launch(configs);
+    }
+
+    public static void launch(List<ServerConfig> configs) {
+        EventLoopGroup bossGroup = new NioEventLoopGroup();
+        EventLoopGroup workerGroup = new NioEventLoopGroup();
         ExecutorService pool = Executors.newFixedThreadPool(configs.size());
         configs.forEach(config -> pool.submit(() -> {
             try {

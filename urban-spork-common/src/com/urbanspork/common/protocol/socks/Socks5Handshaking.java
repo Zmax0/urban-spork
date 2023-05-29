@@ -12,7 +12,7 @@ import java.net.InetSocketAddress;
 
 public interface Socks5Handshaking {
 
-    static Promise<Result> udpAssociateNoAuth(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) {
+    static Promise<Result> noAuth(Socks5CommandType type, InetSocketAddress proxyAddress, InetSocketAddress dstAddress) {
         NioEventLoopGroup worker = new NioEventLoopGroup(1);
         DefaultEventLoop executor = new DefaultEventLoop();
         Promise<Result> promise = new DefaultPromise<>(executor);
@@ -28,7 +28,7 @@ public interface Socks5Handshaking {
                             new SimpleChannelInboundHandler<Socks5InitialResponse>() {
                                 @Override
                                 protected void channelRead0(ChannelHandlerContext ctx, Socks5InitialResponse msg) {
-                                    ctx.writeAndFlush(Socks5.toCommandRequest(Socks5CommandType.UDP_ASSOCIATE, dstAddress));
+                                    ctx.writeAndFlush(Socks5.toCommandRequest(type, dstAddress));
                                 }
                             },
                             new SimpleChannelInboundHandler<Socks5CommandResponse>() {

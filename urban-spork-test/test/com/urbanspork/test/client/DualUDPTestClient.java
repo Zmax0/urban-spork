@@ -1,7 +1,7 @@
 package com.urbanspork.test.client;
 
-import com.urbanspork.test.server.DelayedUDPTestServer;
-import com.urbanspork.test.server.SimpleUDPTestServer;
+import com.urbanspork.test.server.udp.DelayedUDPTestServer;
+import com.urbanspork.test.server.udp.SimpleUDPTestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
