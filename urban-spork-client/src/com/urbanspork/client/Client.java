@@ -60,7 +60,7 @@ public class Client {
     }
 
     public static void main(String[] args) throws Exception {
-        launch(ConfigHandler.read(ClientConfig.class));
+        launch(ConfigHandler.DEFAULT.read());
     }
 
 }

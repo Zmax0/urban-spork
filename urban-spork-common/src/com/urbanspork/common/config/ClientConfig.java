@@ -58,7 +58,7 @@ public class ClientConfig {
     }
 
     public void save() throws IOException {
-        ConfigHandler.write(this);
+        ConfigHandler.DEFAULT.write(this);
     }
 
     @Override
