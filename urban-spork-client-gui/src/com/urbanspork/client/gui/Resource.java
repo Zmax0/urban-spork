@@ -31,7 +31,7 @@ public class Resource {
         CONSOLE_CSS = Objects.requireNonNull(classLoader.getResource(resourcePath + CONSOLE_CSS_NAME));
         ClientConfig config = null;
         try {
-            config = ConfigHandler.read(ClientConfig.class);
+            config = ConfigHandler.DEFAULT.read();
         } catch (IOException e) {
             logger.error("Failed to load config file", e);
         }
