@@ -1,6 +1,5 @@
 package com.urbanspork.common.config;
 
-import java.io.IOException;
 import java.util.List;
 
 public class ClientConfig {
@@ -57,7 +56,7 @@ public class ClientConfig {
         return current;
     }
 
-    public void save() throws IOException {
+    public void save() {
         ConfigHandler.DEFAULT.write(this);
     }
 

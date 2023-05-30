@@ -19,6 +19,7 @@
     <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
     <maven-compiler-plugin>3.11.0</maven-compiler-plugin>
     <jacoco-maven-plugin>0.8.10</jacoco-maven-plugin>
+    <build-helper-maven-plugin.version>3.4.0</build-helper-maven-plugin.version>
     <junit.jupiter.version>5.9.2</junit.jupiter.version>
     <jackson.version>2.14.2</jackson.version>
     <logback.version>1.4.6</logback.version>
@@ -115,11 +116,19 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven-surefire-plugin}</version>
+          <configuration>
+            <forkCount>1</forkCount>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.jacoco</groupId>
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>${jacoco-maven-plugin}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>${build-helper-maven-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -138,10 +147,15 @@
         <artifactId>jacoco-maven-plugin</artifactId>
         <executions>
           <execution>
-            <id>prepare-agent</id>
-            <phase>test</phase>
+            <id>default-prepare-agent</id>
             <goals>
               <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>default-report</id>
+            <goals>
+              <goal>report</goal>
             </goals>
           </execution>
         </executions>

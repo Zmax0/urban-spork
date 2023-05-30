@@ -11,7 +11,6 @@ import com.urbanspork.common.config.ServerConfig;
 import java.awt.*;
 import java.awt.TrayIcon.MessageType;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +58,7 @@ public class ServersMenuItem implements TrayMenuItemBuilder {
             }
             try {
                 config.save();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 Tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
                 return;
             }

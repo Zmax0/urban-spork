@@ -394,36 +394,36 @@ public class Console extends Preloader {
     private void initClientConfigPortTextField() {
         clientConfigPortTextField.getValidators().add(requiredFieldValidator);
         clientConfigPortTextField.textProperty().addListener(
-                (o, oldValue, newValue) -> {
-                    clientConfigPortTextField.validate();
-                    int port = clientConfigPortTextField.getIntValue();
-                    if (clientConfig.getPort() != port) {
-                        clientConfig.setPort(port);
-                        Proxy.launch();
-                        saveConfig();
-                    }
-                });
+            (o, oldValue, newValue) -> {
+                clientConfigPortTextField.validate();
+                int port = clientConfigPortTextField.getIntValue();
+                if (clientConfig.getPort() != port) {
+                    clientConfig.setPort(port);
+                    Proxy.launch();
+                    saveConfig();
+                }
+            });
     }
 
     private void initCurrentConfigPasswordPasswordField() {
         currentConfigPasswordPasswordField.getValidators().add(requiredFieldValidator);
         currentConfigPasswordPasswordField.focusedProperty().addListener(
-                (o, oldValue, newValue) -> {
-                    if (Boolean.TRUE.equals(oldValue) && Boolean.FALSE.equals(newValue)) {
-                        currentConfigPasswordPasswordField.validate();
-                    }
-                });
+            (o, oldValue, newValue) -> {
+                if (Boolean.TRUE.equals(oldValue) && Boolean.FALSE.equals(newValue)) {
+                    currentConfigPasswordPasswordField.validate();
+                }
+            });
         initCurrentConfigPasswordCommonEvent(currentConfigPasswordPasswordField);
     }
 
     private void initCurrentConfigPasswordTextField() {
         currentConfigPasswordTextField.getValidators().add(requiredFieldValidator);
         currentConfigPasswordTextField.focusedProperty().addListener(
-                (o, oldValue, newValue) -> {
-                    if (Boolean.TRUE.equals(oldValue) && Boolean.FALSE.equals(newValue)) {
-                        currentConfigPasswordTextField.validate();
-                    }
-                });
+            (o, oldValue, newValue) -> {
+                if (Boolean.TRUE.equals(oldValue) && Boolean.FALSE.equals(newValue)) {
+                    currentConfigPasswordTextField.validate();
+                }
+            });
         initCurrentConfigPasswordCommonEvent(currentConfigPasswordTextField);
     }
 
@@ -444,7 +444,7 @@ public class Console extends Preloader {
     private void initCurrentConfigPortTextField() {
         currentConfigPortTextField.getValidators().add(requiredFieldValidator);
         currentConfigPortTextField.textProperty().addListener(
-                (o, oldValue, newValue) -> currentConfigPortTextField.validate());
+            (o, oldValue, newValue) -> currentConfigPortTextField.validate());
     }
 
     private void initCurrentConfigCipherChoiceBox() {
@@ -454,7 +454,7 @@ public class Console extends Preloader {
         // currentConfigHostTextField
         currentConfigHostTextField.getValidators().add(requiredFieldValidator);
         currentConfigHostTextField.textProperty().addListener(
-                (o, oldValue, newValue) -> currentConfigHostTextField.validate());
+            (o, oldValue, newValue) -> currentConfigHostTextField.validate());
     }
 
     private void initCurrentConfigProtocolChoiceBox() {
@@ -470,31 +470,31 @@ public class Console extends Preloader {
         MultipleSelectionModel<ServerConfig> selectionModel = serverConfigJFXListView.getSelectionModel();
         selectionModel.select(clientConfig.getIndex());
         selectionModel.selectedItemProperty().addListener(
-                new ChangeListener<>() {
+            new ChangeListener<>() {
 
-                    private boolean changing = false;
+                private boolean changing = false;
 
-                    @Override
-                    public void changed(ObservableValue<? extends ServerConfig> observable, ServerConfig oldValue, ServerConfig newValue) {
-                        if (serverConfigObservableList.contains(oldValue)) {
-                            if (validate()) {
-                                resetValidation();
-                                pack(oldValue);
-                                serverConfigJFXListView.refresh();
-                                display(newValue);
-                            } else if (!changing) {
-                                changing = true;
-                                Platform.runLater(() -> {
-                                    selectionModel.select(oldValue);
-                                    changing = false;
-                                });
-                            }
-                        } else {
+                @Override
+                public void changed(ObservableValue<? extends ServerConfig> observable, ServerConfig oldValue, ServerConfig newValue) {
+                    if (serverConfigObservableList.contains(oldValue)) {
+                        if (validate()) {
                             resetValidation();
+                            pack(oldValue);
+                            serverConfigJFXListView.refresh();
                             display(newValue);
+                        } else if (!changing) {
+                            changing = true;
+                            Platform.runLater(() -> {
+                                selectionModel.select(oldValue);
+                                changing = false;
+                            });
                         }
+                    } else {
+                        resetValidation();
+                        display(newValue);
                     }
-                });
+                }
+            });
     }
 
     private boolean validate() {
@@ -545,12 +545,7 @@ public class Console extends Preloader {
     }
 
     private void saveConfig() {
-        try {
-            clientConfig.save();
-        } catch (IOException e) {
-            logger.error("Saving file failed", e);
-            return;
-        }
+        clientConfig.save();
         Tray.refresh();
     }
 

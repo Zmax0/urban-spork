@@ -41,6 +41,7 @@ public class ShadowsocksUDPAssociateHandler extends ChannelInboundHandlerAdapter
             return;
         }
         if (request.dstAddr() == null || request.dstPort() == 0) {
+            logger.error("Illegal destination address");
             channel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()));
             return;
         }

@@ -1,11 +1,7 @@
 package com.urbanspork.test;
 
 import com.urbanspork.client.Client;
-import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.config.ClientConfig;
-import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.shadowsocks.network.Network;
 import com.urbanspork.common.protocol.socks.Socks5Handshaking;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.server.Server;
@@ -20,37 +16,59 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.*;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.Future;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class TCPTestCase {
 
     private static final int[] PORTS = TestUtil.freePorts(3);
     private static final int DST_PORT = PORTS[2];
     private final ExecutorService service = Executors.newFixedThreadPool(3);
-    private final String hostname = "localhost";
-    private final ClientConfig config = initConfig();
+    private final ClientConfig config = TestUtil.testConfig(PORTS[0], PORTS[1]);
 
     @BeforeAll
     void init() {
-        service.submit(() -> EchoTestServer.launch(DST_PORT));
-        service.submit(() -> Server.launch(config.getServers()));
-        service.submit(() -> Client.launch(config));
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(5));
+        LoggerFactory.getLogger(TCPTestCase.class);
+        config.save();
     }
 
+    @DisplayName("Launch echo test server")
     @Test
-    void testNoAuthConnect() throws InterruptedException, ExecutionException {
+    @Order(1)
+    void launchEchoTestServer() {
+        Future<?> future = service.submit(() -> EchoTestServer.launch(DST_PORT));
+        Assertions.assertFalse(future.isDone());
+    }
+
+    @DisplayName("Launch client")
+    @Test
+    @Order(2)
+    void launchClient() {
+        Future<?> future = service.submit(() -> Client.main(null));
+        Assertions.assertFalse(future.isDone());
+    }
+
+    @DisplayName("Launch server")
+    @Test
+    @Order(3)
+    void launchServer() {
+        Future<?> future = service.submit(() -> Server.main(null));
+        Assertions.assertFalse(future.isDone());
+    }
+
+    @DisplayName("Handshake and send bytes")
+    @Test
+    @Order(4)
+    void handshakeAndSendBytes() throws InterruptedException, ExecutionException {
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
-        InetSocketAddress dstAddress = new InetSocketAddress(hostname, DST_PORT);
+        InetSocketAddress dstAddress = new InetSocketAddress("localhost", DST_PORT);
         Socks5Handshaking.Result result = Socks5Handshaking.noAuth(Socks5CommandType.CONNECT, proxyAddress, dstAddress).await().get();
         Assertions.assertEquals(Socks5CommandStatus.SUCCESS, result.response().status());
         byte[] bytes = Dice.randomBytes(1024);
@@ -77,24 +95,5 @@ class TCPTestCase {
     @AfterAll
     void shutdown() {
         service.shutdown();
-    }
-
-    private ClientConfig initConfig() {
-        ClientConfig config = new ClientConfig();
-        config.setPort(PORTS[1]);
-        config.setIndex(0);
-        config.setServers(List.of(initServerConfig()));
-        return config;
-    }
-
-    private ServerConfig initServerConfig() {
-        ServerConfig serverConfig = new ServerConfig();
-        serverConfig.setHost(hostname);
-        serverConfig.setPort(PORTS[0]);
-        serverConfig.setProtocol(Protocols.shadowsocks);
-        serverConfig.setCipher(SupportedCipher.aes_256_gcm);
-        serverConfig.setPassword(UUID.randomUUID().toString());
-        serverConfig.setNetworks(new Network[]{Network.TCP});
-        return serverConfig;
     }
 }

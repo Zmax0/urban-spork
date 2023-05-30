@@ -1,6 +1,7 @@
 package com.urbanspork.common.config;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 public enum ConfigHandler {
 
@@ -14,11 +15,19 @@ public enum ConfigHandler {
         this.holder = holder;
     }
 
-    public ClientConfig read() throws IOException {
-        return codec.decode(holder.read());
+    public ClientConfig read() {
+        try {
+            return codec.decode(holder.read());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    public void write(ClientConfig config) throws IOException {
-        holder.write(codec.encode(config));
+    public void write(ClientConfig config) {
+        try {
+            holder.write(codec.encode(config));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }
