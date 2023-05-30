@@ -15,6 +15,8 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ClientSocksHandshakeTestCase {
@@ -32,6 +34,7 @@ class ClientSocksHandshakeTestCase {
         ClientConfig config = TestUtil.testConfig(PORTS[0], PORTS[1]);
         config.getServers().get(0).setProtocol(Protocols.vmess);
         future = Executors.newFixedThreadPool(1).submit(() -> Client.launch(config));
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", TestDice.randomPort());
         assertFailedHandshake(proxyAddress, dstAddress1);
@@ -41,6 +44,7 @@ class ClientSocksHandshakeTestCase {
     void testIllegalDstAddress() throws InterruptedException, ExecutionException {
         ClientConfig config = TestUtil.testConfig(PORTS[0], PORTS[1]);
         future = Executors.newFixedThreadPool(1).submit(() -> Client.launch(config));
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", 0);
         assertFailedHandshake(proxyAddress, dstAddress1);
