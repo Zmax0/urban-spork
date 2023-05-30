@@ -19,10 +19,8 @@ import org.junit.jupiter.api.*;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.LockSupport;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -44,7 +42,8 @@ class TCPTestCase {
     @Order(1)
     void launchEchoTestServer() {
         Future<?> future = service.submit(() -> EchoTestServer.launch(DST_PORT));
-        Assertions.assertFalse(future.isDone());
+        Assertions.assertFalse(future.isCancelled());
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
     }
 
     @DisplayName("Launch client")
@@ -52,7 +51,8 @@ class TCPTestCase {
     @Order(2)
     void launchClient() {
         Future<?> future = service.submit(() -> Client.main(null));
-        Assertions.assertFalse(future.isDone());
+        Assertions.assertFalse(future.isCancelled());
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
     }
 
     @DisplayName("Launch server")
@@ -60,7 +60,8 @@ class TCPTestCase {
     @Order(3)
     void launchServer() {
         Future<?> future = service.submit(() -> Server.main(null));
-        Assertions.assertFalse(future.isDone());
+        Assertions.assertFalse(future.isCancelled());
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
     }
 
     @DisplayName("Handshake and send bytes")

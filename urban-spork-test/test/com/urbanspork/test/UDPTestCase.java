@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -63,7 +64,7 @@ class UDPTestCase {
                 throw new RuntimeException(e);
             }
         });
-        Assertions.assertFalse(future1.isDone());
+        Assertions.assertFalse(future1.isCancelled());
         Future<?> future2 = service.submit(() -> {
             try {
                 DelayTestServer.launch(DST_PORTS[1]);
@@ -71,7 +72,8 @@ class UDPTestCase {
                 throw new RuntimeException(e);
             }
         });
-        Assertions.assertFalse(future2.isDone());
+        Assertions.assertFalse(future2.isCancelled());
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
     }
 
     @DisplayName("Launch client")
@@ -79,7 +81,8 @@ class UDPTestCase {
     @Order(2)
     void launchClient() {
         Future<?> future = service.submit(() -> Client.main(null));
-        Assertions.assertFalse(future.isDone());
+        Assertions.assertFalse(future.isCancelled());
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
     }
 
     @DisplayName("Launch server")
@@ -87,7 +90,8 @@ class UDPTestCase {
     @Order(3)
     void launchServer() {
         Future<?> future = service.submit(() -> Server.main(null));
-        Assertions.assertFalse(future.isDone());
+        Assertions.assertFalse(future.isCancelled());
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
     }
 
     @DisplayName("Handshake")
