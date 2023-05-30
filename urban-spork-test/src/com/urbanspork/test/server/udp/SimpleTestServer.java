@@ -4,9 +4,10 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.util.Date;
+import java.text.MessageFormat;
+import java.util.logging.Logger;
 
-public class SimpleUDPTestServer {
+public class SimpleTestServer {
 
     public static final int PORT = 16800;
 
@@ -15,19 +16,22 @@ public class SimpleUDPTestServer {
     }
 
     public static void launch(int port) throws IOException {
+        Logger logger = Logger.getGlobal();
         try (DatagramSocket socket = new DatagramSocket(port)) {
-            System.out.printf("%tc - UDP test server startup [%d]\n", new Date(), socket.getLocalPort());
+            String startupInfo = MessageFormat.format("UDP test server startup [{0,number,#}]", socket.getLocalPort());
+            logger.info(startupInfo);
             for (; ; ) {
                 byte[] data = new byte[1024];
                 DatagramPacket packet = new DatagramPacket(data, data.length);
                 socket.receive(packet);
                 String str = new String(data, 0, packet.getLength());
                 InetSocketAddress address = new InetSocketAddress(packet.getAddress().getHostAddress(), packet.getPort());
-                System.out.printf("%tc - Receive msg from [%s]: %s", new Date(), address, str);
-                byte[] bytes = String.format("Received your msg [%s] ^_^", str).getBytes();
+                String receiveMsgInfo = MessageFormat.format("Receive msg from [{0}]: {1}", address, str);
+                logger.info(receiveMsgInfo);
+                byte[] bytes = MessageFormat.format("Received your msg [{0}] ^_^", str).getBytes();
                 DatagramPacket msg = new DatagramPacket(bytes, bytes.length, address);
                 socket.send(msg);
-                System.out.println(" => Callback");
+                logger.info("Callback");
                 if ("close".equals(str)) {
                     break;
                 }

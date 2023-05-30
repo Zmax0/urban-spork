@@ -2,16 +2,11 @@ package com.urbanspork.client.gui;
 
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
 public class Resource {
-
-    private static final Logger logger = LoggerFactory.getLogger(Resource.class);
 
     private static final String TRAY_ICON_NAME = "ticon.png";
     private static final String PROGRAM_ICON_NAME = "picon.png";
@@ -29,15 +24,10 @@ public class Resource {
         PROGRAM_ICON = Objects.requireNonNull(classLoader.getResource(resourcePath + PROGRAM_ICON_NAME));
         TRAY_ICON = Objects.requireNonNull(classLoader.getResource(resourcePath + TRAY_ICON_NAME));
         CONSOLE_CSS = Objects.requireNonNull(classLoader.getResource(resourcePath + CONSOLE_CSS_NAME));
-        ClientConfig config = null;
-        try {
-            config = ConfigHandler.DEFAULT.read();
-        } catch (IOException e) {
-            logger.error("Failed to load config file", e);
-        }
+        ClientConfig config = ConfigHandler.DEFAULT.read();
         if (config == null) {
             config = new ClientConfig();
-            config.setServers(new ArrayList<>(16));
+            config.setServers(new ArrayList<>());
         }
         String language = config.getLanguage();
         ResourceBundle bundle;

@@ -6,8 +6,8 @@ import com.urbanspork.common.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.socks.Socks5DatagramPacketDecoder;
 import com.urbanspork.common.protocol.socks.Socks5DatagramPacketEncoder;
 import com.urbanspork.common.protocol.socks.Socks5Handshaking;
-import com.urbanspork.test.server.udp.DelayedUDPTestServer;
-import com.urbanspork.test.server.udp.SimpleUDPTestServer;
+import com.urbanspork.test.server.udp.DelayTestServer;
+import com.urbanspork.test.server.udp.SimpleTestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -26,21 +26,24 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 
-public class Socks5UDPProxyTestClient {
+public class Socks5UDPTestClient {
 
-    private static final Logger logger = LoggerFactory.getLogger(Socks5UDPProxyTestClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(Socks5UDPTestClient.class);
+    private static final String LOCALHOST = "localhost";
 
     public static void main(String[] args) throws InterruptedException, IOException, ExecutionException {
         int proxyPort = 1089;
-        String hostname = "localhost";
+        String hostname;
         try {
             ClientConfig config = ConfigHandler.DEFAULT.read();
             proxyPort = config.getPort();
             hostname = config.getCurrent().getHost();
-        } catch (Exception ignore) {}
-        InetSocketAddress proxyAddress = new InetSocketAddress("localhost", proxyPort);
-        InetSocketAddress dstAddress1 = new InetSocketAddress(hostname, SimpleUDPTestServer.PORT);
-        InetSocketAddress dstAddress2 = new InetSocketAddress(hostname, DelayedUDPTestServer.PORT);
+        } catch (Exception ignore) {
+            hostname = LOCALHOST;
+        }
+        InetSocketAddress proxyAddress = new InetSocketAddress(LOCALHOST, proxyPort);
+        InetSocketAddress dstAddress1 = new InetSocketAddress(hostname, SimpleTestServer.PORT);
+        InetSocketAddress dstAddress2 = new InetSocketAddress(hostname, DelayTestServer.PORT);
         Socks5Handshaking.Result result1 = Socks5Handshaking.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress1).await().get();
         Socks5Handshaking.Result result2 = Socks5Handshaking.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress2).await().get();
         int bndPort1 = result1.response().bndPort();
@@ -72,9 +75,9 @@ public class Socks5UDPProxyTestClient {
             .bind(0).sync().channel();
         logger.info("Bind local address {}", channel.localAddress());
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-        System.err.println("Enter text (quit to end)");
-        InetSocketAddress socksAddress1 = new InetSocketAddress("localhost", bndPort1);
-        InetSocketAddress socksAddress2 = new InetSocketAddress("localhost", bndPort2);
+        logger.info("Enter text (quit to end)");
+        InetSocketAddress socksAddress1 = new InetSocketAddress(LOCALHOST, bndPort1);
+        InetSocketAddress socksAddress2 = new InetSocketAddress(LOCALHOST, bndPort2);
         for (; ; ) {
             String line = in.readLine();
             if (line == null || "quit".equalsIgnoreCase(line)) {

@@ -23,6 +23,10 @@ public class Client {
 
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
+    public static void main(String[] args) {
+        launch(ConfigHandler.DEFAULT.read());
+    }
+
     public static void launch(ClientConfig config) {
         logger.info("Launching client => {}", config);
         int port = config.getPort();
@@ -58,9 +62,4 @@ public class Client {
             workerGroup.shutdownGracefully();
         }
     }
-
-    public static void main(String[] args) throws Exception {
-        launch(ConfigHandler.DEFAULT.read());
-    }
-
 }

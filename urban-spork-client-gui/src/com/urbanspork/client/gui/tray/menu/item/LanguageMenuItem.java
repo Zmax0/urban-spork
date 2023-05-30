@@ -9,7 +9,6 @@ import com.urbanspork.common.config.ConfigHandler;
 import java.awt.*;
 import java.awt.TrayIcon.MessageType;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -42,7 +41,7 @@ public class LanguageMenuItem implements TrayMenuItemBuilder {
             config.setLanguage(item.getName());
             try {
                 ConfigHandler.DEFAULT.write(config);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 Tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
                 return;
             }

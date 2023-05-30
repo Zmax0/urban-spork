@@ -14,7 +14,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,7 +22,7 @@ public class Server {
 
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         List<ServerConfig> configs = ConfigHandler.DEFAULT.read().getServers();
         if (configs.isEmpty()) {
             throw new IllegalArgumentException("Server config in the file is empty");
@@ -38,7 +37,7 @@ public class Server {
         launch(configs);
     }
 
-    public static void launch(List<ServerConfig> configs) {
+    private static void launch(List<ServerConfig> configs) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         ExecutorService pool = Executors.newFixedThreadPool(configs.size());
