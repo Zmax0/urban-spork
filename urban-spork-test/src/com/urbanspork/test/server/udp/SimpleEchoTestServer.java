@@ -7,7 +7,7 @@ import java.net.InetSocketAddress;
 import java.text.MessageFormat;
 import java.util.logging.Logger;
 
-public class SimpleTestServer {
+public class SimpleEchoTestServer {
 
     public static final int PORT = 16800;
 

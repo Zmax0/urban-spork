@@ -57,7 +57,7 @@ public class Proxy {
         @Override
         public Thread newThread(Runnable r) {
             Thread thread = new Thread(r);
-            thread.setName("UrbanSporkClient-localhost:" + config.getPort());
+            thread.setName("urban-spork-" + config.getPort());
             return thread;
         }
     }

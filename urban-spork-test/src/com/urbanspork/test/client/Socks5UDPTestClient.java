@@ -6,8 +6,8 @@ import com.urbanspork.common.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.socks.Socks5DatagramPacketDecoder;
 import com.urbanspork.common.protocol.socks.Socks5DatagramPacketEncoder;
 import com.urbanspork.common.protocol.socks.Socks5Handshaking;
-import com.urbanspork.test.server.udp.DelayTestServer;
-import com.urbanspork.test.server.udp.SimpleTestServer;
+import com.urbanspork.test.server.udp.DelayedEchoTestServer;
+import com.urbanspork.test.server.udp.SimpleEchoTestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -42,8 +42,8 @@ public class Socks5UDPTestClient {
             hostname = LOCALHOST;
         }
         InetSocketAddress proxyAddress = new InetSocketAddress(LOCALHOST, proxyPort);
-        InetSocketAddress dstAddress1 = new InetSocketAddress(hostname, SimpleTestServer.PORT);
-        InetSocketAddress dstAddress2 = new InetSocketAddress(hostname, DelayTestServer.PORT);
+        InetSocketAddress dstAddress1 = new InetSocketAddress(hostname, SimpleEchoTestServer.PORT);
+        InetSocketAddress dstAddress2 = new InetSocketAddress(hostname, DelayedEchoTestServer.PORT);
         Socks5Handshaking.Result result1 = Socks5Handshaking.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress1).await().get();
         Socks5Handshaking.Result result2 = Socks5Handshaking.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress2).await().get();
         int bndPort1 = result1.response().bndPort();

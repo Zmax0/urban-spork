@@ -2,18 +2,20 @@ package com.urbanspork.test;
 
 import com.urbanspork.client.Client;
 import com.urbanspork.common.config.ClientConfig;
+import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.socks.Socks5DatagramPacketDecoder;
 import com.urbanspork.common.protocol.socks.Socks5DatagramPacketEncoder;
 import com.urbanspork.common.protocol.socks.Socks5Handshaking;
 import com.urbanspork.server.Server;
-import com.urbanspork.test.server.udp.DelayTestServer;
-import com.urbanspork.test.server.udp.SimpleTestServer;
+import com.urbanspork.test.server.udp.DelayedEchoTestServer;
+import com.urbanspork.test.server.udp.SimpleEchoTestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramPacket;
+import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
@@ -30,8 +32,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -41,9 +43,10 @@ class UDPTestCase {
 
     private static final int[] PORTS = TestUtil.freePorts(4);
     private static final int[] DST_PORTS = Arrays.copyOfRange(PORTS, 2, 4);
+    private final ClientConfig config = TestUtil.testConfig(PORTS[0], PORTS[1]);
     private final ExecutorService service = Executors.newFixedThreadPool(4);
     private final EventLoopGroup group = new NioEventLoopGroup(1);
-    private final ClientConfig config = TestUtil.testConfig(PORTS[0], PORTS[1]);
+    private final DefaultEventLoop executor = new DefaultEventLoop();
     private final Channel channel = initChannel();
     private Consumer<TernaryDatagramPacket> consumer;
 
@@ -59,7 +62,7 @@ class UDPTestCase {
     void launchUDPTestServer() {
         Future<?> future1 = service.submit(() -> {
             try {
-                SimpleTestServer.launch(DST_PORTS[0]);
+                SimpleEchoTestServer.launch(DST_PORTS[0]);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -67,31 +70,31 @@ class UDPTestCase {
         Assertions.assertFalse(future1.isCancelled());
         Future<?> future2 = service.submit(() -> {
             try {
-                DelayTestServer.launch(DST_PORTS[1]);
+                DelayedEchoTestServer.launch(DST_PORTS[1]);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         });
         Assertions.assertFalse(future2.isCancelled());
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
     }
 
     @DisplayName("Launch client")
     @Test
     @Order(2)
-    void launchClient() {
-        Future<?> future = service.submit(() -> Client.main(null));
-        Assertions.assertFalse(future.isCancelled());
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+    void launchClient() throws InterruptedException, ExecutionException {
+        Promise<ServerSocketChannel> promise = new DefaultPromise<>(executor);
+        service.submit(() -> Client.launch(config, promise));
+        Assertions.assertEquals(config.getPort(), promise.await().get().localAddress().getPort());
     }
 
     @DisplayName("Launch server")
     @Test
     @Order(3)
-    void launchServer() {
-        Future<?> future = service.submit(() -> Server.main(null));
-        Assertions.assertFalse(future.isCancelled());
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+    void launchServer() throws InterruptedException, ExecutionException {
+        Promise<List<ServerSocketChannel>> promise = new DefaultPromise<>(executor);
+        List<ServerConfig> configs = config.getServers();
+        service.submit(() -> Server.launch(configs, promise));
+        Assertions.assertEquals(configs.get(0).getPort(), promise.await().get().get(0).localAddress().getPort());
     }
 
     @DisplayName("Handshake")
@@ -127,14 +130,14 @@ class UDPTestCase {
         DatagramPacket data = new DatagramPacket(Unpooled.copiedBuffer(str.getBytes()), dstAddress);
         TernaryDatagramPacket msg = new TernaryDatagramPacket(data, socksAddress);
         channel.writeAndFlush(msg);
-        Assertions.assertTrue(promise.await(DelayTestServer.MAX_DELAYED_SECOND, TimeUnit.SECONDS));
+        Assertions.assertTrue(promise.await(DelayedEchoTestServer.MAX_DELAYED_SECOND, TimeUnit.SECONDS));
         executor.shutdownGracefully();
     }
 
     @AfterAll
     void shutdown() {
         group.shutdownGracefully();
-        service.shutdown();
+        service.shutdownNow();
     }
 
     private Channel initChannel() {
