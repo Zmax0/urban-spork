@@ -27,6 +27,22 @@ public class ServerConfigTestCase {
         Assertions.assertFalse(config.udpEnabled());
     }
 
+    @Test
+    void testToString() {
+        ServerConfig config = testConfig(TestDice.randomPort());
+        String string = config.toString();
+        Assertions.assertTrue(string.contains(config.getProtocol().toString()));
+        Assertions.assertTrue(string.contains(config.getCipher().toString()));
+    }
+
+    @Test
+    void testListItemText() {
+        ServerConfig config = testConfig(TestDice.randomPort());
+        String string = config.listItemText();
+        Assertions.assertTrue(string.contains(config.getHost()));
+        Assertions.assertTrue(string.contains(String.valueOf(config.getPort())));
+    }
+
     public static ServerConfig testConfig(int port) {
         ServerConfig serverConfig = new ServerConfig();
         serverConfig.setHost("localhost");

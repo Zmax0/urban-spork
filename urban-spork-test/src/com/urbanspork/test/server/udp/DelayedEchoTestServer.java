@@ -12,7 +12,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-public class DelayTestServer {
+public class DelayedEchoTestServer {
 
     public static final int PORT = 16801;
     public static final int MAX_DELAYED_SECOND = 5;

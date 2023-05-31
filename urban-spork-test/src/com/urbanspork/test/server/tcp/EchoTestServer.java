@@ -5,16 +5,18 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.Promise;
 
 public class EchoTestServer {
 
     public static final int PORT = 16802;
 
     public static void main(String[] args) {
-        launch(PORT);
+        launch(PORT, new DefaultPromise<>() {});
     }
 
-    public static void launch(int port) {
+    public static void launch(int port, Promise<Channel> promise) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -31,7 +33,13 @@ public class EchoTestServer {
                         });
                     }
                 })
-                .bind(port).sync().channel().closeFuture().sync();
+                .bind(port).addListener((ChannelFutureListener) future -> {
+                    if (future.isSuccess()) {
+                        promise.setSuccess(future.channel());
+                    } else {
+                        promise.setFailure(future.cause());
+                    }
+                }).sync().channel().closeFuture().sync();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {

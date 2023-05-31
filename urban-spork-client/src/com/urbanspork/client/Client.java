@@ -9,13 +9,13 @@ import com.urbanspork.common.protocol.socks.Socks5DatagramPacketDecoder;
 import com.urbanspork.common.protocol.socks.Socks5DatagramPacketEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +28,10 @@ public class Client {
     }
 
     public static void launch(ClientConfig config) {
-        logger.info("Launching client => {}", config);
+        launch(config, new DefaultPromise<>() {});
+    }
+
+    public static void launch(ClientConfig config, Promise<ServerSocketChannel> promise) {
         int port = config.getPort();
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -54,7 +57,17 @@ public class Client {
                 .childOption(ChannelOption.TCP_NODELAY, false)
                 .childOption(ChannelOption.SO_LINGER, 1)
                 .childHandler(new ClientSocksInitializer(current, port))
-                .bind(port).sync().channel().closeFuture().sync();
+                .bind(port).sync().addListener((ChannelFutureListener) future -> {
+                    if (future.isSuccess()) {
+                        Channel channel = future.channel();
+                        logger.info("Launch client => {}", channel);
+                        promise.setSuccess((ServerSocketChannel) channel);
+                    } else {
+                        Throwable cause = future.cause();
+                        logger.error("Launch client failed", cause);
+                        promise.setFailure(cause);
+                    }
+                }).channel().closeFuture().sync();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {

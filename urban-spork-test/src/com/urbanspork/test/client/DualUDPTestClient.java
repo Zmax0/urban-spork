@@ -1,7 +1,7 @@
 package com.urbanspork.test.client;
 
-import com.urbanspork.test.server.udp.DelayTestServer;
-import com.urbanspork.test.server.udp.SimpleTestServer;
+import com.urbanspork.test.server.udp.DelayedEchoTestServer;
+import com.urbanspork.test.server.udp.SimpleEchoTestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -42,8 +42,8 @@ public class DualUDPTestClient {
             })
             .bind(0).sync().channel();
         logger.info("Bind local address {}", channel.localAddress());
-        InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", SimpleTestServer.PORT);
-        InetSocketAddress dstAddress2 = new InetSocketAddress("localhost", DelayTestServer.PORT);
+        InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", SimpleEchoTestServer.PORT);
+        InetSocketAddress dstAddress2 = new InetSocketAddress("localhost", DelayedEchoTestServer.PORT);
         sendMsg(channel, dstAddress1, dstAddress2);
         bossGroup.shutdownGracefully();
     }

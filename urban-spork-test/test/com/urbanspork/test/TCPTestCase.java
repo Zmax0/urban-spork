@@ -2,6 +2,7 @@ package com.urbanspork.test;
 
 import com.urbanspork.client.Client;
 import com.urbanspork.common.config.ClientConfig;
+import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.socks.Socks5Handshaking;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.server.Server;
@@ -9,18 +10,20 @@ import com.urbanspork.test.server.tcp.EchoTestServer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
+import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
+import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.*;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.*;
-import java.util.concurrent.locks.LockSupport;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -28,8 +31,9 @@ class TCPTestCase {
 
     private static final int[] PORTS = TestUtil.freePorts(3);
     private static final int DST_PORT = PORTS[2];
-    private final ExecutorService service = Executors.newFixedThreadPool(3);
     private final ClientConfig config = TestUtil.testConfig(PORTS[0], PORTS[1]);
+    private final ExecutorService service = Executors.newFixedThreadPool(3);
+    private final DefaultEventLoop executor = new DefaultEventLoop();
 
     @BeforeAll
     void init() {
@@ -40,28 +44,30 @@ class TCPTestCase {
     @DisplayName("Launch echo test server")
     @Test
     @Order(1)
-    void launchEchoTestServer() {
-        Future<?> future = service.submit(() -> EchoTestServer.launch(DST_PORT));
-        Assertions.assertFalse(future.isCancelled());
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+    void launchEchoTestServer() throws InterruptedException, ExecutionException {
+        Promise<Channel> promise = new DefaultPromise<>(executor);
+        service.submit(() -> EchoTestServer.launch(DST_PORT, promise));
+        InetSocketAddress address = (InetSocketAddress) promise.await().get().localAddress();
+        Assertions.assertEquals(DST_PORT, address.getPort());
     }
 
     @DisplayName("Launch client")
     @Test
     @Order(2)
-    void launchClient() {
-        Future<?> future = service.submit(() -> Client.main(null));
-        Assertions.assertFalse(future.isCancelled());
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+    void launchClient() throws InterruptedException, ExecutionException {
+        Promise<ServerSocketChannel> promise = new DefaultPromise<>(executor);
+        service.submit(() -> Client.launch(config, promise));
+        Assertions.assertEquals(config.getPort(), promise.await().get().localAddress().getPort());
     }
 
     @DisplayName("Launch server")
     @Test
     @Order(3)
-    void launchServer() {
-        Future<?> future = service.submit(() -> Server.main(null));
-        Assertions.assertFalse(future.isCancelled());
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+    void launchServer() throws InterruptedException, ExecutionException {
+        Promise<List<ServerSocketChannel>> promise = new DefaultPromise<>(executor);
+        List<ServerConfig> configs = config.getServers();
+        service.submit(() -> Server.launch(configs, promise));
+        Assertions.assertEquals(configs.get(0).getPort(), promise.await().get().get(0).localAddress().getPort());
     }
 
     @DisplayName("Handshake and send bytes")
@@ -95,6 +101,6 @@ class TCPTestCase {
 
     @AfterAll
     void shutdown() {
-        service.shutdown();
+        service.shutdownNow();
     }
 }
