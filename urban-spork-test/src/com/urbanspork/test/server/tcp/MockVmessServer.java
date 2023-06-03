@@ -7,13 +7,10 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Promise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class EchoTestServer {
+public class MockVmessServer {
 
-    private static final Logger logger = LoggerFactory.getLogger(EchoTestServer.class);
-    public static final int PORT = 16802;
+    public static final int PORT = 16803;
 
     public static void main(String[] args) {
         launch(PORT, new DefaultPromise<>() {});
@@ -28,10 +25,10 @@ public class EchoTestServer {
                 .childHandler(new ChannelInitializer<>() {
                     @Override
                     protected void initChannel(Channel ch) {
-                        ch.pipeline().addLast(new SimpleChannelInboundHandler<ByteBuf>() {
+                        ch.pipeline().addLast(
+                            new SimpleChannelInboundHandler<ByteBuf>() {
                             @Override
                             protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
-                                logger.info("Receive msg and send back");
                                 ctx.writeAndFlush(msg);
                             }
                         });

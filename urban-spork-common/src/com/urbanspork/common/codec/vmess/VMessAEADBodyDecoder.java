@@ -1,16 +1,16 @@
-package com.urbanspork.client.vmess;
+package com.urbanspork.common.codec.vmess;
 
 import com.urbanspork.common.codec.ChunkSizeCodec;
 import com.urbanspork.common.codec.aead.AEADAuthenticator;
 import com.urbanspork.common.codec.aead.AEADPayloadDecoder;
 
-class ClientBodyDecoder implements AEADPayloadDecoder {
+public class VMessAEADBodyDecoder implements AEADPayloadDecoder {
 
     private final AEADAuthenticator authenticator;
     private final ChunkSizeCodec chunkSizeDecoder;
     private int payloadLength = INIT_PAYLOAD_LENGTH;
 
-    public ClientBodyDecoder(AEADAuthenticator authenticator, ChunkSizeCodec chunkSizeDecoder) {
+    public VMessAEADBodyDecoder(AEADAuthenticator authenticator, ChunkSizeCodec chunkSizeDecoder) {
         this.authenticator = authenticator;
         this.chunkSizeDecoder = chunkSizeDecoder;
     }

@@ -1,4 +1,4 @@
-package com.urbanspork.common.protocol.vmess.cons;
+package com.urbanspork.common.protocol.vmess.header;
 
 public enum RequestCommand {
 

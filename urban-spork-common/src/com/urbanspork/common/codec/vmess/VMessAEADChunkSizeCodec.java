@@ -1,13 +1,13 @@
-package com.urbanspork.client.vmess;
+package com.urbanspork.common.codec.vmess;
 
 import com.urbanspork.common.codec.ChunkSizeCodec;
 import com.urbanspork.common.codec.aead.AEADAuthenticator;
 import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
-record ClientAEADChunkSizeCodec(AEADAuthenticator auth) implements ChunkSizeCodec {
+public record VMessAEADChunkSizeCodec(AEADAuthenticator auth) implements ChunkSizeCodec {
 
-    static final byte[] AUTH_LEN = "auth_len".getBytes();
+    public static final byte[] AUTH_LEN = "auth_len".getBytes();
 
     @Override
     public byte[] encode(int size) throws InvalidCipherTextException {

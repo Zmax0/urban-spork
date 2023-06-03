@@ -10,6 +10,14 @@ import java.util.UUID;
 public class ID {
     private ID() {}
 
+    public static byte[][] newID(String[] uuids) {
+        byte[][] ids = new byte[uuids.length][];
+        for (int i = 0; i < uuids.length; i++) {
+            ids[i] = newID(uuids[i]);
+        }
+        return ids;
+    }
+
     public static byte[] newID(String uuid) {
         return newID(UUID.fromString(uuid));
     }

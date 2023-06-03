@@ -27,7 +27,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -49,12 +48,6 @@ class UDPTestCase {
     private final DefaultEventLoop executor = new DefaultEventLoop();
     private final Channel channel = initChannel();
     private Consumer<TernaryDatagramPacket> consumer;
-
-    @BeforeAll
-    void init() {
-        LoggerFactory.getLogger(UDPTestCase.class);
-        config.save();
-    }
 
     @DisplayName("Launch udp test server")
     @Test
