@@ -60,7 +60,7 @@ public class Client {
                 .bind(port).sync().addListener((ChannelFutureListener) future -> {
                     if (future.isSuccess()) {
                         Channel channel = future.channel();
-                        logger.info("Launch client => {}", channel);
+                        logger.info("Launch client => {} ", config);
                         promise.setSuccess((ServerSocketChannel) channel);
                     } else {
                         Throwable cause = future.cause();

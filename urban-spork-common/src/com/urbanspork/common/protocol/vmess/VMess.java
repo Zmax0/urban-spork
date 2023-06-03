@@ -8,9 +8,13 @@ public interface VMess {
 
     byte VERSION = 1;
 
+    static long now() {
+        return Instant.now().getEpochSecond();
+    }
+
     static long timestamp(int delta) {
         int rangeInDelta = ThreadLocalRandom.current().nextInt(delta * 2) - delta;
-        return Instant.now().getEpochSecond() + rangeInDelta;
+        return now() + rangeInDelta;
     }
 
     static long crc32(byte[] bytes) {

@@ -12,7 +12,6 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import java.security.InvalidKeyException;
-import java.util.List;
 
 import static com.urbanspork.common.codec.aead.AEADCipherCodec.TAG_SIZE;
 
@@ -47,38 +46,38 @@ public record VMessAEADHeaderCodec(AEADCipherCodec codec) {
         out.writeBytes(payloadHeaderAEADEncrypted); // payload + TAG_SIZE
     }
 
-    public void openVMessAEADHeader(byte[] key, ByteBuf msg, List<Object> out) throws InvalidCipherTextException {
-        if (msg.readableBytes() < 16 + 2 + TAG_SIZE + 8 + TAG_SIZE) {
+    public void openVMessAEADHeader(byte[] key, ByteBuf in, ByteBuf out) throws InvalidCipherTextException {
+        if (in.readableBytes() < 16 + 2 + TAG_SIZE + 8 + TAG_SIZE) {
             return;
         }
-        msg.markReaderIndex();
+        in.markReaderIndex();
         byte[] authid = new byte[16];
         byte[] payloadHeaderLengthAEADEncrypted = new byte[2 + TAG_SIZE];
         byte[] nonce = new byte[8];
-        msg.readBytes(authid);
-        msg.readBytes(payloadHeaderLengthAEADEncrypted);
-        msg.readBytes(nonce);
+        in.readBytes(authid);
+        in.readBytes(payloadHeaderLengthAEADEncrypted);
+        in.readBytes(nonce);
         byte[] decryptedAEADHeaderLengthPayloadResult = codec.decrypt(
-            KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY, authid, nonce),
-            KDF.kdf(key, codec.nonceSize(), KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_IV, authid, nonce),
-            authid,
+            KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY, authid, nonce), // secretKey
+            KDF.kdf(key, codec.nonceSize(), KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_IV, authid, nonce), // nonce
+            authid, // associatedText
             payloadHeaderLengthAEADEncrypted
         );
         int length = Unpooled.wrappedBuffer(decryptedAEADHeaderLengthPayloadResult).readShort();
         // 16 == AEAD Tag size
-        if (msg.readableBytes() < length + TAG_SIZE) {
-            msg.resetReaderIndex();
+        if (in.readableBytes() < length + TAG_SIZE) {
+            in.resetReaderIndex();
             return;
         }
         byte[] payloadHeaderAEADEncrypted = new byte[length + TAG_SIZE];
-        msg.readBytes(payloadHeaderAEADEncrypted);
+        in.readBytes(payloadHeaderAEADEncrypted);
         byte[] decryptedAEADHeaderPayloadR = codec.decrypt(
             KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_KEY, authid, nonce),
             KDF.kdf(key, codec.nonceSize(), KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_IV, authid, nonce),
             authid,
             payloadHeaderAEADEncrypted
         );
-        out.add(Unpooled.wrappedBuffer(decryptedAEADHeaderPayloadR));
+        out.writeBytes(decryptedAEADHeaderPayloadR);
     }
 
 }

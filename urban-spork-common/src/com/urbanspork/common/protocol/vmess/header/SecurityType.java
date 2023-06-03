@@ -1,6 +1,8 @@
-package com.urbanspork.common.protocol.vmess.cons;
+package com.urbanspork.common.protocol.vmess.header;
 
 import com.urbanspork.common.codec.SupportedCipher;
+
+import java.util.Arrays;
 
 public enum SecurityType {
 
@@ -22,7 +24,11 @@ public enum SecurityType {
         return value;
     }
 
-    public static SecurityType from(SupportedCipher cipher) {
+    public static SecurityType valueOf(int value) {
+        return Arrays.stream(values()).filter(type -> type.value == value).findFirst().orElse(UNKNOWN);
+    }
+
+    public static SecurityType valueOf(SupportedCipher cipher) {
         if (SupportedCipher.chacha20_poly1305 == cipher) {
             return CHACHA20_POLY1305;
         } else {

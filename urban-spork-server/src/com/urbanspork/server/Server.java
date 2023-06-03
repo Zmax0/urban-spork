@@ -31,12 +31,9 @@ public class Server {
         if (configs.isEmpty()) {
             throw new IllegalArgumentException("Server config in the file is empty");
         }
-        configs = configs.stream()
-            .filter(config -> config.getHost().matches("localhost|127.*|[:1]|0.0.0.0|[:0]"))
-            .filter(config -> Protocols.shadowsocks == config.getProtocol())
-            .toList();
+        configs = configs.stream().filter(config -> config.getHost().matches("localhost|127.*|[:1]|0.0.0.0|[:0]")).toList();
         if (configs.isEmpty()) {
-            throw new IllegalArgumentException("None available shadowsocks server");
+            throw new IllegalArgumentException("None available server");
         }
         launch(configs, new DefaultPromise<>() {});
     }
@@ -77,7 +74,7 @@ public class Server {
     private static void startup(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config, Promise<ServerSocketChannel> promise) {
         try {
             int port = config.getPort();
-            if (config.udpEnabled()) {
+            if (Protocols.shadowsocks == config.getProtocol() && config.udpEnabled()) {
                 new Bootstrap().group(bossGroup)
                     .option(ChannelOption.SO_BROADCAST, true)
                     .channel(NioDatagramChannel.class)
@@ -90,20 +87,26 @@ public class Server {
                             );
                         }
                     })
-                    .bind(port).sync();
+                    .bind(port).sync().addListener(future -> {
+                        if (future.isSuccess()) {
+                            logger.info("Startup udp server => {}", config);
+                        } else {
+                            logger.error("Startup udp server failed", future.cause());
+                        }
+                    });
             }
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new ServerInitializer(config))
-                .bind(port).sync().addListener((ChannelFutureListener) f -> {
-                    if (f.isSuccess()) {
-                        Channel channel = f.channel();
-                        logger.info("Startup server => {}", channel);
+                .bind(port).sync().addListener((ChannelFutureListener) future -> {
+                    if (future.isSuccess()) {
+                        Channel channel = future.channel();
+                        logger.info("Startup tcp server => {}", config);
                         promise.setSuccess((ServerSocketChannel) channel);
                     } else {
-                        Throwable cause = f.cause();
-                        logger.error("Startup server failed", cause);
+                        Throwable cause = future.cause();
+                        logger.error("Startup tcp server failed", cause);
                         promise.setFailure(cause);
                     }
                 }).channel().closeFuture().sync();
