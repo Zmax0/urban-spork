@@ -6,7 +6,7 @@ import io.netty.handler.codec.socksx.v5.*;
 import java.net.InetSocketAddress;
 import java.util.List;
 
-public interface Socks5Addressing {
+public interface Address {
 
     static void encode(Socks5CommandType type, InetSocketAddress address, ByteBuf out) throws Exception {
         encode(Socks5.toCommandRequest(type, address), out);

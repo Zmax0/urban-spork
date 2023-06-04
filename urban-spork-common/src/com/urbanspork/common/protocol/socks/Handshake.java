@@ -10,7 +10,7 @@ import io.netty.util.concurrent.Promise;
 
 import java.net.InetSocketAddress;
 
-public interface Socks5Handshaking {
+public interface Handshake {
 
     static Promise<Result> noAuth(Socks5CommandType type, InetSocketAddress proxyAddress, InetSocketAddress dstAddress) {
         NioEventLoopGroup worker = new NioEventLoopGroup(1);

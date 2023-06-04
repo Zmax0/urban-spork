@@ -99,9 +99,6 @@ public class ServerConfig {
         if (protocol != null) {
             builder.append('|').append(protocol).append('|').append(cipher.toString());
         }
-        if (builder.length() == 0) {
-            builder.append(" XX ");
-        }
         return builder.toString();
     }
 

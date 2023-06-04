@@ -3,7 +3,7 @@ package com.urbanspork.common.codec.shadowsocks;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.shadowsocks.network.Network;
-import com.urbanspork.common.protocol.socks.Socks5Addressing;
+import com.urbanspork.common.protocol.socks.Address;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
@@ -31,7 +31,7 @@ public class ShadowsocksUDPReplayCodec extends MessageToMessageCodec<DatagramPac
         }
         ByteBuf in = ctx.alloc().buffer();
         DatagramPacket data = msg.packet();
-        Socks5Addressing.encode(Socks5CommandType.CONNECT, data.recipient(), in);
+        Address.encode(Socks5CommandType.CONNECT, data.recipient(), in);
         in.writeBytes(data.content().duplicate());
         ByteBuf content = ctx.alloc().buffer();
         cipher.encode(ctx, in, content);
@@ -43,7 +43,7 @@ public class ShadowsocksUDPReplayCodec extends MessageToMessageCodec<DatagramPac
         List<Object> list = new ArrayList<>(1);
         cipher.decode(ctx, msg.content(), list);
         ByteBuf in = (ByteBuf) list.get(0);
-        InetSocketAddress recipient = Socks5Addressing.decode(in);
+        InetSocketAddress recipient = Address.decode(in);
         out.add(new DatagramPacket(in.retainedDuplicate(), recipient, msg.sender()));
     }
 }
