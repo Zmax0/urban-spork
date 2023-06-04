@@ -23,6 +23,6 @@ public interface TestDice {
     }
 
     static int randomPort() {
-        return ThreadLocalRandom.current().nextInt(0, 65535);
+        return ThreadLocalRandom.current().nextInt(49152, 65535);
     }
 }

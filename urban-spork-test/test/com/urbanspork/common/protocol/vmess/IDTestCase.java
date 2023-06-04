@@ -1,12 +1,13 @@
 package com.urbanspork.common.protocol.vmess;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 
+@DisplayName("VMess - ID")
 class IDTestCase {
-
     @Test
     void testNewID() {
         byte[] id = ID.newID("b831381d-6324-4d53-ad4f-8cda48b30811");

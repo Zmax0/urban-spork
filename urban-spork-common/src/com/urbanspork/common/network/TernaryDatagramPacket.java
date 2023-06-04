@@ -5,7 +5,6 @@ import io.netty.channel.socket.DatagramPacket;
 import java.net.InetSocketAddress;
 
 public record TernaryDatagramPacket(DatagramPacket packet, InetSocketAddress third) {
-
     @Override
     public String toString() {
         if (packet.sender() != null) {

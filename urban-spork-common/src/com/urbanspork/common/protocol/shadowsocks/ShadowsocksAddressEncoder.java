@@ -1,6 +1,6 @@
 package com.urbanspork.common.protocol.shadowsocks;
 
-import com.urbanspork.common.protocol.socks.Socks5Addressing;
+import com.urbanspork.common.protocol.socks.Address;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
@@ -17,7 +17,7 @@ public class ShadowsocksAddressEncoder extends MessageToByteEncoder<ByteBuf> {
     @Override
     protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
         ctx.pipeline().remove(this);
-        Socks5Addressing.encode(request, out);
+        Address.encode(request, out);
         out.writeBytes(msg);
     }
 

@@ -2,14 +2,15 @@ package com.urbanspork.common.protocol.vmess.aead;
 
 import com.urbanspork.common.protocol.vmess.VMess;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import java.security.InvalidKeyException;
 
+@DisplayName("VMess - AuthID")
 class AuthIDTestCase {
-
     @Test
     void testMatch() throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
         byte[] key = KDF.kdf16("Demo Key for Auth ID Test".getBytes(), "Demo Path for Auth ID Test".getBytes());
@@ -21,5 +22,4 @@ class AuthIDTestCase {
         keys[10000] = key;
         Assertions.assertArrayEquals(key, AuthID.match(authid, keys));
     }
-
 }

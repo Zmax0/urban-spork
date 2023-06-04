@@ -1,11 +1,13 @@
 package com.urbanspork.common.crypto;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Base64;
 
+@DisplayName("Common - General Digests")
 class GeneralDigestsTestCase {
 
     @Test
@@ -22,5 +24,4 @@ class GeneralDigestsTestCase {
         byte[] md5 = GeneralDigests.md5.get(data);
         Assertions.assertEquals("TaO3E8p5UCbqs7p6t4TM3A==", Base64.getEncoder().encodeToString(md5));
     }
-
 }

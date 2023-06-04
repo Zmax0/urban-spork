@@ -15,7 +15,11 @@ public class ServerConfigTestCase {
     void testCheck() {
         ServerConfig config = testConfig(TestDice.randomPort());
         Assertions.assertTrue(config.check());
-        config.setPassword(null);
+        config.setCipher(null);
+        Assertions.assertFalse(config.check());
+        config.setPassword("");
+        Assertions.assertFalse(config.check());
+        config.setHost("");
         Assertions.assertFalse(config.check());
     }
 
