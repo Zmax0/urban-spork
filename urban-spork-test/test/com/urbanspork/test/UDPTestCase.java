@@ -4,9 +4,9 @@ import com.urbanspork.client.Client;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.network.TernaryDatagramPacket;
-import com.urbanspork.common.protocol.socks.Socks5DatagramPacketDecoder;
-import com.urbanspork.common.protocol.socks.Socks5DatagramPacketEncoder;
-import com.urbanspork.common.protocol.socks.Socks5Handshaking;
+import com.urbanspork.common.protocol.socks.DatagramPacketDecoder;
+import com.urbanspork.common.protocol.socks.DatagramPacketEncoder;
+import com.urbanspork.common.protocol.socks.Handshake;
 import com.urbanspork.server.Server;
 import com.urbanspork.test.server.udp.DelayedEchoTestServer;
 import com.urbanspork.test.server.udp.SimpleEchoTestServer;
@@ -27,6 +27,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -36,10 +38,12 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+@DisplayName("UDP")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class UDPTestCase {
 
+    private static final Logger logger = LoggerFactory.getLogger(UDPTestCase.class);
     private static final int[] PORTS = TestUtil.freePorts(4);
     private static final int[] DST_PORTS = Arrays.copyOfRange(PORTS, 2, 4);
     private final ClientConfig config = TestUtil.testConfig(PORTS[0], PORTS[1]);
@@ -97,7 +101,7 @@ class UDPTestCase {
     void handshake(int dstPort) throws InterruptedException, ExecutionException {
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress = new InetSocketAddress("localhost", dstPort);
-        Socks5Handshaking.Result result = Socks5Handshaking.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).await().get();
+        Handshake.Result result = Handshake.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).await().get();
         Assertions.assertEquals(Socks5CommandStatus.SUCCESS, result.response().status());
         result.sessionChannel().eventLoop().shutdownGracefully();
     }
@@ -122,6 +126,7 @@ class UDPTestCase {
         String str = TestDice.randomString();
         DatagramPacket data = new DatagramPacket(Unpooled.copiedBuffer(str.getBytes()), dstAddress);
         TernaryDatagramPacket msg = new TernaryDatagramPacket(data, socksAddress);
+        logger.debug("Send msg {}", msg);
         channel.writeAndFlush(msg);
         Assertions.assertTrue(promise.await(DelayedEchoTestServer.MAX_DELAYED_SECOND, TimeUnit.SECONDS));
         executor.shutdownGracefully();
@@ -140,11 +145,12 @@ class UDPTestCase {
                 @Override
                 protected void initChannel(Channel ch) {
                     ch.pipeline().addLast(
-                        new Socks5DatagramPacketEncoder(),
-                        new Socks5DatagramPacketDecoder(),
+                        new DatagramPacketEncoder(),
+                        new DatagramPacketDecoder(),
                         new SimpleChannelInboundHandler<TernaryDatagramPacket>(false) {
                             @Override
                             protected void channelRead0(ChannelHandlerContext ctx, TernaryDatagramPacket msg) {
+                                logger.debug("Receive msg {}", msg);
                                 consumer.accept(msg);
                             }
                         }
@@ -154,7 +160,7 @@ class UDPTestCase {
             .bind(0).syncUninterruptibly().channel();
     }
 
-    static class PortProvider implements ArgumentsProvider {
+    private static class PortProvider implements ArgumentsProvider {
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
             return Arrays.stream(DST_PORTS).mapToObj(Arguments::of);

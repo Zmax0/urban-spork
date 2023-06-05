@@ -9,7 +9,7 @@ import io.netty.handler.codec.MessageToMessageDecoder;
 import java.net.InetSocketAddress;
 import java.util.List;
 
-public class Socks5DatagramPacketDecoder extends MessageToMessageDecoder<DatagramPacket> {
+public class DatagramPacketDecoder extends MessageToMessageDecoder<DatagramPacket> {
     @Override
     protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List<Object> out) throws Exception {
         ByteBuf content = msg.content();
@@ -22,7 +22,7 @@ public class Socks5DatagramPacketDecoder extends MessageToMessageDecoder<Datagra
             return;
         }
         content.skipBytes(3);
-        InetSocketAddress address = Socks5Addressing.decode(content);
+        InetSocketAddress address = Address.decode(content);
         out.add(new TernaryDatagramPacket(msg.replace(content.retainedDuplicate()), address));
     }
 }

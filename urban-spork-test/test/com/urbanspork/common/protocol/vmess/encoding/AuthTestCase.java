@@ -1,10 +1,12 @@
 package com.urbanspork.common.protocol.vmess.encoding;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 
+@DisplayName("VMess - Auth")
 class AuthTestCase {
 
     @Test

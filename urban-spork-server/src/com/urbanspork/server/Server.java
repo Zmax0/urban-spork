@@ -28,6 +28,10 @@ public class Server {
 
     public static void main(String[] args) {
         List<ServerConfig> configs = ConfigHandler.DEFAULT.read().getServers();
+        launch(configs);
+    }
+
+    public static void launch(List<ServerConfig> configs) {
         if (configs.isEmpty()) {
             throw new IllegalArgumentException("Server config in the file is empty");
         }
@@ -83,7 +87,7 @@ public class Server {
                         protected void initChannel(Channel ch) {
                             ch.pipeline().addLast(
                                 new ShadowsocksUDPReplayCodec(config),
-                                new ServerUDPReplayHandler(config, workerGroup)
+                                new ServerUDPReplayHandler(config.getPacketEncoding(), workerGroup)
                             );
                         }
                     })
