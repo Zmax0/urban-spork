@@ -28,7 +28,7 @@ public class EchoTestServer {
                 .childHandler(new ChannelInitializer<>() {
                     @Override
                     protected void initChannel(Channel ch) {
-                        ch.pipeline().addLast(new SimpleChannelInboundHandler<ByteBuf>() {
+                        ch.pipeline().addLast(new SimpleChannelInboundHandler<ByteBuf>(false) {
                             @Override
                             protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
                                 logger.info("Receive msg and send back");
@@ -39,7 +39,9 @@ public class EchoTestServer {
                 })
                 .bind(port).addListener((ChannelFutureListener) future -> {
                     if (future.isSuccess()) {
-                        promise.setSuccess(future.channel());
+                        Channel channel = future.channel();
+                        logger.info("Launch echo test server => {} ", channel);
+                        promise.setSuccess(channel);
                     } else {
                         promise.setFailure(future.cause());
                     }

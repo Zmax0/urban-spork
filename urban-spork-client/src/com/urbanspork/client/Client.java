@@ -5,8 +5,8 @@ import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.socks.Socks5DatagramPacketDecoder;
-import com.urbanspork.common.protocol.socks.Socks5DatagramPacketEncoder;
+import com.urbanspork.common.protocol.socks.DatagramPacketDecoder;
+import com.urbanspork.common.protocol.socks.DatagramPacketEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -43,8 +43,8 @@ public class Client {
                         @Override
                         protected void initChannel(Channel ch) {
                             ch.pipeline().addLast(
-                                new Socks5DatagramPacketEncoder(),
-                                new Socks5DatagramPacketDecoder(),
+                                new DatagramPacketEncoder(),
+                                new DatagramPacketDecoder(),
                                 new ClientUDPReplayHandler(current, workerGroup)
                             );
                         }

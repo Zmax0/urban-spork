@@ -1,7 +1,7 @@
 package com.urbanspork.common.protocol.shadowsocks;
 
 
-import com.urbanspork.common.protocol.socks.Socks5Addressing;
+import com.urbanspork.common.protocol.socks.Address;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ReplayingDecoder;
@@ -24,7 +24,7 @@ public class ShadowsocksAddressDecoder extends ReplayingDecoder<ShadowsocksAddre
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         switch (state()) {
             case INIT -> {
-                Socks5Addressing.decode(in, out);
+                Address.decode(in, out);
                 checkpoint(State.SUCCESS);
             }
             case SUCCESS -> {

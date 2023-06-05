@@ -15,7 +15,7 @@ import java.security.InvalidKeyException;
 
 import static com.urbanspork.common.codec.aead.AEADCipherCodec.TAG_SIZE;
 
-public record VMessAEADHeaderCodec(AEADCipherCodec codec) {
+public record VMessAEADHeaderCodec(AEADCipherCodec cipher) {
 
     private static final byte[] KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY = "VMess Header AEAD Key_Length".getBytes();
     private static final byte[] KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_IV = "VMess Header AEAD Nonce_Length".getBytes();
@@ -28,15 +28,16 @@ public record VMessAEADHeaderCodec(AEADCipherCodec codec) {
         byte[] connectionNonce = Dice.randomBytes(8);
         byte[] aeadPayloadLengthSerializedByte = new byte[Short.BYTES];
         Unpooled.wrappedBuffer(aeadPayloadLengthSerializedByte).setShort(0, header.length);
-        byte[] payloadHeaderLengthAEADEncrypted = codec.encrypt(
+        int nonceSize = cipher.nonceSize();
+        byte[] payloadHeaderLengthAEADEncrypted = cipher.encrypt(
             KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY, generatedAuthID, connectionNonce),
-            KDF.kdf(key, codec.nonceSize(), KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_IV, generatedAuthID, connectionNonce),
+            KDF.kdf(key, nonceSize, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_IV, generatedAuthID, connectionNonce),
             generatedAuthID,
             aeadPayloadLengthSerializedByte
         );
-        byte[] payloadHeaderAEADEncrypted = codec.encrypt(
+        byte[] payloadHeaderAEADEncrypted = cipher.encrypt(
             KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_KEY, generatedAuthID, connectionNonce),
-            KDF.kdf(key, codec.nonceSize(), KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_IV, generatedAuthID, connectionNonce),
+            KDF.kdf(key, nonceSize, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_IV, generatedAuthID, connectionNonce),
             generatedAuthID,
             header
         );
@@ -57,9 +58,10 @@ public record VMessAEADHeaderCodec(AEADCipherCodec codec) {
         in.readBytes(authid);
         in.readBytes(payloadHeaderLengthAEADEncrypted);
         in.readBytes(nonce);
-        byte[] decryptedAEADHeaderLengthPayloadResult = codec.decrypt(
+        int nonceSize = cipher.nonceSize();
+        byte[] decryptedAEADHeaderLengthPayloadResult = cipher.decrypt(
             KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY, authid, nonce), // secretKey
-            KDF.kdf(key, codec.nonceSize(), KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_IV, authid, nonce), // nonce
+            KDF.kdf(key, nonceSize, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_IV, authid, nonce), // nonce
             authid, // associatedText
             payloadHeaderLengthAEADEncrypted
         );
@@ -71,9 +73,9 @@ public record VMessAEADHeaderCodec(AEADCipherCodec codec) {
         }
         byte[] payloadHeaderAEADEncrypted = new byte[length + TAG_SIZE];
         in.readBytes(payloadHeaderAEADEncrypted);
-        byte[] decryptedAEADHeaderPayloadR = codec.decrypt(
+        byte[] decryptedAEADHeaderPayloadR = cipher.decrypt(
             KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_KEY, authid, nonce),
-            KDF.kdf(key, codec.nonceSize(), KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_IV, authid, nonce),
+            KDF.kdf(key, nonceSize, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_IV, authid, nonce),
             authid,
             payloadHeaderAEADEncrypted
         );

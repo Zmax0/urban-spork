@@ -2,7 +2,6 @@ package com.urbanspork.server.shadowsocks;
 
 import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.channel.ChannelCloseUtils;
-import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.shadowsocks.network.PacketEncoding;
 import io.netty.bootstrap.Bootstrap;
@@ -23,21 +22,22 @@ public class ServerUDPReplayHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(ServerUDPReplayHandler.class);
     private final Map<InetSocketAddress, Channel> workerChannels = new ConcurrentHashMap<>();
     private final EventLoopGroup workerGroup;
-    private final ServerConfig config;
+    private final PacketEncoding packetEncoding;
 
-    public ServerUDPReplayHandler(ServerConfig config, EventLoopGroup workerGroup) {
-        this.config = config;
+    public ServerUDPReplayHandler(PacketEncoding packetEncoding, EventLoopGroup workerGroup) {
+        this.packetEncoding = packetEncoding;
         this.workerGroup = workerGroup;
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof DatagramPacket packet) {
-            Channel inboundChannel = ctx.channel();
-            Channel outboundChannel = findWorkerChannel(packet.recipient(), inboundChannel);
-            outboundChannel.attr(AttributeKeys.CALLBACK).get().put(packet.recipient(), packet.sender());
-            logger.info("Replay {} -> {} via {} -> {}", packet.sender(), packet.recipient(), inboundChannel.localAddress(), outboundChannel.localAddress());
-            outboundChannel.writeAndFlush(packet);
+            Channel channel = ctx.channel();
+            InetSocketAddress callback = packet.recipient();
+            Channel workerChannel = workerChannel(callback, channel);
+            workerChannel.attr(AttributeKeys.CALLBACK).get().put(callback, packet.sender());
+            logger.info("Replay {} -> {} via {} -> {}", packet.sender(), callback, channel.localAddress(), workerChannel.localAddress());
+            workerChannel.writeAndFlush(packet);
         }
     }
 
@@ -47,14 +47,14 @@ public class ServerUDPReplayHandler extends ChannelInboundHandlerAdapter {
         ChannelCloseUtils.clearMap(workerChannels);
     }
 
-    private Channel findWorkerChannel(InetSocketAddress callback, Channel inboundChannel) {
-        if (PacketEncoding.Packet == config.getPacketEncoding()) {
+    Channel workerChannel(InetSocketAddress callback, Channel inboundChannel) {
+        if (PacketEncoding.Packet == packetEncoding) {
             callback = PacketEncoding.Packet.seqPacketMagicAddress();
         }
         return workerChannels.computeIfAbsent(callback, key -> newWorkerChannel(key, inboundChannel));
     }
 
-    private Channel newWorkerChannel(InetSocketAddress callback, Channel inboundChannel) {
+    private Channel newWorkerChannel(InetSocketAddress callback, Channel channel) {
         Channel outboundChannel = new Bootstrap().group(workerGroup).channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {
                 @Override
@@ -62,7 +62,7 @@ public class ServerUDPReplayHandler extends ChannelInboundHandlerAdapter {
                     ch.attr(AttributeKeys.CALLBACK).set(new ConcurrentHashMap<>());
                     ch.pipeline().addLast(
                         new IdleStateHandler(0, 0, 120),
-                        new InboundHandler(inboundChannel)
+                        new InboundHandler(channel)
                     );
                 }
             })// callback->server->client

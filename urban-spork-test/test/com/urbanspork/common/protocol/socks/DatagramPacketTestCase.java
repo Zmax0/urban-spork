@@ -7,19 +7,20 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.socket.DatagramPacket;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
-class Socks5DatagramPacketTestCase {
-
+@DisplayName("Socks - Datagram Packet")
+class DatagramPacketTestCase {
     @Test
     void testCodec() {
         EmbeddedChannel channel = new EmbeddedChannel();
         channel.pipeline().addLast(
-                new Socks5DatagramPacketDecoder(),
-                new Socks5DatagramPacketEncoder()
+            new DatagramPacketDecoder(),
+            new DatagramPacketEncoder()
         );
         String str = TestDice.randomString();
         int dstPort = TestDice.randomPort();
@@ -36,5 +37,4 @@ class Socks5DatagramPacketTestCase {
         ByteBuf content = inbound.packet().content();
         Assertions.assertEquals(str, content.readCharSequence(content.readableBytes(), StandardCharsets.UTF_8));
     }
-
 }

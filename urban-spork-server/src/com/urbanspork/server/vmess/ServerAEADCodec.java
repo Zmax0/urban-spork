@@ -6,11 +6,11 @@ import com.urbanspork.common.codec.aead.AEADPayloadEncoder;
 import com.urbanspork.common.codec.vmess.VMessAEADBodyCodec;
 import com.urbanspork.common.codec.vmess.VMessAEADHeaderCodec;
 import com.urbanspork.common.lang.Go;
+import com.urbanspork.common.protocol.vmess.Address;
 import com.urbanspork.common.protocol.vmess.ID;
 import com.urbanspork.common.protocol.vmess.aead.AuthID;
 import com.urbanspork.common.protocol.vmess.aead.KDF;
 import com.urbanspork.common.protocol.vmess.encoding.ServerSession;
-import com.urbanspork.common.protocol.vmess.header.AddressType;
 import com.urbanspork.common.protocol.vmess.header.RequestCommand;
 import com.urbanspork.common.protocol.vmess.header.SecurityType;
 import io.netty.buffer.ByteBuf;
@@ -18,13 +18,11 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import io.netty.handler.codec.DecoderException;
-import io.netty.util.NetUtil;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 
@@ -33,7 +31,6 @@ import static com.urbanspork.common.protocol.vmess.aead.Const.*;
 public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerAEADCodec.class);
-
     private final VMessAEADHeaderCodec headerCodec = new VMessAEADHeaderCodec(AEADCipherCodecs.AES_GCM.get());
     private final byte[][] keys;
     private ServerSession session;
@@ -45,7 +42,7 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
         this(ID.newID(uuids));
     }
 
-    protected ServerAEADCodec(byte[][] keys) {
+    ServerAEADCodec(byte[][] keys) {
         this.keys = keys;
     }
 
@@ -53,14 +50,14 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
     public void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         if (bodyEncoder == null) {
             byte[] aeadResponseHeaderLengthEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_LEN_KEY);
-            byte[] aeadResponseHeaderLengthEncryptionIV = KDF.kdf(session.getResponseBodyIV(), headerCodec.codec().nonceSize(), KDF_SALT_AEAD_RESP_HEADER_LEN_IV);
+            byte[] aeadResponseHeaderLengthEncryptionIV = KDF.kdf(session.getResponseBodyIV(), headerCodec.cipher().nonceSize(), KDF_SALT_AEAD_RESP_HEADER_LEN_IV);
             byte[] aeadEncryptedHeaderBuffer = new byte[]{session.getResponseHeader(), (byte) 0}; // not support handling command now
             byte[] aeadResponseHeaderLengthEncryptionBuffer = new byte[Short.BYTES];
             Unpooled.wrappedBuffer(aeadResponseHeaderLengthEncryptionBuffer).setShort(0, aeadEncryptedHeaderBuffer.length);
-            out.writeBytes(headerCodec.codec().encrypt(aeadResponseHeaderLengthEncryptionKey, aeadResponseHeaderLengthEncryptionIV, null, aeadResponseHeaderLengthEncryptionBuffer));
+            out.writeBytes(headerCodec.cipher().encrypt(aeadResponseHeaderLengthEncryptionKey, aeadResponseHeaderLengthEncryptionIV, null, aeadResponseHeaderLengthEncryptionBuffer));
             byte[] aeadResponseHeaderPayloadEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY);
-            byte[] aeadResponseHeaderPayloadEncryptionIV = KDF.kdf(session.getResponseBodyIV(), headerCodec.codec().nonceSize(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV);
-            out.writeBytes(headerCodec.codec().encrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, null, aeadEncryptedHeaderBuffer));
+            byte[] aeadResponseHeaderPayloadEncryptionIV = KDF.kdf(session.getResponseBodyIV(), headerCodec.cipher().nonceSize(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV);
+            out.writeBytes(headerCodec.cipher().encrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, null, aeadEncryptedHeaderBuffer));
             bodyEncoder = VMessAEADBodyCodec.getBodyEncoder(security, session);
         }
         bodyEncoder.encodePayload(msg, out);
@@ -97,7 +94,7 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
             if (RequestCommand.TCP.getValue() != command) {
                 throw new DecoderException("Not support handling other command now");
             }
-            InetSocketAddress address = readAddressBytes(header);
+            InetSocketAddress address = Address.readAddressPort(header);
             if (paddingLen > 0) {
                 header.skipBytes(paddingLen);
             }
@@ -119,26 +116,4 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
         ctx.close();
     }
 
-    private InetSocketAddress readAddressBytes(ByteBuf buf) {
-        int port = buf.readUnsignedShort();
-        String hostname;
-        switch (AddressType.valueOf(buf.readByte())) {
-            case IPV4 -> {
-                byte[] bytes = new byte[4];
-                buf.readBytes(bytes);
-                hostname = NetUtil.bytesToIpAddress(bytes);
-            }
-            case IPV6 -> {
-                byte[] bytes = new byte[16];
-                buf.readBytes(bytes);
-                hostname = NetUtil.bytesToIpAddress(bytes);
-            }
-            case DOMAIN -> {
-                int length = buf.readByte();
-                hostname = buf.readCharSequence(length, Charset.defaultCharset()).toString();
-            }
-            default -> throw new UnknownError();
-        }
-        return new InetSocketAddress(hostname, port);
-    }
 }
