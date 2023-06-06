@@ -1,16 +1,22 @@
 package com.urbanspork.common.codec.aead;
 
 import com.urbanspork.common.codec.ChunkSizeCodec;
+import com.urbanspork.common.codec.PaddingLengthGenerator;
+import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+
+import static com.urbanspork.common.codec.aead.AEADCipherCodec.TAG_SIZE;
 
 public interface AEADPayloadEncoder {
 
     int payloadLimit();
 
-    AEADAuthenticator payloadEncoder();
+    AEADAuthenticator auth();
 
-    ChunkSizeCodec chunkSizeEncoder();
+    ChunkSizeCodec sizeCodec();
+
+    PaddingLengthGenerator padding();
 
     /**
      * encrypt payload for TCP
@@ -20,11 +26,19 @@ public interface AEADPayloadEncoder {
      */
     default void encodePayload(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         while (msg.isReadable()) {
-            int length = Math.min(msg.readableBytes(), payloadLimit());
-            out.writeBytes(chunkSizeEncoder().encode(length));
-            byte[] in = new byte[length];
+            int paddingLength = 0;
+            PaddingLengthGenerator padding = padding();
+            if (padding != null) {
+                paddingLength = padding.nextPaddingLength();
+            }
+            int encryptedSize = Math.min(msg.readableBytes(), payloadLimit() - TAG_SIZE - sizeCodec().sizeBytes() - paddingLength);
+            out.writeBytes(sizeCodec().encode(encryptedSize + paddingLength));
+            byte[] in = new byte[encryptedSize];
             msg.readBytes(in);
-            out.writeBytes(payloadEncoder().seal(in));
+            out.writeBytes(auth().seal(in));
+            if (paddingLength > 0) {
+                out.writeBytes(Dice.randomBytes(paddingLength));
+            }
         }
     }
 
@@ -38,7 +52,7 @@ public interface AEADPayloadEncoder {
         if (msg.isReadable()) {
             byte[] in = new byte[msg.readableBytes()];
             msg.readBytes(in);
-            out.writeBytes(payloadEncoder().seal(in));
+            out.writeBytes(auth().seal(in));
         }
     }
 }

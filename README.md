@@ -48,11 +48,11 @@ put *config.json* file into the unpacked folder before running
 
 ### Ciphers
 
-|                   | Shadowsocks | VMess |
-|:------------------|:-----------:|:-----:|
-| aes-128-gcm       |   `C` `S`   |  `C`  |
-| aes-256-gcm       |   `C` `S`   |       |
-| chacha20-poly1305 |   `C` `S`   |  `C`  |
+|                   | Shadowsocks |  VMess  |
+|:------------------|:-----------:|:-------:|
+| aes-128-gcm       |   `C` `S`   | `C` `S` |
+| aes-256-gcm       |   `C` `S`   |         |
+| chacha20-poly1305 |   `C` `S`   | `C` `S` |
 
 `C` for client `S` for server
 

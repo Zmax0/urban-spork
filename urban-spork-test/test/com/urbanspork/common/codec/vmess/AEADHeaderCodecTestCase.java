@@ -10,21 +10,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 @DisplayName("VMess - AEAD Header Codec")
-class VMessAEADHeaderCodecTestCase {
-
+class AEADHeaderCodecTestCase {
     @Test
     void testSealAndOpen() throws Exception {
         byte[] header = "Test Header".getBytes();
         byte[] key = KDF.kdf16("Demo Key for Auth ID Test".getBytes(), "Demo Path for Auth ID Test".getBytes());
-        VMessAEADHeaderCodec codec = new VMessAEADHeaderCodec(AEADCipherCodecs.AES_GCM.get());
+        AEADHeaderCodec codec = new AEADHeaderCodec(AEADCipherCodecs.AES_GCM.get());
         ByteBuf in = Unpooled.buffer();
         codec.sealVMessAEADHeader(key, header, in);
         Assertions.assertTrue(in.isReadable());
-        ByteBuf out = Unpooled.buffer();
-        codec.openVMessAEADHeader(key, in, out);
+        ByteBuf out = codec.openVMessAEADHeader(key, in);
         Assertions.assertFalse(in.isReadable());
         Assertions.assertTrue(out.isReadable());
         Assertions.assertArrayEquals(header, ByteBufUtil.getBytes(out));
     }
-
 }

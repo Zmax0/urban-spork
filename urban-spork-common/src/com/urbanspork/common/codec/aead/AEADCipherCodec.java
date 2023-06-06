@@ -15,12 +15,20 @@ public interface AEADCipherCodec {
 
     int nonceSize();
 
+    default byte[] encrypt(byte[] secretKey, byte[] nonce, byte[] in) throws InvalidCipherTextException {
+        return encrypt(secretKey, nonce, null, in);
+    }
+
     default byte[] encrypt(byte[] secretKey, byte[] nonce, byte[] associatedText, byte[] in) throws InvalidCipherTextException {
         AEADCipher cipher = cipher();
         cipher.init(true, new AEADParameters(new KeyParameter(secretKey), macSize(), nonce, associatedText));
         byte[] out = new byte[cipher.getOutputSize(in.length)];
         cipher.doFinal(out, cipher.processBytes(in, 0, in.length, out, 0));
         return out;
+    }
+
+    default byte[] decrypt(byte[] secretKey, byte[] nonce, byte[] in) throws InvalidCipherTextException {
+        return decrypt(secretKey, nonce, null, in);
     }
 
     default byte[] decrypt(byte[] secretKey, byte[] nonce, byte[] associatedText, byte[] in) throws InvalidCipherTextException {
@@ -30,5 +38,4 @@ public interface AEADCipherCodec {
         cipher.doFinal(out, cipher.processBytes(in, 0, in.length, out, 0));
         return out;
     }
-
 }

@@ -2,6 +2,7 @@ package com.urbanspork.test;
 
 import com.urbanspork.client.Client;
 import com.urbanspork.common.config.ClientConfig;
+import com.urbanspork.common.config.ClientConfigTestCase;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.socks.DatagramPacketDecoder;
@@ -46,14 +47,14 @@ class UDPTestCase {
     private static final Logger logger = LoggerFactory.getLogger(UDPTestCase.class);
     private static final int[] PORTS = TestUtil.freePorts(4);
     private static final int[] DST_PORTS = Arrays.copyOfRange(PORTS, 2, 4);
-    private final ClientConfig config = TestUtil.testConfig(PORTS[0], PORTS[1]);
+    private final ClientConfig config = ClientConfigTestCase.testConfig(PORTS[0], PORTS[1]);
     private final ExecutorService service = Executors.newFixedThreadPool(4);
     private final EventLoopGroup group = new NioEventLoopGroup(1);
     private final DefaultEventLoop executor = new DefaultEventLoop();
     private final Channel channel = initChannel();
     private Consumer<TernaryDatagramPacket> consumer;
 
-    @DisplayName("Launch udp test server")
+    @DisplayName("launch udp test server")
     @Test
     @Order(1)
     void launchUDPTestServer() {
@@ -75,7 +76,7 @@ class UDPTestCase {
         Assertions.assertFalse(future2.isCancelled());
     }
 
-    @DisplayName("Launch client")
+    @DisplayName("launch client")
     @Test
     @Order(2)
     void launchClient() throws InterruptedException, ExecutionException {
@@ -84,7 +85,7 @@ class UDPTestCase {
         Assertions.assertEquals(config.getPort(), promise.await().get().localAddress().getPort());
     }
 
-    @DisplayName("Launch server")
+    @DisplayName("launch server")
     @Test
     @Order(3)
     void launchServer() throws InterruptedException, ExecutionException {
@@ -94,7 +95,7 @@ class UDPTestCase {
         Assertions.assertEquals(configs.get(0).getPort(), promise.await().get().get(0).localAddress().getPort());
     }
 
-    @DisplayName("Handshake")
+    @DisplayName("handshake")
     @ParameterizedTest
     @ArgumentsSource(PortProvider.class)
     @Order(4)
@@ -106,7 +107,7 @@ class UDPTestCase {
         result.sessionChannel().eventLoop().shutdownGracefully();
     }
 
-    @DisplayName("Send string packet")
+    @DisplayName("send string packet")
     @ParameterizedTest
     @ArgumentsSource(PortProvider.class)
     @Order(5)
@@ -116,12 +117,11 @@ class UDPTestCase {
         InetSocketAddress socksAddress = new InetSocketAddress("localhost", config.getPort());
         InetSocketAddress dstAddress = new InetSocketAddress("localhost", dstPort);
         consumer = msg -> {
-            try {
-                Assertions.assertEquals(dstAddress, msg.third());
-            } catch (Exception e) {
-                promise.setFailure(e);
+            if (dstAddress.equals(msg.third())) {
+                promise.setSuccess(null);
+            } else {
+                promise.setFailure(AssertionFailureBuilder.assertionFailure().message("Not equals").build());
             }
-            promise.setSuccess(null);
         };
         String str = TestDice.randomString();
         DatagramPacket data = new DatagramPacket(Unpooled.copiedBuffer(str.getBytes()), dstAddress);

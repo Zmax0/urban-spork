@@ -21,9 +21,9 @@ public final class DefaultConnectPromiseHandler extends ChannelInboundHandlerAda
     }
 
     @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+    public void channelReadComplete(ChannelHandlerContext ctx) {
         ctx.writeAndFlush(Unpooled.EMPTY_BUFFER);
-        super.channelReadComplete(ctx);
+        ctx.fireChannelReadComplete();
     }
 
     @Override

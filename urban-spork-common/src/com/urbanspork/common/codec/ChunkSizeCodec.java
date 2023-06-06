@@ -4,12 +4,9 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 
 public interface ChunkSizeCodec {
 
-    default int sizeBytes() {
-        return Short.BYTES;
-    }
+    int sizeBytes();
 
     byte[] encode(int size) throws InvalidCipherTextException;
 
     int decode(byte[] data) throws InvalidCipherTextException;
-
 }

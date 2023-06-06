@@ -27,8 +27,7 @@ public class Server {
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
     public static void main(String[] args) {
-        List<ServerConfig> configs = ConfigHandler.DEFAULT.read().getServers();
-        launch(configs);
+        launch(ConfigHandler.DEFAULT.read().getServers());
     }
 
     public static void launch(List<ServerConfig> configs) {
@@ -53,17 +52,22 @@ public class Server {
             for (ServerConfig config : configs) {
                 DefaultPromise<ServerSocketChannel> innerPromise = new DefaultPromise<>(executor);
                 pool.submit(() -> startup(bossGroup, workerGroup, config, innerPromise));
-                result.add(innerPromise.await().get());
+                innerPromise.await();
+                if (innerPromise.isSuccess()) {
+                    result.add(innerPromise.get());
+                } else {
+                    promise.setFailure(innerPromise.cause());
+                    return;
+                }
             }
             promise.setSuccess(result);
             executor.shutdownGracefully();
             pool.shutdown();
             boolean terminated = false;
             while (!terminated) {
-                terminated = pool.awaitTermination(1, TimeUnit.HOURS);
+                terminated = pool.awaitTermination(10, TimeUnit.MINUTES);
             }
         } catch (InterruptedException | ExecutionException e) {
-            promise.setFailure(e);
             pool.shutdownNow();
             if (e instanceof InterruptedException) {
                 logger.error("Launch thread is interrupted");
@@ -116,6 +120,9 @@ public class Server {
                 }).channel().closeFuture().sync();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            logger.error("Startup server failed", e);
+            promise.setFailure(e);
         }
     }
 

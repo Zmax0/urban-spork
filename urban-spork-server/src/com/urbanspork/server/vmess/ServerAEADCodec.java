@@ -1,10 +1,11 @@
 package com.urbanspork.server.vmess;
 
+import com.urbanspork.common.codec.aead.AEADCipherCodec;
 import com.urbanspork.common.codec.aead.AEADCipherCodecs;
 import com.urbanspork.common.codec.aead.AEADPayloadDecoder;
 import com.urbanspork.common.codec.aead.AEADPayloadEncoder;
-import com.urbanspork.common.codec.vmess.VMessAEADBodyCodec;
-import com.urbanspork.common.codec.vmess.VMessAEADHeaderCodec;
+import com.urbanspork.common.codec.vmess.AEADBodyCodec;
+import com.urbanspork.common.codec.vmess.AEADHeaderCodec;
 import com.urbanspork.common.lang.Go;
 import com.urbanspork.common.protocol.vmess.Address;
 import com.urbanspork.common.protocol.vmess.ID;
@@ -12,6 +13,7 @@ import com.urbanspork.common.protocol.vmess.aead.AuthID;
 import com.urbanspork.common.protocol.vmess.aead.KDF;
 import com.urbanspork.common.protocol.vmess.encoding.ServerSession;
 import com.urbanspork.common.protocol.vmess.header.RequestCommand;
+import com.urbanspork.common.protocol.vmess.header.RequestOption;
 import com.urbanspork.common.protocol.vmess.header.SecurityType;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -19,8 +21,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import io.netty.handler.codec.DecoderException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -30,8 +30,7 @@ import static com.urbanspork.common.protocol.vmess.aead.Const.*;
 
 public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ServerAEADCodec.class);
-    private final VMessAEADHeaderCodec headerCodec = new VMessAEADHeaderCodec(AEADCipherCodecs.AES_GCM.get());
+    private final AEADHeaderCodec headerCodec = new AEADHeaderCodec(AEADCipherCodecs.AES_GCM.get());
     private final byte[][] keys;
     private ServerSession session;
     private SecurityType security;
@@ -50,15 +49,17 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
     public void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         if (bodyEncoder == null) {
             byte[] aeadResponseHeaderLengthEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_LEN_KEY);
-            byte[] aeadResponseHeaderLengthEncryptionIV = KDF.kdf(session.getResponseBodyIV(), headerCodec.cipher().nonceSize(), KDF_SALT_AEAD_RESP_HEADER_LEN_IV);
-            byte[] aeadEncryptedHeaderBuffer = new byte[]{session.getResponseHeader(), (byte) 0}; // not support handling command now
+            AEADCipherCodec cipher = headerCodec.cipher();
+            int nonceSize = cipher.nonceSize();
+            byte[] aeadResponseHeaderLengthEncryptionIV = KDF.kdf(session.getResponseBodyIV(), nonceSize, KDF_SALT_AEAD_RESP_HEADER_LEN_IV);
+            byte[] aeadEncryptedHeaderBuffer = new byte[]{session.getResponseHeader(), (byte) RequestOption.AuthenticatedLength.getValue(), 0, 0}; // not support handling command now
             byte[] aeadResponseHeaderLengthEncryptionBuffer = new byte[Short.BYTES];
             Unpooled.wrappedBuffer(aeadResponseHeaderLengthEncryptionBuffer).setShort(0, aeadEncryptedHeaderBuffer.length);
-            out.writeBytes(headerCodec.cipher().encrypt(aeadResponseHeaderLengthEncryptionKey, aeadResponseHeaderLengthEncryptionIV, null, aeadResponseHeaderLengthEncryptionBuffer));
+            out.writeBytes(cipher.encrypt(aeadResponseHeaderLengthEncryptionKey, aeadResponseHeaderLengthEncryptionIV, aeadResponseHeaderLengthEncryptionBuffer));
             byte[] aeadResponseHeaderPayloadEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY);
-            byte[] aeadResponseHeaderPayloadEncryptionIV = KDF.kdf(session.getResponseBodyIV(), headerCodec.cipher().nonceSize(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV);
-            out.writeBytes(headerCodec.cipher().encrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, null, aeadEncryptedHeaderBuffer));
-            bodyEncoder = VMessAEADBodyCodec.getBodyEncoder(security, session);
+            byte[] aeadResponseHeaderPayloadEncryptionIV = KDF.kdf(session.getResponseBodyIV(), nonceSize, KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV);
+            out.writeBytes(cipher.encrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, aeadEncryptedHeaderBuffer));
+            bodyEncoder = AEADBodyCodec.getBodyEncoder(security, session);
         }
         bodyEncoder.encodePayload(msg, out);
     }
@@ -72,8 +73,7 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
             if (key.length == 0) {
                 throw new DecoderException("No matched authID");
             }
-            ByteBuf header = in.alloc().buffer();
-            headerCodec.openVMessAEADHeader(key, in, header);
+            ByteBuf header = headerCodec.openVMessAEADHeader(key, in);
             if (!header.isReadable()) {
                 return;
             }
@@ -104,16 +104,9 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
                 throw new DecoderException("Invalid auth, but this is a AEAD request");
             }
             session = new ServerSession(requestBodyIV, requestBodyKey, responseHeader);
-            bodyDecoder = VMessAEADBodyCodec.getBodyDecoder(security, session);
+            bodyDecoder = AEADBodyCodec.getBodyDecoder(security, session);
             out.add(address);
         }
         bodyDecoder.decodePayload(in, out);
     }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        logger.error(cause.getMessage(), cause);
-        ctx.close();
-    }
-
 }

@@ -13,5 +13,4 @@ public record AEADAuthenticator(AEADCipherCodec codec, byte[] key, NonceGenerato
     public byte[] open(byte[] in) throws InvalidCipherTextException {
         return codec.decrypt(key, nonceGenerator.generate(), associatedTextGenerator.generate(), in);
     }
-
 }
