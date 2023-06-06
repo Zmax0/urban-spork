@@ -70,6 +70,9 @@ public class Client {
                 }).channel().closeFuture().sync();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            logger.error("Launch client failed", e);
+            promise.setFailure(e);
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();

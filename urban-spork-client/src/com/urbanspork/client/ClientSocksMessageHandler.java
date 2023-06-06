@@ -1,7 +1,6 @@
 package com.urbanspork.client;
 
 import com.urbanspork.client.shadowsocks.ShadowsocksUDPAssociateHandler;
-import com.urbanspork.common.channel.ChannelCloseUtils;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -22,9 +21,6 @@ public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks
             if (msg instanceof Socks5InitialRequest) {
                 ctx.pipeline().addFirst(new Socks5CommandRequestDecoder());
                 ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH));
-            } else if (msg instanceof Socks5PasswordAuthRequest) {
-                ctx.pipeline().addFirst(new Socks5CommandRequestDecoder());
-                ctx.write(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.SUCCESS));
             } else if (msg instanceof Socks5CommandRequest request) {
                 channelRead1(ctx, request);
             } else {
@@ -53,10 +49,4 @@ public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks
     public void channelReadComplete(ChannelHandlerContext ctx) {
         ctx.flush();
     }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable throwable) {
-        ChannelCloseUtils.closeOnFlush(ctx.channel());
-    }
-
 }

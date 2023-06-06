@@ -1,6 +1,7 @@
 package com.urbanspork.client;
 
 import com.urbanspork.common.config.ClientConfig;
+import com.urbanspork.common.config.ClientConfigTestCase;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.socks.Handshake;
 import com.urbanspork.test.TestDice;
@@ -23,9 +24,9 @@ class ClientSocksHandshakeTestCase {
 
     @Test
     void testUdpEnable() throws InterruptedException, ExecutionException {
-        ClientConfig config = TestUtil.testConfig(PORTS[0], PORTS[1]);
+        ClientConfig config = ClientConfigTestCase.testConfig(PORTS[0], PORTS[1]);
         config.getServers().get(0).setProtocol(Protocols.vmess);
-        future = TestUtil.launchClient(config);
+        future = ClientTestCase.launchClient(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", TestDice.randomPort());
         assertFailedHandshake(proxyAddress, dstAddress1);
@@ -33,8 +34,8 @@ class ClientSocksHandshakeTestCase {
 
     @Test
     void testIllegalDstAddress() throws InterruptedException, ExecutionException {
-        ClientConfig config = TestUtil.testConfig(PORTS[0], PORTS[1]);
-        future = TestUtil.launchClient(config);
+        ClientConfig config = ClientConfigTestCase.testConfig(PORTS[0], PORTS[1]);
+        future = ClientTestCase.launchClient(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", 0);
         assertFailedHandshake(proxyAddress, dstAddress1);
@@ -53,5 +54,4 @@ class ClientSocksHandshakeTestCase {
         Assertions.assertEquals(Socks5CommandStatus.FAILURE, result.response().status());
         result.sessionChannel().eventLoop().shutdownGracefully();
     }
-
 }

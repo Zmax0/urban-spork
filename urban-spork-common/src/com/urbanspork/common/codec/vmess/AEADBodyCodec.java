@@ -14,36 +14,40 @@ import com.urbanspork.common.protocol.vmess.header.SecurityType;
 
 import java.util.function.Predicate;
 
-import static com.urbanspork.common.codec.vmess.VMessAEADChunkSizeCodec.AUTH_LEN;
+import static com.urbanspork.common.codec.vmess.AEADChunkSizeCodec.AUTH_LEN;
 
-public class VMessAEADBodyCodec {
+public class AEADBodyCodec {
 
-    public static VMessAEADBodyEncoder getBodyEncoder(SecurityType type, Session session) {
+    private AEADBodyCodec() {}
+
+    public static AEADBodyEncoder getBodyEncoder(SecurityType type, Session session) {
         AEADCipherCodec codec = getAEADCipherCodec(type);
         if (SecurityType.CHACHA20_POLY1305 == type) {
-            return new VMessAEADBodyEncoder(
-                newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(getKey(session, VMessAEADBodyCodec::isServer)), getIV(session, VMessAEADBodyCodec::isServer)),
-                newAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN)), session.getRequestBodyIV())
+            return new AEADBodyEncoder(
+                newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(getKey(session, AEADBodyCodec::isServer)), getIV(session, AEADBodyCodec::isServer)),
+                newAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN)), session.getRequestBodyIV()),
+                new ShakeSizeParser(getIV(session, AEADBodyCodec::isServer))
             );
         }
-        return new VMessAEADBodyEncoder(
-            newAEADAuthenticator(codec, getKey(session, VMessAEADBodyCodec::isServer), getIV(session, VMessAEADBodyCodec::isServer)),
-            newAEADChunkSizeCodec(codec, KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN), session.getRequestBodyIV())
+        return new AEADBodyEncoder(
+            newAEADAuthenticator(codec, getKey(session, AEADBodyCodec::isServer), getIV(session, AEADBodyCodec::isServer)),
+            newAEADChunkSizeCodec(codec, KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN), session.getRequestBodyIV()),
+            new ShakeSizeParser(getIV(session, AEADBodyCodec::isServer))
         );
     }
 
-    public static VMessAEADBodyDecoder getBodyDecoder(SecurityType type, Session session) {
+    public static AEADBodyDecoder getBodyDecoder(SecurityType type, Session session) {
         AEADCipherCodec codec = getAEADCipherCodec(type);
         if (SecurityType.CHACHA20_POLY1305 == type) {
-            return new VMessAEADBodyDecoder(
-                newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(getKey(session, VMessAEADBodyCodec::isClient)), getIV(session, VMessAEADBodyCodec::isClient)),
-                newAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN)), session.getRequestBodyIV())
-            );
+            return new AEADBodyDecoder(
+                newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(getKey(session, AEADBodyCodec::isClient)), getIV(session, AEADBodyCodec::isClient)),
+                newAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN)), session.getRequestBodyIV()),
+                new ShakeSizeParser(getIV(session, AEADBodyCodec::isClient)));
         }
-        return new VMessAEADBodyDecoder(
-            newAEADAuthenticator(codec, getKey(session, VMessAEADBodyCodec::isClient), getIV(session, VMessAEADBodyCodec::isClient)),
-            newAEADChunkSizeCodec(codec, KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN), session.getRequestBodyIV())
-        );
+        return new AEADBodyDecoder(
+            newAEADAuthenticator(codec, getKey(session, AEADBodyCodec::isClient), getIV(session, AEADBodyCodec::isClient)),
+            newAEADChunkSizeCodec(codec, KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN), session.getRequestBodyIV()),
+            new ShakeSizeParser(getIV(session, AEADBodyCodec::isClient)));
     }
 
     private static AEADCipherCodec getAEADCipherCodec(SecurityType type) {
@@ -74,8 +78,7 @@ public class VMessAEADBodyCodec {
         return new AEADAuthenticator(codec, key, NonceGenerator.generateCountingNonce(nonce, codec.nonceSize(), true), BytesGenerator.generateEmptyBytes());
     }
 
-    private static VMessAEADChunkSizeCodec newAEADChunkSizeCodec(AEADCipherCodec codec, byte[] key, byte[] nonce) {
-        return new VMessAEADChunkSizeCodec(newAEADAuthenticator(codec, key, nonce));
+    private static AEADChunkSizeCodec newAEADChunkSizeCodec(AEADCipherCodec codec, byte[] key, byte[] nonce) {
+        return new AEADChunkSizeCodec(newAEADAuthenticator(codec, key, nonce));
     }
-
 }

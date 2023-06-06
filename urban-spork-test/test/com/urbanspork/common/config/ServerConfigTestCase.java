@@ -5,10 +5,14 @@ import com.urbanspork.common.protocol.shadowsocks.network.Network;
 import com.urbanspork.common.protocol.shadowsocks.network.PacketEncoding;
 import com.urbanspork.test.TestDice;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
+@DisplayName("Common - Server Config")
 public class ServerConfigTestCase {
 
     @Test
@@ -48,14 +52,22 @@ public class ServerConfigTestCase {
     }
 
     public static ServerConfig testConfig(int port) {
-        ServerConfig serverConfig = new ServerConfig();
-        serverConfig.setHost("localhost");
-        serverConfig.setPort(port);
-        serverConfig.setProtocol(Protocols.shadowsocks);
-        serverConfig.setCipher(TestDice.randomCipher());
-        serverConfig.setPassword(UUID.randomUUID().toString());
-        serverConfig.setNetworks(new Network[]{Network.TCP, Network.UDP});
-        serverConfig.setPacketEncoding(PacketEncoding.Packet);
-        return serverConfig;
+        return testConfig(new int[]{port}).get(0);
+    }
+
+    public static List<ServerConfig> testConfig(int[] ports) {
+        List<ServerConfig> serverConfigs = new ArrayList<>(ports.length);
+        for (int port : ports) {
+            ServerConfig serverConfig = new ServerConfig();
+            serverConfig.setHost("localhost");
+            serverConfig.setPort(port);
+            serverConfig.setProtocol(Protocols.shadowsocks);
+            serverConfig.setCipher(TestDice.randomCipher());
+            serverConfig.setPassword(UUID.randomUUID().toString());
+            serverConfig.setNetworks(new Network[]{Network.TCP, Network.UDP});
+            serverConfig.setPacketEncoding(PacketEncoding.Packet);
+            serverConfigs.add(serverConfig);
+        }
+        return serverConfigs;
     }
 }

@@ -97,9 +97,18 @@ public class ServerConfig {
     public String toString() {
         StringBuilder builder = new StringBuilder(listItemText());
         if (protocol != null) {
-            builder.append('|').append(protocol).append('|').append(cipher.toString());
+            builder.append('|').append(protocol);
+            if (Protocols.vmess == protocol) {
+                builder.append('|').append("negotiated");
+            } else {
+                builder.append('|').append(cipher.toString());
+            }
         }
         return builder.toString();
+    }
+
+    public String clientText() {
+        return listItemText() + '|' + protocol + '|' + cipher.toString();
     }
 
     public String listItemText() {

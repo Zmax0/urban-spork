@@ -15,7 +15,7 @@ import java.security.InvalidKeyException;
 
 import static com.urbanspork.common.codec.aead.AEADCipherCodec.TAG_SIZE;
 
-public record VMessAEADHeaderCodec(AEADCipherCodec cipher) {
+public record AEADHeaderCodec(AEADCipherCodec cipher) {
 
     private static final byte[] KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY = "VMess Header AEAD Key_Length".getBytes();
     private static final byte[] KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_IV = "VMess Header AEAD Nonce_Length".getBytes();
@@ -47,9 +47,9 @@ public record VMessAEADHeaderCodec(AEADCipherCodec cipher) {
         out.writeBytes(payloadHeaderAEADEncrypted); // payload + TAG_SIZE
     }
 
-    public void openVMessAEADHeader(byte[] key, ByteBuf in, ByteBuf out) throws InvalidCipherTextException {
+    public ByteBuf openVMessAEADHeader(byte[] key, ByteBuf in) throws InvalidCipherTextException {
         if (in.readableBytes() < 16 + 2 + TAG_SIZE + 8 + TAG_SIZE) {
-            return;
+            return Unpooled.EMPTY_BUFFER;
         }
         in.markReaderIndex();
         byte[] authid = new byte[16];
@@ -69,7 +69,7 @@ public record VMessAEADHeaderCodec(AEADCipherCodec cipher) {
         // 16 == AEAD Tag size
         if (in.readableBytes() < length + TAG_SIZE) {
             in.resetReaderIndex();
-            return;
+            return Unpooled.EMPTY_BUFFER;
         }
         byte[] payloadHeaderAEADEncrypted = new byte[length + TAG_SIZE];
         in.readBytes(payloadHeaderAEADEncrypted);
@@ -79,7 +79,7 @@ public record VMessAEADHeaderCodec(AEADCipherCodec cipher) {
             authid,
             payloadHeaderAEADEncrypted
         );
-        out.writeBytes(decryptedAEADHeaderPayloadR);
+        return Unpooled.wrappedBuffer(decryptedAEADHeaderPayloadR);
     }
 
 }

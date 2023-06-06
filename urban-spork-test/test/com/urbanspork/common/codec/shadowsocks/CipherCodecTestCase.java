@@ -1,11 +1,12 @@
 package com.urbanspork.common.codec.shadowsocks;
 
-import com.urbanspork.common.codec.EmptyChannelHandlerContext;
 import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.protocol.shadowsocks.network.Network;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -64,14 +65,15 @@ class CipherCodecTestCase {
 
     private List<Object> cipherTest(ShadowsocksAEADCipherCodec codec, ByteBuf inBuf) throws Exception {
         ByteBuf trans = Unpooled.buffer();
+        ChannelHandlerContext ctx = new EmbeddedChannel().pipeline().firstContext();
         for (ByteBuf slice : randomSlice(inBuf)) {
-            codec.encode(EmptyChannelHandlerContext.INSTANCE, slice, trans);
+            codec.encode(ctx, slice, trans);
         }
         List<Object> out = new ArrayList<>();
         ByteBuf buffer = Unpooled.buffer();
         for (ByteBuf slice : randomSlice(trans)) {
             buffer.writeBytes(slice);
-            codec.decode(EmptyChannelHandlerContext.INSTANCE, buffer, out);
+            codec.decode(ctx, buffer, out);
         }
         return out;
     }
