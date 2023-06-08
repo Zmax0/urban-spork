@@ -48,10 +48,7 @@ public class ClientConfig {
         ServerConfig current = null;
         List<ServerConfig> s = getServers();
         if (s != null && !s.isEmpty()) {
-            int i = getIndex();
-            if (i < s.size()) {
-                current = s.get(i);
-            }
+            current = s.get(Math.min(getIndex(), s.size() - 1));
         }
         return current;
     }

@@ -5,6 +5,7 @@ import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ClientConfigTestCase;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.shadowsocks.network.Network;
 import com.urbanspork.common.protocol.socks.DatagramPacketDecoder;
 import com.urbanspork.common.protocol.socks.DatagramPacketEncoder;
 import com.urbanspork.common.protocol.socks.Handshake;
@@ -91,6 +92,9 @@ class UDPTestCase {
     void launchServer() throws InterruptedException, ExecutionException {
         Promise<List<ServerSocketChannel>> promise = new DefaultPromise<>(executor);
         List<ServerConfig> configs = config.getServers();
+        for (ServerConfig config : configs) {
+            config.setNetworks(new Network[]{Network.TCP, Network.UDP});
+        }
         service.submit(() -> Server.launch(configs, promise));
         Assertions.assertEquals(configs.get(0).getPort(), promise.await().get().get(0).localAddress().getPort());
     }
@@ -126,7 +130,7 @@ class UDPTestCase {
         String str = TestDice.randomString();
         DatagramPacket data = new DatagramPacket(Unpooled.copiedBuffer(str.getBytes()), dstAddress);
         TernaryDatagramPacket msg = new TernaryDatagramPacket(data, socksAddress);
-        logger.debug("Send msg {}", msg);
+        logger.info("Send msg {}", msg);
         channel.writeAndFlush(msg);
         Assertions.assertTrue(promise.await(DelayedEchoTestServer.MAX_DELAYED_SECOND, TimeUnit.SECONDS));
         executor.shutdownGracefully();
@@ -150,7 +154,7 @@ class UDPTestCase {
                         new SimpleChannelInboundHandler<TernaryDatagramPacket>(false) {
                             @Override
                             protected void channelRead0(ChannelHandlerContext ctx, TernaryDatagramPacket msg) {
-                                logger.debug("Receive msg {}", msg);
+                                logger.info("Receive msg {}", msg);
                                 consumer.accept(msg);
                             }
                         }

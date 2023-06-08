@@ -24,5 +24,4 @@ public class ClientSocksInitializer extends ChannelInitializer<NioSocketChannel>
             .addLast(new SocksPortUnificationServerHandler())
             .addLast(ClientSocksMessageHandler.INSTANCE);
     }
-
 }

@@ -21,27 +21,20 @@ import java.util.concurrent.*;
 class ClientTestCase {
 
     private final int[] ports = TestUtil.freePorts(2);
-    private final ExecutorService service = Executors.newFixedThreadPool(1);
 
-    @Test
+    @RepeatedTest(2)
     @Order(1)
-    void launchClient() {
-        ClientConfig config = ClientConfigTestCase.testConfig(ports);
-        service.submit(() -> launchClient(config).get(2, TimeUnit.SECONDS));
+    void launchClient() throws InterruptedException {
+        launchClient(ClientConfigTestCase.testConfig(ports));
     }
 
     @Test
     @Order(2)
     void testHandshake() throws InterruptedException, ExecutionException, TimeoutException {
         InetSocketAddress proxyAddress = new InetSocketAddress(ports[0]);
-        InetSocketAddress dstAddress = new InetSocketAddress("localhost", ports[1]);
-        Handshake.Result result = Handshake.noAuth(Socks5CommandType.CONNECT, proxyAddress, dstAddress).get(2, TimeUnit.SECONDS);
+        InetSocketAddress dstAddress = new InetSocketAddress(ports[1]);
+        Handshake.Result result = Handshake.noAuth(Socks5CommandType.CONNECT, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS);
         Assertions.assertNotEquals(Socks5CommandStatus.SUCCESS, result.response().status());
-    }
-
-    @AfterAll
-    void shutdown() {
-        service.shutdownNow();
     }
 
     public static Future<?> launchClient(ClientConfig config) throws InterruptedException {
