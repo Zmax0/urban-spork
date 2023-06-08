@@ -52,7 +52,7 @@ public class Server {
             for (ServerConfig config : configs) {
                 DefaultPromise<ServerSocketChannel> innerPromise = new DefaultPromise<>(executor);
                 pool.submit(() -> startup(bossGroup, workerGroup, config, innerPromise));
-                innerPromise.await();
+                innerPromise.await(5, TimeUnit.SECONDS);
                 if (innerPromise.isSuccess()) {
                     result.add(innerPromise.get());
                 } else {
@@ -69,10 +69,8 @@ public class Server {
             }
         } catch (InterruptedException | ExecutionException e) {
             pool.shutdownNow();
-            if (e instanceof InterruptedException) {
-                logger.error("Launch thread is interrupted");
-                Thread.currentThread().interrupt();
-            }
+            logger.error("Interrupt main launch thread");
+            Thread.currentThread().interrupt();
         } finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
@@ -95,28 +93,16 @@ public class Server {
                             );
                         }
                     })
-                    .bind(port).sync().addListener(future -> {
-                        if (future.isSuccess()) {
-                            logger.info("Startup udp server => {}", config);
-                        } else {
-                            logger.error("Startup udp server failed", future.cause());
-                        }
-                    });
+                    .bind(port).sync().addListener(future -> logger.info("Startup udp server => {}", config));
             }
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new ServerInitializer(config))
                 .bind(port).sync().addListener((ChannelFutureListener) future -> {
-                    if (future.isSuccess()) {
-                        Channel channel = future.channel();
-                        logger.info("Startup tcp server => {}", config);
-                        promise.setSuccess((ServerSocketChannel) channel);
-                    } else {
-                        Throwable cause = future.cause();
-                        logger.error("Startup tcp server failed", cause);
-                        promise.setFailure(cause);
-                    }
+                    Channel channel = future.channel();
+                    logger.info("Startup tcp server => {}", config);
+                    promise.setSuccess((ServerSocketChannel) channel);
                 }).channel().closeFuture().sync();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

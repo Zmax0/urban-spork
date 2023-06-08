@@ -4,28 +4,22 @@ import com.urbanspork.client.shadowsocks.ShadowsocksUDPAssociateHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.socksx.SocksMessage;
-import io.netty.handler.codec.socksx.SocksVersion;
 import io.netty.handler.codec.socksx.v5.*;
 
 @ChannelHandler.Sharable
-public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<SocksMessage> {
+public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks5Message> {
 
     public static final ClientSocksMessageHandler INSTANCE = new ClientSocksMessageHandler();
 
     private ClientSocksMessageHandler() {}
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, SocksMessage msg) {
-        if (SocksVersion.SOCKS5 == msg.version()) {
-            if (msg instanceof Socks5InitialRequest) {
-                ctx.pipeline().addFirst(new Socks5CommandRequestDecoder());
-                ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH));
-            } else if (msg instanceof Socks5CommandRequest request) {
-                channelRead1(ctx, request);
-            } else {
-                ctx.close();
-            }
+    public void channelRead0(ChannelHandlerContext ctx, Socks5Message msg) {
+        if (msg instanceof Socks5InitialRequest) {
+            ctx.pipeline().addFirst(new Socks5CommandRequestDecoder());
+            ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH));
+        } else if (msg instanceof Socks5CommandRequest request) {
+            channelRead1(ctx, request);
         } else {
             ctx.close();
         }
@@ -41,6 +35,7 @@ public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks
             ctx.pipeline().remove(this);
             ctx.fireChannelRead(request);
         } else {
+            ctx.write(new DefaultSocks5CommandResponse(Socks5CommandStatus.COMMAND_UNSUPPORTED, request.dstAddrType()));
             ctx.close();
         }
     }

@@ -58,15 +58,8 @@ public class Client {
                 .childOption(ChannelOption.SO_LINGER, 1)
                 .childHandler(new ClientSocksInitializer(current, port))
                 .bind(port).sync().addListener((ChannelFutureListener) future -> {
-                    if (future.isSuccess()) {
-                        Channel channel = future.channel();
-                        logger.info("Launch client => {} ", config);
-                        promise.setSuccess((ServerSocketChannel) channel);
-                    } else {
-                        Throwable cause = future.cause();
-                        logger.error("Launch client failed", cause);
-                        promise.setFailure(cause);
-                    }
+                    logger.info("Launch client => {} ", config);
+                    promise.setSuccess((ServerSocketChannel) future.channel());
                 }).channel().closeFuture().sync();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

@@ -30,7 +30,10 @@ public class ServerConfigTestCase {
     @Test
     void testUDPEnable() {
         ServerConfig config = testConfig(TestDice.randomPort());
+        config.setNetworks(new Network[]{Network.UDP});
         Assertions.assertTrue(config.udpEnabled());
+        config.setNetworks(new Network[]{Network.TCP});
+        Assertions.assertFalse(config.udpEnabled());
         config.setNetworks(null);
         Assertions.assertFalse(config.udpEnabled());
     }
@@ -64,7 +67,6 @@ public class ServerConfigTestCase {
             serverConfig.setProtocol(Protocols.shadowsocks);
             serverConfig.setCipher(TestDice.randomCipher());
             serverConfig.setPassword(UUID.randomUUID().toString());
-            serverConfig.setNetworks(new Network[]{Network.TCP, Network.UDP});
             serverConfig.setPacketEncoding(PacketEncoding.Packet);
             serverConfigs.add(serverConfig);
         }
