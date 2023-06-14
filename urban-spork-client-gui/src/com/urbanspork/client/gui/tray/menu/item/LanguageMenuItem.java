@@ -40,7 +40,7 @@ public class LanguageMenuItem implements TrayMenuItemBuilder {
         if (item.getState()) {
             config.setLanguage(item.getName());
             try {
-                ConfigHandler.DEFAULT.write(config);
+                ConfigHandler.DEFAULT.save(config);
             } catch (Exception e) {
                 Tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
                 return;

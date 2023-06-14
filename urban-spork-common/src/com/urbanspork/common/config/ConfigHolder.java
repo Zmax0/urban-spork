@@ -4,7 +4,9 @@ import java.io.IOException;
 
 interface ConfigHolder {
 
-    void write(String str) throws IOException;
+    void save(String str) throws IOException;
 
     String read() throws IOException;
+
+    void delete() throws IOException;
 }

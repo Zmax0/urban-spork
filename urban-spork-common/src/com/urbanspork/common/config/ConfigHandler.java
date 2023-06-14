@@ -23,9 +23,17 @@ public enum ConfigHandler {
         }
     }
 
-    public void write(ClientConfig config) {
+    public void save(ClientConfig config) {
         try {
-            holder.write(codec.encode(config));
+            holder.save(codec.encode(config));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public void delete() {
+        try {
+            holder.delete();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
