@@ -40,7 +40,7 @@ public class EchoTestServer {
                 .bind(port).addListener((ChannelFutureListener) future -> {
                     if (future.isSuccess()) {
                         Channel channel = future.channel();
-                        logger.info("Launch echo test server => {} ", channel);
+                        logger.info("Launch echo test server => {}", channel.localAddress());
                         promise.setSuccess(channel);
                     } else {
                         promise.setFailure(future.cause());

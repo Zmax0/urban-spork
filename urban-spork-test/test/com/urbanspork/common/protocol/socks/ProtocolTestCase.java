@@ -19,7 +19,8 @@ class ProtocolTestCase {
     @ArgumentsSource(InetSocketAddressProvider.class)
     void testToCommandRequest(InetSocketAddress address) {
         Socks5CommandRequest request = Socks5.toCommandRequest(Socks5CommandType.CONNECT, address);
-        Assertions.assertEquals(address, new InetSocketAddress(request.dstAddr(), request.dstPort()));
+        Assertions.assertEquals(address.getHostString(), request.dstAddr());
+        Assertions.assertEquals(address.getPort(), request.dstPort());
     }
 
     @ParameterizedTest
@@ -27,6 +28,8 @@ class ProtocolTestCase {
     void testAddressing(InetSocketAddress address) throws Exception {
         ByteBuf out = Unpooled.directBuffer();
         Address.encode(Socks5CommandType.CONNECT, address, out);
-        Assertions.assertEquals(address, Address.decode(out));
+        InetSocketAddress actual = Address.decode(out);
+        Assertions.assertEquals(address, actual);
+        Assertions.assertEquals(address, actual);
     }
 }

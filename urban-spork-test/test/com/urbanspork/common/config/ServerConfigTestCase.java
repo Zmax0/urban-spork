@@ -21,7 +21,7 @@ public class ServerConfigTestCase {
         Assertions.assertTrue(config.check());
         config.setCipher(null);
         Assertions.assertFalse(config.check());
-        config.setPassword("");
+        config.setPassword(null);
         Assertions.assertFalse(config.check());
         config.setHost("");
         Assertions.assertFalse(config.check());
@@ -44,14 +44,20 @@ public class ServerConfigTestCase {
         String string = config.toString();
         Assertions.assertTrue(string.contains(config.getProtocol().toString()));
         Assertions.assertTrue(string.contains(config.getCipher().toString()));
+        config.setProtocol(null);
+        Assertions.assertEquals(config.toString(), config.listItemText());
     }
 
     @Test
     void testListItemText() {
         ServerConfig config = testConfig(TestDice.randomPort());
-        String string = config.listItemText();
-        Assertions.assertTrue(string.contains(config.getHost()));
-        Assertions.assertTrue(string.contains(String.valueOf(config.getPort())));
+        config.setRemark("");
+        String text = config.listItemText();
+        Assertions.assertTrue(text.contains(config.getHost()));
+        Assertions.assertTrue(text.contains(String.valueOf(config.getPort())));
+        String remark = TestDice.randomString();
+        config.setRemark(remark);
+        Assertions.assertEquals(remark, config.listItemText());
     }
 
     public static ServerConfig testConfig(int port) {

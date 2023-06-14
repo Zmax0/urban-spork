@@ -12,7 +12,7 @@ public class InetSocketAddressProvider implements ArgumentsProvider {
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
         return Stream.of(
-            new InetSocketAddress("www.w3.org", 80),
+            InetSocketAddress.createUnresolved("www.w3.org", 80),
             InetSocketAddress.createUnresolved("www.urban-spork.com", 443),
             new InetSocketAddress(0),
             new InetSocketAddress("192.168.89.9", TestDice.randomPort()),
