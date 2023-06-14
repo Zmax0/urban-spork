@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 public class DefaultChannelInboundHandler extends ChannelInboundHandlerAdapter {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    protected final Channel channel;
+    private final Channel channel;
 
     public DefaultChannelInboundHandler(Channel channel) {
         this.channel = channel;

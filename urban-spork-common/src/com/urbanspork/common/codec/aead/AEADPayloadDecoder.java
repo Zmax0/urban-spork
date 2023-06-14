@@ -12,15 +12,9 @@ public interface AEADPayloadDecoder {
 
     int INIT_PAYLOAD_LENGTH = -1;
 
-    int INIT_PADDING_LENGTH = -1;
-
     int payloadLength();
 
     void updatePayloadLength(int payloadLength);
-
-    int paddingLength();
-
-    void updatePaddingLength(int paddingLength);
 
     AEADAuthenticator auth();
 
@@ -43,19 +37,14 @@ public interface AEADPayloadDecoder {
                 in.readBytes(payloadSizeBytes);
                 payloadLength = chunkSizeDecoder.decode(payloadSizeBytes);
             } else {
-                int paddingLength = paddingLength();
-                if (paddingLength == INIT_PADDING_LENGTH) {
-                    PaddingLengthGenerator padding = padding();
-                    if (padding != null) {
-                        paddingLength = padding.nextPaddingLength();
-                    } else {
-                        paddingLength = 0;
-                    }
+                int paddingLength = 0;
+                PaddingLengthGenerator padding = padding();
+                if (padding != null) {
+                    paddingLength = padding.nextPaddingLength();
                 }
                 byte[] payloadBytes = new byte[payloadLength + AEADCipherCodec.TAG_SIZE - paddingLength];
                 in.readBytes(payloadBytes);
                 in.skipBytes(paddingLength);
-                updatePaddingLength(INIT_PADDING_LENGTH);
                 out.add(Unpooled.wrappedBuffer(auth().open(payloadBytes)));
                 payloadLength = INIT_PAYLOAD_LENGTH;
             }
@@ -70,10 +59,8 @@ public interface AEADPayloadDecoder {
      * @param out payload
      */
     default void decodePacket(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-        if (in.isReadable()) {
-            byte[] payloadBytes = new byte[in.readableBytes()];
-            in.readBytes(payloadBytes);
-            out.add(in.alloc().buffer().writeBytes(auth().open(payloadBytes)));
-        }
+        byte[] payloadBytes = new byte[in.readableBytes()];
+        in.readBytes(payloadBytes);
+        out.add(Unpooled.wrappedBuffer(auth().open(payloadBytes)));
     }
 }

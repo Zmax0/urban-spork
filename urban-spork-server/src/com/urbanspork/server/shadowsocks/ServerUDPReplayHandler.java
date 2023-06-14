@@ -17,7 +17,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ServerUDPReplayHandler extends ChannelInboundHandlerAdapter {
+public class ServerUDPReplayHandler extends SimpleChannelInboundHandler<DatagramPacket> {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerUDPReplayHandler.class);
     private final Map<InetSocketAddress, Channel> workerChannels = new ConcurrentHashMap<>();
@@ -25,20 +25,19 @@ public class ServerUDPReplayHandler extends ChannelInboundHandlerAdapter {
     private final PacketEncoding packetEncoding;
 
     public ServerUDPReplayHandler(PacketEncoding packetEncoding, EventLoopGroup workerGroup) {
+        super(false);
         this.packetEncoding = packetEncoding;
         this.workerGroup = workerGroup;
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        if (msg instanceof DatagramPacket packet) {
-            Channel channel = ctx.channel();
-            InetSocketAddress callback = packet.recipient();
-            Channel workerChannel = workerChannel(callback, channel);
-            workerChannel.attr(AttributeKeys.CALLBACK).get().put(callback, packet.sender());
-            logger.info("Replay {} -> {} via {} -> {}", packet.sender(), callback, channel.localAddress(), workerChannel.localAddress());
-            workerChannel.writeAndFlush(packet);
-        }
+    public void channelRead0(ChannelHandlerContext ctx, DatagramPacket msg) {
+        Channel channel = ctx.channel();
+        InetSocketAddress callback = msg.recipient();
+        Channel workerChannel = workerChannel(callback, channel);
+        workerChannel.attr(AttributeKeys.CALLBACK).get().put(callback, msg.sender());
+        logger.info("Replay {} -> {} via {} -> {}", msg.sender(), callback, channel.localAddress(), workerChannel.localAddress());
+        workerChannel.writeAndFlush(msg);
     }
 
     @Override
@@ -103,9 +102,7 @@ public class ServerUDPReplayHandler extends ChannelInboundHandlerAdapter {
                     boolean flag = channel.equals(value);
                     if (flag) {
                         logger.info("Remove working binding: {} != {}", entry.getKey(), channel.localAddress());
-                        if (value.isActive()) {
-                            value.close();
-                        }
+                        value.close();
                     }
                     return flag;
                 });

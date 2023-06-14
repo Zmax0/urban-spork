@@ -2,8 +2,10 @@ package com.urbanspork.common.channel;
 
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+@DisplayName("Common - Default Channel Inbound Handler")
 class DefaultChannelInboundHandlerTestCase {
     @Test
     void testExceptionCaught() {
