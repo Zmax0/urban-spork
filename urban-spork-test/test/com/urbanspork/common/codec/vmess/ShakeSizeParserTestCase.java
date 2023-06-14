@@ -1,8 +1,10 @@
 package com.urbanspork.common.codec.vmess;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+@DisplayName("VMess - Shake Size Parser")
 class ShakeSizeParserTestCase {
     @Test
     void testNextPaddingLength() {

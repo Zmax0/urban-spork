@@ -24,6 +24,7 @@ class ServerUDPHandlerTestCase {
     @EnumSource(PacketEncoding.class)
     void testWorkAndIdle(PacketEncoding packetEncoding) throws Exception {
         ServerUDPReplayHandler handler = new ServerUDPReplayHandler(packetEncoding, new NioEventLoopGroup());
+        handler.workerChannel(new InetSocketAddress(TestDice.randomPort()), new EmbeddedChannel(handler));
         InetSocketAddress recipient = new InetSocketAddress(TestDice.randomPort());
         Channel outboundChannel = handler.workerChannel(recipient, new EmbeddedChannel(handler));
         Assertions.assertNotNull(outboundChannel);
@@ -31,6 +32,7 @@ class ServerUDPHandlerTestCase {
         ChannelInboundHandlerAdapter last = (ChannelInboundHandlerAdapter) workerPipeline.last();
         ChannelHandlerContext ctx = workerPipeline.lastContext();
         last.channelRead(ctx, new DatagramPacket(Unpooled.wrappedBuffer(TestDice.randomString().getBytes()), new InetSocketAddress(0), new InetSocketAddress(0)));
+        last.userEventTriggered(ctx, new Object());
         last.userEventTriggered(ctx, IdleStateEvent.FIRST_ALL_IDLE_STATE_EVENT);
         outboundChannel.closeFuture().await();
         Assertions.assertFalse(outboundChannel.isActive());

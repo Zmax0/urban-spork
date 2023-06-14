@@ -36,7 +36,6 @@ public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks
             ctx.fireChannelRead(request);
         } else {
             ctx.write(new DefaultSocks5CommandResponse(Socks5CommandStatus.COMMAND_UNSUPPORTED, request.dstAddrType()));
-            ctx.close();
         }
     }
 

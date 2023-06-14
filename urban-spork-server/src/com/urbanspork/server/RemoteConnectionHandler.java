@@ -4,6 +4,7 @@ import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
@@ -20,21 +21,10 @@ public class RemoteConnectionHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         Channel localChannel = ctx.channel();
-        if (msg instanceof InetSocketAddress remoteAddress) {
-            p = ctx.executor().newPromise();
-            b.group(localChannel.eventLoop())
-                .channel(NioSocketChannel.class)
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
-                .handler(new DefaultChannelInboundHandler(localChannel))
-                .connect(remoteAddress).addListener((ChannelFutureListener) future -> {
-                    if (future.isSuccess()) {
-                        logger.info("Connect success [id: {}, L: {} - R: {}]", localChannel.id(), localChannel.localAddress(), remoteAddress);
-                        p.setSuccess(future.channel());
-                    } else {
-                        logger.error("Connect failed [id: {}, L: {} - R: {}]", localChannel.id(), localChannel.localAddress(), remoteAddress);
-                        ctx.close();
-                    }
-                });
+        if (msg instanceof InetSocketAddress address) {
+            connect(ctx, localChannel, address);
+        } else if (msg instanceof Socks5CommandRequest request) {
+            connect(ctx, localChannel, new InetSocketAddress(request.dstAddr(), request.dstPort()));
         } else {
             p.addListener((FutureListener<Channel>) future -> {
                     Channel outboundChannel = future.get();
@@ -46,5 +36,22 @@ public class RemoteConnectionHandler extends ChannelInboundHandlerAdapter {
                 }
             );
         }
+    }
+
+    private void connect(ChannelHandlerContext ctx, Channel localChannel, InetSocketAddress remoteAddress) {
+        p = ctx.executor().newPromise();
+        b.group(localChannel.eventLoop())
+            .channel(NioSocketChannel.class)
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
+            .handler(new DefaultChannelInboundHandler(localChannel))
+            .connect(remoteAddress).addListener((ChannelFutureListener) future -> {
+                if (future.isSuccess()) {
+                    logger.info("Connect success [id: {}, L: {} - R: {}]", localChannel.id(), localChannel.localAddress(), remoteAddress);
+                    p.setSuccess(future.channel());
+                } else {
+                    logger.error("Connect failed [id: {}, L: {} - R: {}]", localChannel.id(), localChannel.localAddress(), remoteAddress);
+                    ctx.close();
+                }
+            });
     }
 }

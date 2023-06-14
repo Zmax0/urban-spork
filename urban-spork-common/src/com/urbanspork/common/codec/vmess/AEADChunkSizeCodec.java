@@ -8,7 +8,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 
 public record AEADChunkSizeCodec(AEADAuthenticator auth) implements ChunkSizeCodec {
 
-    public static final byte[] AUTH_LEN = "auth_len".getBytes();
+    public static final String AUTH_LEN = "auth_len";
 
     @Override
     public int sizeBytes() {

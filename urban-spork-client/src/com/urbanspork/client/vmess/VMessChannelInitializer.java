@@ -18,7 +18,7 @@ public class VMessChannelInitializer extends ChannelInitializer<SocketChannel> {
 
     @Override
     public void initChannel(SocketChannel remoteChannel) {
-        remoteChannel.pipeline().addLast(new ClientAEADCodec(config.getPassword(), request, config.getCipher()));
+        remoteChannel.pipeline().addLast(new ClientAEADCodec(config.getCipher(), request, config.getPassword()));
     }
 
 }

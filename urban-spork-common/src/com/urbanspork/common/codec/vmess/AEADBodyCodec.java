@@ -22,32 +22,34 @@ public class AEADBodyCodec {
 
     public static AEADBodyEncoder getBodyEncoder(SecurityType type, Session session) {
         AEADCipherCodec codec = getAEADCipherCodec(type);
+        Predicate<Session> predicate = ServerSession.class::isInstance;
         if (SecurityType.CHACHA20_POLY1305 == type) {
             return new AEADBodyEncoder(
-                newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(getKey(session, AEADBodyCodec::isServer)), getIV(session, AEADBodyCodec::isServer)),
-                newAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN)), session.getRequestBodyIV()),
-                new ShakeSizeParser(getIV(session, AEADBodyCodec::isServer))
+                newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(getKey(session, predicate)), getIV(session, predicate)),
+                newAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN.getBytes())), session.getRequestBodyIV()),
+                new ShakeSizeParser(getIV(session, predicate))
             );
         }
         return new AEADBodyEncoder(
-            newAEADAuthenticator(codec, getKey(session, AEADBodyCodec::isServer), getIV(session, AEADBodyCodec::isServer)),
-            newAEADChunkSizeCodec(codec, KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN), session.getRequestBodyIV()),
-            new ShakeSizeParser(getIV(session, AEADBodyCodec::isServer))
+            newAEADAuthenticator(codec, getKey(session, predicate), getIV(session, predicate)),
+            newAEADChunkSizeCodec(codec, KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN.getBytes()), session.getRequestBodyIV()),
+            new ShakeSizeParser(getIV(session, predicate))
         );
     }
 
     public static AEADBodyDecoder getBodyDecoder(SecurityType type, Session session) {
         AEADCipherCodec codec = getAEADCipherCodec(type);
+        Predicate<Session> predicate = ClientSession.class::isInstance;
         if (SecurityType.CHACHA20_POLY1305 == type) {
             return new AEADBodyDecoder(
-                newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(getKey(session, AEADBodyCodec::isClient)), getIV(session, AEADBodyCodec::isClient)),
-                newAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN)), session.getRequestBodyIV()),
-                new ShakeSizeParser(getIV(session, AEADBodyCodec::isClient)));
+                newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(getKey(session, predicate)), getIV(session, predicate)),
+                newAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN.getBytes())), session.getRequestBodyIV()),
+                new ShakeSizeParser(getIV(session, predicate)));
         }
         return new AEADBodyDecoder(
-            newAEADAuthenticator(codec, getKey(session, AEADBodyCodec::isClient), getIV(session, AEADBodyCodec::isClient)),
-            newAEADChunkSizeCodec(codec, KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN), session.getRequestBodyIV()),
-            new ShakeSizeParser(getIV(session, AEADBodyCodec::isClient)));
+            newAEADAuthenticator(codec, getKey(session, predicate), getIV(session, predicate)),
+            newAEADChunkSizeCodec(codec, KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN.getBytes()), session.getRequestBodyIV()),
+            new ShakeSizeParser(getIV(session, predicate)));
     }
 
     private static AEADCipherCodec getAEADCipherCodec(SecurityType type) {
@@ -64,14 +66,6 @@ public class AEADBodyCodec {
 
     private static byte[] getIV(Session session, Predicate<Session> predicate) {
         return predicate.test(session) ? session.getResponseBodyIV() : session.getRequestBodyIV();
-    }
-
-    private static boolean isServer(Session session) {
-        return session instanceof ServerSession;
-    }
-
-    private static boolean isClient(Session session) {
-        return session instanceof ClientSession;
     }
 
     private static AEADAuthenticator newAEADAuthenticator(AEADCipherCodec codec, byte[] key, byte[] nonce) {
