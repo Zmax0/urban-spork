@@ -16,24 +16,17 @@ public class ShadowsocksAddressDecoder extends ReplayingDecoder<ShadowsocksAddre
 
     enum State {
         INIT,
-        SUCCESS,
-        FAILURE
+        SUCCESS
     }
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        switch (state()) {
-            case INIT -> {
-                Address.decode(in, out);
-                checkpoint(State.SUCCESS);
-            }
-            case SUCCESS -> {
-                int readableBytes = actualReadableBytes();
-                if (readableBytes > 0) {
-                    out.add(in.readRetainedSlice(readableBytes));
-                }
-            }
-            case FAILURE -> in.skipBytes(actualReadableBytes());
+        State state = state();
+        if (state == State.INIT) {
+            Address.decode(in, out);
+            checkpoint(State.SUCCESS);
+        } else {
+            out.add(in.readRetainedSlice(actualReadableBytes()));
         }
     }
 }
