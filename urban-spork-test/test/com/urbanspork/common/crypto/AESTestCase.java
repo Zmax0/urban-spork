@@ -16,8 +16,8 @@ class AESTestCase {
     @ParameterizedTest
     @EnumSource(AES.class)
     void testEncryptAndDecrypt(AES aes) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
-        byte[] key = Dice.randomBytes(32);
-        String str = TestDice.randomString();
+        byte[] key = Dice.rollBytes(32);
+        String str = TestDice.rollString();
         Assertions.assertEquals(str, new String(aes.decrypt(key, aes.encrypt(key, str.getBytes()))));
     }
 }

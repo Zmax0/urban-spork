@@ -8,24 +8,16 @@ import java.util.Map;
 
 public final class ChannelCloseUtils {
 
+    private ChannelCloseUtils() {}
+
     public static void closeOnFlush(Channel ch) {
-        if (ch.isActive()) {
-            ch.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
-        }
+        ch.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
     }
 
     public static void clearMap(Map<?, Channel> map) {
         for (Map.Entry<?, Channel> entry : map.entrySet()) {
-            Channel channel = entry.getValue();
-            if (channel.isActive()) {
-                channel.close();
-            }
+            entry.getValue().close();
         }
         map.clear();
     }
-
-    // @formatter:off
-    private ChannelCloseUtils() {}
-    // @formatter:on
-
 }

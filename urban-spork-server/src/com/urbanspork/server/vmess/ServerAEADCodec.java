@@ -1,9 +1,9 @@
 package com.urbanspork.server.vmess;
 
-import com.urbanspork.common.codec.aead.AEADCipherCodec;
-import com.urbanspork.common.codec.aead.AEADCipherCodecs;
-import com.urbanspork.common.codec.aead.AEADPayloadDecoder;
-import com.urbanspork.common.codec.aead.AEADPayloadEncoder;
+import com.urbanspork.common.codec.aead.CipherCodec;
+import com.urbanspork.common.codec.aead.CipherCodecs;
+import com.urbanspork.common.codec.aead.PayloadDecoder;
+import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.codec.vmess.AEADBodyCodec;
 import com.urbanspork.common.lang.Go;
 import com.urbanspork.common.protocol.vmess.Address;
@@ -35,8 +35,8 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
     private final byte[][] keys;
     private RequestHeader header;
     private Session session;
-    private AEADPayloadEncoder payloadEncoder;
-    private AEADPayloadDecoder payloadDecoder;
+    private PayloadEncoder payloadEncoder;
+    private PayloadDecoder payloadDecoder;
 
     public ServerAEADCodec(String[] uuids) {
         this(ID.newID(uuids));
@@ -50,7 +50,7 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
     public void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         if (payloadEncoder == null) {
             byte[] aeadResponseHeaderLengthEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_LEN_KEY.getBytes());
-            AEADCipherCodec cipher = AEADCipherCodecs.AES_GCM.get();
+            CipherCodec cipher = CipherCodecs.AES_GCM.get();
             int nonceSize = cipher.nonceSize();
             byte[] aeadResponseHeaderLengthEncryptionIV = KDF.kdf(session.getResponseBodyIV(), nonceSize, KDF_SALT_AEAD_RESP_HEADER_LEN_IV.getBytes());
             int option = RequestOption.toMask(header.option());

@@ -36,7 +36,7 @@ public class ServerUDPReplayHandler extends SimpleChannelInboundHandler<Datagram
         InetSocketAddress callback = msg.recipient();
         Channel workerChannel = workerChannel(callback, channel);
         workerChannel.attr(AttributeKeys.CALLBACK).get().put(callback, msg.sender());
-        logger.info("Replay {} -> {} via {} -> {}", msg.sender(), callback, channel.localAddress(), workerChannel.localAddress());
+        logger.info("[udp][shadowsocks]{} → {} ~ {} → {}", msg.sender(), callback, channel.localAddress(), workerChannel.localAddress());
         workerChannel.writeAndFlush(msg);
     }
 
@@ -86,7 +86,7 @@ public class ServerUDPReplayHandler extends SimpleChannelInboundHandler<Datagram
             Channel outboundChannel = ctx.channel();
             InetSocketAddress callback = outboundChannel.attr(AttributeKeys.CALLBACK).get().get(sender);
             if (callback != null) {
-                logger.info("Replay {} <- {} via {} <- {}", callback, sender, inboundChannel.localAddress(), outboundChannel.localAddress());
+                logger.info("[udp][shadowsocks]{} ← {} ~ {} ← {}", callback, sender, inboundChannel.localAddress(), outboundChannel.localAddress());
                 inboundChannel.writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(msg.content(), sender), callback));
             } else {
                 logger.error("None callback of sender => {}", msg.sender());

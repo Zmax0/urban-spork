@@ -1,5 +1,7 @@
 package com.urbanspork.server;
 
+import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.config.ServerConfigTestCase;
 import com.urbanspork.test.TestUtil;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.Assertions;
@@ -12,7 +14,8 @@ import java.net.InetSocketAddress;
 class RemoteConnectionHandlerTestCase {
     @Test
     void testConnectFailed() {
-        EmbeddedChannel channel = new EmbeddedChannel(new RemoteConnectionHandler());
+        ServerConfig config = ServerConfigTestCase.testConfig(TestUtil.freePort());
+        EmbeddedChannel channel = new EmbeddedChannel(new RemoteConnectionHandler(config));
         channel.writeInbound(new InetSocketAddress(TestUtil.freePort()));
         Assertions.assertFalse(channel.isActive());
     }

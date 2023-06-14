@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 @DisplayName("VMess - Encrypt")
 class EncryptTestCase {
     @Test
@@ -18,8 +20,12 @@ class EncryptTestCase {
         ByteBuf in = Unpooled.buffer();
         Encrypt.sealVMessAEADHeader(key, header, in);
         Assertions.assertTrue(in.isReadable());
-        ByteBuf out = Encrypt.openVMessAEADHeader(key, in);
-        Assertions.assertFalse(in.isReadable());
+        Assertions.assertEquals(Unpooled.EMPTY_BUFFER, Encrypt.openVMessAEADHeader(key, in.slice(0, 57)));
+        ByteBuf slice = in.readSlice(ThreadLocalRandom.current().nextInt(58, in.readableBytes()));
+        Assertions.assertEquals(Unpooled.EMPTY_BUFFER, Encrypt.openVMessAEADHeader(key, slice));
+        ByteBuf wrapped = Unpooled.wrappedBuffer(slice, in);
+        ByteBuf out = Encrypt.openVMessAEADHeader(key, wrapped);
+        Assertions.assertFalse(wrapped.isReadable());
         Assertions.assertTrue(out.isReadable());
         Assertions.assertArrayEquals(header, ByteBufUtil.getBytes(out));
     }

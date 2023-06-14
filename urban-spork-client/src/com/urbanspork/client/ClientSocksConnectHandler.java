@@ -1,7 +1,7 @@
 package com.urbanspork.client;
 
-import com.urbanspork.client.shadowsocks.ShadowsocksTCPChannelInitializer;
-import com.urbanspork.client.vmess.VMessChannelInitializer;
+import com.urbanspork.client.shadowsocks.ClientTCPChannelInitializer;
+import com.urbanspork.client.vmess.ClientChannelInitializer;
 import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.channel.ChannelCloseUtils;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
@@ -31,17 +31,17 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
             .channel(inboundChannel.getClass())
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000);
         if (Protocols.vmess == config.getProtocol()) {
-            bootstrap.handler(new VMessChannelInitializer(request, config));
+            bootstrap.handler(new ClientChannelInitializer(request, config));
         } else {
-            bootstrap.handler(new ShadowsocksTCPChannelInitializer(request, config));
+            bootstrap.handler(new ClientTCPChannelInitializer(request, config));
         }
         bootstrap.connect(serverAddress).addListener((ChannelFutureListener) future -> {
             if (future.isSuccess()) {
                 Channel outbound = future.channel();
-                outbound.pipeline().addLast(new DefaultChannelInboundHandler(ctx.channel())); // R -> L
+                outbound.pipeline().addLast(new DefaultChannelInboundHandler(ctx.channel())); // R → L
                 ctx.pipeline().remove(ClientSocksConnectHandler.this);
                 ctx.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, request.dstAddrType(), request.dstAddr(), request.dstPort()))
-                    .addListener((ChannelFutureListener) channelFuture -> ctx.pipeline().addLast(new DefaultChannelInboundHandler(outbound))); // L -> R
+                    .addListener((ChannelFutureListener) channelFuture -> ctx.pipeline().addLast(new DefaultChannelInboundHandler(outbound))); // L → R
             } else {
                 logger.error("Connect proxy server {} failed", serverAddress);
                 Channel inbound = ctx.channel();

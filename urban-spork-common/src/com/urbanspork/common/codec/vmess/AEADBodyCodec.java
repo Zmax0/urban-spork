@@ -2,9 +2,9 @@ package com.urbanspork.common.codec.vmess;
 
 import com.urbanspork.common.codec.BytesGenerator;
 import com.urbanspork.common.codec.NonceGenerator;
-import com.urbanspork.common.codec.aead.AEADAuthenticator;
-import com.urbanspork.common.codec.aead.AEADCipherCodec;
-import com.urbanspork.common.codec.aead.AEADCipherCodecs;
+import com.urbanspork.common.codec.aead.Authenticator;
+import com.urbanspork.common.codec.aead.CipherCodec;
+import com.urbanspork.common.codec.aead.CipherCodecs;
 import com.urbanspork.common.protocol.vmess.aead.KDF;
 import com.urbanspork.common.protocol.vmess.encoding.Auth;
 import com.urbanspork.common.protocol.vmess.encoding.ClientSession;
@@ -21,7 +21,7 @@ public class AEADBodyCodec {
     private AEADBodyCodec() {}
 
     public static AEADBodyEncoder getBodyEncoder(SecurityType type, Session session) {
-        AEADCipherCodec codec = getAEADCipherCodec(type);
+        CipherCodec codec = getAEADCipherCodec(type);
         Predicate<Session> predicate = ServerSession.class::isInstance;
         if (SecurityType.CHACHA20_POLY1305 == type) {
             return new AEADBodyEncoder(
@@ -38,7 +38,7 @@ public class AEADBodyCodec {
     }
 
     public static AEADBodyDecoder getBodyDecoder(SecurityType type, Session session) {
-        AEADCipherCodec codec = getAEADCipherCodec(type);
+        CipherCodec codec = getAEADCipherCodec(type);
         Predicate<Session> predicate = ClientSession.class::isInstance;
         if (SecurityType.CHACHA20_POLY1305 == type) {
             return new AEADBodyDecoder(
@@ -52,11 +52,11 @@ public class AEADBodyCodec {
             new ShakeSizeParser(getIV(session, predicate)));
     }
 
-    private static AEADCipherCodec getAEADCipherCodec(SecurityType type) {
+    private static CipherCodec getAEADCipherCodec(SecurityType type) {
         if (SecurityType.CHACHA20_POLY1305 == type) {
-            return AEADCipherCodecs.CHACHA20_POLY1305.get();
+            return CipherCodecs.CHACHA20_POLY1305.get();
         } else {
-            return AEADCipherCodecs.AES_GCM.get();
+            return CipherCodecs.AES_GCM.get();
         }
     }
 
@@ -68,11 +68,11 @@ public class AEADBodyCodec {
         return predicate.test(session) ? session.getResponseBodyIV() : session.getRequestBodyIV();
     }
 
-    private static AEADAuthenticator newAEADAuthenticator(AEADCipherCodec codec, byte[] key, byte[] nonce) {
-        return new AEADAuthenticator(codec, key, NonceGenerator.generateCountingNonce(nonce, codec.nonceSize(), true), BytesGenerator.generateEmptyBytes());
+    private static Authenticator newAEADAuthenticator(CipherCodec codec, byte[] key, byte[] nonce) {
+        return new Authenticator(codec, key, NonceGenerator.generateCountingNonce(nonce, codec.nonceSize(), true), BytesGenerator.generateEmptyBytes());
     }
 
-    private static AEADChunkSizeCodec newAEADChunkSizeCodec(AEADCipherCodec codec, byte[] key, byte[] nonce) {
+    private static AEADChunkSizeCodec newAEADChunkSizeCodec(CipherCodec codec, byte[] key, byte[] nonce) {
         return new AEADChunkSizeCodec(newAEADAuthenticator(codec, key, nonce));
     }
 }

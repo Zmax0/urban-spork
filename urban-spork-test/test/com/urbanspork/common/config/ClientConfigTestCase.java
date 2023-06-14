@@ -13,7 +13,7 @@ public class ClientConfigTestCase {
 
     @Test
     void testGetCurrent() {
-        ClientConfig config = testConfig(TestDice.randomPort(), TestDice.randomPort());
+        ClientConfig config = testConfig(TestDice.rollPort(), TestDice.rollPort());
         config.setServers(Collections.emptyList());
         Assertions.assertNull(config.getCurrent());
         config.setServers(null);

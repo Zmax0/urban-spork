@@ -1,10 +1,10 @@
 package com.urbanspork.client.vmess;
 
 import com.urbanspork.common.codec.SupportedCipher;
-import com.urbanspork.common.codec.aead.AEADCipherCodec;
-import com.urbanspork.common.codec.aead.AEADCipherCodecs;
-import com.urbanspork.common.codec.aead.AEADPayloadDecoder;
-import com.urbanspork.common.codec.aead.AEADPayloadEncoder;
+import com.urbanspork.common.codec.aead.CipherCodec;
+import com.urbanspork.common.codec.aead.CipherCodecs;
+import com.urbanspork.common.codec.aead.PayloadDecoder;
+import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.codec.vmess.AEADBodyCodec;
 import com.urbanspork.common.lang.Go;
 import com.urbanspork.common.protocol.vmess.Address;
@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static com.urbanspork.common.codec.aead.AEADCipherCodec.TAG_SIZE;
+import static com.urbanspork.common.codec.aead.CipherCodec.TAG_SIZE;
 import static com.urbanspork.common.protocol.vmess.aead.Const.*;
 import static com.urbanspork.common.protocol.vmess.aead.Encrypt.sealVMessAEADHeader;
 
@@ -37,8 +37,8 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
     private static final Logger logger = LoggerFactory.getLogger(ClientAEADCodec.class);
     private final RequestHeader header;
     private final Session session;
-    private AEADPayloadEncoder bodyEncoder;
-    private AEADPayloadDecoder bodyDecoder;
+    private PayloadEncoder bodyEncoder;
+    private PayloadDecoder bodyDecoder;
 
     public ClientAEADCodec(SupportedCipher cipher, Socks5CommandRequest address, String uuid) {
         this(SecurityType.valueOf(cipher), address, uuid);
@@ -68,7 +68,7 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
             buffer.writeByte(0);
             buffer.writeByte(header.command().getValue());
             Address.writeAddressPort(buffer, header.address()); // address
-            buffer.writeBytes(Dice.randomBytes(paddingLen)); // padding
+            buffer.writeBytes(Dice.rollBytes(paddingLen)); // padding
             buffer.writeBytes(Go.fnv1a32(ByteBufUtil.getBytes(buffer, buffer.readerIndex(), buffer.writerIndex(), false)));
             byte[] headerBytes = new byte[buffer.readableBytes()];
             buffer.readBytes(headerBytes);
@@ -81,7 +81,7 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
     @Override
     public void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         if (bodyDecoder == null) {
-            AEADCipherCodec cipher = AEADCipherCodecs.AES_GCM.get();
+            CipherCodec cipher = CipherCodecs.AES_GCM.get();
             int nonceSize = cipher.nonceSize();
             byte[] aeadResponseHeaderLengthEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_LEN_KEY.getBytes());
             byte[] aeadResponseHeaderLengthEncryptionIV = KDF.kdf(session.getResponseBodyIV(), nonceSize, KDF_SALT_AEAD_RESP_HEADER_LEN_IV.getBytes());
@@ -91,8 +91,8 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
             int decryptedResponseHeaderLength = Unpooled.wrappedBuffer(cipher.decrypt(aeadResponseHeaderLengthEncryptionKey,
                 aeadResponseHeaderLengthEncryptionIV, aeadEncryptedResponseHeaderLength)).readShort();
             if (in.readableBytes() < decryptedResponseHeaderLength + TAG_SIZE) {
-                in.resetReaderIndex();
                 logger.info("Unexpected readable bytes for decoding client header: expecting {} but actually {}", decryptedResponseHeaderLength + TAG_SIZE, in.readableBytes());
+                in.resetReaderIndex();
                 return;
             }
             byte[] aeadResponseHeaderPayloadEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY.getBytes());

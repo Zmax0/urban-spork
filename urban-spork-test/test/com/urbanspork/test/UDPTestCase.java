@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.List;
@@ -63,7 +64,7 @@ class UDPTestCase {
             try {
                 SimpleEchoTestServer.launch(DST_PORTS[0]);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new UncheckedIOException(e);
             }
         });
         Assertions.assertFalse(future1.isCancelled());
@@ -127,7 +128,7 @@ class UDPTestCase {
                 promise.setFailure(AssertionFailureBuilder.assertionFailure().message("Not equals").build());
             }
         };
-        String str = TestDice.randomString();
+        String str = TestDice.rollString();
         DatagramPacket data = new DatagramPacket(Unpooled.copiedBuffer(str.getBytes()), dstAddress);
         TernaryDatagramPacket msg = new TernaryDatagramPacket(data, socksAddress);
         logger.info("Send msg {}", msg);
