@@ -26,7 +26,10 @@ public interface Address {
     static InetSocketAddress decode(ByteBuf in) throws Exception {
         Socks5AddressType addressType = Socks5AddressType.valueOf(in.readByte());
         String hostname = Socks5AddressDecoder.DEFAULT.decodeAddress(addressType, in);
-        return new InetSocketAddress(hostname, in.readUnsignedShort());
+        if (addressType == Socks5AddressType.DOMAIN) {
+            return InetSocketAddress.createUnresolved(hostname, in.readUnsignedShort());
+        } else {
+            return new InetSocketAddress(hostname, in.readUnsignedShort());
+        }
     }
-
 }

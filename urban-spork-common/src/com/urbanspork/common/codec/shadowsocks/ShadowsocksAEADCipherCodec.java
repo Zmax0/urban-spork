@@ -48,7 +48,6 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
     private final ChunkSizeCodec sizeCodec;
     private final Network network;
     private int payloadLength = AEADPayloadDecoder.INIT_PAYLOAD_LENGTH;
-    private int paddingLength = AEADPayloadDecoder.INIT_PADDING_LENGTH;
     private AEADPayloadEncoder payloadEncoder;
     private AEADPayloadDecoder payloadDecoder;
 
@@ -145,16 +144,6 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
             @Override
             public void updatePayloadLength(int payloadLength) {
                 ShadowsocksAEADCipherCodec.this.payloadLength = payloadLength;
-            }
-
-            @Override
-            public int paddingLength() {
-                return ShadowsocksAEADCipherCodec.this.paddingLength;
-            }
-
-            @Override
-            public void updatePaddingLength(int paddingLength) {
-                ShadowsocksAEADCipherCodec.this.paddingLength = paddingLength;
             }
 
             @Override

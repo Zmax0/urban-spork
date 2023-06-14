@@ -11,7 +11,6 @@ public class AEADBodyDecoder implements AEADPayloadDecoder {
     private final ChunkSizeCodec sizeCodec;
     private final PaddingLengthGenerator padding;
     private int payloadLength = INIT_PAYLOAD_LENGTH;
-    private int paddingLength = INIT_PADDING_LENGTH;
 
     public AEADBodyDecoder(AEADAuthenticator auth, ChunkSizeCodec sizeCodec, PaddingLengthGenerator padding) {
         this.auth = auth;
@@ -27,16 +26,6 @@ public class AEADBodyDecoder implements AEADPayloadDecoder {
     @Override
     public void updatePayloadLength(int payloadLength) {
         this.payloadLength = payloadLength;
-    }
-
-    @Override
-    public int paddingLength() {
-        return paddingLength;
-    }
-
-    @Override
-    public void updatePaddingLength(int paddingLength) {
-        this.paddingLength = paddingLength;
     }
 
     @Override

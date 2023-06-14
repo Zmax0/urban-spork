@@ -1,27 +1,49 @@
 package com.urbanspork.common.protocol.vmess.header;
 
+import java.util.Arrays;
+
 public enum RequestOption {
 
     // RequestOptionChunkStream indicates request payload is chunked. Each chunk consists of length, authentication and payload.
-    ChunkStream(1),
+    ChunkStream((byte) 1),
 
     // RequestOptionConnectionReuse indicates client side expects to reuse the connection.
-    ConnectionReuse(2),
+    ConnectionReuse((byte) 2),
 
-    ChunkMasking(4),
+    ChunkMasking((byte) 4),
 
-    GlobalPadding(8),
+    GlobalPadding((byte) 8),
 
-    AuthenticatedLength(16),
+    AuthenticatedLength((byte) 16),
     ;
 
-    private final int value;
+    private final byte value;
 
-    RequestOption(int value) {
+    RequestOption(byte value) {
         this.value = value;
     }
 
-    public int getValue() {
+    public byte getValue() {
         return value;
+    }
+
+    public static byte toMask(RequestOption[] arr) {
+        byte b = 0;
+        for (RequestOption option : arr) {
+            b |= option.value;
+        }
+        return b;
+    }
+
+    public static RequestOption[] fromMask(byte mask) {
+        RequestOption[] options = values();
+        RequestOption[] res = new RequestOption[options.length];
+        int i = 0;
+        for (RequestOption option : options) {
+            if ((option.value & mask) == 1) {
+                res[i++] = option;
+            }
+        }
+        return Arrays.copyOf(res, i);
     }
 }

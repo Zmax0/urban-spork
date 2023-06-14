@@ -12,7 +12,6 @@ import java.util.function.Supplier;
 
 public enum AES {
 
-    DEFAULT(() -> getCipher("AES")),
     ECB_PKCS7Padding(() -> getCipher("AES/ECB/PKCS7Padding")),
     ECB_NoPadding(() -> getCipher("AES/ECB/NoPadding"));
 
