@@ -49,10 +49,8 @@ public interface AEADPayloadEncoder {
      * @param out [salt][encrypted payload][tag]
      */
     default void encodePacket(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
-        if (msg.isReadable()) {
-            byte[] in = new byte[msg.readableBytes()];
-            msg.readBytes(in);
-            out.writeBytes(auth().seal(in));
-        }
+        byte[] in = new byte[msg.readableBytes()];
+        msg.readBytes(in);
+        out.writeBytes(auth().seal(in));
     }
 }
