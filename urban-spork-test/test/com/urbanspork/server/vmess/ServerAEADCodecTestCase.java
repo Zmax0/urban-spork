@@ -21,14 +21,10 @@ import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import java.security.InvalidKeyException;
 import java.util.ArrayList;
 
 @DisplayName("VMess - Server AEAD Codec")
@@ -58,12 +54,12 @@ class ServerAEADCodecTestCase {
     }
 
     @Test
-    void testDecodeUnsupportedCommand() throws InvalidCipherTextException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+    void testDecodeUnsupportedCommand() throws Exception {
         ClientSession session = new ClientSession();
         RequestHeader header = new RequestHeader(VMess.VERSION, RequestCommand.UDP, new RequestOption[]{RequestOption.AuthenticatedLength}, SecurityType.AES128_GCM, REQUEST, ID.newID(UUID));
         ClientAEADCodec clientCodec = ClientAEADCodecTestCase.codec(header, session);
         ByteBuf buf = Unpooled.buffer();
-        clientCodec.encodeRequest(header, session, buf);
+        clientCodec.encode(CTX, Unpooled.EMPTY_BUFFER, buf);
         ArrayList<Object> list = new ArrayList<>();
         Assertions.assertThrows(DecoderException.class, () -> SERVER_CODEC.decode(CTX, buf, list));
     }
