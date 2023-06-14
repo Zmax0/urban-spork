@@ -4,10 +4,10 @@ import com.urbanspork.common.codec.BytesGenerator;
 import com.urbanspork.common.codec.ChunkSizeCodec;
 import com.urbanspork.common.codec.NonceGenerator;
 import com.urbanspork.common.codec.PaddingLengthGenerator;
-import com.urbanspork.common.codec.aead.AEADAuthenticator;
-import com.urbanspork.common.codec.aead.AEADCipherCodec;
-import com.urbanspork.common.codec.aead.AEADPayloadDecoder;
-import com.urbanspork.common.codec.aead.AEADPayloadEncoder;
+import com.urbanspork.common.codec.aead.Authenticator;
+import com.urbanspork.common.codec.aead.CipherCodec;
+import com.urbanspork.common.codec.aead.PayloadDecoder;
+import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.crypto.GeneralDigests;
 import com.urbanspork.common.protocol.shadowsocks.network.Network;
 import com.urbanspork.common.util.Dice;
@@ -30,7 +30,7 @@ import static java.lang.System.arraycopy;
  * @author Zmax0
  * @see <a href=https://shadowsocks.org/guide/aead.html">https://shadowsocks.org/guide/aead.html</a>
  */
-class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
+class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
 
     /*
      * TCP per-session [salt][encrypted payload length][length tag][encrypted payload][payload tag]
@@ -44,14 +44,14 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
     private final byte[] nonce = new byte[NONCE_SIZE];
     private final byte[] key;
     private final int saltSize;
-    private final AEADCipherCodec cipherCodec;
+    private final CipherCodec cipherCodec;
     private final ChunkSizeCodec sizeCodec;
-    private final Network network;
-    private int payloadLength = AEADPayloadDecoder.INIT_PAYLOAD_LENGTH;
-    private AEADPayloadEncoder payloadEncoder;
-    private AEADPayloadDecoder payloadDecoder;
+    final Network network;
+    private int payloadLength = PayloadDecoder.INIT_PAYLOAD_LENGTH;
+    private PayloadEncoder payloadEncoder;
+    private PayloadDecoder payloadDecoder;
 
-    ShadowsocksAEADCipherCodec(String password, int saltSize, AEADCipherCodec cipherCodec, Network network) {
+    AEADCipherCodec(String password, int saltSize, CipherCodec cipherCodec, Network network) {
         this.key = generateKey(password.getBytes(), saltSize);
         this.saltSize = saltSize;
         this.cipherCodec = cipherCodec;
@@ -60,14 +60,14 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
     }
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         if (network == Network.UDP) {
-            byte[] salt = Dice.randomBytes(saltSize);
+            byte[] salt = Dice.rollBytes(saltSize);
             out.writeBytes(salt);
             newPayloadEncoder(salt).encodePacket(msg, out);
         } else {
             if (payloadEncoder == null) {
-                byte[] salt = Dice.randomBytes(saltSize);
+                byte[] salt = Dice.rollBytes(saltSize);
                 out.writeBytes(salt);
                 payloadEncoder = newPayloadEncoder(salt);
             }
@@ -76,7 +76,7 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
     }
 
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
         if (in.readableBytes() >= saltSize) {
             if (network == Network.UDP) {
                 byte[] salt = new byte[saltSize];
@@ -110,15 +110,15 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
         return encoded;
     }
 
-    private AEADPayloadEncoder newPayloadEncoder(byte[] salt) {
-        return new AEADPayloadEncoder() {
+    private PayloadEncoder newPayloadEncoder(byte[] salt) {
+        return new PayloadEncoder() {
             @Override
             public int payloadLimit() {
                 return PAYLOAD_LIMIT;
             }
 
             @Override
-            public AEADAuthenticator auth() {
+            public Authenticator auth() {
                 return newAuthenticator(salt);
             }
 
@@ -134,20 +134,20 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
         };
     }
 
-    private AEADPayloadDecoder newPayloadDecoder(byte[] salt) {
-        return new AEADPayloadDecoder() {
+    private PayloadDecoder newPayloadDecoder(byte[] salt) {
+        return new PayloadDecoder() {
             @Override
             public int payloadLength() {
-                return ShadowsocksAEADCipherCodec.this.payloadLength;
+                return AEADCipherCodec.this.payloadLength;
             }
 
             @Override
             public void updatePayloadLength(int payloadLength) {
-                ShadowsocksAEADCipherCodec.this.payloadLength = payloadLength;
+                AEADCipherCodec.this.payloadLength = payloadLength;
             }
 
             @Override
-            public AEADAuthenticator auth() {
+            public Authenticator auth() {
                 return newAuthenticator(salt);
             }
 
@@ -163,8 +163,8 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
         };
     }
 
-    private AEADAuthenticator newAuthenticator(byte[] salt) {
-        return new AEADAuthenticator(cipherCodec, hkdfsha1(key, salt),
+    private Authenticator newAuthenticator(byte[] salt) {
+        return new Authenticator(cipherCodec, hkdfsha1(key, salt),
             NonceGenerator.generateCountingNonce(nonce, cipherCodec.nonceSize(), false),
             BytesGenerator.generateEmptyBytes());
     }
@@ -182,7 +182,7 @@ class ShadowsocksAEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
 
             @Override
             public int sizeBytes() {
-                return Short.BYTES + AEADCipherCodec.TAG_SIZE;
+                return Short.BYTES + CipherCodec.TAG_SIZE;
             }
 
             @Override

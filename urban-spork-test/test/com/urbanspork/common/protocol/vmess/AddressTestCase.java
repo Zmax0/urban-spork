@@ -34,10 +34,10 @@ class AddressTestCase {
     void testWriteUnknown() {
         ByteBuf buf = Unpooled.buffer();
         DefaultSocks5CommandRequest request1 = new DefaultSocks5CommandRequest(
-            Socks5CommandType.CONNECT, Socks5AddressType.valueOf((byte) -1), "localhost", TestDice.randomPort());
+            Socks5CommandType.CONNECT, Socks5AddressType.valueOf((byte) -1), "localhost", TestDice.rollPort());
         Assertions.assertThrows(EncoderException.class, () -> Address.writeAddressPort(buf, request1));
         DefaultSocks5CommandRequest request2 = new DefaultSocks5CommandRequest(
-            Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "", TestDice.randomPort());
+            Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "", TestDice.rollPort());
         Assertions.assertThrows(EncoderException.class, () -> Address.writeAddressPort(buf, request2));
     }
 }

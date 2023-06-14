@@ -4,6 +4,7 @@ import com.urbanspork.common.network.TernaryDatagramPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
+import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.MessageToMessageDecoder;
 
 import java.net.InetSocketAddress;
@@ -14,12 +15,10 @@ public class DatagramPacketDecoder extends MessageToMessageDecoder<DatagramPacke
     protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List<Object> out) throws Exception {
         ByteBuf content = msg.content();
         if (content.readableBytes() < 5) {
-            ctx.fireExceptionCaught(new IllegalArgumentException("Insufficient length of packet"));
-            return;
+            throw new DecoderException("Insufficient length of packet");
         }
         if (content.getByte(2) != 0) {
-            ctx.fireExceptionCaught(new IllegalArgumentException("Discarding fragmented payload"));
-            return;
+            throw new DecoderException("Discarding fragmented payload");
         }
         content.skipBytes(3);
         InetSocketAddress address = Address.decode(content);

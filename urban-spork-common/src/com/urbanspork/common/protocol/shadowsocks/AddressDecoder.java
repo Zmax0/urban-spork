@@ -8,9 +8,9 @@ import io.netty.handler.codec.ReplayingDecoder;
 
 import java.util.List;
 
-public class ShadowsocksAddressDecoder extends ReplayingDecoder<ShadowsocksAddressDecoder.State> {
+public class AddressDecoder extends ReplayingDecoder<AddressDecoder.State> {
 
-    public ShadowsocksAddressDecoder() {
+    public AddressDecoder() {
         super(State.INIT);
     }
 

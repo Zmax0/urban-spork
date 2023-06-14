@@ -62,7 +62,7 @@ public abstract class TCPTestTemplate {
         Handshake.Result result = Handshake.noAuth(Socks5CommandType.CONNECT, proxyAddress, dstAddress).await().get();
         Assertions.assertEquals(Socks5CommandStatus.SUCCESS, result.response().status());
         int length = ThreadLocalRandom.current().nextInt(0xfff, 0xffff);
-        byte[] bytes = Dice.randomBytes(length);
+        byte[] bytes = Dice.rollBytes(length);
         Channel channel = result.sessionChannel();
         ChannelPromise promise = channel.newPromise();
         channel.pipeline().addLast(

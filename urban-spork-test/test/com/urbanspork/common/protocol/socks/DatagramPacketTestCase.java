@@ -6,6 +6,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.socket.DatagramPacket;
+import io.netty.handler.codec.DecoderException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,14 +23,18 @@ class DatagramPacketTestCase {
             new DatagramPacketDecoder(),
             new DatagramPacketEncoder()
         );
-        String str = TestDice.randomString();
-        int dstPort = TestDice.randomPort();
-        int socksPort = TestDice.randomPort();
+        String str = TestDice.rollString();
+        int dstPort = TestDice.rollPort();
+        int socksPort = TestDice.rollPort();
         InetSocketAddress dstAddress = new InetSocketAddress(dstPort);
         InetSocketAddress socksAddress = new InetSocketAddress(socksPort);
         channel.writeOutbound(new TernaryDatagramPacket(new DatagramPacket(Unpooled.wrappedBuffer(str.getBytes()), dstAddress), socksAddress));
         DatagramPacket outbound = channel.readOutbound();
         Assertions.assertEquals(socksAddress, outbound.recipient());
+        DatagramPacket outbound2 = outbound.replace(outbound.content().copy(0, 4));
+        Assertions.assertThrows(DecoderException.class, () -> channel.writeInbound(outbound2));
+        DatagramPacket outbound3 = outbound.replace(outbound.content().copy().setByte(2, 1));
+        Assertions.assertThrows(DecoderException.class, () -> channel.writeInbound(outbound3));
         channel.writeInbound(outbound);
         TernaryDatagramPacket inbound = channel.readInbound();
         Assertions.assertEquals(dstAddress, inbound.third());

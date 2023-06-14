@@ -10,8 +10,8 @@ class ConfigHandlerTestCase {
 
     @Test
     void testSaveAndRead() {
-        int clientPort = TestDice.randomPort();
-        int serverPort = TestDice.randomPort();
+        int clientPort = TestDice.rollPort();
+        int serverPort = TestDice.rollPort();
         ConfigHandler.DEFAULT.save(ClientConfigTestCase.testConfig(clientPort, serverPort));
         ClientConfig config = ConfigHandler.DEFAULT.read();
         Assertions.assertEquals(clientPort, config.getPort());

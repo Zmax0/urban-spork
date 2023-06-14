@@ -29,7 +29,7 @@ class AEADBodyCodecTestCase {
         AEADBodyDecoder serverBodyDecoder = AEADBodyCodec.getBodyDecoder(security, serverSession);
         AEADBodyEncoder serverBodyEncoder = AEADBodyCodec.getBodyEncoder(security, serverSession);
         AEADBodyDecoder clientBodyDecoder = AEADBodyCodec.getBodyDecoder(security, clientSession);
-        byte[] bytes = Dice.randomBytes(ThreadLocalRandom.current().nextInt(10 * clientBodyEncoder.payloadLimit()));
+        byte[] bytes = Dice.rollBytes(ThreadLocalRandom.current().nextInt(10 * clientBodyEncoder.payloadLimit()));
         ByteBuf out = Unpooled.buffer();
         clientBodyEncoder.encodePayload(Unpooled.wrappedBuffer(bytes), out);
         List<Object> list = new ArrayList<>();
