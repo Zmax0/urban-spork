@@ -8,7 +8,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 
 import java.util.List;
 
-public interface AEADPayloadDecoder {
+public interface PayloadDecoder {
 
     int INIT_PAYLOAD_LENGTH = -1;
 
@@ -16,7 +16,7 @@ public interface AEADPayloadDecoder {
 
     void updatePayloadLength(int payloadLength);
 
-    AEADAuthenticator auth();
+    Authenticator auth();
 
     ChunkSizeCodec sizeCodec();
 
@@ -31,7 +31,7 @@ public interface AEADPayloadDecoder {
     default void decodePayload(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
         ChunkSizeCodec chunkSizeDecoder = sizeCodec();
         int payloadLength = payloadLength();
-        while (in.readableBytes() >= (payloadLength == INIT_PAYLOAD_LENGTH ? chunkSizeDecoder.sizeBytes() : payloadLength + AEADCipherCodec.TAG_SIZE)) {
+        while (in.readableBytes() >= (payloadLength == INIT_PAYLOAD_LENGTH ? chunkSizeDecoder.sizeBytes() : payloadLength + CipherCodec.TAG_SIZE)) {
             if (payloadLength == INIT_PAYLOAD_LENGTH) {
                 byte[] payloadSizeBytes = new byte[chunkSizeDecoder.sizeBytes()];
                 in.readBytes(payloadSizeBytes);
@@ -42,7 +42,7 @@ public interface AEADPayloadDecoder {
                 if (padding != null) {
                     paddingLength = padding.nextPaddingLength();
                 }
-                byte[] payloadBytes = new byte[payloadLength + AEADCipherCodec.TAG_SIZE - paddingLength];
+                byte[] payloadBytes = new byte[payloadLength + CipherCodec.TAG_SIZE - paddingLength];
                 in.readBytes(payloadBytes);
                 in.skipBytes(paddingLength);
                 out.add(Unpooled.wrappedBuffer(auth().open(payloadBytes)));

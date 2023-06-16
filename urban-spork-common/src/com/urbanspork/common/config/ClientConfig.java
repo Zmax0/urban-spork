@@ -53,10 +53,6 @@ public class ClientConfig {
         return current;
     }
 
-    public void save() {
-        ConfigHandler.DEFAULT.write(this);
-    }
-
     @Override
     public String toString() {
         return String.format("localhost:%s - %s", getPort(), getCurrent().clientText());

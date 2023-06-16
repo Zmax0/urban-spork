@@ -7,7 +7,7 @@ import java.util.Arrays;
 public class ClientSession extends Session {
 
     public ClientSession() {
-        this(Dice.randomBytes(33));
+        this(Dice.rollBytes(33));
     }
 
     ClientSession(byte[] bytes) {

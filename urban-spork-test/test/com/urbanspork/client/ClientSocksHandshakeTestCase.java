@@ -28,7 +28,7 @@ class ClientSocksHandshakeTestCase {
         config.getServers().get(0).setProtocol(Protocols.vmess);
         future = ClientTestCase.launchClient(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
-        InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", TestDice.randomPort());
+        InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", TestDice.rollPort());
         assertFailedHandshake(proxyAddress, dstAddress1);
     }
 

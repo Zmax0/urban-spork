@@ -6,6 +6,7 @@ import com.urbanspork.client.gui.console.component.Proxy;
 import com.urbanspork.client.gui.console.component.Tray;
 import com.urbanspork.client.gui.i18n.I18n;
 import com.urbanspork.common.config.ClientConfig;
+import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 
 import java.awt.*;
@@ -57,7 +58,7 @@ public class ServersMenuItem implements TrayMenuItemBuilder {
                 }
             }
             try {
-                config.save();
+                ConfigHandler.DEFAULT.save(config);
             } catch (Exception e) {
                 Tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
                 return;

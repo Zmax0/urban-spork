@@ -17,7 +17,7 @@ public class ServerConfigTestCase {
 
     @Test
     void testCheck() {
-        ServerConfig config = testConfig(TestDice.randomPort());
+        ServerConfig config = testConfig(TestDice.rollPort());
         Assertions.assertTrue(config.check());
         config.setCipher(null);
         Assertions.assertFalse(config.check());
@@ -29,7 +29,7 @@ public class ServerConfigTestCase {
 
     @Test
     void testUDPEnable() {
-        ServerConfig config = testConfig(TestDice.randomPort());
+        ServerConfig config = testConfig(TestDice.rollPort());
         config.setNetworks(new Network[]{Network.UDP});
         Assertions.assertTrue(config.udpEnabled());
         config.setNetworks(new Network[]{Network.TCP});
@@ -40,7 +40,7 @@ public class ServerConfigTestCase {
 
     @Test
     void testToString() {
-        ServerConfig config = testConfig(TestDice.randomPort());
+        ServerConfig config = testConfig(TestDice.rollPort());
         String string = config.toString();
         Assertions.assertTrue(string.contains(config.getProtocol().toString()));
         Assertions.assertTrue(string.contains(config.getCipher().toString()));
@@ -50,12 +50,12 @@ public class ServerConfigTestCase {
 
     @Test
     void testListItemText() {
-        ServerConfig config = testConfig(TestDice.randomPort());
+        ServerConfig config = testConfig(TestDice.rollPort());
         config.setRemark("");
         String text = config.listItemText();
         Assertions.assertTrue(text.contains(config.getHost()));
         Assertions.assertTrue(text.contains(String.valueOf(config.getPort())));
-        String remark = TestDice.randomString();
+        String remark = TestDice.rollString();
         config.setRemark(remark);
         Assertions.assertEquals(remark, config.listItemText());
     }
@@ -71,7 +71,7 @@ public class ServerConfigTestCase {
             serverConfig.setHost("localhost");
             serverConfig.setPort(port);
             serverConfig.setProtocol(Protocols.shadowsocks);
-            serverConfig.setCipher(TestDice.randomCipher());
+            serverConfig.setCipher(TestDice.rollCipher());
             serverConfig.setPassword(UUID.randomUUID().toString());
             serverConfig.setPacketEncoding(PacketEncoding.Packet);
             serverConfigs.add(serverConfig);

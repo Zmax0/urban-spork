@@ -7,6 +7,7 @@ import com.urbanspork.common.protocol.socks.Address;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
+import io.netty.handler.codec.EncoderException;
 import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 
@@ -14,20 +15,19 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ShadowsocksUDPReplayCodec extends MessageToMessageCodec<DatagramPacket, TernaryDatagramPacket> {
+public class UDPReplayCodec extends MessageToMessageCodec<DatagramPacket, TernaryDatagramPacket> {
 
-    private final ShadowsocksAEADCipherCodec cipher;
+    private final AEADCipherCodec cipher;
 
-    public ShadowsocksUDPReplayCodec(ServerConfig config) {
-        this.cipher = ShadowsocksAEADCipherCodecs.get(config.getPassword(), config.getCipher(), Network.UDP);
+    public UDPReplayCodec(ServerConfig config) {
+        this.cipher = AEADCipherCodecs.get(config.getPassword(), config.getCipher(), Network.UDP);
     }
 
     @Override
     protected void encode(ChannelHandlerContext ctx, TernaryDatagramPacket msg, List<Object> out) throws Exception {
         InetSocketAddress proxy = msg.third();
         if (proxy == null) {
-            ctx.fireExceptionCaught(new IllegalStateException("Replay address is null"));
-            return;
+            throw new EncoderException("Replay address is null");
         }
         ByteBuf in = ctx.alloc().buffer();
         DatagramPacket data = msg.packet();

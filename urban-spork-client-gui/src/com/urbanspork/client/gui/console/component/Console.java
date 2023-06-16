@@ -11,6 +11,7 @@ import com.urbanspork.client.gui.console.widget.*;
 import com.urbanspork.client.gui.i18n.I18n;
 import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.config.ClientConfig;
+import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
 import javafx.application.Platform;
@@ -545,7 +546,7 @@ public class Console extends Preloader {
     }
 
     private void saveConfig() {
-        clientConfig.save();
+        ConfigHandler.DEFAULT.save(clientConfig);
         Tray.refresh();
     }
 

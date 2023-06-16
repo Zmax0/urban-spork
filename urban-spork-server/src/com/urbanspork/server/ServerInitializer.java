@@ -1,9 +1,10 @@
 package com.urbanspork.server;
 
-import com.urbanspork.common.codec.shadowsocks.ShadowsocksAEADCipherCodecs;
+import com.urbanspork.common.channel.ExceptionHandler;
+import com.urbanspork.common.codec.shadowsocks.AEADCipherCodecs;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.shadowsocks.ShadowsocksAddressDecoder;
+import com.urbanspork.common.protocol.shadowsocks.AddressDecoder;
 import com.urbanspork.common.protocol.shadowsocks.network.Network;
 import com.urbanspork.server.vmess.ServerAEADCodec;
 import io.netty.channel.Channel;
@@ -24,10 +25,9 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
         if (Protocols.vmess == config.getProtocol()) {
             pipeline.addLast(new ServerAEADCodec(new String[]{config.getPassword()}));
         } else {
-            pipeline.addLast(ShadowsocksAEADCipherCodecs.get(config.getPassword(), config.getCipher(), Network.TCP))
-                .addLast(new ShadowsocksAddressDecoder());
+            pipeline.addLast(AEADCipherCodecs.get(config.getPassword(), config.getCipher(), Network.TCP))
+                .addLast(new AddressDecoder());
         }
-        pipeline.addLast(new RemoteConnectionHandler());
+        pipeline.addLast(new ExceptionHandler(config), new RemoteConnectionHandler(config));
     }
-
 }

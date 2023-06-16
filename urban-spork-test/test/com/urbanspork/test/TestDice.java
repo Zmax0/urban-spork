@@ -7,7 +7,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public interface TestDice {
 
-    static String randomString() {
+    static String rollString() {
         String str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-=_+";
         Random random = ThreadLocalRandom.current();
         StringBuilder sb = new StringBuilder();
@@ -17,12 +17,12 @@ public interface TestDice {
         return sb.toString();
     }
 
-    static SupportedCipher randomCipher() {
+    static SupportedCipher rollCipher() {
         SupportedCipher[] ciphers = SupportedCipher.values();
         return ciphers[ThreadLocalRandom.current().nextInt(0, ciphers.length)];
     }
 
-    static int randomPort() {
+    static int rollPort() {
         return ThreadLocalRandom.current().nextInt(49152, 65535);
     }
 }

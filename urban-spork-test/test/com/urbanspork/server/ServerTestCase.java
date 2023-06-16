@@ -25,7 +25,7 @@ class ServerTestCase {
     void launch() {
         List<ServerConfig> empty = Collections.emptyList();
         Assertions.assertThrows(IllegalArgumentException.class, () -> Server.launch(empty), "Server config in the file is empty");
-        List<ServerConfig> configs = ServerConfigTestCase.testConfig(new int[]{TestDice.randomPort()});
+        List<ServerConfig> configs = ServerConfigTestCase.testConfig(new int[]{TestDice.rollPort()});
         ServerConfig config = configs.get(0);
         config.setHost("www.urban-spork.com");
         Assertions.assertThrows(IllegalArgumentException.class, () -> Server.launch(configs), "None available server");
@@ -33,7 +33,7 @@ class ServerTestCase {
 
     @Test
     void launchFailed() throws InterruptedException {
-        int port = TestDice.randomPort();
+        int port = TestDice.rollPort();
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(new int[]{port, port});
         DefaultEventLoop executor = new DefaultEventLoop();
         Promise<List<ServerSocketChannel>> promise = new DefaultPromise<>(executor);
