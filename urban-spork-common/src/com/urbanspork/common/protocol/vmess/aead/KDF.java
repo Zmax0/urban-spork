@@ -14,10 +14,8 @@ public class KDF {
 
     public static byte[] kdf(byte[] key, byte[]... paths) {
         HMacCreator hmacCreator = new HMacCreator(KDF_SALT_VMESS_AEAD_KDF);
-        if (paths != null) {
-            for (byte[] path : paths) {
-                hmacCreator = new HMacCreator(hmacCreator, path);
-            }
+        for (byte[] path : paths) {
+            hmacCreator = new HMacCreator(hmacCreator, path);
         }
         Digest digest = hmacCreator.create();
         digest.update(key, 0, key.length);
@@ -27,7 +25,7 @@ public class KDF {
     }
 
     public static byte[] kdf(byte[] key, int len, byte[]... paths) {
-        return len == 32 ? kdf(key, paths) : Arrays.copyOf(kdf(key, paths), len);
+        return len >= 32 ? kdf(key, paths) : Arrays.copyOf(kdf(key, paths), len);
     }
 
     public static byte[] kdf16(byte[] key, byte[]... paths) {
@@ -37,7 +35,7 @@ public class KDF {
     static class HMacCreator {
 
         HMacCreator parent;
-        byte[] value;
+        final byte[] value;
 
         public HMacCreator(byte[] value) {
             this.value = value;

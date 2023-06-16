@@ -18,18 +18,16 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 
 @ChannelHandler.Sharable
-public class ShadowsocksUDPAssociateHandler extends ChannelInboundHandlerAdapter {
+public class ClientUDPAssociateHandler extends ChannelInboundHandlerAdapter {
 
-    public static final ShadowsocksUDPAssociateHandler INSTANCE = new ShadowsocksUDPAssociateHandler();
-    private static final Logger logger = LoggerFactory.getLogger(ShadowsocksUDPAssociateHandler.class);
+    public static final ClientUDPAssociateHandler INSTANCE = new ClientUDPAssociateHandler();
+    private static final Logger logger = LoggerFactory.getLogger(ClientUDPAssociateHandler.class);
 
-    private ShadowsocksUDPAssociateHandler() {}
+    private ClientUDPAssociateHandler() {}
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        if (msg instanceof Socks5CommandRequest request) {
-            channelRead0(ctx, request);
-        }
+        channelRead0(ctx, (Socks5CommandRequest) msg);
     }
 
     private void channelRead0(ChannelHandlerContext ctx, Socks5CommandRequest request) {
@@ -40,7 +38,7 @@ public class ShadowsocksUDPAssociateHandler extends ChannelInboundHandlerAdapter
             logger.error("UDP is not enabled");
             return;
         }
-        if (request.dstAddr() == null || request.dstPort() == 0) {
+        if (request.dstPort() == 0) {
             logger.error("Illegal destination address");
             channel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()));
             return;
@@ -50,5 +48,4 @@ public class ShadowsocksUDPAssociateHandler extends ChannelInboundHandlerAdapter
         DefaultSocks5CommandResponse response = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, bndRequest.dstAddrType(), bndRequest.dstAddr(), bndRequest.dstPort());
         channel.writeAndFlush(response);
     }
-
 }

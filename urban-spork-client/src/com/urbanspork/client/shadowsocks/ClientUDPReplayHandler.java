@@ -1,7 +1,7 @@
 package com.urbanspork.client.shadowsocks;
 
 import com.urbanspork.common.channel.ChannelCloseUtils;
-import com.urbanspork.common.codec.shadowsocks.ShadowsocksUDPReplayCodec;
+import com.urbanspork.common.codec.shadowsocks.UDPReplayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.network.TernaryDatagramPacket;
 import io.netty.bootstrap.Bootstrap;
@@ -64,7 +64,7 @@ public class ClientUDPReplayHandler extends SimpleChannelInboundHandler<TernaryD
                 @Override
                 protected void initChannel(Channel ch) {
                     ch.pipeline().addLast(
-                        new ShadowsocksUDPReplayCodec(config),
+                        new UDPReplayCodec(config),
                         new InboundHandler(inboundChannel, sender)// server->client->sender
                     );
                 }
@@ -85,7 +85,7 @@ public class ClientUDPReplayHandler extends SimpleChannelInboundHandler<TernaryD
 
         @Override
         public void channelRead0(ChannelHandlerContext ctx, DatagramPacket packet) {
-            logger.info("Replay {} <- {} via {} <- {}", sender, packet.recipient(), ctx.channel().localAddress(), packet.sender());
+            logger.info("[udp][shadowsocks]{} ← {} ~ {} ← {}", sender, packet.recipient(), ctx.channel().localAddress(), packet.sender());
             channel.writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(packet.content(), packet.recipient()), sender));
         }
     }

@@ -6,13 +6,13 @@ import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
-import static com.urbanspork.common.codec.aead.AEADCipherCodec.TAG_SIZE;
+import static com.urbanspork.common.codec.aead.CipherCodec.TAG_SIZE;
 
-public interface AEADPayloadEncoder {
+public interface PayloadEncoder {
 
     int payloadLimit();
 
-    AEADAuthenticator auth();
+    Authenticator auth();
 
     ChunkSizeCodec sizeCodec();
 
@@ -37,7 +37,7 @@ public interface AEADPayloadEncoder {
             msg.readBytes(in);
             out.writeBytes(auth().seal(in));
             if (paddingLength > 0) {
-                out.writeBytes(Dice.randomBytes(paddingLength));
+                out.writeBytes(Dice.rollBytes(paddingLength));
             }
         }
     }
@@ -49,10 +49,8 @@ public interface AEADPayloadEncoder {
      * @param out [salt][encrypted payload][tag]
      */
     default void encodePacket(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
-        if (msg.isReadable()) {
-            byte[] in = new byte[msg.readableBytes()];
-            msg.readBytes(in);
-            out.writeBytes(auth().seal(in));
-        }
+        byte[] in = new byte[msg.readableBytes()];
+        msg.readBytes(in);
+        out.writeBytes(auth().seal(in));
     }
 }

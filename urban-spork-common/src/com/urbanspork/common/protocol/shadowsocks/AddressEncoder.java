@@ -6,11 +6,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 
-public class ShadowsocksAddressEncoder extends MessageToByteEncoder<ByteBuf> {
+public class AddressEncoder extends MessageToByteEncoder<ByteBuf> {
 
     private final Socks5CommandRequest request;
 
-    public ShadowsocksAddressEncoder(Socks5CommandRequest request) {
+    public AddressEncoder(Socks5CommandRequest request) {
         this.request = request;
     }
 

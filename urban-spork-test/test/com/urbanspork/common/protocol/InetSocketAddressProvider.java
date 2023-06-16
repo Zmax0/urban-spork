@@ -15,8 +15,8 @@ public class InetSocketAddressProvider implements ArgumentsProvider {
             InetSocketAddress.createUnresolved("www.w3.org", 80),
             InetSocketAddress.createUnresolved("www.urban-spork.com", 443),
             new InetSocketAddress(0),
-            new InetSocketAddress("192.168.89.9", TestDice.randomPort()),
-            new InetSocketAddress("ABCD:EF01:2345:6789:ABCD:EF01:2345:6789", TestDice.randomPort())
+            new InetSocketAddress("192.168.89.9", TestDice.rollPort()),
+            new InetSocketAddress("ABCD:EF01:2345:6789:ABCD:EF01:2345:6789", TestDice.rollPort())
         ).map(Arguments::of);
     }
 }

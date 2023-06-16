@@ -4,7 +4,6 @@ import com.urbanspork.common.codec.ChunkSizeCodec;
 import com.urbanspork.common.codec.PaddingLengthGenerator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 
 public class ShakeSizeParser implements ChunkSizeCodec, PaddingLengthGenerator {
@@ -23,7 +22,7 @@ public class ShakeSizeParser implements ChunkSizeCodec, PaddingLengthGenerator {
     }
 
     @Override
-    public byte[] encode(int size) throws InvalidCipherTextException {
+    public byte[] encode(int size) {
         byte[] result = new byte[2];
         int mask = next();
         Unpooled.wrappedBuffer(result).setShort(0, mask ^ size);
@@ -31,7 +30,7 @@ public class ShakeSizeParser implements ChunkSizeCodec, PaddingLengthGenerator {
     }
 
     @Override
-    public int decode(byte[] data) throws InvalidCipherTextException {
+    public int decode(byte[] data) {
         int mask = next();
         int size = Unpooled.wrappedBuffer(data).readUnsignedShort();
         return mask ^ size;

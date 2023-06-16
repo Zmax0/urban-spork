@@ -1,6 +1,7 @@
 package com.urbanspork.server;
 
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
+import com.urbanspork.common.config.ServerConfig;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -16,7 +17,12 @@ public class RemoteConnectionHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(RemoteConnectionHandler.class);
     private final Bootstrap b = new Bootstrap();
+    private final ServerConfig config;
     private Promise<Channel> p;
+
+    public RemoteConnectionHandler(ServerConfig config) {
+        this.config = config;
+    }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
@@ -46,10 +52,10 @@ public class RemoteConnectionHandler extends ChannelInboundHandlerAdapter {
             .handler(new DefaultChannelInboundHandler(localChannel))
             .connect(remoteAddress).addListener((ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
-                    logger.info("Connect success [id: {}, L: {} - R: {}]", localChannel.id(), localChannel.localAddress(), remoteAddress);
+                    logger.info("[tcp][{}][{} → {}]", config.getProtocol(), localChannel.localAddress(), remoteAddress);
                     p.setSuccess(future.channel());
                 } else {
-                    logger.error("Connect failed [id: {}, L: {} - R: {}]", localChannel.id(), localChannel.localAddress(), remoteAddress);
+                    logger.error("[tcp][{}][{} → {}]", config.getProtocol(), localChannel.localAddress(), remoteAddress);
                     ctx.close();
                 }
             });

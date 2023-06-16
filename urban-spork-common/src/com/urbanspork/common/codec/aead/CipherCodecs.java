@@ -7,30 +7,14 @@ import org.bouncycastle.crypto.modes.GCMBlockCipher;
 
 import java.util.function.Supplier;
 
-public enum AEADCipherCodecs implements Supplier<AEADCipherCodec> {
+public enum CipherCodecs implements Supplier<CipherCodec> {
 
     AES_GCM, CHACHA20_POLY1305;
 
     @Override
-    public AEADCipherCodec get() {
-        return switch (this) {
-            case AES_GCM -> new AEADCipherCodec() {
-                @Override
-                public AEADCipher cipher() {
-                    return new GCMBlockCipher(new AESEngine());
-                }
-
-                @Override
-                public int macSize() {
-                    return 128;
-                }
-
-                @Override
-                public int nonceSize() {
-                    return 12;
-                }
-            };
-            case CHACHA20_POLY1305 -> new AEADCipherCodec() {
+    public CipherCodec get() {
+        if (CHACHA20_POLY1305 == this) {
+            return new CipherCodec() {
                 @Override
                 public AEADCipher cipher() {
                     return new ChaCha20Poly1305();
@@ -46,6 +30,23 @@ public enum AEADCipherCodecs implements Supplier<AEADCipherCodec> {
                     return 12;
                 }
             };
-        };
+        } else {
+            return new CipherCodec() {
+                @Override
+                public AEADCipher cipher() {
+                    return new GCMBlockCipher(new AESEngine());
+                }
+
+                @Override
+                public int macSize() {
+                    return 128;
+                }
+
+                @Override
+                public int nonceSize() {
+                    return 12;
+                }
+            };
+        }
     }
 }

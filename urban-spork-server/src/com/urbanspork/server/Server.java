@@ -1,6 +1,6 @@
 package com.urbanspork.server;
 
-import com.urbanspork.common.codec.shadowsocks.ShadowsocksUDPReplayCodec;
+import com.urbanspork.common.codec.shadowsocks.UDPReplayCodec;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
@@ -88,7 +88,7 @@ public class Server {
                         @Override
                         protected void initChannel(Channel ch) {
                             ch.pipeline().addLast(
-                                new ShadowsocksUDPReplayCodec(config),
+                                new UDPReplayCodec(config),
                                 new ServerUDPReplayHandler(config.getPacketEncoding(), workerGroup)
                             );
                         }

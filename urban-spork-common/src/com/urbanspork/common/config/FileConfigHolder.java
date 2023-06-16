@@ -1,13 +1,15 @@
 package com.urbanspork.common.config;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.stream.Collectors;
 
 class FileConfigHolder implements ConfigHolder {
 
     private static final String FILE_NAME = "config.json";
     private static final String FOLDER_NAME = "lib";
-    private static final File FILE = new File(FileConfigHolder.parentPath() + File.separatorChar + FILE_NAME);
+    private static final Path PATH = Path.of(FileConfigHolder.parentPath(), FILE_NAME);
 
     FileConfigHolder() {}
 
@@ -21,11 +23,12 @@ class FileConfigHolder implements ConfigHolder {
     }
 
     @Override
-    public void write(String str) throws IOException {
-        if (!FILE.exists() && !FILE.getParentFile().mkdirs() && !FILE.createNewFile()) {
-            throw new IllegalStateException("failed to create config file");
+    public void save(String str) throws IOException {
+        if (!Files.exists(PATH)) {
+            Files.createFile(PATH);
         }
-        try (FileWriter writer = new FileWriter(FILE)) {
+        try (
+            FileWriter writer = new FileWriter(PATH.toFile())) {
             writer.write(str);
             writer.flush();
         }
@@ -33,12 +36,17 @@ class FileConfigHolder implements ConfigHolder {
 
     @Override
     public String read() throws IOException {
-        if (FILE.exists()) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(FILE))) {
+        if (Files.exists(PATH)) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(PATH.toFile()))) {
                 return reader.lines().collect(Collectors.joining(System.lineSeparator()));
             }
         } else {
             throw new IllegalArgumentException("Please put the '" + FILE_NAME + "' file into the folder");
         }
+    }
+
+    @Override
+    public void delete() throws IOException {
+        Files.deleteIfExists(PATH);
     }
 }
