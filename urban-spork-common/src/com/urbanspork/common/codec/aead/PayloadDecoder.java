@@ -10,11 +10,15 @@ import java.util.List;
 
 public interface PayloadDecoder {
 
-    int INIT_PAYLOAD_LENGTH = -1;
+    int INIT_LENGTH = -1;
 
     int payloadLength();
 
     void updatePayloadLength(int payloadLength);
+
+    int paddingLength();
+
+    void updatePaddingLength(int paddingLength);
 
     Authenticator auth();
 
@@ -29,27 +33,30 @@ public interface PayloadDecoder {
      * @param out payload
      */
     default void decodePayload(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-        ChunkSizeCodec chunkSizeDecoder = sizeCodec();
+        PaddingLengthGenerator padding = padding();
         int payloadLength = payloadLength();
-        while (in.readableBytes() >= (payloadLength == INIT_PAYLOAD_LENGTH ? chunkSizeDecoder.sizeBytes() : payloadLength + CipherCodec.TAG_SIZE)) {
-            if (payloadLength == INIT_PAYLOAD_LENGTH) {
-                byte[] payloadSizeBytes = new byte[chunkSizeDecoder.sizeBytes()];
-                in.readBytes(payloadSizeBytes);
-                payloadLength = chunkSizeDecoder.decode(payloadSizeBytes);
-            } else {
-                int paddingLength = 0;
-                PaddingLengthGenerator padding = padding();
-                if (padding != null) {
-                    paddingLength = padding.nextPaddingLength();
-                }
-                byte[] payloadBytes = new byte[payloadLength + CipherCodec.TAG_SIZE - paddingLength];
-                in.readBytes(payloadBytes);
-                in.skipBytes(paddingLength);
-                out.add(Unpooled.wrappedBuffer(auth().open(payloadBytes)));
-                payloadLength = INIT_PAYLOAD_LENGTH;
+        int paddingLength = paddingLength();
+        ChunkSizeCodec sizeCodec = sizeCodec();
+        int sizeBytes = sizeCodec.sizeBytes();
+        while (in.readableBytes() >= (payloadLength == INIT_LENGTH ? sizeBytes : payloadLength)) {
+            if (paddingLength == INIT_LENGTH) {
+                paddingLength = padding == null ? 0 : padding.nextPaddingLength();
             }
-            updatePayloadLength(payloadLength);
+            if (payloadLength == INIT_LENGTH) {
+                byte[] payloadSizeBytes = new byte[sizeBytes];
+                in.readBytes(payloadSizeBytes);
+                payloadLength = sizeCodec.decode(payloadSizeBytes);
+            } else {
+                byte[] payloadBytes = new byte[payloadLength - paddingLength];
+                in.readBytes(payloadBytes);
+                out.add(Unpooled.wrappedBuffer(auth().open(payloadBytes)));
+                in.skipBytes(paddingLength);
+                payloadLength = INIT_LENGTH;
+                paddingLength = INIT_LENGTH;
+            }
         }
+        updatePayloadLength(payloadLength);
+        updatePaddingLength(paddingLength);
     }
 
     /**

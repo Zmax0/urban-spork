@@ -32,7 +32,7 @@ public class ShakeSizeParser implements ChunkSizeCodec, PaddingLengthGenerator {
     @Override
     public int decode(byte[] data) {
         int mask = next();
-        int size = Unpooled.wrappedBuffer(data).readUnsignedShort();
+        int size = Unpooled.wrappedBuffer(data).getUnsignedShort(0);
         return mask ^ size;
     }
 

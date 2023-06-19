@@ -7,13 +7,15 @@ import org.bouncycastle.crypto.params.KeyParameter;
 
 public interface CipherCodec {
 
-    int TAG_SIZE = 16;
-
     AEADCipher cipher();
 
     int macSize();
 
     int nonceSize();
+
+    default int tagSize() {
+        return 16;
+    }
 
     default byte[] encrypt(byte[] secretKey, byte[] nonce, byte[] in) throws InvalidCipherTextException {
         return encrypt(secretKey, nonce, null, in);

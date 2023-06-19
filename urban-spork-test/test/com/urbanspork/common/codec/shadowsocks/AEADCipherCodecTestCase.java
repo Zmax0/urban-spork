@@ -5,8 +5,6 @@ import com.urbanspork.common.protocol.shadowsocks.network.Network;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -65,15 +63,14 @@ class AEADCipherCodecTestCase {
 
     private List<Object> cipherTest(AEADCipherCodec codec, ByteBuf inBuf, boolean firstSmallSlice) throws Exception {
         ByteBuf trans = Unpooled.buffer();
-        ChannelHandlerContext ctx = new EmbeddedChannel().pipeline().firstContext();
         for (ByteBuf slice : randomSlice(inBuf, false)) {
-            codec.encode(ctx, slice, trans);
+            codec.encode(null, slice, trans);
         }
         List<Object> out = new ArrayList<>();
         ByteBuf buffer = Unpooled.buffer();
         for (ByteBuf slice : randomSlice(trans, firstSmallSlice)) {
             buffer.writeBytes(slice);
-            codec.decode(ctx, buffer, out);
+            codec.decode(null, buffer, out);
         }
         return out;
     }

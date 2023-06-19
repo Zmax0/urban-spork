@@ -6,6 +6,10 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 
 public record Authenticator(CipherCodec codec, byte[] key, NonceGenerator nonceGenerator, BytesGenerator associatedTextGenerator) {
 
+    public int overhead() {
+        return codec.tagSize();
+    }
+
     public byte[] seal(byte[] in) throws InvalidCipherTextException {
         return codec.encrypt(key, nonceGenerator.generate(), associatedTextGenerator.generate(), in);
     }

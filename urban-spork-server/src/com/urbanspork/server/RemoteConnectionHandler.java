@@ -28,7 +28,7 @@ public class RemoteConnectionHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         Channel localChannel = ctx.channel();
         if (msg instanceof InetSocketAddress address) {
-            connect(ctx, localChannel, address);
+            connect(ctx, localChannel, new InetSocketAddress(address.getHostString(), address.getPort()));
         } else if (msg instanceof Socks5CommandRequest request) {
             connect(ctx, localChannel, new InetSocketAddress(request.dstAddr(), request.dstPort()));
         } else {

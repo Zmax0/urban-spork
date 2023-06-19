@@ -21,7 +21,7 @@ public class ExceptionHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         Channel channel = ctx.channel();
-        if (cause instanceof InvalidCipherTextException) {
+        if (cause.getCause() instanceof InvalidCipherTextException) {
             logger.error("[{}][{} → {}] Invalid cipher text", config.getProtocol(), channel.localAddress(), channel.remoteAddress());
         } else {
             String msg = String.format("[%s][%s → %s] Caught exception", config.getProtocol(), channel.localAddress(), channel.remoteAddress());
