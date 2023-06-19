@@ -6,8 +6,6 @@ import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
-import static com.urbanspork.common.codec.aead.CipherCodec.TAG_SIZE;
-
 public interface PayloadEncoder {
 
     int payloadLimit();
@@ -31,14 +29,12 @@ public interface PayloadEncoder {
             if (padding != null) {
                 paddingLength = padding.nextPaddingLength();
             }
-            int encryptedSize = Math.min(msg.readableBytes(), payloadLimit() - TAG_SIZE - sizeCodec().sizeBytes() - paddingLength);
-            out.writeBytes(sizeCodec().encode(encryptedSize + paddingLength));
+            int encryptedSize = Math.min(msg.readableBytes(), payloadLimit() - auth().overhead() - sizeCodec().sizeBytes() - paddingLength);
+            out.writeBytes(sizeCodec().encode(encryptedSize + paddingLength + auth().overhead()));
             byte[] in = new byte[encryptedSize];
             msg.readBytes(in);
             out.writeBytes(auth().seal(in));
-            if (paddingLength > 0) {
-                out.writeBytes(Dice.rollBytes(paddingLength));
-            }
+            out.writeBytes(Dice.rollBytes(paddingLength));
         }
     }
 

@@ -6,10 +6,13 @@ import com.urbanspork.test.TestDice;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.MessageToMessageDecoder;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 @DisplayName("Common - Exception Handler")
 class ExceptionHandlerTestCase {
@@ -33,10 +36,10 @@ class ExceptionHandlerTestCase {
     void testInvalidCipherText() {
         ServerConfig config = ServerConfigTestCase.testConfig(TestDice.rollPort());
         EmbeddedChannel channel = new EmbeddedChannel();
-        channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+        channel.pipeline().addLast(new MessageToMessageDecoder<String>() {
             @Override
-            public void channelRead(ChannelHandlerContext ctx, Object msg) throws InvalidCipherTextException {
-                throw new InvalidCipherTextException(msg.toString());
+            protected void decode(ChannelHandlerContext ctx, String in, List<Object> out) throws InvalidCipherTextException {
+                throw new InvalidCipherTextException(in);
             }
         }, new ExceptionHandler(config));
         Assertions.assertTrue(channel.isActive());

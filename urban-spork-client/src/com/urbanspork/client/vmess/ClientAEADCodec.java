@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static com.urbanspork.common.codec.aead.CipherCodec.TAG_SIZE;
 import static com.urbanspork.common.protocol.vmess.aead.Const.*;
 import static com.urbanspork.common.protocol.vmess.aead.Encrypt.sealVMessAEADHeader;
 
@@ -73,7 +72,7 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
             byte[] headerBytes = new byte[buffer.readableBytes()];
             buffer.readBytes(headerBytes);
             sealVMessAEADHeader(header.id(), headerBytes, out);
-            bodyEncoder = AEADBodyCodec.getBodyEncoder(header.security(), session);
+            bodyEncoder = AEADBodyCodec.getBodyEncoder(header, session);
         }
         bodyEncoder.encodePayload(msg, out);
     }
@@ -82,22 +81,23 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
     public void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         if (bodyDecoder == null) {
             CipherCodec cipher = CipherCodecs.AES_GCM.get();
+            int tagSize = cipher.tagSize();
             int nonceSize = cipher.nonceSize();
             byte[] aeadResponseHeaderLengthEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_LEN_KEY.getBytes());
             byte[] aeadResponseHeaderLengthEncryptionIV = KDF.kdf(session.getResponseBodyIV(), nonceSize, KDF_SALT_AEAD_RESP_HEADER_LEN_IV.getBytes());
-            byte[] aeadEncryptedResponseHeaderLength = new byte[Short.BYTES + TAG_SIZE];
+            byte[] aeadEncryptedResponseHeaderLength = new byte[Short.BYTES + tagSize];
             in.markReaderIndex();
             in.readBytes(aeadEncryptedResponseHeaderLength);
             int decryptedResponseHeaderLength = Unpooled.wrappedBuffer(cipher.decrypt(aeadResponseHeaderLengthEncryptionKey,
                 aeadResponseHeaderLengthEncryptionIV, aeadEncryptedResponseHeaderLength)).readShort();
-            if (in.readableBytes() < decryptedResponseHeaderLength + TAG_SIZE) {
-                logger.info("Unexpected readable bytes for decoding client header: expecting {} but actually {}", decryptedResponseHeaderLength + TAG_SIZE, in.readableBytes());
+            if (in.readableBytes() < decryptedResponseHeaderLength + tagSize) {
+                logger.info("Unexpected readable bytes for decoding client header: expecting {} but actually {}", decryptedResponseHeaderLength + tagSize, in.readableBytes());
                 in.resetReaderIndex();
                 return;
             }
             byte[] aeadResponseHeaderPayloadEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY.getBytes());
             byte[] aeadResponseHeaderPayloadEncryptionIV = KDF.kdf(session.getResponseBodyIV(), nonceSize, KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV.getBytes());
-            byte[] encryptedResponseHeaderBytes = new byte[decryptedResponseHeaderLength + TAG_SIZE];
+            byte[] encryptedResponseHeaderBytes = new byte[decryptedResponseHeaderLength + tagSize];
             in.readBytes(encryptedResponseHeaderBytes);
             byte[] decryptedResponseHeaderBytes = cipher.decrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, encryptedResponseHeaderBytes);
             byte responseHeader = decryptedResponseHeaderBytes[0];
@@ -105,7 +105,7 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
                 throw new DecoderException(String.format("Unexpected response header: expecting %d but actually %d", session.getResponseHeader(), responseHeader));
             }
             // not support handling command now -> decryptedResponseHeaderBytes[1]
-            bodyDecoder = AEADBodyCodec.getBodyDecoder(header.security(), session);
+            bodyDecoder = AEADBodyCodec.getBodyDecoder(header, session);
         }
         bodyDecoder.decodePayload(in, out);
     }

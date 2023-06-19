@@ -8,11 +8,11 @@ import com.urbanspork.common.codec.aead.Authenticator;
 import com.urbanspork.common.codec.aead.CipherCodec;
 import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
+import com.urbanspork.common.codec.vmess.AEADChunkSizeParser;
 import com.urbanspork.common.crypto.GeneralDigests;
 import com.urbanspork.common.protocol.shadowsocks.network.Network;
 import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -31,23 +31,15 @@ import static java.lang.System.arraycopy;
  * @see <a href=https://shadowsocks.org/guide/aead.html">https://shadowsocks.org/guide/aead.html</a>
  */
 class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
-
     /*
      * TCP per-session [salt][encrypted payload length][length tag][encrypted payload][payload tag]
      * UDP per-packet [salt][encrypted payload][payload tag]
      */
-
-    private static final int NONCE_SIZE = 12;
-    private static final int PAYLOAD_LIMIT = 0xffff;
-    private static final byte[] INFO = new byte[]{115, 115, 45, 115, 117, 98, 107, 101, 121}; // "ss-subkey"
-
-    private final byte[] nonce = new byte[NONCE_SIZE];
     private final byte[] key;
     private final int saltSize;
     private final CipherCodec cipherCodec;
-    private final ChunkSizeCodec sizeCodec;
-    final Network network;
-    private int payloadLength = PayloadDecoder.INIT_PAYLOAD_LENGTH;
+    private final Network network;
+    private int payloadLength = PayloadDecoder.INIT_LENGTH;
     private PayloadEncoder payloadEncoder;
     private PayloadDecoder payloadDecoder;
 
@@ -55,7 +47,6 @@ class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
         this.key = generateKey(password.getBytes(), saltSize);
         this.saltSize = saltSize;
         this.cipherCodec = cipherCodec;
-        this.sizeCodec = Network.UDP != network ? generateChunkSizeCodec() : null;
         this.network = network;
     }
 
@@ -111,15 +102,18 @@ class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
     }
 
     private PayloadEncoder newPayloadEncoder(byte[] salt) {
+        Authenticator auth = new Authenticator(cipherCodec, hkdfsha1(key, salt), NonceGenerator.generateInitialAEADNonce(),
+            BytesGenerator.generateEmptyBytes());
+        AEADChunkSizeParser sizeCodec = new AEADChunkSizeParser(auth);
         return new PayloadEncoder() {
             @Override
             public int payloadLimit() {
-                return PAYLOAD_LIMIT;
+                return 0xffff;
             }
 
             @Override
             public Authenticator auth() {
-                return newAuthenticator(salt);
+                return auth;
             }
 
             @Override
@@ -135,6 +129,9 @@ class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
     }
 
     private PayloadDecoder newPayloadDecoder(byte[] salt) {
+        Authenticator auth = new Authenticator(cipherCodec, hkdfsha1(key, salt), NonceGenerator.generateInitialAEADNonce(),
+            BytesGenerator.generateEmptyBytes());
+        AEADChunkSizeParser sizeCodec = new AEADChunkSizeParser(auth);
         return new PayloadDecoder() {
             @Override
             public int payloadLength() {
@@ -147,8 +144,18 @@ class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
             }
 
             @Override
+            public int paddingLength() {
+                return 0;
+            }
+
+            @Override
+            public void updatePaddingLength(int paddingLength) {
+                // unsupported
+            }
+
+            @Override
             public Authenticator auth() {
-                return newAuthenticator(salt);
+                return auth;
             }
 
             @Override
@@ -163,39 +170,11 @@ class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
         };
     }
 
-    private Authenticator newAuthenticator(byte[] salt) {
-        return new Authenticator(cipherCodec, hkdfsha1(key, salt),
-            NonceGenerator.generateCountingNonce(nonce, cipherCodec.nonceSize(), false),
-            BytesGenerator.generateEmptyBytes());
-    }
-
     private byte[] hkdfsha1(byte[] key, byte[] salt) {
         byte[] out = new byte[salt.length];
         HKDFBytesGenerator generator = new HKDFBytesGenerator(new SHA1Digest());
-        generator.init(new HKDFParameters(key, salt, INFO));
+        generator.init(new HKDFParameters(key, salt, "ss-subkey".getBytes()));
         generator.generateBytes(out, 0, out.length);
         return out;
-    }
-
-    private ChunkSizeCodec generateChunkSizeCodec() {
-        return new ChunkSizeCodec() {
-
-            @Override
-            public int sizeBytes() {
-                return Short.BYTES + CipherCodec.TAG_SIZE;
-            }
-
-            @Override
-            public byte[] encode(int size) throws InvalidCipherTextException {
-                byte[] bytes = new byte[Short.BYTES];
-                Unpooled.wrappedBuffer(bytes).setShort(0, Math.min(size, PAYLOAD_LIMIT));
-                return payloadEncoder.auth().seal(bytes);
-            }
-
-            @Override
-            public int decode(byte[] data) throws InvalidCipherTextException {
-                return Unpooled.wrappedBuffer(payloadDecoder.auth().open(data)).getUnsignedShort(0);
-            }
-        };
     }
 }

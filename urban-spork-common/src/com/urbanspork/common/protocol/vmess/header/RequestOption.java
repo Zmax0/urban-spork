@@ -40,10 +40,14 @@ public enum RequestOption {
         RequestOption[] res = new RequestOption[options.length];
         int i = 0;
         for (RequestOption option : options) {
-            if ((option.value & mask) == 1) {
+            if ((option.value & mask) != 0) {
                 res[i++] = option;
             }
         }
         return Arrays.copyOf(res, i);
+    }
+
+    public static boolean has(RequestOption[] options, RequestOption target) {
+        return Arrays.stream(options).anyMatch(option -> option == target);
     }
 }

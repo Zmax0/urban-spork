@@ -12,8 +12,6 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import java.security.InvalidKeyException;
 
-import static com.urbanspork.common.codec.aead.CipherCodec.TAG_SIZE;
-
 public class Encrypt {
 
     private static final byte[] KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY = "VMess Header AEAD Key_Length".getBytes();
@@ -50,17 +48,18 @@ public class Encrypt {
     }
 
     public static ByteBuf openVMessAEADHeader(byte[] key, ByteBuf in) throws InvalidCipherTextException {
-        if (in.readableBytes() < 16 + 2 + TAG_SIZE + 8 + TAG_SIZE) {
+        CipherCodec cipher = CipherCodecs.AES_GCM.get();
+        int tagSize = cipher.tagSize();
+        if (in.readableBytes() < 16 + 2 + tagSize + 8 + tagSize) {
             return Unpooled.EMPTY_BUFFER;
         }
         in.markReaderIndex();
         byte[] authid = new byte[16];
-        byte[] payloadHeaderLengthAEADEncrypted = new byte[2 + TAG_SIZE];
+        byte[] payloadHeaderLengthAEADEncrypted = new byte[2 + tagSize];
         byte[] nonce = new byte[8];
         in.readBytes(authid);
         in.readBytes(payloadHeaderLengthAEADEncrypted);
         in.readBytes(nonce);
-        CipherCodec cipher = CipherCodecs.AES_GCM.get();
         int nonceSize = cipher.nonceSize();
         byte[] decryptedAEADHeaderLengthPayloadResult = cipher.decrypt(
             KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY, authid, nonce),
@@ -69,11 +68,11 @@ public class Encrypt {
             payloadHeaderLengthAEADEncrypted
         );
         int length = Unpooled.wrappedBuffer(decryptedAEADHeaderLengthPayloadResult).readShort();
-        if (in.readableBytes() < length + TAG_SIZE) {
+        if (in.readableBytes() < length + tagSize) {
             in.resetReaderIndex();
             return Unpooled.EMPTY_BUFFER;
         }
-        byte[] payloadHeaderAEADEncrypted = new byte[length + TAG_SIZE];
+        byte[] payloadHeaderAEADEncrypted = new byte[length + tagSize];
         in.readBytes(payloadHeaderAEADEncrypted);
         byte[] decryptedAEADHeaderPayloadR = cipher.decrypt(
             KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_KEY, authid, nonce),

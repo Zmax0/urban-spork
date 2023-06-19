@@ -61,7 +61,7 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
             byte[] aeadResponseHeaderPayloadEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY.getBytes());
             byte[] aeadResponseHeaderPayloadEncryptionIV = KDF.kdf(session.getResponseBodyIV(), nonceSize, KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV.getBytes());
             out.writeBytes(cipher.encrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, aeadEncryptedHeaderBuffer));
-            payloadEncoder = AEADBodyCodec.getBodyEncoder(header.security(), session);
+            payloadEncoder = AEADBodyCodec.getBodyEncoder(header, session);
         }
         payloadEncoder.encodePayload(msg, out);
     }
@@ -105,7 +105,7 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
             }
             header = new RequestHeader(version, command, RequestOption.fromMask(option), security, address, key);
             session = new ServerSession(requestBodyIV, requestBodyKey, responseHeader);
-            payloadDecoder = AEADBodyCodec.getBodyDecoder(header.security(), session);
+            payloadDecoder = AEADBodyCodec.getBodyDecoder(header, session);
             out.add(header.address());
         }
         payloadDecoder.decodePayload(in, out);
