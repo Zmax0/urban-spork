@@ -48,7 +48,7 @@ public class Socks5UDPTestClient {
         Handshake.Result result2 = Handshake.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress2).await().get();
         int bndPort1 = result1.response().bndPort();
         int bndPort2 = result2.response().bndPort();
-        logger.info("Associate ports: [{}, {}]", bndPort1, bndPort2);
+        logger.info("Associate ports: [1:{}, 2:{}]", bndPort1, bndPort2);
         EventLoopGroup bossGroup = new NioEventLoopGroup(2);
         Channel channel = new Bootstrap().group(bossGroup)
             .channel(NioDatagramChannel.class)

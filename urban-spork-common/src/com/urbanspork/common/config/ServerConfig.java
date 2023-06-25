@@ -2,8 +2,8 @@ package com.urbanspork.common.config;
 
 import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.shadowsocks.network.Network;
-import com.urbanspork.common.protocol.shadowsocks.network.PacketEncoding;
+import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.protocol.network.PacketEncoding;
 
 import java.util.Arrays;
 

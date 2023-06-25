@@ -66,8 +66,16 @@ public interface PayloadDecoder {
      * @param out payload
      */
     default void decodePacket(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-        byte[] payloadBytes = new byte[in.readableBytes()];
+        PaddingLengthGenerator padding = padding();
+        int paddingLength = padding == null ? 0 : padding.nextPaddingLength();
+        ChunkSizeCodec sizeCodec = sizeCodec();
+        int sizeBytes = sizeCodec.sizeBytes();
+        byte[] payloadSizeBytes = new byte[sizeBytes];
+        in.readBytes(payloadSizeBytes);
+        int payloadLength = sizeCodec.decode(payloadSizeBytes);
+        byte[] payloadBytes = new byte[payloadLength - paddingLength];
         in.readBytes(payloadBytes);
         out.add(Unpooled.wrappedBuffer(auth().open(payloadBytes)));
+        in.skipBytes(paddingLength);
     }
 }

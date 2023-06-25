@@ -1,6 +1,6 @@
-package com.urbanspork.server.shadowsocks;
+package com.urbanspork.server;
 
-import com.urbanspork.common.protocol.shadowsocks.network.PacketEncoding;
+import com.urbanspork.common.protocol.network.PacketEncoding;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;

@@ -1,11 +1,14 @@
 package com.urbanspork.server.vmess;
 
+import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.codec.aead.CipherCodec;
 import com.urbanspork.common.codec.aead.CipherCodecs;
 import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.codec.vmess.AEADBodyCodec;
+import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.lang.Go;
+import com.urbanspork.common.protocol.network.Network;
 import com.urbanspork.common.protocol.vmess.Address;
 import com.urbanspork.common.protocol.vmess.ID;
 import com.urbanspork.common.protocol.vmess.aead.AuthID;
@@ -38,8 +41,8 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
     private PayloadEncoder payloadEncoder;
     private PayloadDecoder payloadDecoder;
 
-    public ServerAEADCodec(String[] uuids) {
-        this(ID.newID(uuids));
+    public ServerAEADCodec(ServerConfig config) {
+        this(ID.newID(new String[]{config.getPassword()}));
     }
 
     ServerAEADCodec(byte[][] keys) {
@@ -63,7 +66,11 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
             out.writeBytes(cipher.encrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, aeadEncryptedHeaderBuffer));
             payloadEncoder = AEADBodyCodec.getBodyEncoder(header, session);
         }
-        payloadEncoder.encodePayload(msg, out);
+        if (RequestCommand.UDP == header.command()) {
+            payloadEncoder.encodePacket(msg, out);
+        } else {
+            payloadEncoder.encodePayload(msg, out);
+        }
     }
 
     @Override
@@ -81,20 +88,20 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
             }
             byte[] data = new byte[decrypted.readableBytes() - 4];
             decrypted.getBytes(0, data);
-            byte version = decrypted.readByte();// version
+            byte version = decrypted.readByte(); //version
             byte[] requestBodyIV = new byte[16];
             decrypted.readBytes(requestBodyIV);
             byte[] requestBodyKey = new byte[16];
             decrypted.readBytes(requestBodyKey);
             byte responseHeader = decrypted.readByte();
-            byte option = decrypted.readByte();// not support handling option now
+            byte option = decrypted.readByte(); // not support handling option now
             short b35 = decrypted.readUnsignedByte();
             int paddingLen = b35 >> 4;
             SecurityType security = SecurityType.valueOf((byte) (b35 & 0x0F));
             decrypted.skipBytes(1); // fixed 0
-            RequestCommand command = RequestCommand.valueOf(decrypted.readByte());// command
-            if (RequestCommand.TCP != command) {
-                throw new DecoderException("Not support handling other command now");
+            RequestCommand command = RequestCommand.valueOf(decrypted.readByte()); // command
+            if (RequestCommand.UDP == command) {
+                ctx.channel().attr(AttributeKeys.NETWORK).set(Network.UDP);
             }
             Socks5CommandRequest address = Address.readAddressPort(decrypted);
             decrypted.skipBytes(paddingLen);
@@ -108,6 +115,10 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
             payloadDecoder = AEADBodyCodec.getBodyDecoder(header, session);
             out.add(header.address());
         }
-        payloadDecoder.decodePayload(in, out);
+        if (RequestCommand.UDP == header.command()) {
+            payloadDecoder.decodePacket(in, out);
+        } else {
+            payloadDecoder.decodePayload(in, out);
+        }
     }
 }

@@ -2,7 +2,7 @@ package com.urbanspork.common.codec.shadowsocks;
 
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.network.TernaryDatagramPacket;
-import com.urbanspork.common.protocol.shadowsocks.network.Network;
+import com.urbanspork.common.protocol.network.Network;
 import com.urbanspork.common.protocol.socks.Address;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

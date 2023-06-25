@@ -8,9 +8,9 @@ public record TernaryDatagramPacket(DatagramPacket packet, InetSocketAddress thi
     @Override
     public String toString() {
         if (packet.sender() != null) {
-            return String.format("%s -> %s ~> %s", packet.sender(), packet.recipient(), third);
+            return String.format("%s → %s ~ %s", packet.sender(), packet.recipient(), third);
         } else {
-            return String.format("-> %s ~> %s", packet.recipient(), third);
+            return String.format("→ %s ~ %s", packet.recipient(), third);
         }
     }
 }

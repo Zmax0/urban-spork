@@ -1,18 +1,14 @@
 package com.urbanspork.test.template;
 
-import com.urbanspork.client.Client;
 import com.urbanspork.common.config.ClientConfig;
-import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.socks.Handshake;
 import com.urbanspork.common.util.Dice;
-import com.urbanspork.server.Server;
 import com.urbanspork.test.TestUtil;
 import com.urbanspork.test.server.tcp.EchoTestServer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
-import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.handler.codec.FixedLengthFrameDecoder;
 import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
@@ -22,11 +18,10 @@ import org.junit.jupiter.api.*;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public abstract class TCPTestTemplate {
+public abstract class TCPTestTemplate extends TestTemplate {
 
     final DefaultEventLoop executor = new DefaultEventLoop();
     final ExecutorService pool = Executors.newFixedThreadPool(1);
@@ -37,23 +32,11 @@ public abstract class TCPTestTemplate {
         launchEchoTestServer();
     }
 
-    protected void launchEchoTestServer() throws InterruptedException, ExecutionException {
+    private void launchEchoTestServer() throws InterruptedException, ExecutionException {
         Promise<Channel> promise = new DefaultPromise<>(executor);
         pool.submit(() -> EchoTestServer.launch(dstPort, promise));
         InetSocketAddress address = (InetSocketAddress) promise.await().get().localAddress();
         Assertions.assertEquals(dstPort, address.getPort());
-    }
-
-    protected void launchClient(ExecutorService service, ClientConfig config) throws InterruptedException, ExecutionException {
-        Promise<ServerSocketChannel> promise = new DefaultPromise<>(executor);
-        service.submit(() -> Client.launch(config, promise));
-        Assertions.assertEquals(config.getPort(), promise.await().get().localAddress().getPort());
-    }
-
-    protected void launchServer(ExecutorService service, List<ServerConfig> configs) throws InterruptedException, ExecutionException {
-        Promise<List<ServerSocketChannel>> promise = new DefaultPromise<>(executor);
-        service.submit(() -> Server.launch(configs, promise));
-        Assertions.assertEquals(configs.get(0).getPort(), promise.await().get().get(0).localAddress().getPort());
     }
 
     protected void handshakeAndSendBytes(ClientConfig config) throws InterruptedException, ExecutionException {

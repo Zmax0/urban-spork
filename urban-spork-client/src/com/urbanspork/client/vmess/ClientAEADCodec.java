@@ -11,6 +11,7 @@ import com.urbanspork.common.protocol.vmess.Address;
 import com.urbanspork.common.protocol.vmess.aead.KDF;
 import com.urbanspork.common.protocol.vmess.encoding.ClientSession;
 import com.urbanspork.common.protocol.vmess.encoding.Session;
+import com.urbanspork.common.protocol.vmess.header.RequestCommand;
 import com.urbanspork.common.protocol.vmess.header.RequestHeader;
 import com.urbanspork.common.protocol.vmess.header.RequestOption;
 import com.urbanspork.common.protocol.vmess.header.SecurityType;
@@ -40,11 +41,11 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
     private PayloadDecoder bodyDecoder;
 
     public ClientAEADCodec(SupportedCipher cipher, Socks5CommandRequest address, String uuid) {
-        this(SecurityType.valueOf(cipher), address, uuid);
+        this(cipher, RequestCommand.TCP, address, uuid);
     }
 
-    ClientAEADCodec(SecurityType security, Socks5CommandRequest address, String uuid) {
-        this(RequestHeader.defaultHeader(security, address, uuid), new ClientSession());
+    ClientAEADCodec(SupportedCipher cipher, RequestCommand command, Socks5CommandRequest address, String uuid) {
+        this(RequestHeader.defaultHeader(SecurityType.valueOf(cipher), command, address, uuid), new ClientSession());
     }
 
     ClientAEADCodec(RequestHeader header, Session session) {
@@ -74,7 +75,11 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
             sealVMessAEADHeader(header.id(), headerBytes, out);
             bodyEncoder = AEADBodyCodec.getBodyEncoder(header, session);
         }
-        bodyEncoder.encodePayload(msg, out);
+        if (RequestCommand.UDP == header.command()) {
+            bodyEncoder.encodePacket(msg, out);
+        } else {
+            bodyEncoder.encodePayload(msg, out);
+        }
     }
 
     @Override
@@ -107,6 +112,10 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
             // not support handling command now -> decryptedResponseHeaderBytes[1]
             bodyDecoder = AEADBodyCodec.getBodyDecoder(header, session);
         }
-        bodyDecoder.decodePayload(in, out);
+        if (header.command() == RequestCommand.UDP) {
+            bodyDecoder.decodePacket(in, out);
+        } else {
+            bodyDecoder.decodePayload(in, out);
+        }
     }
 }
