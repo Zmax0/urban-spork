@@ -10,7 +10,7 @@ import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.codec.vmess.AEADChunkSizeParser;
 import com.urbanspork.common.crypto.GeneralDigests;
-import com.urbanspork.common.protocol.shadowsocks.network.Network;
+import com.urbanspork.common.protocol.network.Network;
 import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

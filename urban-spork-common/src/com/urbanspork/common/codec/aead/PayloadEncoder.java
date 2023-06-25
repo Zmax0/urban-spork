@@ -24,17 +24,7 @@ public interface PayloadEncoder {
      */
     default void encodePayload(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         while (msg.isReadable()) {
-            int paddingLength = 0;
-            PaddingLengthGenerator padding = padding();
-            if (padding != null) {
-                paddingLength = padding.nextPaddingLength();
-            }
-            int encryptedSize = Math.min(msg.readableBytes(), payloadLimit() - auth().overhead() - sizeCodec().sizeBytes() - paddingLength);
-            out.writeBytes(sizeCodec().encode(encryptedSize + paddingLength + auth().overhead()));
-            byte[] in = new byte[encryptedSize];
-            msg.readBytes(in);
-            out.writeBytes(auth().seal(in));
-            out.writeBytes(Dice.rollBytes(paddingLength));
+            seal(msg, out);
         }
     }
 
@@ -45,8 +35,20 @@ public interface PayloadEncoder {
      * @param out [salt][encrypted payload][tag]
      */
     default void encodePacket(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
-        byte[] in = new byte[msg.readableBytes()];
+        seal(msg, out);
+    }
+
+    private void seal(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+        int paddingLength = 0;
+        PaddingLengthGenerator padding = padding();
+        if (padding != null) {
+            paddingLength = padding.nextPaddingLength();
+        }
+        int encryptedSize = Math.min(msg.readableBytes(), payloadLimit() - auth().overhead() - sizeCodec().sizeBytes() - paddingLength);
+        out.writeBytes(sizeCodec().encode(encryptedSize + paddingLength + auth().overhead()));
+        byte[] in = new byte[encryptedSize];
         msg.readBytes(in);
         out.writeBytes(auth().seal(in));
+        out.writeBytes(Dice.rollBytes(paddingLength));
     }
 }

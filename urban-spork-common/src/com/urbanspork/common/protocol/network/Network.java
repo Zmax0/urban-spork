@@ -1,4 +1,4 @@
-package com.urbanspork.common.protocol.shadowsocks.network;
+package com.urbanspork.common.protocol.network;
 
 public enum Network {
 

@@ -2,7 +2,7 @@ package com.urbanspork.common.codec.shadowsocks;
 
 import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.codec.aead.CipherCodecs;
-import com.urbanspork.common.protocol.shadowsocks.network.Network;
+import com.urbanspork.common.protocol.network.Network;
 
 public class AEADCipherCodecs {
 

@@ -1,6 +1,7 @@
 package com.urbanspork.client;
 
 import com.urbanspork.client.shadowsocks.ClientUDPReplayHandler;
+import com.urbanspork.client.vmess.ClientUDPOverTCPHandler;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
@@ -37,20 +38,20 @@ public class Client {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         ServerConfig current = config.getCurrent();
         try {
-            if (Protocols.shadowsocks == current.getProtocol()) {
-                new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
-                    .handler(new ChannelInitializer<>() {
-                        @Override
-                        protected void initChannel(Channel ch) {
-                            ch.pipeline().addLast(
-                                new DatagramPacketEncoder(),
-                                new DatagramPacketDecoder(),
-                                new ClientUDPReplayHandler(current, workerGroup)
-                            );
-                        }
-                    })
-                    .bind(port).sync();
+            ChannelHandler udpTransportHandler;
+            if (Protocols.vmess == current.getProtocol()) {
+                udpTransportHandler = new ClientUDPOverTCPHandler(current, workerGroup);
+            } else {
+                udpTransportHandler = new ClientUDPReplayHandler(current, workerGroup);
             }
+            new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
+                .handler(new ChannelInitializer<>() {
+                    @Override
+                    protected void initChannel(Channel ch) {
+                        ch.pipeline().addLast(new DatagramPacketEncoder(), new DatagramPacketDecoder(), udpTransportHandler);
+                    }
+                })
+                .bind(port).sync();
             new ServerBootstrap().group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childOption(ChannelOption.SO_KEEPALIVE, true) // socks5 require

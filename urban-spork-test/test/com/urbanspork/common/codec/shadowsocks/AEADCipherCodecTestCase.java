@@ -1,7 +1,8 @@
 package com.urbanspork.common.codec.shadowsocks;
 
 import com.urbanspork.common.codec.SupportedCipher;
-import com.urbanspork.common.protocol.shadowsocks.network.Network;
+import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -10,7 +11,6 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -26,9 +26,7 @@ class AEADCipherCodecTestCase {
     @BeforeAll
     void beforeAll() {
         password = TestDice.rollString();
-        SecureRandom random = new SecureRandom();
-        in = new byte[maxChunkSize * 10]; // 1M
-        random.nextBytes(in);
+        in = Dice.rollBytes(maxChunkSize * 10);
     }
 
     @DisplayName("Single supported cipher repeat")
@@ -46,8 +44,8 @@ class AEADCipherCodecTestCase {
         cipherTest(AEADCipherCodecs.get(password, cipher, Network.UDP), false);
     }
 
-    private void cipherTest(AEADCipherCodec codec, boolean firstSmallSlice) throws Exception {
-        List<Object> list = cipherTest(codec, Unpooled.copiedBuffer(in), firstSmallSlice);
+    private void cipherTest(AEADCipherCodec codec, boolean reRoll) throws Exception {
+        List<Object> list = cipherTest(codec, Unpooled.copiedBuffer(in), reRoll);
         byte[] out = new byte[in.length];
         int len = 0;
         for (Object obj : list) {
@@ -61,16 +59,22 @@ class AEADCipherCodecTestCase {
         Assertions.assertArrayEquals(in, out);
     }
 
-    private List<Object> cipherTest(AEADCipherCodec codec, ByteBuf inBuf, boolean firstSmallSlice) throws Exception {
+    private List<Object> cipherTest(AEADCipherCodec codec, ByteBuf inBuf, boolean reRoll) throws Exception {
         ByteBuf trans = Unpooled.buffer();
         for (ByteBuf slice : randomSlice(inBuf, false)) {
             codec.encode(null, slice, trans);
         }
         List<Object> out = new ArrayList<>();
         ByteBuf buffer = Unpooled.buffer();
-        for (ByteBuf slice : randomSlice(trans, firstSmallSlice)) {
-            buffer.writeBytes(slice);
-            codec.decode(null, buffer, out);
+        if (reRoll) {
+            for (ByteBuf slice : randomSlice(trans, true)) {
+                buffer.writeBytes(slice);
+                codec.decode(null, buffer, out);
+            }
+        } else {
+            while (trans.isReadable()) {
+                codec.decode(null, trans, out);
+            }
         }
         return out;
     }
@@ -82,7 +86,7 @@ class AEADCipherCodecTestCase {
             list.add(src.readSlice(Math.min(src.readableBytes(), random.nextInt(15))));
         }
         while (src.isReadable()) {
-            list.add(src.readSlice(Math.max(src.readableBytes(), random.nextInt(1, maxChunkSize))));
+            list.add(src.readSlice(Math.min(src.readableBytes(), random.nextInt(1, maxChunkSize))));
         }
         return list;
     }

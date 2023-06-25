@@ -15,7 +15,7 @@ class RemoteConnectionHandlerTestCase {
     @Test
     void testConnectFailed() {
         ServerConfig config = ServerConfigTestCase.testConfig(TestUtil.freePort());
-        EmbeddedChannel channel = new EmbeddedChannel(new RemoteConnectionHandler(config));
+        EmbeddedChannel channel = new EmbeddedChannel(new RemoteConnectHandler(config));
         channel.writeInbound(new InetSocketAddress(TestUtil.freePort()));
         Assertions.assertFalse(channel.isActive());
     }

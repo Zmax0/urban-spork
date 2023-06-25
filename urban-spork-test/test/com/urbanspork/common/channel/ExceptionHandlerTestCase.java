@@ -28,7 +28,7 @@ class ExceptionHandlerTestCase {
             }
         }, new ExceptionHandler(config));
         Assertions.assertTrue(channel.isActive());
-        channel.writeInbound("Error message");
+        channel.writeInbound("Testcase");
         Assertions.assertFalse(channel.isActive());
     }
 

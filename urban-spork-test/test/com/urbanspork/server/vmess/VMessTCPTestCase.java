@@ -5,6 +5,7 @@ import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.test.template.TCPTestTemplate;
+import io.netty.channel.DefaultEventLoop;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -24,8 +25,10 @@ class VMessTCPTestCase extends TCPTestTemplate {
         List<ServerConfig> configs = config.getServers();
         Assertions.assertEquals(Protocols.vmess, configs.get(0).getProtocol());
         ExecutorService service = Executors.newSingleThreadExecutor();
-        launchServer(service, configs);
+        DefaultEventLoop eventLoop = new DefaultEventLoop();
+        launchServer(service, eventLoop, configs);
         handshakeAndSendBytes(config);
         service.shutdownNow();
+        eventLoop.shutdownGracefully();
     }
 }

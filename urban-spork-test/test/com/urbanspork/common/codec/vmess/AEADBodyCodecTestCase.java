@@ -35,7 +35,7 @@ class AEADBodyCodecTestCase {
     @ParameterizedTest
     @EnumSource(SecurityType.class)
     void testBySecurity(SecurityType security) throws InvalidCipherTextException {
-        RequestHeader header = RequestHeader.defaultHeader(security, null, UUID.randomUUID().toString());
+        RequestHeader header = RequestHeader.defaultHeader(security, RequestCommand.TCP, null, UUID.randomUUID().toString());
         testByHeader(header);
     }
 
@@ -44,6 +44,13 @@ class AEADBodyCodecTestCase {
     void testByOptionMask(int mask) throws InvalidCipherTextException {
         RequestHeader header = new RequestHeader(VMess.VERSION, RequestCommand.TCP, RequestOption.fromMask((byte) mask),
             SecurityType.CHACHA20_POLY1305, null, ID.newID(UUID.randomUUID().toString()));
+        testByHeader(header);
+    }
+
+    @ParameterizedTest
+    @EnumSource(RequestCommand.class)
+    void testByCommand(RequestCommand command) throws InvalidCipherTextException {
+        RequestHeader header = RequestHeader.defaultHeader(SecurityType.CHACHA20_POLY1305, command, null, UUID.randomUUID().toString());
         testByHeader(header);
     }
 

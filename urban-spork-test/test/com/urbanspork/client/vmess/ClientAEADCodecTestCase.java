@@ -1,7 +1,9 @@
 package com.urbanspork.client.vmess;
 
+import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.vmess.encoding.ClientSession;
 import com.urbanspork.common.protocol.vmess.encoding.SessionTestCase;
+import com.urbanspork.common.protocol.vmess.header.RequestCommand;
 import com.urbanspork.common.protocol.vmess.header.RequestHeader;
 import com.urbanspork.common.protocol.vmess.header.SecurityType;
 import com.urbanspork.common.util.Dice;
@@ -30,12 +32,14 @@ public class ClientAEADCodecTestCase {
     void testDecodeDifferentSession() throws Exception {
         String uuid = java.util.UUID.randomUUID().toString();
         Socks5CommandRequest address = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "www.urban-spork.com", TestDice.rollPort());
-        RequestHeader header = RequestHeader.defaultHeader(SecurityType.AES128_GCM, address, uuid);
+        RequestHeader header = RequestHeader.defaultHeader(SecurityType.AES128_GCM, RequestCommand.TCP, address, uuid);
         ClientSession session1 = new ClientSession();
         ClientSession session2 = SessionTestCase.another(session1);
         ClientAEADCodec clientCodec1 = new ClientAEADCodec(header, session1);
         ClientAEADCodec clientCodec2 = new ClientAEADCodec(header, session2);
-        ServerAEADCodec serverCodec = new ServerAEADCodec(new String[]{uuid});
+        ServerConfig config = new ServerConfig();
+        config.setPassword(uuid);
+        ServerAEADCodec serverCodec = new ServerAEADCodec(config);
         ByteBuf msg = Unpooled.wrappedBuffer(Dice.rollBytes(1024));
         clientCodec1.encode(null, msg, Unpooled.buffer());
         ByteBuf buf = Unpooled.buffer();

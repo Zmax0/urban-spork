@@ -1,6 +1,6 @@
 package com.urbanspork.client.shadowsocks;
 
-import com.urbanspork.common.channel.ChannelCloseUtils;
+import com.urbanspork.client.AbstractClientUDPReplayHandler;
 import com.urbanspork.common.codec.shadowsocks.UDPReplayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.network.TernaryDatagramPacket;
@@ -8,57 +8,35 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
-public class ClientUDPReplayHandler extends SimpleChannelInboundHandler<TernaryDatagramPacket> {
+public class ClientUDPReplayHandler extends AbstractClientUDPReplayHandler<InetSocketAddress> {
 
     private static final Logger logger = LoggerFactory.getLogger(ClientUDPReplayHandler.class);
-    private final HashedWheelTimer timer = new HashedWheelTimer(1, TimeUnit.SECONDS);
-    private final Map<InetSocketAddress, Channel> binding = new ConcurrentHashMap<>();
-    private final ServerConfig config;
     private final EventLoopGroup workerGroup;
     private final InetSocketAddress replay;
 
     public ClientUDPReplayHandler(ServerConfig config, EventLoopGroup workerGroup) {
-        super(false);
-        this.config = config;
+        super(config);
         this.workerGroup = workerGroup;
         this.replay = new InetSocketAddress(config.getHost(), config.getPort());
     }
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, TernaryDatagramPacket msg) {
-        DatagramPacket packet = msg.packet();
-        InetSocketAddress sender = packet.sender();
-        getBindingChannel(ctx.channel(), sender).writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(packet.content(), msg.third()), replay));
+    protected Object convertToWrite(TernaryDatagramPacket msg) {
+        return new TernaryDatagramPacket(new DatagramPacket(msg.packet().content(), msg.third()), replay);
     }
 
     @Override
-    public void channelUnregistered(ChannelHandlerContext ctx) {
-        ctx.fireChannelUnregistered();
-        logger.info("Stop timer and clean binding");
-        timer.stop();
-        ChannelCloseUtils.clearMap(binding);
+    protected InetSocketAddress getKey(TernaryDatagramPacket msg) {
+        return msg.packet().sender();
     }
 
-    private Channel getBindingChannel(Channel inboundChannel, InetSocketAddress sender) {
-        return binding.computeIfAbsent(sender, key -> {
-            Channel channel = newBindingChannel(inboundChannel, sender);
-            logger.info("New binding => {} - {}", sender, channel.localAddress());
-            timer.newTimeout(timeout -> channel.close(), 10, TimeUnit.MINUTES);
-            timer.newTimeout(timeout -> binding.remove(sender), 1, TimeUnit.MINUTES);
-            return channel;
-        });
-    }
-
-    private Channel newBindingChannel(Channel inboundChannel, InetSocketAddress sender) {
+    @Override
+    protected Channel newBindingChannel(Channel inboundChannel, InetSocketAddress sender) {
         return new Bootstrap().group(workerGroup).channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {
                 @Override

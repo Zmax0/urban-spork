@@ -4,7 +4,6 @@ import com.urbanspork.common.codec.shadowsocks.UDPReplayCodec;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.server.shadowsocks.ServerUDPReplayHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
