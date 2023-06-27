@@ -66,7 +66,7 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
             out.writeBytes(cipher.encrypt(aeadResponseHeaderPayloadEncryptionKey, aeadResponseHeaderPayloadEncryptionIV, aeadEncryptedHeaderBuffer));
             payloadEncoder = AEADBodyCodec.getBodyEncoder(header, session);
         }
-        if (RequestCommand.UDP == header.command()) {
+        if (RequestCommand.UDP.equals(header.command())) {
             payloadEncoder.encodePacket(msg, out);
         } else {
             payloadEncoder.encodePayload(msg, out);
@@ -99,11 +99,15 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
             int paddingLen = b35 >> 4;
             SecurityType security = SecurityType.valueOf((byte) (b35 & 0x0F));
             decrypted.skipBytes(1); // fixed 0
-            RequestCommand command = RequestCommand.valueOf(decrypted.readByte()); // command
-            if (RequestCommand.UDP == command) {
-                ctx.channel().attr(AttributeKeys.NETWORK).set(Network.UDP);
+            RequestCommand command = new RequestCommand(decrypted.readByte()); // command
+            Socks5CommandRequest address = null;
+            if (RequestCommand.TCP.equals(command) || RequestCommand.UDP.equals(command)) {
+                address = Address.readAddressPort(decrypted);
+                if (RequestCommand.UDP.equals(command)) {
+                    ctx.channel().attr(AttributeKeys.NETWORK).set(Network.UDP);
+                }
+                out.add(address);
             }
-            Socks5CommandRequest address = Address.readAddressPort(decrypted);
             decrypted.skipBytes(paddingLen);
             byte[] actual = new byte[Integer.BYTES];
             decrypted.readBytes(actual);
@@ -113,9 +117,8 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
             header = new RequestHeader(version, command, RequestOption.fromMask(option), security, address, key);
             session = new ServerSession(requestBodyIV, requestBodyKey, responseHeader);
             payloadDecoder = AEADBodyCodec.getBodyDecoder(header, session);
-            out.add(header.address());
         }
-        if (RequestCommand.UDP == header.command()) {
+        if (RequestCommand.UDP.equals(header.command())) {
             payloadDecoder.decodePacket(in, out);
         } else {
             payloadDecoder.decodePayload(in, out);

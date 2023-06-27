@@ -4,7 +4,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.digests.MD5Digest;
 
-import java.util.Arrays;
 import java.util.UUID;
 
 public class ID {
@@ -47,17 +46,11 @@ public class ID {
     public static byte[] nextID(byte[] oldID) {
         MD5Digest digest = new MD5Digest();
         digest.update(oldID, 0, oldID.length);
-        byte[] salt1 = "16167dc8-16b6-4e6d-b8bb-65dd68113a81".getBytes();
-        byte[] salt2 = "533eff8a-4113-4b10-b5ce-0f5d76b98cd2".getBytes();
-        digest.update(salt1, 0, salt1.length);
+        byte[] salt = "16167dc8-16b6-4e6d-b8bb-65dd68113a81".getBytes();
+        digest.update(salt, 0, salt.length);
         byte[] newID = new byte[oldID.length];
-        for (; ; ) {
-            digest.doFinal(newID, 0);
-            if (!Arrays.equals(oldID, newID)) {
-                return newID;
-            }
-            digest.update(salt2, 0, salt2.length);
-        }
+        digest.doFinal(newID, 0);
+        return newID;
     }
 
     public static byte[][] newAlterIDs(byte[] id, int alterIDCount) {

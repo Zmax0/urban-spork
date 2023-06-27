@@ -1,11 +1,16 @@
 package com.urbanspork.server.vmess;
 
 import com.urbanspork.client.vmess.ClientAEADCodec;
+import com.urbanspork.client.vmess.ClientAEADCodecTestCase;
 import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.vmess.ID;
 import com.urbanspork.common.protocol.vmess.VMess;
 import com.urbanspork.common.protocol.vmess.aead.AuthID;
+import com.urbanspork.common.protocol.vmess.encoding.ClientSession;
+import com.urbanspork.common.protocol.vmess.header.RequestCommand;
+import com.urbanspork.common.protocol.vmess.header.RequestHeader;
+import com.urbanspork.common.protocol.vmess.header.SecurityType;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -23,7 +28,8 @@ import org.junit.jupiter.api.Test;
 class ServerAEADCodecTestCase {
 
     private static final String UUID = java.util.UUID.randomUUID().toString();
-    private static final Socks5CommandRequest REQUEST = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "www.urban-spork.com", TestDice.rollPort());
+    private static final Socks5CommandRequest ADDRESS = new DefaultSocks5CommandRequest(
+        Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "www.urban-spork.com", TestDice.rollPort());
 
     @Test
     void testDecodeEmptyHeader() throws Exception {
@@ -35,10 +41,23 @@ class ServerAEADCodecTestCase {
 
     @Test
     void testDecodeNoMatchedAuthID() {
-        ClientAEADCodec clientCodec = new ClientAEADCodec(SupportedCipher.aes_128_gcm, REQUEST, UUID);
+        ClientAEADCodec clientCodec = new ClientAEADCodec(SupportedCipher.aes_128_gcm, ADDRESS, UUID);
         ByteBuf buf = readOutbound(clientCodec);
         ServerConfig config = new ServerConfig();
         config.setPassword(java.util.UUID.randomUUID().toString());
+        ServerAEADCodec serverCodec = new ServerAEADCodec(config);
+        EmbeddedChannel serverChannel = new EmbeddedChannel();
+        serverChannel.pipeline().addLast(serverCodec);
+        Assertions.assertThrows(DecoderException.class, () -> serverChannel.writeInbound(buf));
+    }
+
+    @Test
+    void testInvalidRequest() {
+        RequestHeader header = RequestHeader.defaultHeader(SecurityType.AES128_GCM, new RequestCommand((byte) 100), ADDRESS, UUID);
+        ClientAEADCodec clientCodec = ClientAEADCodecTestCase.codec(header, new ClientSession());
+        ByteBuf buf = readOutbound(clientCodec);
+        ServerConfig config = new ServerConfig();
+        config.setPassword(UUID);
         ServerAEADCodec serverCodec = new ServerAEADCodec(config);
         EmbeddedChannel serverChannel = new EmbeddedChannel();
         serverChannel.pipeline().addLast(serverCodec);

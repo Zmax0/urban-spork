@@ -32,6 +32,8 @@ import java.util.stream.Stream;
 @DisplayName("VMess - AEAD Body Codec")
 class AEADBodyCodecTestCase {
 
+    private final String uuid = UUID.randomUUID().toString();
+
     @ParameterizedTest
     @EnumSource(SecurityType.class)
     void testBySecurity(SecurityType security) throws InvalidCipherTextException {
@@ -42,13 +44,12 @@ class AEADBodyCodecTestCase {
     @ParameterizedTest
     @ArgumentsSource(RequestOptionProvider.class)
     void testByOptionMask(int mask) throws InvalidCipherTextException {
-        RequestHeader header = new RequestHeader(VMess.VERSION, RequestCommand.TCP, RequestOption.fromMask((byte) mask),
-            SecurityType.CHACHA20_POLY1305, null, ID.newID(UUID.randomUUID().toString()));
-        testByHeader(header);
+        testByHeader(new RequestHeader(VMess.VERSION, RequestCommand.TCP, RequestOption.fromMask((byte) mask), SecurityType.CHACHA20_POLY1305, null, ID.newID(uuid)));
+        testByHeader(new RequestHeader(VMess.VERSION, RequestCommand.UDP, RequestOption.fromMask((byte) mask), SecurityType.AES128_GCM, null, ID.newID(uuid)));
     }
 
     @ParameterizedTest
-    @EnumSource(RequestCommand.class)
+    @ArgumentsSource(RequestCommandProvider.class)
     void testByCommand(RequestCommand command) throws InvalidCipherTextException {
         RequestHeader header = RequestHeader.defaultHeader(SecurityType.CHACHA20_POLY1305, command, null, UUID.randomUUID().toString());
         testByHeader(header);
@@ -80,6 +81,13 @@ class AEADBodyCodecTestCase {
         }
         list.clear();
         return merged;
+    }
+
+    private static class RequestCommandProvider implements ArgumentsProvider {
+        @Override
+        public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+            return Arrays.stream(new RequestCommand[]{RequestCommand.TCP, RequestCommand.UDP}).map(Arguments::of);
+        }
     }
 
     private static class RequestOptionProvider implements ArgumentsProvider {

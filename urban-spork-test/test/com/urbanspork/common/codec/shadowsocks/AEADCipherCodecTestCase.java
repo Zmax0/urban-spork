@@ -59,21 +59,23 @@ class AEADCipherCodecTestCase {
         Assertions.assertArrayEquals(in, out);
     }
 
-    private List<Object> cipherTest(AEADCipherCodec codec, ByteBuf inBuf, boolean reRoll) throws Exception {
-        ByteBuf trans = Unpooled.buffer();
-        for (ByteBuf slice : randomSlice(inBuf, false)) {
-            codec.encode(null, slice, trans);
+    private List<Object> cipherTest(AEADCipherCodec codec, ByteBuf in, boolean reRoll) throws Exception {
+        List<ByteBuf> encodeSlices = new ArrayList<>();
+        for (ByteBuf slice : randomSlice(in, false)) {
+            ByteBuf buf = Unpooled.buffer();
+            codec.encode(null, slice, buf);
+            encodeSlices.add(buf);
         }
         List<Object> out = new ArrayList<>();
-        ByteBuf buffer = Unpooled.buffer();
         if (reRoll) {
-            for (ByteBuf slice : randomSlice(trans, true)) {
+            ByteBuf buffer = Unpooled.buffer();
+            for (ByteBuf slice : randomSlice(merge(encodeSlices), true)) {
                 buffer.writeBytes(slice);
                 codec.decode(null, buffer, out);
             }
         } else {
-            while (trans.isReadable()) {
-                codec.decode(null, trans, out);
+            for (ByteBuf buf : encodeSlices) {
+                codec.decode(null, buf, out);
             }
         }
         return out;
@@ -86,8 +88,16 @@ class AEADCipherCodecTestCase {
             list.add(src.readSlice(Math.min(src.readableBytes(), random.nextInt(15))));
         }
         while (src.isReadable()) {
-            list.add(src.readSlice(Math.min(src.readableBytes(), random.nextInt(1, maxChunkSize))));
+            list.add(src.readSlice(Math.min(src.readableBytes(), random.nextInt(maxChunkSize))));
         }
         return list;
+    }
+
+    private ByteBuf merge(List<ByteBuf> list) {
+        ByteBuf merged = Unpooled.buffer();
+        for (ByteBuf buf : list) {
+            merged.writeBytes(buf);
+        }
+        return merged;
     }
 }

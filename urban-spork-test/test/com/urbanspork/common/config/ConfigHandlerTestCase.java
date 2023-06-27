@@ -13,6 +13,7 @@ class ConfigHandlerTestCase {
         int clientPort = TestDice.rollPort();
         int serverPort = TestDice.rollPort();
         ConfigHandler.DEFAULT.save(ClientConfigTestCase.testConfig(clientPort, serverPort));
+        ConfigHandler.DEFAULT.save(ConfigHandler.DEFAULT.read());
         ClientConfig config = ConfigHandler.DEFAULT.read();
         Assertions.assertEquals(clientPort, config.getPort());
         Assertions.assertEquals(serverPort, config.getServers().get(0).getPort());

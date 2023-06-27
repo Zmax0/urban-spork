@@ -75,7 +75,7 @@ public class AEADBodyCodec {
     }
 
     private static Authenticator newAEADAuthenticator(CipherCodec codec, byte[] key, byte[] nonce) {
-        return new Authenticator(codec, key, NonceGenerator.generateCountingNonce(nonce, codec.nonceSize(), true), BytesGenerator.generateEmptyBytes());
+        return new Authenticator(codec, key, NonceGenerator.generateCountingNonce(nonce, codec.nonceSize()), BytesGenerator.generateEmptyBytes());
     }
 
     private static ChunkSizeCodec newAEADChunkSizeCodec(CipherCodec codec, byte[] key, byte[] nonce) {

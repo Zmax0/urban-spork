@@ -66,7 +66,7 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
             SecurityType security = header.security();
             buffer.writeByte((paddingLen << 4) | (int) security.getValue());
             buffer.writeByte(0);
-            buffer.writeByte(header.command().getValue());
+            buffer.writeByte(header.command().value());
             Address.writeAddressPort(buffer, header.address()); // address
             buffer.writeBytes(Dice.rollBytes(paddingLen)); // padding
             buffer.writeBytes(Go.fnv1a32(ByteBufUtil.getBytes(buffer, buffer.readerIndex(), buffer.writerIndex(), false)));
@@ -75,7 +75,7 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
             sealVMessAEADHeader(header.id(), headerBytes, out);
             bodyEncoder = AEADBodyCodec.getBodyEncoder(header, session);
         }
-        if (RequestCommand.UDP == header.command()) {
+        if (RequestCommand.UDP.equals(header.command())) {
             bodyEncoder.encodePacket(msg, out);
         } else {
             bodyEncoder.encodePayload(msg, out);
@@ -112,7 +112,7 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
             // not support handling command now -> decryptedResponseHeaderBytes[1]
             bodyDecoder = AEADBodyCodec.getBodyDecoder(header, session);
         }
-        if (header.command() == RequestCommand.UDP) {
+        if (RequestCommand.UDP.equals(header.command())) {
             bodyDecoder.decodePacket(in, out);
         } else {
             bodyDecoder.decodePayload(in, out);
