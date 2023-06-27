@@ -1,22 +1,18 @@
 package com.urbanspork.common.protocol.vmess.header;
 
-import java.util.Arrays;
+public record RequestCommand(byte value) {
 
-public enum RequestCommand {
+    public static final RequestCommand TCP = new RequestCommand((byte) 1);
+    public static final RequestCommand UDP = new RequestCommand((byte) 2);
+    // not support Mux now
 
-    TCP((byte) 1), UDP((byte) 2), Mux((byte) 3);
-
-    private final byte value;
-
-    RequestCommand(byte value) {
-        this.value = value;
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof RequestCommand command && value == command.value;
     }
 
-    public byte getValue() {
-        return value;
-    }
-
-    public static RequestCommand valueOf(byte value) {
-        return Arrays.stream(values()).filter(type -> type.value == value).findFirst().orElseThrow();
+    @Override
+    public int hashCode() {
+        return Byte.hashCode(value);
     }
 }

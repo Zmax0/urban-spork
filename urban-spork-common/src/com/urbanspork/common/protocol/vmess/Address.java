@@ -38,8 +38,8 @@ public interface Address {
 
     static Socks5CommandRequest readAddressPort(ByteBuf buf) {
         int port = buf.readUnsignedShort();
-        String hostname = null;
-        Socks5AddressType type = null;
+        String hostname;
+        Socks5AddressType type;
         switch (AddressType.valueOf(buf.readByte())) {
             case IPV4 -> {
                 type = Socks5AddressType.IPv4;
@@ -53,7 +53,7 @@ public interface Address {
                 buf.readBytes(bytes);
                 hostname = NetUtil.bytesToIpAddress(bytes);
             }
-            case DOMAIN -> {
+            default -> {
                 type = Socks5AddressType.DOMAIN;
                 int length = buf.readByte();
                 hostname = buf.readCharSequence(length, Charset.defaultCharset()).toString();

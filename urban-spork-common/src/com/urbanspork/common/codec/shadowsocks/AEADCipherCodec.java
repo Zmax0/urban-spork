@@ -13,6 +13,7 @@ import com.urbanspork.common.crypto.GeneralDigests;
 import com.urbanspork.common.protocol.network.Network;
 import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -28,7 +29,7 @@ import static java.lang.System.arraycopy;
  * AEAD Cipher Codec
  *
  * @author Zmax0
- * @see <a href=https://shadowsocks.org/guide/aead.html">https://shadowsocks.org/guide/aead.html</a>
+ * @see <a href=https://shadowsocks.org/doc/aead.html">https://shadowsocks.org/doc/aead.html</a>
  */
 class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
     /*
@@ -68,17 +69,17 @@ class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-        if (in.readableBytes() >= saltSize) {
-            if (network == Network.UDP) {
+        if (network == Network.UDP) {
+            byte[] salt = new byte[saltSize];
+            in.readBytes(salt);
+            newPayloadDecoder(salt).decodePacket(in, out);
+        } else {
+            if (payloadDecoder == null && in.readableBytes() >= saltSize) {
                 byte[] salt = new byte[saltSize];
                 in.readBytes(salt);
-                newPayloadDecoder(salt).decodePacket(in, out);
-            } else {
-                if (payloadDecoder == null) {
-                    byte[] salt = new byte[saltSize];
-                    in.readBytes(salt);
-                    payloadDecoder = newPayloadDecoder(salt);
-                }
+                payloadDecoder = newPayloadDecoder(salt);
+            }
+            if (payloadDecoder != null) {
                 payloadDecoder.decodePayload(in, out);
             }
         }
@@ -125,6 +126,13 @@ class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
             public PaddingLengthGenerator padding() {
                 return null;
             }
+
+            @Override
+            public void encodePacket(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+                byte[] in = new byte[msg.readableBytes()];
+                msg.readBytes(in);
+                out.writeBytes(auth().seal(in));
+            }
         };
     }
 
@@ -166,6 +174,13 @@ class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
             @Override
             public PaddingLengthGenerator padding() {
                 return null;
+            }
+
+            @Override
+            public void decodePacket(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+                byte[] payloadBytes = new byte[in.readableBytes()];
+                in.readBytes(payloadBytes);
+                out.add(Unpooled.wrappedBuffer(auth().open(payloadBytes)));
             }
         };
     }
