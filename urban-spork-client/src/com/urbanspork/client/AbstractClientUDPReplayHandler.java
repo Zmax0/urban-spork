@@ -2,7 +2,7 @@ package com.urbanspork.client;
 
 import com.urbanspork.common.channel.ChannelCloseUtils;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -38,7 +38,7 @@ public abstract class AbstractClientUDPReplayHandler<K> extends SimpleChannelInb
         DatagramPacket packet = msg.packet();
         Channel inbound = ctx.channel();
         Channel outbound = getBindingChannel(inbound, getKey(msg));
-        logger.info("[udp][{}]{} → {} ~ {} → {}", config.getProtocol(), packet.sender(), inbound.localAddress(), outbound.localAddress(), msg.third());
+        logger.info("[udp][{}]{}→{}~{}→{}", config.getProtocol(), packet.sender(), inbound.localAddress(), outbound.localAddress(), msg.third());
         outbound.writeAndFlush(convertToWrite(msg));
     }
 

@@ -75,10 +75,10 @@ class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
             .handler(new DefaultChannelInboundHandler(localChannel))
             .connect(remoteAddress).addListener((ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
-                    logger.info("[tcp][{}][{} → {}]", config.getProtocol(), localChannel.localAddress(), remoteAddress);
+                    logger.info("[tcp][{}][{}→{}]", config.getProtocol(), localChannel.localAddress(), remoteAddress);
                     p.setSuccess(future.channel());
                 } else {
-                    logger.error("[tcp][{}][{} → {}]", config.getProtocol(), localChannel.localAddress(), remoteAddress);
+                    logger.error("[tcp][{}][{}→{}]", config.getProtocol(), localChannel.localAddress(), remoteAddress);
                     ctx.close();
                 }
             });

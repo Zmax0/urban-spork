@@ -1,4 +1,4 @@
-package com.urbanspork.common.network;
+package com.urbanspork.common.protocol.network;
 
 import io.netty.channel.socket.DatagramPacket;
 

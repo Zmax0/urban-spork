@@ -2,7 +2,7 @@ package com.urbanspork.test.client;
 
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
-import com.urbanspork.common.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.socks.DatagramPacketDecoder;
 import com.urbanspork.common.protocol.socks.DatagramPacketEncoder;
 import com.urbanspork.common.protocol.socks.Handshake;

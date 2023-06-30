@@ -3,7 +3,7 @@ package com.urbanspork.client.shadowsocks;
 import com.urbanspork.client.AbstractClientUDPReplayHandler;
 import com.urbanspork.common.codec.shadowsocks.UDPReplayCodec;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.DatagramPacket;

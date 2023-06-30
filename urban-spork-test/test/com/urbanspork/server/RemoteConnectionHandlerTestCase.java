@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 
-@DisplayName("Server - Remote Connection Handler")
-class RemoteConnectionHandlerTestCase {
+@DisplayName("Server - Remote Connect Handler")
+class RemoteConnectHandlerTestCase {
     @Test
     void testConnectFailed() {
         ServerConfig config = ServerConfigTestCase.testConfig(TestUtil.freePort());

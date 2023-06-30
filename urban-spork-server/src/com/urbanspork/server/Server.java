@@ -1,9 +1,12 @@
 package com.urbanspork.server;
 
+import com.urbanspork.common.channel.AttributeKeys;
+import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.UDPReplayCodec;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.network.Direction;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -80,15 +83,16 @@ public class Server {
         try {
             int port = config.getPort();
             if (Protocols.shadowsocks == config.getProtocol() && config.udpEnabled()) {
-                new Bootstrap().group(bossGroup)
+                new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
+                    .attr(AttributeKeys.DIRECTION, Direction.Inbound)
                     .option(ChannelOption.SO_BROADCAST, true)
-                    .channel(NioDatagramChannel.class)
                     .handler(new ChannelInitializer<>() {
                         @Override
                         protected void initChannel(Channel ch) {
                             ch.pipeline().addLast(
                                 new UDPReplayCodec(config),
-                                new ServerUDPReplayHandler(config.getPacketEncoding(), workerGroup)
+                                new ServerUDPReplayHandler(config.getPacketEncoding(), workerGroup),
+                                new ExceptionHandler(config)
                             );
                         }
                     })
@@ -97,6 +101,7 @@ public class Server {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
+                .attr(AttributeKeys.DIRECTION, Direction.Inbound)
                 .childHandler(new ServerInitializer(config))
                 .bind(port).sync().addListener((ChannelFutureListener) future -> {
                     Channel channel = future.channel();

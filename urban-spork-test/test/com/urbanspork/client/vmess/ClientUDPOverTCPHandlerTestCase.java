@@ -2,7 +2,7 @@ package com.urbanspork.client.vmess;
 
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTestCase;
-import com.urbanspork.common.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoopGroup;

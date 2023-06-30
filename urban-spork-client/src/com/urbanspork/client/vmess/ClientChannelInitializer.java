@@ -1,6 +1,5 @@
 package com.urbanspork.client.vmess;
 
-import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.config.ServerConfig;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -19,8 +18,6 @@ public class ClientChannelInitializer extends ChannelInitializer<SocketChannel> 
 
     @Override
     public void initChannel(SocketChannel remoteChannel) {
-        remoteChannel.pipeline().addLast(new ClientAEADCodec(config.getCipher(), request, config.getPassword()),
-            new ExceptionHandler(config));
+        remoteChannel.pipeline().addLast(new ClientAEADCodec(config.getCipher(), request, config.getPassword()));
     }
-
 }

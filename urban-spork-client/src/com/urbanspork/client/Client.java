@@ -2,10 +2,13 @@ package com.urbanspork.client;
 
 import com.urbanspork.client.shadowsocks.ClientUDPReplayHandler;
 import com.urbanspork.client.vmess.ClientUDPOverTCPHandler;
+import com.urbanspork.common.channel.AttributeKeys;
+import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.network.Direction;
 import com.urbanspork.common.protocol.socks.DatagramPacketDecoder;
 import com.urbanspork.common.protocol.socks.DatagramPacketEncoder;
 import io.netty.bootstrap.Bootstrap;
@@ -37,18 +40,24 @@ public class Client {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         ServerConfig current = config.getCurrent();
+        ChannelHandler udpTransportHandler;
+        if (Protocols.vmess == current.getProtocol()) {
+            udpTransportHandler = new ClientUDPOverTCPHandler(current, workerGroup);
+        } else {
+            udpTransportHandler = new ClientUDPReplayHandler(current, workerGroup);
+        }
         try {
-            ChannelHandler udpTransportHandler;
-            if (Protocols.vmess == current.getProtocol()) {
-                udpTransportHandler = new ClientUDPOverTCPHandler(current, workerGroup);
-            } else {
-                udpTransportHandler = new ClientUDPReplayHandler(current, workerGroup);
-            }
             new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
+                .attr(AttributeKeys.DIRECTION, Direction.Inbound)
                 .handler(new ChannelInitializer<>() {
                     @Override
                     protected void initChannel(Channel ch) {
-                        ch.pipeline().addLast(new DatagramPacketEncoder(), new DatagramPacketDecoder(), udpTransportHandler);
+                        ch.pipeline().addLast(
+                            new DatagramPacketEncoder(),
+                            new DatagramPacketDecoder(),
+                            udpTransportHandler,
+                            new ExceptionHandler(current)
+                        );
                     }
                 })
                 .bind(port).sync();

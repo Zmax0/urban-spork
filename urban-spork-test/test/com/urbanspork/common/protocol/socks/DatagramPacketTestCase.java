@@ -1,6 +1,6 @@
 package com.urbanspork.common.protocol.socks;
 
-import com.urbanspork.common.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
