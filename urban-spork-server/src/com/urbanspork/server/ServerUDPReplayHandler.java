@@ -2,8 +2,9 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.channel.ChannelCloseUtils;
-import com.urbanspork.common.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.network.Direction;
 import com.urbanspork.common.protocol.network.PacketEncoding;
+import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.DatagramPacket;
@@ -36,7 +37,7 @@ public class ServerUDPReplayHandler extends SimpleChannelInboundHandler<Datagram
         InetSocketAddress callback = msg.recipient();
         Channel workerChannel = workerChannel(callback, channel);
         workerChannel.attr(AttributeKeys.CALLBACK).get().put(callback, msg.sender());
-        logger.info("[udp]{} → {} ~ {} → {}", msg.sender(), callback, channel.localAddress(), workerChannel.localAddress());
+        logger.info("[udp][replay]{}→{}~{}→{}", msg.sender(), callback, channel.localAddress(), workerChannel.localAddress());
         workerChannel.writeAndFlush(msg);
     }
 
@@ -67,7 +68,7 @@ public class ServerUDPReplayHandler extends SimpleChannelInboundHandler<Datagram
             })// callback->server->client
             .bind(0) // automatically assigned port now, may have security implications
             .syncUninterruptibly().channel();
-        logger.info("New working binding: {} == {}", callback, outboundChannel.localAddress());
+        logger.info("[udp][binding]{} == {}", callback, outboundChannel.localAddress());
         return outboundChannel;
     }
 
@@ -86,7 +87,8 @@ public class ServerUDPReplayHandler extends SimpleChannelInboundHandler<Datagram
             Channel outboundChannel = ctx.channel();
             InetSocketAddress callback = outboundChannel.attr(AttributeKeys.CALLBACK).get().get(sender);
             if (callback != null) {
-                logger.info("[udp]{} ← {} ~ {} ← {}", callback, sender, inboundChannel.localAddress(), outboundChannel.localAddress());
+                logger.info("[udp][replay]{} ← {} ~ {} ← {}", callback, sender, inboundChannel.localAddress(), outboundChannel.localAddress());
+                inboundChannel.attr(AttributeKeys.DIRECTION).set(Direction.Outbound);
                 inboundChannel.writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(msg.content(), sender), callback));
             } else {
                 logger.error("None callback of sender => {}", msg.sender());
@@ -101,7 +103,7 @@ public class ServerUDPReplayHandler extends SimpleChannelInboundHandler<Datagram
                     Channel value = entry.getValue();
                     boolean flag = channel.equals(value);
                     if (flag) {
-                        logger.info("Remove working binding: {} != {}", entry.getKey(), channel.localAddress());
+                        logger.info("[udp][binding]{} != {}", entry.getKey(), channel.localAddress());
                         value.close();
                     }
                     return flag;

@@ -2,8 +2,8 @@ package com.urbanspork.common.codec.shadowsocks;
 
 import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.shadowsocks.AddressDecoder;
 import com.urbanspork.common.protocol.shadowsocks.AddressEncoder;
 import com.urbanspork.test.TestDice;

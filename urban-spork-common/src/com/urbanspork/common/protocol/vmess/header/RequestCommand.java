@@ -7,8 +7,8 @@ public record RequestCommand(byte value) {
     // not support Mux now
 
     @Override
-    public boolean equals(Object o) {
-        return o instanceof RequestCommand command && value == command.value;
+    public boolean equals(Object obj) {
+        return obj instanceof RequestCommand command && value == command.value;
     }
 
     @Override

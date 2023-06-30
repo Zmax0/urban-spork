@@ -2,10 +2,21 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTestCase;
+import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import com.urbanspork.test.TestUtil;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.DefaultEventLoop;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.ServerSocketChannel;
+import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.Assertions;
@@ -13,6 +24,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
@@ -56,5 +68,43 @@ class ServerTestCase {
         }
         Assertions.assertTrue(future.isCancelled());
         service.shutdown();
+    }
+
+    @Test
+    void sendInvalidUDP() throws InterruptedException, ExecutionException {
+        List<ServerConfig> configs = ServerConfigTestCase.testConfig(TestUtil.freePorts(1));
+        ServerConfig config = configs.get(0);
+        config.setNetworks(new Network[]{Network.TCP, Network.UDP});
+        DefaultEventLoop executor = new DefaultEventLoop();
+        ExecutorService service = Executors.newFixedThreadPool(1);
+        Promise<List<ServerSocketChannel>> promise = new DefaultPromise<>(executor);
+        service.submit(() -> Server.launch(configs, promise));
+        promise.await().get();
+        InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
+        Channel channel = new Bootstrap().group(new NioEventLoopGroup())
+            .channel(NioDatagramChannel.class)
+            .handler(new LoggingHandler())
+            .bind(0).syncUninterruptibly().channel();
+        ChannelFuture future = channel.writeAndFlush(new DatagramPacket(Unpooled.wrappedBuffer(Dice.rollBytes(512)), serverAddress)).sync();
+        future.get();
+        Assertions.assertTrue(future.isDone());
+    }
+
+    @Test
+    void sendInvalidTCP() throws InterruptedException, ExecutionException {
+        List<ServerConfig> configs = ServerConfigTestCase.testConfig(TestUtil.freePorts(1));
+        ServerConfig config = configs.get(0);
+        DefaultEventLoop executor = new DefaultEventLoop();
+        ExecutorService service = Executors.newFixedThreadPool(1);
+        Promise<List<ServerSocketChannel>> promise = new DefaultPromise<>(executor);
+        service.submit(() -> Server.launch(configs, promise));
+        promise.await().get();
+        Channel channel = new Bootstrap().group(new NioEventLoopGroup())
+            .channel(NioSocketChannel.class)
+            .handler(new LoggingHandler())
+            .connect(new InetSocketAddress(config.getHost(), config.getPort())).syncUninterruptibly().channel();
+        ChannelFuture future = channel.writeAndFlush(Unpooled.wrappedBuffer(Dice.rollBytes(512))).sync();
+        future.get();
+        Assertions.assertTrue(future.isDone());
     }
 }

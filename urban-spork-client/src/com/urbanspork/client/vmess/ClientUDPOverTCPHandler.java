@@ -1,10 +1,11 @@
 package com.urbanspork.client.vmess;
 
 import com.urbanspork.client.AbstractClientUDPReplayHandler;
+import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
-import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.network.Direction;
+import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.socks.Socks5;
 import com.urbanspork.common.protocol.vmess.header.RequestCommand;
 import io.netty.bootstrap.Bootstrap;
@@ -50,10 +51,7 @@ public class ClientUDPOverTCPHandler extends AbstractClientUDPReplayHandler<Clie
                 @Override
                 protected void initChannel(Channel ch) {
                     Socks5CommandRequest request = Socks5.toCommandRequest(Socks5CommandType.CONNECT, key.recipient);
-                    ch.pipeline().addLast(
-                        new ClientAEADCodec(config.getCipher(), RequestCommand.UDP, request, config.getPassword()),
-                        new ExceptionHandler(config)
-                    );
+                    ch.pipeline().addLast(new ClientAEADCodec(config.getCipher(), RequestCommand.UDP, request, config.getPassword()));
                 }
             })
             .connect(serverAddress).addListener((ChannelFutureListener) future -> {
@@ -91,6 +89,7 @@ public class ClientUDPOverTCPHandler extends AbstractClientUDPReplayHandler<Clie
         public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
             Channel inboundChannel = ctx.channel();
             logger.info("[udp][vmess]{} ← {} ~ {} ← {}", sender, inboundChannel.localAddress(), inboundChannel.remoteAddress(), recipient);
+            channel.attr(AttributeKeys.DIRECTION).set(Direction.Outbound);
             channel.writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(msg, recipient), sender));
         }
     }

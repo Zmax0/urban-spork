@@ -1,6 +1,5 @@
 package com.urbanspork.client.shadowsocks;
 
-import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.AEADCipherCodecs;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.network.Network;
@@ -22,7 +21,6 @@ public class ClientTCPChannelInitializer extends ChannelInitializer<Channel> {
 
     @Override
     public void initChannel(Channel channel) {
-        channel.pipeline().addLast(AEADCipherCodecs.get(config.getPassword(), config.getCipher(), Network.TCP),
-            new AddressEncoder(request), new ExceptionHandler(config));
+        channel.pipeline().addLast(AEADCipherCodecs.get(config.getPassword(), config.getCipher(), Network.TCP), new AddressEncoder(request));
     }
 }

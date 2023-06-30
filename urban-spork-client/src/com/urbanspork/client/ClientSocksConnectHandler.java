@@ -26,28 +26,30 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
         Channel inboundChannel = ctx.channel();
         ServerConfig config = inboundChannel.attr(AttributeKeys.SERVER_CONFIG).get();
         InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
-        Bootstrap bootstrap = new Bootstrap()
+        ChannelHandler outboundHandler;
+        if (Protocols.vmess == config.getProtocol()) {
+            outboundHandler = new ClientChannelInitializer(request, config);
+        } else {
+            outboundHandler = new ClientTCPChannelInitializer(request, config);
+        }
+        new Bootstrap()
             .group(inboundChannel.eventLoop())
             .channel(inboundChannel.getClass())
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000);
-        if (Protocols.vmess == config.getProtocol()) {
-            bootstrap.handler(new ClientChannelInitializer(request, config));
-        } else {
-            bootstrap.handler(new ClientTCPChannelInitializer(request, config));
-        }
-        bootstrap.connect(serverAddress).addListener((ChannelFutureListener) future -> {
-            if (future.isSuccess()) {
-                Channel outbound = future.channel();
-                outbound.pipeline().addLast(new DefaultChannelInboundHandler(ctx.channel())); // R → L
-                ctx.pipeline().remove(ClientSocksConnectHandler.this);
-                ctx.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, request.dstAddrType(), request.dstAddr(), request.dstPort()))
-                    .addListener((ChannelFutureListener) channelFuture -> ctx.pipeline().addLast(new DefaultChannelInboundHandler(outbound))); // L → R
-            } else {
-                logger.error("Connect proxy server {} failed", serverAddress);
-                Channel inbound = ctx.channel();
-                inbound.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()));
-                ChannelCloseUtils.closeOnFlush(inbound);
-            }
-        });
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
+            .handler(outboundHandler)
+            .connect(serverAddress).addListener((ChannelFutureListener) future -> {
+                if (future.isSuccess()) {
+                    Channel outbound = future.channel();
+                    outbound.pipeline().addLast(new DefaultChannelInboundHandler(ctx.channel())); // R → L
+                    ctx.pipeline().remove(ClientSocksConnectHandler.this);
+                    ctx.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, request.dstAddrType(), request.dstAddr(), request.dstPort()))
+                        .addListener((ChannelFutureListener) channelFuture -> ctx.pipeline().addLast(new DefaultChannelInboundHandler(outbound))); // L → R
+                } else {
+                    logger.error("Connect proxy server {} failed", serverAddress);
+                    Channel inbound = ctx.channel();
+                    inbound.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()));
+                    ChannelCloseUtils.closeOnFlush(inbound);
+                }
+            });
     }
 }

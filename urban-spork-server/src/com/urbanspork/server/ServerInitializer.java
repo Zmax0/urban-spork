@@ -27,6 +27,6 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
         } else {
             pipeline.addLast(AEADCipherCodecs.get(config.getPassword(), config.getCipher(), Network.TCP), new AddressDecoder());
         }
-        pipeline.addLast(new ExceptionHandler(config), new RemoteConnectHandler(config));
+        pipeline.addLast(new RemoteConnectHandler(config), new ExceptionHandler(config));
     }
 }
