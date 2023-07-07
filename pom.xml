@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>urban-spork</groupId>
   <artifactId>urban-spork</artifactId>
-  <version>2.2.0</version>
+  <version>2.3.0</version>
   <packaging>pom</packaging>
   <modules>
     <module>urban-spork-common</module>
@@ -14,7 +14,7 @@
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <urban-spork.version>2.2.0</urban-spork.version>
+    <urban-spork.version>2.3.0</urban-spork.version>
     <maven-surefire-plugin>3.0.0</maven-surefire-plugin>
     <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
     <maven-compiler-plugin>3.11.0</maven-compiler-plugin>
