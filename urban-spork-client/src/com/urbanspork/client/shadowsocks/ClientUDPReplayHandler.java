@@ -63,7 +63,7 @@ public class ClientUDPReplayHandler extends AbstractClientUDPReplayHandler<InetS
 
         @Override
         public void channelRead0(ChannelHandlerContext ctx, DatagramPacket packet) {
-            logger.info("[udp][shadowsocks]{} ← {} ~ {} ← {}", sender, packet.recipient(), ctx.channel().localAddress(), packet.sender());
+            logger.info("[udp][shadowsocks]{}←{}~{}←{}", sender, packet.recipient(), ctx.channel().localAddress(), packet.sender());
             channel.writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(packet.content(), packet.recipient()), sender));
         }
     }

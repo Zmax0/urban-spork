@@ -31,11 +31,7 @@ public enum ConfigHandler {
         }
     }
 
-    public void delete() {
-        try {
-            holder.delete();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    void delete() throws IOException {
+        holder.delete();
     }
 }

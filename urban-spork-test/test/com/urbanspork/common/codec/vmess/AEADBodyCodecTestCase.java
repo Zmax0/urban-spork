@@ -63,12 +63,21 @@ class AEADBodyCodecTestCase {
         AEADBodyEncoder serverBodyEncoder = AEADBodyCodec.getBodyEncoder(header, serverSession);
         AEADBodyDecoder clientBodyDecoder = AEADBodyCodec.getBodyDecoder(header, clientSession);
         ByteBuf out = Unpooled.buffer();
-        byte[] bytes = Dice.rollBytes(ThreadLocalRandom.current().nextInt(10 * clientBodyEncoder.payloadLimit()));
-        clientBodyEncoder.encodePayload(Unpooled.wrappedBuffer(bytes), out);
         List<Object> list = new ArrayList<>();
-        serverBodyDecoder.decodePayload(out, list);
-        serverBodyEncoder.encodePayload(merge(list), out);
-        clientBodyDecoder.decodePayload(out, list);
+        byte[] bytes;
+        if (RequestCommand.UDP.equals(header.command())) {
+            bytes = Dice.rollBytes(ThreadLocalRandom.current().nextInt(clientBodyEncoder.payloadLimit() / 2));
+            clientBodyEncoder.encodePacket(Unpooled.wrappedBuffer(bytes), out);
+            serverBodyDecoder.decodePacket(out, list);
+            serverBodyEncoder.encodePacket(merge(list), out);
+            clientBodyDecoder.decodePacket(out, list);
+        } else {
+            bytes = Dice.rollBytes(ThreadLocalRandom.current().nextInt(10 * clientBodyEncoder.payloadLimit()));
+            clientBodyEncoder.encodePayload(Unpooled.wrappedBuffer(bytes), out);
+            serverBodyDecoder.decodePayload(out, list);
+            serverBodyEncoder.encodePayload(merge(list), out);
+            clientBodyDecoder.decodePayload(out, list);
+        }
         Assertions.assertArrayEquals(bytes, ByteBufUtil.getBytes(merge(list)));
     }
 

@@ -37,11 +37,6 @@ public class ShakeSizeParser implements ChunkSizeCodec, PaddingLengthGenerator {
     }
 
     @Override
-    public int maxPaddingLength() {
-        return 64;
-    }
-
-    @Override
     public int nextPaddingLength() {
         return next() % 64;
     }

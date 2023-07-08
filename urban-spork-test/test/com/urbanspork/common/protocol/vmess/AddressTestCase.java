@@ -40,4 +40,12 @@ class AddressTestCase {
             Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "", TestDice.rollPort());
         Assertions.assertThrows(EncoderException.class, () -> Address.writeAddressPort(buf, request2));
     }
+
+    @Test
+    void testReadUnknown() {
+        ByteBuf buf = Unpooled.buffer();
+        buf.writeShort(TestDice.rollPort());
+        buf.writeByte(-1);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Address.readAddressPort(buf));
+    }
 }
