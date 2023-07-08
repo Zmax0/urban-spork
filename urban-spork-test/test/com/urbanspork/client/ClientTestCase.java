@@ -2,6 +2,7 @@ package com.urbanspork.client;
 
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ClientConfigTestCase;
+import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.protocol.socks.Handshake;
 import com.urbanspork.test.TestUtil;
 import io.netty.channel.DefaultEventLoop;
@@ -29,15 +30,35 @@ class ClientTestCase {
 
     private final int[] ports = TestUtil.freePorts(2);
 
-    @RepeatedTest(2)
+    @Test
     @Order(1)
+    void testExit() {
+        ClientConfig config = ClientConfigTestCase.testConfig(ports);
+        ConfigHandler.DEFAULT.save(config);
+        ExecutorService pool = Executors.newFixedThreadPool(1);
+        Future<?> future = pool.submit(() -> Client.main(null));
+        try {
+            future.get(2, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            if (e instanceof TimeoutException) {
+                future.cancel(true);
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
+        pool.shutdownNow();
+        Assertions.assertTrue(future.isCancelled());
+    }
+
+    @RepeatedTest(2)
+    @Order(2)
     void launchClient() throws InterruptedException {
         launchClient(ClientConfigTestCase.testConfig(ports));
     }
 
     @ParameterizedTest
     @ArgumentsSource(Socks5CommandTypeProvider.class)
-    @Order(2)
+    @Order(3)
     void testHandshake(Socks5CommandType type) throws InterruptedException, ExecutionException, TimeoutException {
         InetSocketAddress proxyAddress = new InetSocketAddress(ports[0]);
         InetSocketAddress dstAddress = new InetSocketAddress(ports[1]);

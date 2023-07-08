@@ -66,8 +66,11 @@ public interface PayloadDecoder {
      * @param out payload
      */
     default void decodePacket(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+        int paddingLength = 0;
         PaddingLengthGenerator padding = padding();
-        int paddingLength = padding == null ? 0 : padding.nextPaddingLength();
+        if (padding != null) {
+            paddingLength = padding.nextPaddingLength();
+        }
         ChunkSizeCodec sizeCodec = sizeCodec();
         int sizeBytes = sizeCodec.sizeBytes();
         byte[] payloadSizeBytes = new byte[sizeBytes];

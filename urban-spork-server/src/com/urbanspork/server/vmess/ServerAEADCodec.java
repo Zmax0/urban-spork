@@ -94,7 +94,7 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
             byte[] requestBodyKey = new byte[16];
             decrypted.readBytes(requestBodyKey);
             byte responseHeader = decrypted.readByte();
-            byte option = decrypted.readByte(); // not support handling option now
+            byte option = decrypted.readByte();
             short b35 = decrypted.readUnsignedByte();
             int paddingLen = b35 >> 4;
             SecurityType security = SecurityType.valueOf((byte) (b35 & 0x0F));

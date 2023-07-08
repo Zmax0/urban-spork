@@ -109,7 +109,6 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
             if (session.getResponseHeader() != responseHeader) { // v[1]
                 throw new DecoderException(String.format("Unexpected response header: expecting %d but actually %d", session.getResponseHeader(), responseHeader));
             }
-            // not support handling command now -> decryptedResponseHeaderBytes[1]
             bodyDecoder = AEADBodyCodec.getBodyDecoder(header, session);
         }
         if (RequestCommand.UDP.equals(header.command())) {
