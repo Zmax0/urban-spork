@@ -12,8 +12,7 @@ import java.util.logging.Logger;
 public class SimpleUDPSender {
     public static void main(String[] args) throws IOException {
         Logger logger = Logger.getGlobal();
-        try (DatagramSocket socket = new DatagramSocket(0);
-             BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
+        try (DatagramSocket socket = new DatagramSocket(0); BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
             String bindPortInfo = MessageFormat.format("UDP test client bind port {0,number,#}", socket.getLocalPort());
             logger.info(bindPortInfo);
             logger.info("Enter a valid port 0~65535 (quit to end)");

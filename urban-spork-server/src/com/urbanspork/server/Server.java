@@ -64,11 +64,7 @@ public class Server {
             }
             promise.setSuccess(result);
             executor.shutdownGracefully();
-            pool.shutdown();
-            boolean terminated = false;
-            while (!terminated) {
-                terminated = pool.awaitTermination(10, TimeUnit.MINUTES);
-            }
+            new DefaultPromise<>(executor).sync();
         } catch (InterruptedException | ExecutionException e) {
             pool.shutdownNow();
             logger.error("Interrupt main launch thread");
