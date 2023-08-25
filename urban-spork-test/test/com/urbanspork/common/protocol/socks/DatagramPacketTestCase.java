@@ -1,5 +1,7 @@
 package com.urbanspork.common.protocol.socks;
 
+import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
+import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;

@@ -1,4 +1,4 @@
-package com.urbanspork.common.protocol.shadowsocks;
+package com.urbanspork.common.codec.shadowsocks;
 
 import com.urbanspork.common.protocol.socks.Address;
 import io.netty.buffer.ByteBuf;

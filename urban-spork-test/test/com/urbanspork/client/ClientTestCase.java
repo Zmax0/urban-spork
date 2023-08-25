@@ -3,7 +3,7 @@ package com.urbanspork.client;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ClientConfigTestCase;
 import com.urbanspork.common.config.ConfigHandler;
-import com.urbanspork.common.protocol.socks.Handshake;
+import com.urbanspork.common.protocol.socks.ClientHandshake;
 import com.urbanspork.test.TestUtil;
 import io.netty.channel.DefaultEventLoop;
 import io.netty.channel.socket.ServerSocketChannel;
@@ -62,7 +62,7 @@ class ClientTestCase {
     void testHandshake(Socks5CommandType type) throws InterruptedException, ExecutionException, TimeoutException {
         InetSocketAddress proxyAddress = new InetSocketAddress(ports[0]);
         InetSocketAddress dstAddress = new InetSocketAddress(ports[1]);
-        Handshake.Result result = Handshake.noAuth(type, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS);
+        ClientHandshake.Result result = ClientHandshake.noAuth(type, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS);
         Assertions.assertNotEquals(Socks5CommandStatus.SUCCESS, result.response().status());
     }
 

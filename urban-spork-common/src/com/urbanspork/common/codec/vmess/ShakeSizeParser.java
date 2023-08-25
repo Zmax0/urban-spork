@@ -1,7 +1,7 @@
 package com.urbanspork.common.codec.vmess;
 
-import com.urbanspork.common.codec.ChunkSizeCodec;
 import com.urbanspork.common.codec.PaddingLengthGenerator;
+import com.urbanspork.common.codec.chunk.ChunkSizeCodec;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.digests.SHAKEDigest;

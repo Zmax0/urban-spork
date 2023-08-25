@@ -1,4 +1,4 @@
-package com.urbanspork.common.codec;
+package com.urbanspork.common.codec.chunk;
 
 import org.bouncycastle.crypto.InvalidCipherTextException;
 

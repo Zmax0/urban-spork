@@ -1,11 +1,11 @@
 package com.urbanspork.test.client;
 
+import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
+import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
-import com.urbanspork.common.protocol.socks.DatagramPacketDecoder;
-import com.urbanspork.common.protocol.socks.DatagramPacketEncoder;
-import com.urbanspork.common.protocol.socks.Handshake;
+import com.urbanspork.common.protocol.socks.ClientHandshake;
 import com.urbanspork.test.server.udp.DelayedEchoTestServer;
 import com.urbanspork.test.server.udp.SimpleEchoTestServer;
 import io.netty.bootstrap.Bootstrap;
@@ -44,8 +44,8 @@ public class Socks5UDPTestClient {
         InetSocketAddress proxyAddress = new InetSocketAddress(LOCALHOST, proxyPort);
         InetSocketAddress dstAddress1 = new InetSocketAddress(hostname, SimpleEchoTestServer.PORT);
         InetSocketAddress dstAddress2 = new InetSocketAddress(hostname, DelayedEchoTestServer.PORT);
-        Handshake.Result result1 = Handshake.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress1).await().get();
-        Handshake.Result result2 = Handshake.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress2).await().get();
+        ClientHandshake.Result result1 = ClientHandshake.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress1).await().get();
+        ClientHandshake.Result result2 = ClientHandshake.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress2).await().get();
         int bndPort1 = result1.response().bndPort();
         int bndPort2 = result2.response().bndPort();
         logger.info("Associate ports: [{}, {}]", bndPort1, bndPort2);

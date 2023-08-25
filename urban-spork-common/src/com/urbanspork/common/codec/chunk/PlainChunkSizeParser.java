@@ -1,6 +1,5 @@
-package com.urbanspork.common.codec.vmess;
+package com.urbanspork.common.codec.chunk;
 
-import com.urbanspork.common.codec.ChunkSizeCodec;
 import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 

@@ -1,13 +1,10 @@
-package com.urbanspork.common.codec.vmess;
+package com.urbanspork.common.codec.chunk;
 
-import com.urbanspork.common.codec.ChunkSizeCodec;
 import com.urbanspork.common.codec.aead.Authenticator;
 import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
 public record AEADChunkSizeParser(Authenticator auth) implements ChunkSizeCodec {
-
-    public static final String AUTH_LEN = "auth_len";
 
     @Override
     public int sizeBytes() {

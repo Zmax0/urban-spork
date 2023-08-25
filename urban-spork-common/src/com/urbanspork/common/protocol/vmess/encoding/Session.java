@@ -3,6 +3,7 @@ package com.urbanspork.common.protocol.vmess.encoding;
 import com.urbanspork.common.crypto.GeneralDigests;
 
 import java.util.Arrays;
+import java.util.Base64;
 
 public abstract class Session {
 
@@ -38,5 +39,15 @@ public abstract class Session {
 
     public byte getResponseHeader() {
         return responseHeader;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("RK:%s, RI:%s, SK:%s, SI:%s, SH:%d",
+            Base64.getEncoder().encodeToString(requestBodyKey),
+            Base64.getEncoder().encodeToString(requestBodyIV),
+            Base64.getEncoder().encodeToString(responseBodyKey),
+            Base64.getEncoder().encodeToString(responseBodyIV),
+            Byte.toUnsignedInt(responseHeader));
     }
 }

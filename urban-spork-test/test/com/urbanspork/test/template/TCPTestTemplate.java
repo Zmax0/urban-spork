@@ -1,7 +1,7 @@
 package com.urbanspork.test.template;
 
 import com.urbanspork.common.config.ClientConfig;
-import com.urbanspork.common.protocol.socks.Handshake;
+import com.urbanspork.common.protocol.socks.ClientHandshake;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestUtil;
 import com.urbanspork.test.server.tcp.EchoTestServer;
@@ -42,7 +42,7 @@ public abstract class TCPTestTemplate extends TestTemplate {
     protected void handshakeAndSendBytes(ClientConfig config) throws InterruptedException, ExecutionException {
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress = new InetSocketAddress("localhost", dstPort);
-        Handshake.Result result = Handshake.noAuth(Socks5CommandType.CONNECT, proxyAddress, dstAddress).await().get();
+        ClientHandshake.Result result = ClientHandshake.noAuth(Socks5CommandType.CONNECT, proxyAddress, dstAddress).await().get();
         Assertions.assertEquals(Socks5CommandStatus.SUCCESS, result.response().status());
         int length = ThreadLocalRandom.current().nextInt(0xfff, 0xffff);
         byte[] bytes = Dice.rollBytes(length);

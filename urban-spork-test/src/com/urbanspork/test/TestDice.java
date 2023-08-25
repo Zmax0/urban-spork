@@ -7,14 +7,18 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public interface TestDice {
 
-    static String rollString() {
+    static String rollString(int length) {
         String str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-=_+";
         Random random = ThreadLocalRandom.current();
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 256; i++) {
+        for (int i = 0; i < length; i++) {
             sb.append(str.charAt(random.nextInt(str.length())));
         }
         return sb.toString();
+    }
+
+    static String rollString() {
+        return rollString(256);
     }
 
     static SupportedCipher rollCipher() {

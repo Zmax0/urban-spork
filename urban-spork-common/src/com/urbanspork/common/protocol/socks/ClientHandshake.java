@@ -5,12 +5,14 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.socksx.v5.*;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Promise;
 
 import java.net.InetSocketAddress;
 
-public interface Handshake {
+public interface ClientHandshake {
 
     static Promise<Result> noAuth(Socks5CommandType type, InetSocketAddress proxyAddress, InetSocketAddress dstAddress) {
         NioEventLoopGroup worker = new NioEventLoopGroup(1);
@@ -22,6 +24,7 @@ public interface Handshake {
                     @Override
                     protected void initChannel(Channel ch) {
                         ch.pipeline().addLast(
+                            new LoggingHandler(LogLevel.DEBUG),
                             new Socks5ClientEncoder(Socks5AddressEncoder.DEFAULT),
                             new Socks5InitialResponseDecoder(),
                             new Socks5CommandResponseDecoder(),

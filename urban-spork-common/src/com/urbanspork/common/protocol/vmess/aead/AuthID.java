@@ -22,8 +22,8 @@ public class AuthID {
         buf.writerIndex(0);
         buf.writeLong(time);
         buf.writeBytes(Go.nextUnsignedInt());
-        int crc32 = (int) VMess.crc32(ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.writerIndex(), false));
-        buf.writeInt(crc32);
+        long crc32 = VMess.crc32(ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.writerIndex(), false));
+        buf.writeInt((int) crc32);
         return AES.ECB_NoPadding.encrypt(KDF.kdf16(key, KDF_SALT_AUTH_ID_ENCRYPTION_KEY), authID);
     }
 

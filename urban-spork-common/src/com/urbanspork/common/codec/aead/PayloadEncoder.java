@@ -1,7 +1,7 @@
 package com.urbanspork.common.codec.aead;
 
-import com.urbanspork.common.codec.ChunkSizeCodec;
 import com.urbanspork.common.codec.PaddingLengthGenerator;
+import com.urbanspork.common.codec.chunk.ChunkSizeCodec;
 import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import org.bouncycastle.crypto.InvalidCipherTextException;

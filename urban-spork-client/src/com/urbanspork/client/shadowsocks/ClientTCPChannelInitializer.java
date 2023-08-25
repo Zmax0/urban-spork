@@ -1,9 +1,9 @@
 package com.urbanspork.client.shadowsocks;
 
 import com.urbanspork.common.codec.shadowsocks.AEADCipherCodecs;
+import com.urbanspork.common.codec.shadowsocks.AddressEncoder;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.network.Network;
-import com.urbanspork.common.protocol.shadowsocks.AddressEncoder;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
