@@ -3,7 +3,7 @@ package com.urbanspork.client;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ClientConfigTestCase;
 import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.socks.Handshake;
+import com.urbanspork.common.protocol.socks.ClientHandshake;
 import com.urbanspork.test.TestDice;
 import com.urbanspork.test.TestUtil;
 import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
@@ -49,8 +49,8 @@ class ClientSocksHandshakeTestCase {
     }
 
     private static void assertFailedHandshake(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) throws InterruptedException, ExecutionException {
-        Promise<Handshake.Result> promise = Handshake.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress);
-        Handshake.Result result = promise.await().get();
+        Promise<ClientHandshake.Result> promise = ClientHandshake.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress);
+        ClientHandshake.Result result = promise.await().get();
         Assertions.assertEquals(Socks5CommandStatus.FAILURE, result.response().status());
         result.sessionChannel().eventLoop().shutdownGracefully();
     }

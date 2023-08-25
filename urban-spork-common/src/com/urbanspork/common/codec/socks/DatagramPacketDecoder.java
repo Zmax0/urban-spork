@@ -1,6 +1,7 @@
-package com.urbanspork.common.protocol.socks;
+package com.urbanspork.common.codec.socks;
 
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.socks.Address;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;

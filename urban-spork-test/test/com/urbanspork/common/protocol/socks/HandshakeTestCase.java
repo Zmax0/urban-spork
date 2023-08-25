@@ -17,7 +17,7 @@ class HandshakeTestCase {
     void testNoAuthFailed() {
         InetSocketAddress proxyAddress = new InetSocketAddress(TestUtil.freePort());
         InetSocketAddress dstAddress = new InetSocketAddress(TestDice.rollPort());
-        Promise<Handshake.Result> promise = Handshake.noAuth(Socks5CommandType.CONNECT, proxyAddress, dstAddress);
+        Promise<ClientHandshake.Result> promise = ClientHandshake.noAuth(Socks5CommandType.CONNECT, proxyAddress, dstAddress);
         Assertions.assertThrows(ExecutionException.class, promise::get);
     }
 }

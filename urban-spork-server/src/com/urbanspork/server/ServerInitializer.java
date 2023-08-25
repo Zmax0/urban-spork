@@ -2,10 +2,10 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.AEADCipherCodecs;
+import com.urbanspork.common.codec.shadowsocks.AddressDecoder;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.Network;
-import com.urbanspork.common.protocol.shadowsocks.AddressDecoder;
 import com.urbanspork.server.vmess.ServerAEADCodec;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;

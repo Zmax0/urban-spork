@@ -37,7 +37,7 @@ public class ClientUDPOverTCPHandler extends AbstractClientUDPReplayHandler<Clie
 
     @Override
     protected Key getKey(TernaryDatagramPacket msg) {
-        return new Key(msg.packet().sender(), msg.third());
+        return new Key(msg.packet().sender(), msg.third() /* recipient */);
     }
 
     @Override

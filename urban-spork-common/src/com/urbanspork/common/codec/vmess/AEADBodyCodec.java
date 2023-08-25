@@ -1,12 +1,14 @@
 package com.urbanspork.common.codec.vmess;
 
 import com.urbanspork.common.codec.BytesGenerator;
-import com.urbanspork.common.codec.ChunkSizeCodec;
 import com.urbanspork.common.codec.NonceGenerator;
 import com.urbanspork.common.codec.PaddingLengthGenerator;
 import com.urbanspork.common.codec.aead.Authenticator;
 import com.urbanspork.common.codec.aead.CipherCodec;
 import com.urbanspork.common.codec.aead.CipherCodecs;
+import com.urbanspork.common.codec.chunk.AEADChunkSizeParser;
+import com.urbanspork.common.codec.chunk.ChunkSizeCodec;
+import com.urbanspork.common.codec.chunk.PlainChunkSizeParser;
 import com.urbanspork.common.protocol.vmess.aead.KDF;
 import com.urbanspork.common.protocol.vmess.encoding.Auth;
 import com.urbanspork.common.protocol.vmess.encoding.ClientSession;
@@ -18,9 +20,9 @@ import com.urbanspork.common.protocol.vmess.header.SecurityType;
 
 import java.util.function.Predicate;
 
-import static com.urbanspork.common.codec.vmess.AEADChunkSizeParser.AUTH_LEN;
-
 public class AEADBodyCodec {
+
+    private static final byte[] AUTH_LEN = "auth_len".getBytes();
 
     private AEADBodyCodec() {}
 
@@ -31,12 +33,12 @@ public class AEADBodyCodec {
         ChunkSizeCodec sizeParser = tuple.sizeParser;
         if (SecurityType.CHACHA20_POLY1305 == security) {
             if (RequestOption.has(header.option(), RequestOption.AuthenticatedLength)) {
-                sizeParser = newAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN.getBytes())), session.getRequestBodyIV());
+                sizeParser = newAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN)), session.getRequestBodyIV());
             }
             return new AEADBodyEncoder(newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(tuple.key), tuple.iv), sizeParser, tuple.padding);
         }
         if (RequestOption.has(header.option(), RequestOption.AuthenticatedLength)) {
-            sizeParser = newAEADChunkSizeCodec(codec, KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN.getBytes()), session.getRequestBodyIV());
+            sizeParser = newAEADChunkSizeCodec(codec, KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN), session.getRequestBodyIV());
         }
         return new AEADBodyEncoder(newAEADAuthenticator(codec, tuple.key, tuple.iv), sizeParser, tuple.padding);
     }
@@ -48,12 +50,12 @@ public class AEADBodyCodec {
         ChunkSizeCodec sizeParser = tuple.sizeParser;
         if (SecurityType.CHACHA20_POLY1305 == security) {
             if (RequestOption.has(header.option(), RequestOption.AuthenticatedLength)) {
-                sizeParser = newAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN.getBytes())), session.getRequestBodyIV());
+                sizeParser = newAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN)), session.getRequestBodyIV());
             }
             return new AEADBodyDecoder(newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(tuple.key), tuple.iv), sizeParser, tuple.padding);
         }
         if (RequestOption.has(header.option(), RequestOption.AuthenticatedLength)) {
-            sizeParser = newAEADChunkSizeCodec(codec, KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN.getBytes()), session.getRequestBodyIV());
+            sizeParser = newAEADChunkSizeCodec(codec, KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN), session.getRequestBodyIV());
         }
         return new AEADBodyDecoder(newAEADAuthenticator(codec, tuple.key, tuple.iv), sizeParser, tuple.padding);
     }

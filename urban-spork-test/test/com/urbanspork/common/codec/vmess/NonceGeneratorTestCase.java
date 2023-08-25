@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Base64;
+
 @DisplayName("VMess - Nonce Generator")
 class NonceGeneratorTestCase {
     @Test
@@ -27,5 +29,17 @@ class NonceGeneratorTestCase {
         byte[] nonce = bytes.clone();
         NonceGenerator.generateStaticBytes(nonce).generate();
         Assertions.assertArrayEquals(bytes, nonce);
+    }
+
+    @Test
+    void testGenerateCountingNonce() {
+        byte[] nonce = new byte[12];
+        NonceGenerator nonceGenerator = NonceGenerator.generateCountingNonce(nonce, nonce.length);
+        byte[] generate = null;
+        for (int i = 0; i < 65536; i++) {
+            generate = nonceGenerator.generate();
+        }
+        Assertions.assertEquals("//8AAAAAAAAAAAAA", Base64.getEncoder().encodeToString(generate));
+        Assertions.assertEquals("//8AAAAAAAAAAAAA", Base64.getEncoder().encodeToString(nonce));
     }
 }

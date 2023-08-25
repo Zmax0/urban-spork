@@ -1,7 +1,7 @@
 package com.urbanspork.common.codec.aead;
 
-import com.urbanspork.common.codec.ChunkSizeCodec;
 import com.urbanspork.common.codec.PaddingLengthGenerator;
+import com.urbanspork.common.codec.chunk.ChunkSizeCodec;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -75,8 +75,8 @@ public interface PayloadDecoder {
         int sizeBytes = sizeCodec.sizeBytes();
         byte[] payloadSizeBytes = new byte[sizeBytes];
         in.readBytes(payloadSizeBytes);
-        int payloadLength = sizeCodec.decode(payloadSizeBytes);
-        byte[] payloadBytes = new byte[payloadLength - paddingLength];
+        int packetLength = sizeCodec.decode(payloadSizeBytes);
+        byte[] payloadBytes = new byte[packetLength - paddingLength];
         in.readBytes(payloadBytes);
         out.add(Unpooled.wrappedBuffer(auth().open(payloadBytes)));
         in.skipBytes(paddingLength);

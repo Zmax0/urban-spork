@@ -87,7 +87,7 @@ public class ServerUDPReplayHandler extends SimpleChannelInboundHandler<Datagram
             Channel outboundChannel = ctx.channel();
             InetSocketAddress callback = outboundChannel.attr(AttributeKeys.CALLBACK).get().get(sender);
             if (callback != null) {
-                logger.info("[udp][replay]{} ← {} ~ {} ← {}", callback, sender, inboundChannel.localAddress(), outboundChannel.localAddress());
+                logger.info("[udp][replay]{}←{}~{}←{}", callback, sender, inboundChannel.localAddress(), outboundChannel.localAddress());
                 inboundChannel.attr(AttributeKeys.DIRECTION).set(Direction.Outbound);
                 inboundChannel.writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(msg.content(), sender), callback));
             } else {

@@ -1,14 +1,14 @@
 package com.urbanspork.common.codec.shadowsocks;
 
 import com.urbanspork.common.codec.BytesGenerator;
-import com.urbanspork.common.codec.ChunkSizeCodec;
 import com.urbanspork.common.codec.NonceGenerator;
 import com.urbanspork.common.codec.PaddingLengthGenerator;
 import com.urbanspork.common.codec.aead.Authenticator;
 import com.urbanspork.common.codec.aead.CipherCodec;
 import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
-import com.urbanspork.common.codec.vmess.AEADChunkSizeParser;
+import com.urbanspork.common.codec.chunk.AEADChunkSizeParser;
+import com.urbanspork.common.codec.chunk.ChunkSizeCodec;
 import com.urbanspork.common.crypto.GeneralDigests;
 import com.urbanspork.common.protocol.network.Network;
 import com.urbanspork.common.util.Dice;

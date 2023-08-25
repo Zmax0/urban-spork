@@ -1,10 +1,10 @@
 package com.urbanspork.test.template;
 
+import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
+import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
-import com.urbanspork.common.protocol.socks.DatagramPacketDecoder;
-import com.urbanspork.common.protocol.socks.DatagramPacketEncoder;
-import com.urbanspork.common.protocol.socks.Handshake;
+import com.urbanspork.common.protocol.socks.ClientHandshake;
 import com.urbanspork.test.TestDice;
 import com.urbanspork.test.TestUtil;
 import com.urbanspork.test.server.udp.DelayedEchoTestServer;
@@ -70,7 +70,7 @@ public class UDPTestTemplate extends TestTemplate {
     protected void handshakeAndSendBytes(ClientConfig config, int dstPort) throws InterruptedException, ExecutionException {
         InetSocketAddress proxyAddress = new InetSocketAddress("localhost", config.getPort());
         InetSocketAddress dstAddress = new InetSocketAddress("localhost", dstPort);
-        Handshake.Result result = Handshake.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).await().get();
+        ClientHandshake.Result result = ClientHandshake.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).await().get();
         Assertions.assertEquals(Socks5CommandStatus.SUCCESS, result.response().status());
         result.sessionChannel().eventLoop().shutdownGracefully();
         DefaultEventLoop executor = new DefaultEventLoop();
