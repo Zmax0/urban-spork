@@ -5,6 +5,7 @@ import com.urbanspork.common.protocol.network.Network;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.socks.Address;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.EncoderException;
@@ -29,12 +30,13 @@ public class UDPReplayCodec extends MessageToMessageCodec<DatagramPacket, Ternar
         if (proxy == null) {
             throw new EncoderException("Replay address is null");
         }
-        ByteBuf in = ctx.alloc().buffer();
+        ByteBuf in = Unpooled.buffer();
         DatagramPacket data = msg.packet();
         Address.encode(Socks5CommandType.CONNECT, data.recipient(), in);
-        in.writeBytes(data.content().duplicate());
-        ByteBuf content = ctx.alloc().buffer();
+        in.writeBytes(data.content().slice());
+        ByteBuf content = ctx.alloc().buffer(in.readableBytes());
         cipher.encode(ctx, in, content);
+        in.release();
         out.add(new DatagramPacket(content, proxy, data.sender()));
     }
 
