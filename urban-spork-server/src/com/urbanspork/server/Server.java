@@ -98,6 +98,7 @@ public class Server {
             b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .attr(AttributeKeys.DIRECTION, Direction.Inbound)
+                .childOption(ChannelOption.SO_LINGER, 1)
                 .childHandler(new ServerInitializer(config))
                 .bind(port).sync().addListener((ChannelFutureListener) future -> {
                     Channel channel = future.channel();
