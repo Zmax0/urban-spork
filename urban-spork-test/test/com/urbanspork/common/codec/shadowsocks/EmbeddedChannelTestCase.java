@@ -2,8 +2,8 @@ package com.urbanspork.common.codec.shadowsocks;
 
 import com.urbanspork.common.codec.SupportedCipher;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.network.Network;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -16,8 +16,6 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -25,24 +23,28 @@ import java.nio.charset.StandardCharsets;
 @DisplayName("Shadowsocks - Embedded Channel")
 class EmbeddedChannelTestCase {
 
-    @ParameterizedTest
-    @EnumSource(Network.class)
-    void testCommonChannel(Network network) {
+    @Test
+    void testTCPReplayChannel() {
         int port = TestDice.rollPort();
+        String host = TestDice.rollHost();
+        DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, host, port);
         SupportedCipher cipher = TestDice.rollCipher();
         String password = TestDice.rollString();
-        EmbeddedChannel channel = new EmbeddedChannel();
-        channel.pipeline()
-            .addLast(AEADCipherCodecs.get(password, cipher, network))
-            .addLast(new AddressEncoder(new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "localhost", port)))
-            .addLast(new AddressDecoder());
+        EmbeddedChannel client = new EmbeddedChannel();
+        client.pipeline().addLast(new TCPReplayCodec(StreamType.Client, request, password, cipher));
+        EmbeddedChannel server = new EmbeddedChannel();
+        server.pipeline().addLast(new TCPReplayCodec(StreamType.Server, password, cipher));
         String message = TestDice.rollString();
-        channel.writeOutbound(Unpooled.wrappedBuffer(message.getBytes()));
-        ByteBuf out = channel.readOutbound();
-        channel.writeInbound(out);
-        InetSocketAddress address = channel.readInbound();
+        client.writeOutbound(Unpooled.wrappedBuffer(message.getBytes()));
+        ByteBuf msg = client.readOutbound();
+        server.writeInbound(msg);
+        InetSocketAddress address = server.readInbound();
         Assertions.assertEquals(address.getPort(), port);
-        ByteBuf msg = channel.readInbound();
+        msg = server.readInbound();
+        server.writeOutbound(msg);
+        msg = server.readOutbound();
+        client.writeInbound(msg);
+        msg = client.readInbound();
         Assertions.assertEquals(message, msg.readCharSequence(msg.readableBytes(), StandardCharsets.UTF_8));
     }
 

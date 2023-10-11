@@ -26,6 +26,10 @@ public interface TestDice {
         return ciphers[ThreadLocalRandom.current().nextInt(0, ciphers.length)];
     }
 
+    static String rollHost() {
+        return rollString(10) + ".io";
+    }
+
     static int rollPort() {
         return ThreadLocalRandom.current().nextInt(49152, 65535);
     }

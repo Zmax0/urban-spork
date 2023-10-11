@@ -11,16 +11,18 @@ import com.urbanspork.common.codec.chunk.AEADChunkSizeParser;
 import com.urbanspork.common.codec.chunk.ChunkSizeCodec;
 import com.urbanspork.common.crypto.GeneralDigests;
 import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.protocol.shadowsocks.RequestHeader;
+import com.urbanspork.common.protocol.shadowsocks.StreamType;
+import com.urbanspork.common.protocol.socks.Address;
 import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageCodec;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.System.arraycopy;
@@ -29,9 +31,9 @@ import static java.lang.System.arraycopy;
  * AEAD Cipher Codec
  *
  * @author Zmax0
- * @see <a href=https://shadowsocks.org/doc/aead.html">https://shadowsocks.org/doc/aead.html</a>
+ * @see <a href=https://shadowsocks.org/doc/aead.html">AEAD ciphers</a>
  */
-class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
+class AEADCipherCodec {
     /*
      * TCP per-session [salt][encrypted payload length][length tag][encrypted payload][payload tag]
      * UDP per-packet [salt][encrypted payload][payload tag]
@@ -39,48 +41,64 @@ class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
     private final byte[] key;
     private final int saltSize;
     private final CipherCodec cipherCodec;
-    private final Network network;
     private int payloadLength = PayloadDecoder.INIT_LENGTH;
+    private boolean decodeAddress = false;
     private PayloadEncoder payloadEncoder;
     private PayloadDecoder payloadDecoder;
 
-    AEADCipherCodec(String password, int saltSize, CipherCodec cipherCodec, Network network) {
+    AEADCipherCodec(String password, int saltSize, CipherCodec cipherCodec) {
         this.key = generateKey(password.getBytes(), saltSize);
         this.saltSize = saltSize;
         this.cipherCodec = cipherCodec;
-        this.network = network;
     }
 
-    @Override
-    protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
-        if (network == Network.UDP) {
+    public void encode(RequestHeader header, ByteBuf msg, ByteBuf out) throws Exception {
+        if (header.network() == Network.UDP) {
+            ByteBuf in = Unpooled.buffer();
+            Address.encode(header.request(), in);
+            in.writeBytes(msg);
             byte[] salt = Dice.rollBytes(saltSize);
             out.writeBytes(salt);
-            newPayloadEncoder(salt).encodePacket(msg, out);
+            newPayloadEncoder(salt).encodePacket(in, out);
+            in.release();
         } else {
             if (payloadEncoder == null) {
                 byte[] salt = Dice.rollBytes(saltSize);
                 out.writeBytes(salt);
                 payloadEncoder = newPayloadEncoder(salt);
+                if (StreamType.Client == header.streamType()) {
+                    ByteBuf in = Unpooled.buffer();
+                    Address.encode(header.request(), in);
+                    in.writeBytes(msg);
+                    msg = in;
+                }
             }
             payloadEncoder.encodePayload(msg, out);
         }
     }
 
-    @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-        if (network == Network.UDP) {
+    public void decode(RequestHeader header, ByteBuf in, List<Object> out) throws Exception {
+        if (header.network() == Network.UDP) {
             byte[] salt = new byte[saltSize];
             in.readBytes(salt);
-            newPayloadDecoder(salt).decodePacket(in, out);
+            List<Object> list = new ArrayList<>(1);
+            newPayloadDecoder(salt).decodePacket(in, list);
+            ByteBuf decoded = (ByteBuf) list.get(0);
+            Address.decode(decoded, out);
+            out.add(decoded.slice());
         } else {
             if (payloadDecoder == null && in.readableBytes() >= saltSize) {
                 byte[] salt = new byte[saltSize];
                 in.readBytes(salt);
                 payloadDecoder = newPayloadDecoder(salt);
+                decodeAddress = StreamType.Server == header.streamType();
             }
             if (payloadDecoder != null) {
                 payloadDecoder.decodePayload(in, out);
+                if (decodeAddress && !out.isEmpty()) {
+                    out.add(0, Address.decode((ByteBuf) out.get(0)));
+                    decodeAddress = false;
+                }
             }
         }
     }
@@ -109,7 +127,7 @@ class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
         return new PayloadEncoder() {
             @Override
             public int payloadLimit() {
-                return 0xffff;
+                return 0x3fff;
             }
 
             @Override
