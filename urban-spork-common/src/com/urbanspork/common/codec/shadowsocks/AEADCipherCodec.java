@@ -1,6 +1,7 @@
 package com.urbanspork.common.codec.shadowsocks;
 
 import com.urbanspork.common.codec.BytesGenerator;
+import com.urbanspork.common.codec.EmptyPaddingLengthGenerator;
 import com.urbanspork.common.codec.NonceGenerator;
 import com.urbanspork.common.codec.PaddingLengthGenerator;
 import com.urbanspork.common.codec.aead.Authenticator;
@@ -52,7 +53,7 @@ class AEADCipherCodec {
         this.cipherCodec = cipherCodec;
     }
 
-    public void encode(RequestHeader header, ByteBuf msg, ByteBuf out) throws Exception {
+    public void encode(RequestHeader header, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         if (header.network() == Network.UDP) {
             ByteBuf in = Unpooled.buffer();
             Address.encode(header.request(), in);
@@ -66,7 +67,7 @@ class AEADCipherCodec {
                 byte[] salt = Dice.rollBytes(saltSize);
                 out.writeBytes(salt);
                 payloadEncoder = newPayloadEncoder(salt);
-                if (StreamType.Client == header.streamType()) {
+                if (StreamType.Request == header.streamType()) {
                     ByteBuf in = Unpooled.buffer();
                     Address.encode(header.request(), in);
                     in.writeBytes(msg);
@@ -77,7 +78,7 @@ class AEADCipherCodec {
         }
     }
 
-    public void decode(RequestHeader header, ByteBuf in, List<Object> out) throws Exception {
+    public void decode(RequestHeader header, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
         if (header.network() == Network.UDP) {
             byte[] salt = new byte[saltSize];
             in.readBytes(salt);
@@ -91,7 +92,7 @@ class AEADCipherCodec {
                 byte[] salt = new byte[saltSize];
                 in.readBytes(salt);
                 payloadDecoder = newPayloadDecoder(salt);
-                decodeAddress = StreamType.Server == header.streamType();
+                decodeAddress = StreamType.Response == header.streamType();
             }
             if (payloadDecoder != null) {
                 payloadDecoder.decodePayload(in, out);
@@ -142,7 +143,7 @@ class AEADCipherCodec {
 
             @Override
             public PaddingLengthGenerator padding() {
-                return null;
+                return EmptyPaddingLengthGenerator.INSTANCE;
             }
 
             @Override
@@ -191,7 +192,7 @@ class AEADCipherCodec {
 
             @Override
             public PaddingLengthGenerator padding() {
-                return null;
+                return EmptyPaddingLengthGenerator.INSTANCE;
             }
 
             @Override

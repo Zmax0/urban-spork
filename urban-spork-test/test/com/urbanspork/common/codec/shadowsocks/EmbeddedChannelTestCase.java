@@ -31,9 +31,9 @@ class EmbeddedChannelTestCase {
         SupportedCipher cipher = TestDice.rollCipher();
         String password = TestDice.rollString();
         EmbeddedChannel client = new EmbeddedChannel();
-        client.pipeline().addLast(new TCPReplayCodec(StreamType.Client, request, password, cipher));
+        client.pipeline().addLast(new TCPReplayCodec(StreamType.Request, request, password, cipher));
         EmbeddedChannel server = new EmbeddedChannel();
-        server.pipeline().addLast(new TCPReplayCodec(StreamType.Server, password, cipher));
+        server.pipeline().addLast(new TCPReplayCodec(StreamType.Response, password, cipher));
         String message = TestDice.rollString();
         client.writeOutbound(Unpooled.wrappedBuffer(message.getBytes()));
         ByteBuf msg = client.readOutbound();

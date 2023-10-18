@@ -1,6 +1,7 @@
 package com.urbanspork.common.codec.vmess;
 
 import com.urbanspork.common.codec.BytesGenerator;
+import com.urbanspork.common.codec.EmptyPaddingLengthGenerator;
 import com.urbanspork.common.codec.NonceGenerator;
 import com.urbanspork.common.codec.PaddingLengthGenerator;
 import com.urbanspork.common.codec.aead.Authenticator;
@@ -88,7 +89,7 @@ public class AEADBodyCodec {
         byte[] key = getKey(session, predicate);
         byte[] iv = getIV(session, predicate);
         ChunkSizeCodec sizeParser = new PlainChunkSizeParser();
-        PaddingLengthGenerator padding = null;
+        PaddingLengthGenerator padding = EmptyPaddingLengthGenerator.INSTANCE;
         if (RequestOption.has(header.option(), RequestOption.ChunkMasking)) {
             sizeParser = new ShakeSizeParser(iv);
         }

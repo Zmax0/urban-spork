@@ -1,7 +1,7 @@
 package com.urbanspork.common.protocol.shadowsocks;
 
 public enum StreamType {
-    Client((byte) 0), Server((byte) 1);
+    Request((byte) 0), Response((byte) 1);
 
     private final byte value;
 

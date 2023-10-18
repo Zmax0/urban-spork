@@ -48,8 +48,8 @@ class AEADCipherCodecTestCase {
         String host = TestDice.rollHost();
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, host, port);
         AEADCipherCodec codec = AEADCipherCodecs.get(password, cipher);
-        cipherTest(codec, new RequestHeader(Network.TCP, StreamType.Client, request), new RequestHeader(Network.TCP, StreamType.Server, null), true);
-        cipherTest(codec, new RequestHeader(Network.UDP, StreamType.Client, request), new RequestHeader(Network.UDP, StreamType.Server, null), false);
+        cipherTest(codec, new RequestHeader(Network.TCP, StreamType.Request, request), new RequestHeader(Network.TCP, StreamType.Response, null), true);
+        cipherTest(codec, new RequestHeader(Network.UDP, StreamType.Request, request), new RequestHeader(Network.UDP, StreamType.Response, null), false);
     }
 
 
