@@ -33,14 +33,13 @@ public interface PayloadDecoder {
      * @param out payload
      */
     default void decodePayload(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-        PaddingLengthGenerator padding = padding();
         int payloadLength = payloadLength();
         int paddingLength = paddingLength();
         ChunkSizeCodec sizeCodec = sizeCodec();
         int sizeBytes = sizeCodec.sizeBytes();
         while (in.readableBytes() >= (payloadLength == INIT_LENGTH ? sizeBytes : payloadLength)) {
             if (paddingLength == INIT_LENGTH) {
-                paddingLength = padding == null ? 0 : padding.nextPaddingLength();
+                paddingLength = padding().nextPaddingLength();
             }
             if (payloadLength == INIT_LENGTH) {
                 byte[] payloadSizeBytes = new byte[sizeBytes];
@@ -66,11 +65,7 @@ public interface PayloadDecoder {
      * @param out payload
      */
     default void decodePacket(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-        int paddingLength = 0;
-        PaddingLengthGenerator padding = padding();
-        if (padding != null) {
-            paddingLength = padding.nextPaddingLength();
-        }
+        int paddingLength = padding().nextPaddingLength();
         ChunkSizeCodec sizeCodec = sizeCodec();
         int sizeBytes = sizeCodec.sizeBytes();
         byte[] payloadSizeBytes = new byte[sizeBytes];

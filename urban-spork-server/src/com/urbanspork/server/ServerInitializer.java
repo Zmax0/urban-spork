@@ -24,7 +24,7 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
         if (Protocols.vmess == config.getProtocol()) {
             pipeline.addLast(new ServerAEADCodec(config));
         } else {
-            pipeline.addLast(new TCPReplayCodec(StreamType.Server, config.getPassword(), config.getCipher()));
+            pipeline.addLast(new TCPReplayCodec(StreamType.Response, config.getPassword(), config.getCipher()));
         }
         pipeline.addLast(new RemoteConnectHandler(config), new ExceptionHandler(config));
     }

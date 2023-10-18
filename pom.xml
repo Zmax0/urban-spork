@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>urban-spork</groupId>
   <artifactId>urban-spork</artifactId>
-  <version>2.3.0</version>
+  <version>2.4.0</version>
   <packaging>pom</packaging>
   <modules>
     <module>urban-spork-common</module>
@@ -14,15 +14,15 @@
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <urban-spork.version>2.3.0</urban-spork.version>
+    <urban-spork.version>2.4.0</urban-spork.version>
     <maven-surefire-plugin.versioin>3.0.0</maven-surefire-plugin.versioin>
     <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
     <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
     <jacoco-maven-plugin.version>0.8.10</jacoco-maven-plugin.version>
     <build-helper-maven-plugin.version>3.4.0</build-helper-maven-plugin.version>
     <junit.jupiter.version>5.9.2</junit.jupiter.version>
-    <jackson.version>2.14.2</jackson.version>
-    <logback.version>1.4.6</logback.version>
+    <jackson.version>2.15.1</jackson.version>
+    <logback.version>1.4.7</logback.version>
     <netty.version>4.1.94.Final</netty.version>
     <bouncycastle.version>1.74</bouncycastle.version>
     <javafx.version>18.0.2</javafx.version>

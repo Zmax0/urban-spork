@@ -39,11 +39,7 @@ public interface PayloadEncoder {
     }
 
     private void seal(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
-        int paddingLength = 0;
-        PaddingLengthGenerator padding = padding();
-        if (padding != null) {
-            paddingLength = padding.nextPaddingLength();
-        }
+        int paddingLength = padding().nextPaddingLength();
         int encryptedSize = Math.min(msg.readableBytes(), payloadLimit() - auth().overhead() - sizeCodec().sizeBytes() - paddingLength);
         out.writeBytes(sizeCodec().encode(encryptedSize + paddingLength + auth().overhead()));
         byte[] in = new byte[encryptedSize];
