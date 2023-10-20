@@ -4,6 +4,8 @@
 
 A sock5 proxy
 
+**Warning**: Be aware of the risk when using it because neither **Detection Prevention** nor **Replay Protection** is implemented
+
 ## Require
 
 Java 17+
@@ -44,7 +46,9 @@ put *config.json* file into the unpacked folder before running
 |     | Shadowsocks | VMess |
 |:----|:-----------:|:-----:|
 | TCP |      ✔      |   ✔   |
-| UDP |      ✔      |   ✔   |
+| UDP |      ✔\*      |   ✔   |
+
+\* exclude AEAD-2022 ciphers
 
 ### Ciphers
 
@@ -53,8 +57,8 @@ put *config.json* file into the unpacked folder before running
 | aes-128-gcm             |   `C` `S`   | `C` `S` |
 | aes-256-gcm             |   `C` `S`   |         |
 | chacha20-poly1305       |   `C` `S`   | `C` `S` |
-| 2022-blake3-aes-128-gcm |   `C`       |         |
-| 2022-blake3-aes-256-gcm |   `C`       |         |
+| 2022-blake3-aes-128-gcm |   `C` `S`   |         |
+| 2022-blake3-aes-256-gcm |   `C` `S`   |         |
 
 `C` for client `S` for server
 
