@@ -12,7 +12,6 @@ import com.urbanspork.common.protocol.shadowsocks.aead.AEAD2022;
 import com.urbanspork.common.protocol.socks.Address;
 import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
@@ -53,8 +52,8 @@ public class ServerAEAD2022Codec extends ByteToMessageCodec<ByteBuf> {
                 }
                 out.writeBytes(salt);
                 payloadEncoder = AEAD2022.newPayloadEncoder(aead2022CipherCodec.cipherCodec(), aead2022CipherCodec.secret(), salt);
-                for (ByteBuf buf : AEAD2022.newResponseHeader(requestSalt, msg)) {
-                    out.writeBytes(payloadEncoder.auth().seal(ByteBufUtil.getBytes(buf)));
+                for (byte[] bytes : AEAD2022.newResponseHeader(requestSalt, msg)) {
+                    out.writeBytes(payloadEncoder.auth().seal(bytes));
                 }
             }
             payloadEncoder.encodePayload(msg, out);
