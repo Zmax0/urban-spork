@@ -1,10 +1,15 @@
 package com.urbanspork.server;
 
 import com.urbanspork.common.channel.ExceptionHandler;
+import com.urbanspork.common.codec.SupportedCipher;
+import com.urbanspork.common.codec.shadowsocks.AEADCipherCodecs;
 import com.urbanspork.common.codec.shadowsocks.TCPReplayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.protocol.shadowsocks.RequestHeader;
 import com.urbanspork.common.protocol.shadowsocks.StreamType;
+import com.urbanspork.server.shadowsocks.ServerAEAD2022Codec;
 import com.urbanspork.server.vmess.ServerAEADCodec;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -24,7 +29,13 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
         if (Protocols.vmess == config.getProtocol()) {
             pipeline.addLast(new ServerAEADCodec(config));
         } else {
-            pipeline.addLast(new TCPReplayCodec(StreamType.Response, config.getPassword(), config.getCipher()));
+            SupportedCipher cipher = config.getCipher();
+            if (cipher.isAEAD2022()) {
+                RequestHeader header = new RequestHeader(Network.TCP, StreamType.Response, null);
+                pipeline.addLast(new ServerAEAD2022Codec(header, AEADCipherCodecs.get2022(config.getPassword(), cipher)));
+            } else {
+                pipeline.addLast(new TCPReplayCodec(StreamType.Response, config.getPassword(), cipher));
+            }
         }
         pipeline.addLast(new RemoteConnectHandler(config), new ExceptionHandler(config));
     }

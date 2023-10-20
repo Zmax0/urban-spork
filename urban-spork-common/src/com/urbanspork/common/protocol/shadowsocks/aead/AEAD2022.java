@@ -69,16 +69,16 @@ public interface AEAD2022 {
             |  1B  | variable | u16be |     u16be      | variable |    variable     |
             +------+----------+-------+----------------+----------+-----------------+
         */
-        ByteBuf[] res = new ByteBuf[2];
-        ByteBuf fixed = Unpooled.wrappedBuffer(new byte[1 + 8 + 2]);
+        ByteBuf fixed = Unpooled.wrappedBuffer(new byte[1 + 8 + requestSalt.length + 2]);
+        fixed.writerIndex(0);
         fixed.writeByte(StreamType.Response.getValue());
         fixed.writeLong(AEAD2022.now());
         fixed.writeBytes(requestSalt);
-        int length = Math.max(msg.readableBytes(), 0xffff);
+        int length = Math.min(msg.readableBytes(), 0xffff);
         fixed.writeShort(length);
-        ByteBuf variable = msg.readBytes(length);
+        ByteBuf[] res = new ByteBuf[2];
         res[0] = fixed;
-        res[1] = variable;
+        res[1] = msg.readBytes(length);
         return res;
     }
 
