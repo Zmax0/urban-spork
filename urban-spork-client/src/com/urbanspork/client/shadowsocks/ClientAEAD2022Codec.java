@@ -12,7 +12,6 @@ import com.urbanspork.common.protocol.shadowsocks.aead.AEAD2022;
 import com.urbanspork.common.protocol.socks.Address;
 import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
@@ -63,8 +62,8 @@ public class ClientAEAD2022Codec extends ByteToMessageCodec<ByteBuf> {
                 temp.writeShort(paddingLength);
                 temp.writeBytes(Dice.rollBytes(paddingLength));
                 msg = Unpooled.wrappedBuffer(temp, msg);
-                for (ByteBuf buf : AEAD2022.newRequestHeader(msg)) {
-                    out.writeBytes(payloadEncoder.auth().seal(ByteBufUtil.getBytes(buf)));
+                for (byte[] bytes : AEAD2022.newRequestHeader(msg)) {
+                    out.writeBytes(payloadEncoder.auth().seal(bytes));
                 }
             }
             payloadEncoder.encodePayload(msg, out);
@@ -115,9 +114,12 @@ public class ClientAEAD2022Codec extends ByteToMessageCodec<ByteBuf> {
             String msg = String.format("invalid timestamp %d - now %d = %d", timestamp, now, diff);
             throw new DecoderException(msg);
         }
-        ByteBuf requestSalt = headerBuf.readBytes(saltSize);
         if (logger.isTraceEnabled()) {
-            logger.trace("request salt {}", Base64.getEncoder().encodeToString(ByteBufUtil.getBytes(requestSalt)));
+            byte[] requestSalt = new byte[saltSize];
+            headerBuf.readBytes(requestSalt);
+            logger.trace("request salt {}", Base64.getEncoder().encodeToString(requestSalt));
+        } else {
+            headerBuf.skipBytes(saltSize);
         }
         int length = headerBuf.readUnsignedShort();
         if (in.readableBytes() < length + tagSize) {

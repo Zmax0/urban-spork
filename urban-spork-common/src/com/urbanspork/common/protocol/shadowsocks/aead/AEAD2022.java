@@ -25,7 +25,7 @@ public interface AEAD2022 {
     int MAX_PADDING_LENGTH = 900;
     long SERVER_STREAM_TIMESTAMP_MAX_DIFF = 30;
 
-    static ByteBuf[] newRequestHeader(ByteBuf msg) {
+    static byte[][] newRequestHeader(ByteBuf msg) {
         /*
             Request fixed-length header:
             +------+------------------+--------+
@@ -41,19 +41,10 @@ public interface AEAD2022 {
             |  1B  | variable | u16be |     u16be      | variable |    variable     |
             +------+----------+-------+----------------+----------+-----------------+
         */
-        ByteBuf fixed = Unpooled.wrappedBuffer(new byte[1 + 8 + 2]);
-        fixed.writerIndex(0);
-        fixed.writeByte(StreamType.Request.getValue());
-        fixed.writeLong(AEAD2022.now());
-        int length = Math.min(msg.readableBytes(), 0xffff);
-        fixed.writeShort(length);
-        ByteBuf[] res = new ByteBuf[2];
-        res[0] = fixed;
-        res[1] = msg.readBytes(length);
-        return res;
+        return newHeader(StreamType.Request, new byte[]{}, msg);
     }
 
-    static ByteBuf[] newResponseHeader(byte[] requestSalt, ByteBuf msg) {
+    static byte[][] newResponseHeader(byte[] requestSalt, ByteBuf msg) {
         /*
             Response fixed-length header:
             +------+------------------+----------------+--------+
@@ -69,16 +60,22 @@ public interface AEAD2022 {
             |  1B  | variable | u16be |     u16be      | variable |    variable     |
             +------+----------+-------+----------------+----------+-----------------+
         */
+        return newHeader(StreamType.Response, requestSalt, msg);
+    }
+
+    private static byte[][] newHeader(StreamType streamType, byte[] requestSalt, ByteBuf msg) {
         ByteBuf fixed = Unpooled.wrappedBuffer(new byte[1 + 8 + requestSalt.length + 2]);
         fixed.writerIndex(0);
-        fixed.writeByte(StreamType.Response.getValue());
+        fixed.writeByte(streamType.getValue());
         fixed.writeLong(AEAD2022.now());
         fixed.writeBytes(requestSalt);
         int length = Math.min(msg.readableBytes(), 0xffff);
+        byte[] via = new byte[length];
+        msg.readBytes(via);
         fixed.writeShort(length);
-        ByteBuf[] res = new ByteBuf[2];
-        res[0] = fixed;
-        res[1] = msg.readBytes(length);
+        byte[][] res = new byte[2][];
+        res[0] = fixed.array();
+        res[1] = via;
         return res;
     }
 
