@@ -1,8 +1,9 @@
 package com.urbanspork.common.codec.shadowsocks;
 
-import com.urbanspork.common.codec.SupportedCipher;
+import com.urbanspork.common.codec.CipherKind;
+import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.Network;
-import com.urbanspork.common.protocol.shadowsocks.RequestHeader;
+import com.urbanspork.common.protocol.shadowsocks.RequestContext;
 import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
@@ -24,37 +25,38 @@ import java.util.concurrent.ThreadLocalRandom;
 @TestInstance(Lifecycle.PER_CLASS)
 class AEADCipherCodecTestCase {
 
-    private String password;
     private byte[] in;
-    private final int maxChunkSize = 0xffff;
+    private CipherKind kind;
+    private String password;
 
     @BeforeAll
     void beforeAll() {
-        password = TestDice.rollString();
-        in = Dice.rollBytes(maxChunkSize * 10);
+        in = Dice.rollBytes(0xffff * 10);
     }
 
-    @DisplayName("Single supported cipher repeat")
-    @RepeatedTest(10)
-    void repeatedTest() throws Exception {
-        parameterizedTest(SupportedCipher.aes_128_gcm);
+    @DisplayName("Single cipher")
+    @Test
+    void test() throws Exception {
+        parameterizedTest(CipherKind.chacha20_poly1305);
+        parameterizedTest(CipherKind.aead2022_blake3_aes_256_gcm);
     }
 
     @ParameterizedTest
     @DisplayName("All supported cipher iterate")
-    @EnumSource(SupportedCipher.class)
-    void parameterizedTest(SupportedCipher cipher) throws Exception {
+    @EnumSource(CipherKind.class)
+    void parameterizedTest(CipherKind kind) throws Exception {
+        this.password = TestDice.rollPassword(Protocols.shadowsocks, kind);
+        this.kind = kind;
         int port = TestDice.rollPort();
         String host = TestDice.rollHost();
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, host, port);
-        AEADCipherCodec codec = AEADCipherCodecs.get(password, cipher);
-        cipherTest(codec, new RequestHeader(Network.TCP, StreamType.Request, request), new RequestHeader(Network.TCP, StreamType.Response, null), true);
-        cipherTest(codec, new RequestHeader(Network.UDP, StreamType.Request, request), new RequestHeader(Network.UDP, StreamType.Response, null), false);
+        cipherTest(new RequestContext(Network.TCP, StreamType.Request, request), new RequestContext(Network.TCP, StreamType.Response, null), true);
+        cipherTest(new RequestContext(Network.UDP, StreamType.Request, request), new RequestContext(Network.UDP, StreamType.Response, null), false);
     }
 
 
-    private void cipherTest(AEADCipherCodec cipher, RequestHeader client, RequestHeader server, boolean reRoll) throws Exception {
-        List<Object> list = cipherTest(cipher, client, server, Unpooled.copiedBuffer(in), reRoll);
+    private void cipherTest(RequestContext request, RequestContext response, boolean reRoll) throws Exception {
+        List<Object> list = cipherTest(request, response, Unpooled.copiedBuffer(in), reRoll);
         byte[] out = new byte[in.length];
         int len = 0;
         for (Object obj : list) {
@@ -65,14 +67,17 @@ class AEADCipherCodecTestCase {
                 len += readableBytes;
             }
         }
+        Assertions.assertEquals(in.length, len);
         Assertions.assertArrayEquals(in, out);
     }
 
-    private List<Object> cipherTest(AEADCipherCodec cipher, RequestHeader client, RequestHeader server, ByteBuf in, boolean reRoll) throws Exception {
+    private List<Object> cipherTest(RequestContext request, RequestContext response, ByteBuf in, boolean reRoll) throws Exception {
+        AEADCipherCodec client = AEADCipherCodecs.get(kind, password);
+        AEADCipherCodec server = AEADCipherCodecs.get(kind, password);
         List<ByteBuf> encodeSlices = new ArrayList<>();
         for (ByteBuf slice : randomSlice(in, false)) {
             ByteBuf buf = Unpooled.buffer();
-            cipher.encode(client, slice, buf);
+            client.encode(request, slice, buf);
             encodeSlices.add(buf);
         }
         List<Object> out = new ArrayList<>();
@@ -80,11 +85,11 @@ class AEADCipherCodecTestCase {
             ByteBuf buffer = Unpooled.buffer();
             for (ByteBuf slice : randomSlice(merge(encodeSlices), true)) {
                 buffer.writeBytes(slice);
-                cipher.decode(server, buffer, out);
+                server.decode(response, buffer, out);
             }
         } else {
             for (ByteBuf buf : encodeSlices) {
-                cipher.decode(server, buf, out);
+                server.decode(response, buf, out);
             }
         }
         return out;
@@ -97,7 +102,8 @@ class AEADCipherCodecTestCase {
             list.add(src.readSlice(Math.min(src.readableBytes(), random.nextInt(1024, 10240))));
         }
         while (src.isReadable()) {
-            list.add(src.readSlice(Math.min(src.readableBytes(), random.nextInt(maxChunkSize))));
+            int maxChunkSize = kind.isAead2022() ? 0xffff - 100 : 0x3fff - 100;
+            list.add(src.readSlice(Math.min(src.readableBytes(), random.nextInt(1, maxChunkSize))));
         }
         return list;
     }

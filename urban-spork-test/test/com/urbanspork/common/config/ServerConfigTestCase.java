@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @DisplayName("Common - Server Config")
 public class ServerConfigTestCase {
@@ -72,7 +71,7 @@ public class ServerConfigTestCase {
             serverConfig.setPort(port);
             serverConfig.setProtocol(Protocols.shadowsocks);
             serverConfig.setCipher(TestDice.rollCipher());
-            serverConfig.setPassword(UUID.randomUUID().toString());
+            serverConfig.setPassword(TestDice.rollPassword(serverConfig.getProtocol(), serverConfig.getCipher()));
             serverConfig.setPacketEncoding(PacketEncoding.Packet);
             serverConfigs.add(serverConfig);
         }

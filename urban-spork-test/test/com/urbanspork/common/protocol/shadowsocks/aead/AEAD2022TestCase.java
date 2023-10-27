@@ -27,7 +27,7 @@ class AEAD2022TestCase {
     void testSessionSubkey() {
         byte[] key = Base64.getDecoder().decode("Lc3tTx0BY6ZJ/fCwOx3JvF0I/anhwJBO5p2+FA5Vce4=");
         byte[] salt = Base64.getDecoder().decode("3oFO0VyLyGI4nFN0M9P+62vPND/L6v8IingaPJWTbJA=");
-        byte[] bytes = AEAD2022.sessionSubkey(key, salt);
+        byte[] bytes = AEAD2022.TCP.sessionSubkey(key, salt);
         Assertions.assertEquals("EdNE+4U8dVnHT0+poAFDK2bdlwfrHT61sUNr9WYPh+E=", Base64.getEncoder().encodeToString(bytes));
     }
 }

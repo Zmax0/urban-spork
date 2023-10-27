@@ -26,6 +26,7 @@ class UDPTestCase extends UDPTestTemplate {
         serverConfig.setNetworks(new Network[]{Network.TCP, Network.UDP});
         serverConfig.setProtocol(parameter.protocol());
         serverConfig.setCipher(parameter.cipher());
+        serverConfig.setPassword(parameter.password());
         ExecutorService service = Executors.newFixedThreadPool(2);
         DefaultEventLoop executor = new DefaultEventLoop();
         launchClient(service, executor, clientConfig);

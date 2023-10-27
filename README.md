@@ -46,7 +46,7 @@ put *config.json* file into the unpacked folder before running
 |     | Shadowsocks | VMess |
 |:----|:-----------:|:-----:|
 | TCP |      ✔      |   ✔   |
-| UDP |      ✔\*      |   ✔   |
+| UDP |     ✔\*     |   ✔   |
 
 \* exclude AEAD-2022 ciphers
 
