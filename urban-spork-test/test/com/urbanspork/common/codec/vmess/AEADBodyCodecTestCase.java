@@ -1,5 +1,7 @@
 package com.urbanspork.common.codec.vmess;
 
+import com.urbanspork.common.codec.aead.PayloadDecoder;
+import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.protocol.vmess.ID;
 import com.urbanspork.common.protocol.vmess.VMess;
 import com.urbanspork.common.protocol.vmess.encoding.ClientSession;
@@ -58,10 +60,10 @@ class AEADBodyCodecTestCase {
     private static void testByHeader(RequestHeader header) throws InvalidCipherTextException {
         ClientSession clientSession = new ClientSession();
         ServerSession serverSession = new ServerSession(clientSession);
-        AEADBodyEncoder clientBodyEncoder = AEADBodyCodec.getBodyEncoder(header, clientSession);
-        AEADBodyDecoder serverBodyDecoder = AEADBodyCodec.getBodyDecoder(header, serverSession);
-        AEADBodyEncoder serverBodyEncoder = AEADBodyCodec.getBodyEncoder(header, serverSession);
-        AEADBodyDecoder clientBodyDecoder = AEADBodyCodec.getBodyDecoder(header, clientSession);
+        PayloadEncoder clientBodyEncoder = AEADBodyCodec.getBodyEncoder(header, clientSession);
+        PayloadDecoder serverBodyDecoder = AEADBodyCodec.getBodyDecoder(header, serverSession);
+        PayloadEncoder serverBodyEncoder = AEADBodyCodec.getBodyEncoder(header, serverSession);
+        PayloadDecoder clientBodyDecoder = AEADBodyCodec.getBodyDecoder(header, clientSession);
         ByteBuf out = Unpooled.buffer();
         List<Object> list = new ArrayList<>();
         byte[] bytes;

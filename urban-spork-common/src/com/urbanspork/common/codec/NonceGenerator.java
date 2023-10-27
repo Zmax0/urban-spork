@@ -23,7 +23,7 @@ public interface NonceGenerator extends BytesGenerator {
         return generateIncreasingNonce(new byte[]{(byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff});
     }
 
-    static NonceGenerator generateStaticBytes(byte[] nonce) {
+    static NonceGenerator generateStaticNonce(byte[] nonce) {
         return () -> nonce;
     }
 

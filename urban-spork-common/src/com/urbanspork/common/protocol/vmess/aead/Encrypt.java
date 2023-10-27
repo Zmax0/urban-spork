@@ -1,7 +1,7 @@
 package com.urbanspork.common.protocol.vmess.aead;
 
-import com.urbanspork.common.codec.aead.CipherCodec;
-import com.urbanspork.common.codec.aead.CipherCodecs;
+import com.urbanspork.common.codec.aead.CipherMethod;
+import com.urbanspork.common.codec.aead.CipherMethods;
 import com.urbanspork.common.protocol.vmess.VMess;
 import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
@@ -27,7 +27,7 @@ public class Encrypt {
         byte[] connectionNonce = Dice.rollBytes(8);
         byte[] aeadPayloadLengthSerializedByte = new byte[Short.BYTES];
         Unpooled.wrappedBuffer(aeadPayloadLengthSerializedByte).setShort(0, header.length);
-        CipherCodec cipher = CipherCodecs.AES_GCM.get();
+        CipherMethod cipher = CipherMethods.AES_GCM.get();
         int nonceSize = cipher.nonceSize();
         byte[] payloadHeaderLengthAEADEncrypted = cipher.encrypt(
             KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY, generatedAuthID, connectionNonce),
@@ -48,7 +48,7 @@ public class Encrypt {
     }
 
     public static ByteBuf openVMessAEADHeader(byte[] key, ByteBuf in) throws InvalidCipherTextException {
-        CipherCodec cipher = CipherCodecs.AES_GCM.get();
+        CipherMethod cipher = CipherMethods.AES_GCM.get();
         int tagSize = cipher.tagSize();
         if (in.readableBytes() < 16 + 2 + tagSize + 8 + tagSize) {
             return Unpooled.EMPTY_BUFFER;

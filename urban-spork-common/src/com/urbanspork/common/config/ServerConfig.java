@@ -1,6 +1,6 @@
 package com.urbanspork.common.config;
 
-import com.urbanspork.common.codec.SupportedCipher;
+import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.Network;
 import com.urbanspork.common.protocol.network.PacketEncoding;
@@ -15,7 +15,7 @@ public class ServerConfig {
 
     private String password;
 
-    private SupportedCipher cipher;
+    private CipherKind cipher;
 
     private Protocols protocol;
 
@@ -41,11 +41,11 @@ public class ServerConfig {
         this.port = port;
     }
 
-    public SupportedCipher getCipher() {
+    public CipherKind getCipher() {
         return cipher;
     }
 
-    public void setCipher(SupportedCipher cipher) {
+    public void setCipher(CipherKind cipher) {
         this.cipher = cipher;
     }
 

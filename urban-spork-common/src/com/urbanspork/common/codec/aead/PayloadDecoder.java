@@ -8,23 +8,13 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 
 import java.util.List;
 
-public interface PayloadDecoder {
+public record PayloadDecoder(Authenticator auth, ChunkSizeCodec sizeCodec, PaddingLengthGenerator padding, Length length) {
 
-    int INIT_LENGTH = -1;
+    private static final int INIT_LENGTH = -1;
 
-    int payloadLength();
-
-    void updatePayloadLength(int payloadLength);
-
-    int paddingLength();
-
-    void updatePaddingLength(int paddingLength);
-
-    Authenticator auth();
-
-    ChunkSizeCodec sizeCodec();
-
-    PaddingLengthGenerator padding();
+    public PayloadDecoder(Authenticator auth, ChunkSizeCodec sizeCodec, PaddingLengthGenerator padding) {
+        this(auth, sizeCodec, padding, new Length());
+    }
 
     /**
      * decrypt payload for TCP
@@ -32,30 +22,25 @@ public interface PayloadDecoder {
      * @param in  [salt][encrypted payload length][length tag][encrypted payload][payload tag]
      * @param out payload
      */
-    default void decodePayload(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-        int payloadLength = payloadLength();
-        int paddingLength = paddingLength();
-        ChunkSizeCodec sizeCodec = sizeCodec();
+    public void decodePayload(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
         int sizeBytes = sizeCodec.sizeBytes();
-        while (in.readableBytes() >= (payloadLength == INIT_LENGTH ? sizeBytes : payloadLength)) {
-            if (paddingLength == INIT_LENGTH) {
-                paddingLength = padding().nextPaddingLength();
+        while (in.readableBytes() >= (length.payload == INIT_LENGTH ? sizeBytes : length.payload)) {
+            if (length.padding == INIT_LENGTH) {
+                length.padding = padding.nextPaddingLength();
             }
-            if (payloadLength == INIT_LENGTH) {
+            if (length.payload == INIT_LENGTH) {
                 byte[] payloadSizeBytes = new byte[sizeBytes];
                 in.readBytes(payloadSizeBytes);
-                payloadLength = sizeCodec.decode(payloadSizeBytes);
+                length.payload = sizeCodec.decode(payloadSizeBytes);
             } else {
-                byte[] payloadBytes = new byte[payloadLength - paddingLength];
+                byte[] payloadBytes = new byte[length.payload - length.padding];
                 in.readBytes(payloadBytes);
                 out.add(Unpooled.wrappedBuffer(auth().open(payloadBytes)));
-                in.skipBytes(paddingLength);
-                payloadLength = INIT_LENGTH;
-                paddingLength = INIT_LENGTH;
+                in.skipBytes(length.padding);
+                length.payload = INIT_LENGTH;
+                length.padding = INIT_LENGTH;
             }
         }
-        updatePayloadLength(payloadLength);
-        updatePaddingLength(paddingLength);
     }
 
     /**
@@ -64,16 +49,25 @@ public interface PayloadDecoder {
      * @param in  [salt][encrypted payload][tag]
      * @param out payload
      */
-    default void decodePacket(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-        int paddingLength = padding().nextPaddingLength();
-        ChunkSizeCodec sizeCodec = sizeCodec();
+    public void decodePacket(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+        int paddingLength = padding.nextPaddingLength();
         int sizeBytes = sizeCodec.sizeBytes();
-        byte[] payloadSizeBytes = new byte[sizeBytes];
-        in.readBytes(payloadSizeBytes);
-        int packetLength = sizeCodec.decode(payloadSizeBytes);
+        int packetLength;
+        if (sizeBytes > 0) {
+            byte[] payloadSizeBytes = new byte[sizeBytes];
+            in.readBytes(payloadSizeBytes);
+            packetLength = sizeCodec.decode(payloadSizeBytes);
+        } else {
+            packetLength = in.readableBytes();
+        }
         byte[] payloadBytes = new byte[packetLength - paddingLength];
         in.readBytes(payloadBytes);
         out.add(Unpooled.wrappedBuffer(auth().open(payloadBytes)));
         in.skipBytes(paddingLength);
+    }
+
+    static class Length {
+        int payload = INIT_LENGTH;
+        int padding = INIT_LENGTH;
     }
 }

@@ -12,14 +12,4 @@
       <artifactId>urban-spork-common</artifactId>
     </dependency>
   </dependencies>
-  <build>
-    <resources>
-      <resource>
-        <directory>resource</directory>
-        <includes>
-          <include>**/*.xml</include>
-        </includes>
-      </resource>
-    </resources>
-  </build>
 </project>

@@ -1,7 +1,8 @@
 package com.urbanspork.common.codec.shadowsocks;
 
-import com.urbanspork.common.codec.SupportedCipher;
+import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import com.urbanspork.test.TestDice;
@@ -28,12 +29,12 @@ class EmbeddedChannelTestCase {
         int port = TestDice.rollPort();
         String host = TestDice.rollHost();
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, host, port);
-        SupportedCipher cipher = TestDice.rollCipher();
-        String password = TestDice.rollString();
+        CipherKind cipher = TestDice.rollCipher();
+        String password = TestDice.rollPassword(Protocols.shadowsocks, cipher);
         EmbeddedChannel client = new EmbeddedChannel();
-        client.pipeline().addLast(new TCPReplayCodec(StreamType.Request, request, password, cipher));
+        client.pipeline().addLast(new TCPReplayCodec(StreamType.Request, request, cipher, password));
         EmbeddedChannel server = new EmbeddedChannel();
-        server.pipeline().addLast(new TCPReplayCodec(StreamType.Response, password, cipher));
+        server.pipeline().addLast(new TCPReplayCodec(StreamType.Response, cipher, password));
         String message = TestDice.rollString();
         client.writeOutbound(Unpooled.wrappedBuffer(message.getBytes()));
         ByteBuf msg = client.readOutbound();
@@ -51,11 +52,11 @@ class EmbeddedChannelTestCase {
     @Test
     void testUDPReplayChannel() {
         EmbeddedChannel channel = new EmbeddedChannel();
-        SupportedCipher cipher = TestDice.rollCipher();
+        CipherKind cipher = TestDice.rollCipher();
         int port = TestDice.rollPort();
         InetSocketAddress replay = new InetSocketAddress("192.168.1.1", port);
         ServerConfig config = new ServerConfig();
-        config.setPassword(TestDice.rollString());
+        config.setPassword(TestDice.rollPassword(Protocols.shadowsocks, cipher));
         config.setCipher(cipher);
         channel.pipeline().addLast(new UDPReplayCodec(config));
         String host = "192.168.255.1";

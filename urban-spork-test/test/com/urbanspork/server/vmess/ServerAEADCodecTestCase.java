@@ -2,7 +2,7 @@ package com.urbanspork.server.vmess;
 
 import com.urbanspork.client.vmess.ClientAEADCodec;
 import com.urbanspork.client.vmess.ClientAEADCodecTestCase;
-import com.urbanspork.common.codec.SupportedCipher;
+import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.vmess.ID;
 import com.urbanspork.common.protocol.vmess.VMess;
@@ -41,7 +41,7 @@ class ServerAEADCodecTestCase {
 
     @Test
     void testDecodeNoMatchedAuthID() {
-        ClientAEADCodec clientCodec = new ClientAEADCodec(SupportedCipher.aes_128_gcm, ADDRESS, UUID);
+        ClientAEADCodec clientCodec = new ClientAEADCodec(CipherKind.aes_128_gcm, ADDRESS, UUID);
         ByteBuf buf = readOutbound(clientCodec);
         ServerConfig config = new ServerConfig();
         config.setPassword(java.util.UUID.randomUUID().toString());

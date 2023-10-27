@@ -27,7 +27,7 @@ class NonceGeneratorTestCase {
     void testGenerateStaticBytes() {
         byte[] bytes = Dice.rollBytes(12);
         byte[] nonce = bytes.clone();
-        NonceGenerator.generateStaticBytes(nonce).generate();
+        NonceGenerator.generateStaticNonce(nonce).generate();
         Assertions.assertArrayEquals(bytes, nonce);
     }
 

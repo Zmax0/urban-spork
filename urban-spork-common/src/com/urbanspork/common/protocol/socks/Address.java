@@ -43,4 +43,17 @@ public interface Address {
             return new InetSocketAddress(hostname, in.readUnsignedShort());
         }
     }
+
+    static int getLength(Socks5CommandRequest request) {
+        Socks5AddressType addrType = request.dstAddrType();
+        if (Socks5AddressType.IPv4.equals(addrType)) {
+            return 1 + 4 + 2;
+        } else if (Socks5AddressType.IPv6.equals(addrType)) {
+            return 1 + 8 * 2 + 2;
+        } else if (Socks5AddressType.DOMAIN.equals(addrType)) {
+            return 1 + 1 + request.dstAddr().length() + 2;
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
 }
