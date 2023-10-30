@@ -4,6 +4,7 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.network.Network;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.shadowsocks.RequestContext;
+import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import com.urbanspork.common.protocol.socks.Socks5;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -21,9 +22,11 @@ import java.util.List;
 public class UDPReplayCodec extends MessageToMessageCodec<DatagramPacket, TernaryDatagramPacket> {
 
     private final AEADCipherCodec cipher;
+    private final StreamType streamType;
 
-    public UDPReplayCodec(ServerConfig config) {
+    public UDPReplayCodec(ServerConfig config, StreamType streamType) {
         this.cipher = AEADCipherCodecs.get(config.getCipher(), config.getPassword());
+        this.streamType = streamType;
     }
 
     @Override
@@ -35,14 +38,14 @@ public class UDPReplayCodec extends MessageToMessageCodec<DatagramPacket, Ternar
         ByteBuf in = Unpooled.buffer();
         DatagramPacket data = msg.packet();
         Socks5CommandRequest request = Socks5.toCommandRequest(Socks5CommandType.CONNECT, data.recipient());
-        cipher.encode(new RequestContext(Network.UDP, null, request), data.content(), in);
+        cipher.encode(new RequestContext(Network.UDP, streamType, request), data.content(), in);
         out.add(new DatagramPacket(in, proxy, data.sender()));
     }
 
     @Override
     protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List<Object> out) throws Exception {
         List<Object> list = new ArrayList<>(2);
-        cipher.decode(new RequestContext(Network.UDP, null, null), msg.content(), list);
+        cipher.decode(new RequestContext(Network.UDP, streamType, null), msg.content(), list);
         out.add(new DatagramPacket((ByteBuf) list.get(1), (InetSocketAddress) list.get(0), msg.sender()));
     }
 }

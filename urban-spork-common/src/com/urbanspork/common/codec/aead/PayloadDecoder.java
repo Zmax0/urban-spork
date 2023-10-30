@@ -46,10 +46,14 @@ public record PayloadDecoder(Authenticator auth, ChunkSizeCodec sizeCodec, Paddi
     /**
      * decrypt packet for UDP
      *
-     * @param in  [salt][encrypted payload][tag]
+     * @param in  [encrypted payload][tag]
      * @param out payload
      */
     public void decodePacket(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+        out.add(decodePacket(in));
+    }
+
+    public ByteBuf decodePacket(ByteBuf in) throws InvalidCipherTextException {
         int paddingLength = padding.nextPaddingLength();
         int sizeBytes = sizeCodec.sizeBytes();
         int packetLength;
@@ -62,8 +66,8 @@ public record PayloadDecoder(Authenticator auth, ChunkSizeCodec sizeCodec, Paddi
         }
         byte[] payloadBytes = new byte[packetLength - paddingLength];
         in.readBytes(payloadBytes);
-        out.add(Unpooled.wrappedBuffer(auth().open(payloadBytes)));
         in.skipBytes(paddingLength);
+        return Unpooled.wrappedBuffer(auth().open(payloadBytes));
     }
 
     static class Length {

@@ -44,6 +44,7 @@ class AEADCipherCodec {
     private PayloadEncoder payloadEncoder;
     private PayloadDecoder payloadDecoder;
     private long packetId;
+    private long clientSessionId;
 
     AEADCipherCodec(CipherKind cipherKind, CipherMethod cipherMethod, String password, int saltSize) {
         this.key = cipherKind.isAead2022() ? Base64.getDecoder().decode(password) : AEAD.generateKey(password.getBytes(), saltSize);
@@ -61,7 +62,7 @@ class AEADCipherCodec {
         boolean isAead2022 = cipherKind.isAead2022();
         Socks5CommandRequest request = context.request();
         if (context.network() == Network.UDP) {
-            encodePacket(request, isAead2022, msg, out);
+            encodePacket(context.streamType(), isAead2022, request, msg, out);
         } else {
             if (payloadEncoder == null) {
                 initTcpPayloadEncoder(out, isAead2022);
@@ -75,7 +76,7 @@ class AEADCipherCodec {
         }
     }
 
-    private void encodePacket(Socks5CommandRequest request, boolean isAead2022, ByteBuf msg, ByteBuf out)
+    private void encodePacket(StreamType streamType, boolean isAead2022, Socks5CommandRequest request, ByteBuf msg, ByteBuf out)
         throws InvalidCipherTextException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
         if (isAead2022) {
             int paddingLength = AEAD2022.getPaddingLength(msg);
@@ -85,10 +86,13 @@ class AEADCipherCodec {
             temp.writerIndex(0);
             temp.writeLong(0); // client_session_id
             temp.writeLong(packetId++); // packet_id
-            temp.writeByte(StreamType.Request.getValue());
-            temp.writeLong(AEAD2022.now());
+            temp.writeByte(streamType.getValue());
+            temp.writeLong(AEAD2022.newTimestamp());
             temp.writeShort(paddingLength);
             temp.writeBytes(Dice.rollBytes(paddingLength));
+            if (StreamType.Response == streamType) {
+                temp.writeLong(clientSessionId);
+            }
             Address.encode(request, temp);
             temp.writeBytes(msg);
             byte[] nonce = new byte[12];
@@ -177,28 +181,24 @@ class AEADCipherCodec {
             header.getBytes(4, nonce);
             long serverSessionId = header.readLong();
             header.readLong(); // packet_id
-            List<Object> list = new ArrayList<>(1);
-            AEAD2022.UDP.newPayloadDecoder(cipherMethod, key, serverSessionId, nonce).decodePacket(in, list);
-            ByteBuf decoded = (ByteBuf) list.get(0);
-            decoded.readByte(); // stream type
-            validateTimestamp(decoded);
-            int paddingLength = decoded.readUnsignedShort();
+            ByteBuf packet = AEAD2022.UDP.newPayloadDecoder(cipherMethod, key, serverSessionId, nonce).decodePacket(in);
+            packet.readByte(); // stream type
+            AEAD2022.validateTimestamp(packet.readLong());
+            int paddingLength = packet.readUnsignedShort();
             if (paddingLength > 0) {
-                decoded.skipBytes(paddingLength);
+                packet.skipBytes(paddingLength);
             }
             if (StreamType.Request == streamType) {
-                decoded.readLong(); // client_session_id
+                clientSessionId = packet.readLong(); // client_session_id
             }
-            Address.decode(decoded, out);
-            out.add(decoded.slice());
+            Address.decode(packet, out);
+            out.add(packet.slice());
         } else {
             byte[] salt = new byte[requestSalt.length];
             in.readBytes(salt);
-            List<Object> list = new ArrayList<>(1);
-            AEAD.UDP.newPayloadDecoder(cipherMethod, key, salt).decodePacket(in, list);
-            ByteBuf decoded = (ByteBuf) list.get(0);
-            Address.decode(decoded, out);
-            out.add(decoded.slice());
+            ByteBuf packet = AEAD.UDP.newPayloadDecoder(cipherMethod, key, salt).decodePacket(in);
+            Address.decode(packet, out);
+            out.add(packet.slice());
         }
     }
 
@@ -236,12 +236,14 @@ class AEADCipherCodec {
             String msg = String.format("invalid stream type, expecting %d, but found %d", expectedStreamTypeByte, streamTypeByte);
             throw new DecoderException(msg);
         }
-        validateTimestamp(headerBuf);
-        if (logger.isTraceEnabled()) {
-            headerBuf.readBytes(requestSalt);
-            logger.trace("request salt {}", Base64.getEncoder().encodeToString(requestSalt));
-        } else {
-            headerBuf.skipBytes(saltSize);
+        AEAD2022.validateTimestamp(headerBuf.readLong());
+        if (StreamType.Request == streamType) {
+            if (logger.isTraceEnabled()) {
+                headerBuf.readBytes(requestSalt);
+                logger.trace("request salt {}", Base64.getEncoder().encodeToString(requestSalt));
+            } else {
+                headerBuf.skipBytes(saltSize);
+            }
         }
         int length = headerBuf.readUnsignedShort();
         if (in.readableBytes() < length + tagSize) {
@@ -275,15 +277,5 @@ class AEADCipherCodec {
         }
         out.addAll(list);
         this.payloadDecoder = newPayloadDecoder;
-    }
-
-    private static void validateTimestamp(ByteBuf decoded) {
-        long timestamp = decoded.readLong();
-        long now = AEAD2022.now();
-        long diff = timestamp - now;
-        if (Math.abs(diff) > AEAD2022.SERVER_STREAM_TIMESTAMP_MAX_DIFF) {
-            String msg = String.format("invalid timestamp %d - now %d = %d", timestamp, now, diff);
-            throw new DecoderException(msg);
-        }
     }
 }

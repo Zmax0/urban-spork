@@ -51,23 +51,25 @@ class EmbeddedChannelTestCase {
 
     @Test
     void testUDPReplayChannel() {
-        EmbeddedChannel channel = new EmbeddedChannel();
+        EmbeddedChannel client = new EmbeddedChannel();
+        EmbeddedChannel server = new EmbeddedChannel();
         CipherKind cipher = TestDice.rollCipher();
         int port = TestDice.rollPort();
         InetSocketAddress replay = new InetSocketAddress("192.168.1.1", port);
         ServerConfig config = new ServerConfig();
         config.setPassword(TestDice.rollPassword(Protocols.shadowsocks, cipher));
         config.setCipher(cipher);
-        channel.pipeline().addLast(new UDPReplayCodec(config));
+        client.pipeline().addLast(new UDPReplayCodec(config, StreamType.Request));
+        server.pipeline().addLast(new UDPReplayCodec(config, StreamType.Response));
         String host = "192.168.255.1";
         String message = TestDice.rollString();
         InetSocketAddress dst = new InetSocketAddress(host, port);
         TernaryDatagramPacket noRelayPacket = new TernaryDatagramPacket(new DatagramPacket(Unpooled.wrappedBuffer(message.getBytes()), dst), null);
-        Assertions.assertThrows(EncoderException.class, () -> channel.writeOutbound(noRelayPacket));
-        channel.writeOutbound(new TernaryDatagramPacket(new DatagramPacket(Unpooled.wrappedBuffer(message.getBytes()), dst), replay));
-        DatagramPacket out = channel.readOutbound();
-        channel.writeInbound(out);
-        DatagramPacket in = channel.readInbound();
+        Assertions.assertThrows(EncoderException.class, () -> client.writeOutbound(noRelayPacket));
+        client.writeOutbound(new TernaryDatagramPacket(new DatagramPacket(Unpooled.wrappedBuffer(message.getBytes()), dst), replay));
+        DatagramPacket out = client.readOutbound();
+        server.writeInbound(out);
+        DatagramPacket in = server.readInbound();
         Assertions.assertEquals(in.recipient(), dst);
         ByteBuf content = in.content();
         Assertions.assertEquals(message, content.readCharSequence(content.readableBytes(), StandardCharsets.UTF_8));
