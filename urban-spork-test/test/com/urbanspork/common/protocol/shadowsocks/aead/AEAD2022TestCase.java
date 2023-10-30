@@ -1,5 +1,8 @@
 package com.urbanspork.common.protocol.shadowsocks.aead;
 
+import com.urbanspork.common.codec.CipherKind;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.DecoderException;
 import org.bouncycastle.crypto.digests.Blake3Digest;
 import org.bouncycastle.crypto.params.Blake3Parameters;
 import org.junit.jupiter.api.Assertions;
@@ -29,5 +32,21 @@ class AEAD2022TestCase {
         byte[] salt = Base64.getDecoder().decode("3oFO0VyLyGI4nFN0M9P+62vPND/L6v8IingaPJWTbJA=");
         byte[] bytes = AEAD2022.TCP.sessionSubkey(key, salt);
         Assertions.assertEquals("EdNE+4U8dVnHT0+poAFDK2bdlwfrHT61sUNr9WYPh+E=", Base64.getEncoder().encodeToString(bytes));
+    }
+
+    @Test
+    void testValidateTimestamp() {
+        long timestamp = AEAD2022.newTimestamp() + 2 * AEAD2022.SERVER_STREAM_TIMESTAMP_MAX_DIFF;
+        Assertions.assertThrows(DecoderException.class, () -> AEAD2022.validateTimestamp(timestamp));
+    }
+
+    @Test
+    void testGetPaddingLength() {
+        Assertions.assertTrue(AEAD2022.getPaddingLength(Unpooled.EMPTY_BUFFER) > 0);
+    }
+
+    @Test
+    void testGetNonceLength() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AEAD2022.UDP.getNonceLength(CipherKind.aes_128_gcm));
     }
 }

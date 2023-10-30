@@ -13,6 +13,7 @@ import com.urbanspork.common.codec.chunk.EmptyChunkSizeParser;
 import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.DecoderException;
 import org.bouncycastle.crypto.digests.Blake3Digest;
 import org.bouncycastle.crypto.params.Blake3Parameters;
 
@@ -105,7 +106,7 @@ public interface AEAD2022 {
             }
             ByteBuf fixed = Unpooled.wrappedBuffer(new byte[1 + 8 + saltLength + 2]);
             fixed.setByte(0, streamType.getValue());
-            fixed.setLong(1, AEAD2022.now());
+            fixed.setLong(1, AEAD2022.newTimestamp());
             if (requestSalt != null) {
                 fixed.setBytes(1 + 8, requestSalt);
             }
@@ -199,8 +200,17 @@ public interface AEAD2022 {
         }
     }
 
-    static long now() {
+    static long newTimestamp() {
         return Instant.now().getEpochSecond();
+    }
+
+    static void validateTimestamp(long timestamp) {
+        long now = AEAD2022.newTimestamp();
+        long diff = timestamp - now;
+        if (Math.abs(diff) > AEAD2022.SERVER_STREAM_TIMESTAMP_MAX_DIFF) {
+            String msg = String.format("invalid timestamp %d - now %d = %d", timestamp, now, diff);
+            throw new DecoderException(msg);
+        }
     }
 
     static int getPaddingLength(ByteBuf msg) {

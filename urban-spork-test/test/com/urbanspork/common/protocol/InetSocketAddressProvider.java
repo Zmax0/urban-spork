@@ -12,8 +12,8 @@ public class InetSocketAddressProvider implements ArgumentsProvider {
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
         return Stream.of(
-            InetSocketAddress.createUnresolved("www.w3.org", 80),
-            InetSocketAddress.createUnresolved("www.urban-spork.com", 443),
+            InetSocketAddress.createUnresolved("www.example.com", 80),
+            InetSocketAddress.createUnresolved("www.example.com", 443),
             new InetSocketAddress(0),
             new InetSocketAddress("192.168.89.9", TestDice.rollPort()),
             new InetSocketAddress("abcd:ef01:2345:6789:abcd:ef01:2345:6789", TestDice.rollPort())

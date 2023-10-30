@@ -16,6 +16,7 @@ public class SessionTestCase {
         Assertions.assertArrayEquals(session.getResponseBodyIV(), another.getResponseBodyIV());
         Assertions.assertArrayEquals(session.getResponseBodyKey(), another.getResponseBodyKey());
         Assertions.assertNotEquals(session.responseHeader, another.responseHeader);
+        Assertions.assertNotEquals(session.toString(), another.toString());
     }
 
     public static ClientSession another(ClientSession src) {
