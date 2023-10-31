@@ -47,7 +47,7 @@ class AEADCipherCodecTestCase {
 
     @Test
     void testIncorrectPassword() {
-        String password = TestDice.rollString(10);
+        String password = Base64.getEncoder().encodeToString(Dice.rollBytes(10));
         Assertions.assertThrows(IllegalArgumentException.class, () -> AEADCipherCodecs.get(CipherKind.aead2022_blake3_aes_128_gcm, password));
     }
 
