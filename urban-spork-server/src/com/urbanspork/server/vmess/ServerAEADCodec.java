@@ -1,8 +1,8 @@
 package com.urbanspork.server.vmess;
 
 import com.urbanspork.common.channel.AttributeKeys;
-import com.urbanspork.common.codec.aead.CipherCodec;
-import com.urbanspork.common.codec.aead.CipherCodecs;
+import com.urbanspork.common.codec.aead.CipherMethod;
+import com.urbanspork.common.codec.aead.CipherMethods;
 import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.codec.vmess.AEADBodyCodec;
@@ -53,7 +53,7 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
     public void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         if (payloadEncoder == null) {
             byte[] aeadResponseHeaderLengthEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_LEN_KEY.getBytes());
-            CipherCodec cipher = CipherCodecs.AES_GCM.get();
+            CipherMethod cipher = CipherMethods.AES_GCM.get();
             int nonceSize = cipher.nonceSize();
             byte[] aeadResponseHeaderLengthEncryptionIV = KDF.kdf(session.getResponseBodyIV(), nonceSize, KDF_SALT_AEAD_RESP_HEADER_LEN_IV.getBytes());
             int option = RequestOption.toMask(header.option());

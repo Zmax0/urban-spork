@@ -6,15 +6,7 @@ import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
-public interface PayloadEncoder {
-
-    int payloadLimit();
-
-    Authenticator auth();
-
-    ChunkSizeCodec sizeCodec();
-
-    PaddingLengthGenerator padding();
+public record PayloadEncoder(Authenticator auth, ChunkSizeCodec sizeCodec, PaddingLengthGenerator padding, int payloadLimit) {
 
     /**
      * encrypt payload for TCP
@@ -22,7 +14,7 @@ public interface PayloadEncoder {
      * @param msg payload
      * @param out [salt][encrypted payload length][length tag][encrypted payload][payload tag]
      */
-    default void encodePayload(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+    public void encodePayload(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         while (msg.isReadable()) {
             seal(msg, out);
         }
@@ -34,21 +26,24 @@ public interface PayloadEncoder {
      * @param msg payload
      * @param out [salt][encrypted payload][tag]
      */
-    default void encodePacket(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+    public void encodePacket(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         seal(msg, out);
     }
 
     private void seal(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
-        int paddingLength = 0;
-        PaddingLengthGenerator padding = padding();
-        if (padding != null) {
-            paddingLength = padding.nextPaddingLength();
+        int paddingLength = padding.nextPaddingLength();
+        int overhead = auth.overhead();
+        int sizeBytes = sizeCodec.sizeBytes();
+        int encryptedSize = Math.min(msg.readableBytes(), payloadLimit - overhead - sizeBytes - paddingLength);
+        if (sizeBytes > 0) {
+            byte[] encodedSizeBytes = sizeCodec.encode(encryptedSize + paddingLength + overhead);
+            out.writeBytes(encodedSizeBytes);
         }
-        int encryptedSize = Math.min(msg.readableBytes(), payloadLimit() - auth().overhead() - sizeCodec().sizeBytes() - paddingLength);
-        out.writeBytes(sizeCodec().encode(encryptedSize + paddingLength + auth().overhead()));
         byte[] in = new byte[encryptedSize];
         msg.readBytes(in);
-        out.writeBytes(auth().seal(in));
-        out.writeBytes(Dice.rollBytes(paddingLength));
+        out.writeBytes(auth.seal(in));
+        if (paddingLength > 0) {
+            out.writeBytes(Dice.rollBytes(paddingLength));
+        }
     }
 }

@@ -4,6 +4,7 @@ import com.urbanspork.client.AbstractClientUDPReplayHandler;
 import com.urbanspork.common.codec.shadowsocks.UDPReplayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.DatagramPacket;
@@ -42,7 +43,7 @@ public class ClientUDPReplayHandler extends AbstractClientUDPReplayHandler<InetS
                 @Override
                 protected void initChannel(Channel ch) {
                     ch.pipeline().addLast(
-                        new UDPReplayCodec(config),
+                        new UDPReplayCodec(config, StreamType.Request),
                         new InboundHandler(inboundChannel, sender)// server->client->sender
                     );
                 }

@@ -1,195 +1,281 @@
 package com.urbanspork.common.codec.shadowsocks;
 
-import com.urbanspork.common.codec.BytesGenerator;
-import com.urbanspork.common.codec.NonceGenerator;
-import com.urbanspork.common.codec.PaddingLengthGenerator;
+import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.codec.aead.Authenticator;
-import com.urbanspork.common.codec.aead.CipherCodec;
+import com.urbanspork.common.codec.aead.CipherMethod;
 import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
-import com.urbanspork.common.codec.chunk.AEADChunkSizeParser;
-import com.urbanspork.common.codec.chunk.ChunkSizeCodec;
-import com.urbanspork.common.crypto.GeneralDigests;
+import com.urbanspork.common.crypto.AES;
 import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.protocol.shadowsocks.RequestContext;
+import com.urbanspork.common.protocol.shadowsocks.StreamType;
+import com.urbanspork.common.protocol.shadowsocks.aead.AEAD;
+import com.urbanspork.common.protocol.shadowsocks.aead.AEAD2022;
+import com.urbanspork.common.protocol.socks.Address;
 import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageCodec;
+import io.netty.handler.codec.DecoderException;
+import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
-import org.bouncycastle.crypto.params.HKDFParameters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import java.security.InvalidKeyException;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
-
-import static java.lang.System.arraycopy;
 
 /**
  * AEAD Cipher Codec
  *
  * @author Zmax0
- * @see <a href=https://shadowsocks.org/doc/aead.html">https://shadowsocks.org/doc/aead.html</a>
+ * @see <a href=https://shadowsocks.org/doc/aead.html">AEAD ciphers</a>
  */
-class AEADCipherCodec extends ByteToMessageCodec<ByteBuf> {
-    /*
-     * TCP per-session [salt][encrypted payload length][length tag][encrypted payload][payload tag]
-     * UDP per-packet [salt][encrypted payload][payload tag]
-     */
+class AEADCipherCodec {
+
+    private static final Logger logger = LoggerFactory.getLogger(AEADCipherCodec.class);
     private final byte[] key;
-    private final int saltSize;
-    private final CipherCodec cipherCodec;
-    private final Network network;
-    private int payloadLength = PayloadDecoder.INIT_LENGTH;
+    private final CipherKind cipherKind;
+    private final CipherMethod cipherMethod;
+    private final byte[] requestSalt;
     private PayloadEncoder payloadEncoder;
     private PayloadDecoder payloadDecoder;
+    private long packetId;
+    private long clientSessionId;
 
-    AEADCipherCodec(String password, int saltSize, CipherCodec cipherCodec, Network network) {
-        this.key = generateKey(password.getBytes(), saltSize);
-        this.saltSize = saltSize;
-        this.cipherCodec = cipherCodec;
-        this.network = network;
+    AEADCipherCodec(CipherKind cipherKind, CipherMethod cipherMethod, String password, int saltSize) {
+        this.key = cipherKind.isAead2022() ? Base64.getDecoder().decode(password) : AEAD.generateKey(password.getBytes(), saltSize);
+        if (key.length != saltSize) {
+            String msg = String.format("%s is expecting a %d bytes key, but password: %s (%d bytes after decode)",
+                cipherKind, saltSize, password, key.length);
+            throw new IllegalArgumentException(msg);
+        }
+        this.cipherKind = cipherKind;
+        this.cipherMethod = cipherMethod;
+        this.requestSalt = new byte[saltSize];
     }
 
-    @Override
-    protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
-        if (network == Network.UDP) {
-            byte[] salt = Dice.rollBytes(saltSize);
-            out.writeBytes(salt);
-            newPayloadEncoder(salt).encodePacket(msg, out);
+    public void encode(RequestContext context, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+        boolean isAead2022 = cipherKind.isAead2022();
+        Socks5CommandRequest request = context.request();
+        if (context.network() == Network.UDP) {
+            encodePacket(context.streamType(), isAead2022, request, msg, out);
         } else {
             if (payloadEncoder == null) {
-                byte[] salt = Dice.rollBytes(saltSize);
-                out.writeBytes(salt);
-                payloadEncoder = newPayloadEncoder(salt);
+                initTcpPayloadEncoder(out, isAead2022);
+                if (StreamType.Request == context.streamType()) {
+                    msg = handleRequestHeader(isAead2022, request, msg, out);
+                } else {
+                    handleResponseHeader(isAead2022, msg, out);
+                }
             }
             payloadEncoder.encodePayload(msg, out);
         }
     }
 
-    @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-        if (network == Network.UDP) {
-            byte[] salt = new byte[saltSize];
-            in.readBytes(salt);
-            newPayloadDecoder(salt).decodePacket(in, out);
+    private void encodePacket(StreamType streamType, boolean isAead2022, Socks5CommandRequest request, ByteBuf msg, ByteBuf out)
+        throws InvalidCipherTextException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+        if (isAead2022) {
+            int paddingLength = AEAD2022.getPaddingLength(msg);
+            int nonceLength = AEAD2022.UDP.getNonceLength(cipherKind);
+            int tagSize = cipherMethod.tagSize();
+            ByteBuf temp = Unpooled.wrappedBuffer(new byte[nonceLength + 8 + 8 + 1 + 8 + 2 + paddingLength + Address.getLength(request) + msg.readableBytes() + tagSize]);
+            temp.writerIndex(0);
+            temp.writeLong(0); // client_session_id
+            temp.writeLong(packetId++); // packet_id
+            temp.writeByte(streamType.getValue());
+            temp.writeLong(AEAD2022.newTimestamp());
+            temp.writeShort(paddingLength);
+            temp.writeBytes(Dice.rollBytes(paddingLength));
+            if (StreamType.Response == streamType) {
+                temp.writeLong(clientSessionId);
+            }
+            Address.encode(request, temp);
+            temp.writeBytes(msg);
+            byte[] nonce = new byte[12];
+            temp.getBytes(4, nonce);
+            byte[] header = new byte[16];
+            temp.readBytes(header);
+            out.writeBytes(AES.ECB_NoPadding.encrypt(key, header));
+            AEAD2022.UDP.newPayloadEncoder(cipherMethod, key, 0, nonce).encodePacket(temp, out);
         } else {
-            if (payloadDecoder == null && in.readableBytes() >= saltSize) {
-                byte[] salt = new byte[saltSize];
-                in.readBytes(salt);
-                payloadDecoder = newPayloadDecoder(salt);
+            byte[] salt = Dice.rollBytes(requestSalt.length);
+            out.writeBytes(salt);
+            ByteBuf temp = Unpooled.buffer(Address.getLength(request));
+            Address.encode(request, temp);
+            AEAD.UDP.newPayloadEncoder(cipherMethod, key, salt).encodePacket(Unpooled.wrappedBuffer(temp, msg), out);
+            msg.skipBytes(msg.readableBytes());
+        }
+    }
+
+    private void initTcpPayloadEncoder(ByteBuf out, boolean isAead2022) {
+        byte[] salt = Dice.rollBytes(requestSalt.length);
+        if (logger.isTraceEnabled()) {
+            logger.trace("new request salt {}", Base64.getEncoder().encodeToString(salt));
+        }
+        out.writeBytes(salt);
+        if (isAead2022) {
+            payloadEncoder = AEAD2022.TCP.newPayloadEncoder(cipherMethod, key, salt);
+        } else {
+            payloadEncoder = AEAD.TCP.newPayloadEncoder(cipherMethod, key, salt);
+        }
+    }
+
+    private ByteBuf handleRequestHeader(boolean isAead2022, Socks5CommandRequest request, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+        ByteBuf temp = Unpooled.buffer();
+        Address.encode(request, temp);
+        if (isAead2022) {
+            int paddingLength = AEAD2022.getPaddingLength(msg);
+            temp.writeShort(paddingLength);
+            temp.writeBytes(Dice.rollBytes(paddingLength));
+        }
+        temp = Unpooled.wrappedBuffer(temp, msg);
+        msg.skipBytes(msg.readableBytes());
+        if (isAead2022) {
+            for (byte[] bytes : AEAD2022.TCP.newRequestHeader(temp)) {
+                out.writeBytes(payloadEncoder.auth().seal(bytes));
             }
-            if (payloadDecoder != null) {
-                payloadDecoder.decodePayload(in, out);
+        }
+        return temp;
+    }
+
+    private void handleResponseHeader(boolean isAead2022, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+        if (isAead2022) {
+            for (byte[] bytes : AEAD2022.TCP.newResponseHeader(requestSalt, msg)) {
+                out.writeBytes(payloadEncoder.auth().seal(bytes));
             }
         }
     }
 
-    // ensure key.length equals salt.length
-    private byte[] generateKey(byte[] password, int size) {
-        byte[] encoded = new byte[size];
-        byte[] passwordDigest = GeneralDigests.md5.get(password);
-        byte[] container = new byte[password.length + passwordDigest.length];
-        arraycopy(passwordDigest, 0, encoded, 0, Math.min(size, passwordDigest.length));
-        int index = passwordDigest.length;
-        while (index < size) {
-            arraycopy(passwordDigest, 0, container, 0, passwordDigest.length);
-            arraycopy(password, 0, container, passwordDigest.length, password.length);
-            passwordDigest = GeneralDigests.md5.get(container);
-            arraycopy(passwordDigest, 0, encoded, index, Math.min(size - index, passwordDigest.length));
-            index += passwordDigest.length;
+    public void decode(RequestContext header, ByteBuf in, List<Object> out) throws InvalidCipherTextException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+        if (header.network() == Network.UDP) {
+            decodePacket(header.streamType(), cipherKind.isAead2022(), in, out);
+        } else {
+            if (payloadDecoder == null) {
+                initPayloadDecoder(cipherKind, header.streamType(), in, out);
+                if (payloadDecoder == null) {
+                    return;
+                }
+            }
+            payloadDecoder.decodePayload(in, out);
         }
-        return encoded;
     }
 
-    private PayloadEncoder newPayloadEncoder(byte[] salt) {
-        Authenticator auth = new Authenticator(cipherCodec, hkdfsha1(key, salt), NonceGenerator.generateInitialAEADNonce(),
-            BytesGenerator.generateEmptyBytes());
-        AEADChunkSizeParser sizeCodec = new AEADChunkSizeParser(auth);
-        return new PayloadEncoder() {
-            @Override
-            public int payloadLimit() {
-                return 0xffff;
+    private void decodePacket(StreamType streamType, boolean isAead2022, ByteBuf in, List<Object> out)
+        throws InvalidCipherTextException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+        if (isAead2022) {
+            int nonceLength = AEAD2022.UDP.getNonceLength(cipherKind);
+            int tagSize = cipherMethod.tagSize();
+            int headerLength = nonceLength + tagSize + 8 + 8 + 1 + 8 + 2;
+            if (headerLength > in.readableBytes()) {
+                String msg = String.format("packet too short, at least %d bytes, but found %d bytes", headerLength, in.readableBytes());
+                throw new DecoderException(msg);
             }
+            byte[] headerBytes = new byte[16];
+            in.readBytes(headerBytes);
+            ByteBuf header = Unpooled.wrappedBuffer(AES.ECB_NoPadding.decrypt(key, headerBytes));
+            byte[] nonce = new byte[12];
+            header.getBytes(4, nonce);
+            long serverSessionId = header.readLong();
+            header.readLong(); // packet_id
+            ByteBuf packet = AEAD2022.UDP.newPayloadDecoder(cipherMethod, key, serverSessionId, nonce).decodePacket(in);
+            packet.readByte(); // stream type
+            AEAD2022.validateTimestamp(packet.readLong());
+            int paddingLength = packet.readUnsignedShort();
+            if (paddingLength > 0) {
+                packet.skipBytes(paddingLength);
+            }
+            if (StreamType.Request == streamType) {
+                clientSessionId = packet.readLong(); // client_session_id
+            }
+            Address.decode(packet, out);
+            out.add(packet.slice());
+        } else {
+            byte[] salt = new byte[requestSalt.length];
+            in.readBytes(salt);
+            ByteBuf packet = AEAD.UDP.newPayloadDecoder(cipherMethod, key, salt).decodePacket(in);
+            Address.decode(packet, out);
+            out.add(packet.slice());
+        }
+    }
 
-            @Override
-            public Authenticator auth() {
-                return auth;
-            }
+    private void initPayloadDecoder(CipherKind kind, StreamType streamType, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+        if (in.readableBytes() < requestSalt.length) {
+            return;
+        }
+        in.markReaderIndex();
+        in.readBytes(requestSalt);
+        if (logger.isTraceEnabled()) {
+            logger.trace("request salt {}", Base64.getEncoder().encodeToString(requestSalt));
+        }
+        if (kind.isAead2022()) {
+            initAEAD2022PayloadDecoder(streamType, in, out, requestSalt);
+        } else {
+            initPayloadDecoder(streamType, in, out, requestSalt);
+        }
+    }
 
-            @Override
-            public ChunkSizeCodec sizeCodec() {
-                return sizeCodec;
-            }
-
-            @Override
-            public PaddingLengthGenerator padding() {
-                return null;
-            }
-
-            @Override
-            public void encodePacket(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
-                byte[] in = new byte[msg.readableBytes()];
-                msg.readBytes(in);
-                out.writeBytes(auth().seal(in));
-            }
+    private void initAEAD2022PayloadDecoder(StreamType streamType, ByteBuf in, List<Object> out, byte[] salt) throws InvalidCipherTextException {
+        int tagSize = cipherMethod.tagSize();
+        PayloadDecoder newPayloadDecoder = AEAD2022.TCP.newPayloadDecoder(cipherMethod, key, salt);
+        int saltSize = StreamType.Response == streamType ? 0 : requestSalt.length;
+        byte[] encryptedHeaderBytes = new byte[1 + 8 + saltSize + 2 + tagSize];
+        in.readBytes(encryptedHeaderBytes);
+        Authenticator auth = newPayloadDecoder.auth();
+        ByteBuf headerBuf = Unpooled.wrappedBuffer(auth.open(encryptedHeaderBytes));
+        byte streamTypeByte = headerBuf.readByte();
+        StreamType expectedStreamType = switch (streamType) {
+            case Request -> StreamType.Response;
+            case Response -> StreamType.Request;
         };
+        byte expectedStreamTypeByte = expectedStreamType.getValue();
+        if (expectedStreamTypeByte != streamTypeByte) {
+            String msg = String.format("invalid stream type, expecting %d, but found %d", expectedStreamTypeByte, streamTypeByte);
+            throw new DecoderException(msg);
+        }
+        AEAD2022.validateTimestamp(headerBuf.readLong());
+        if (StreamType.Request == streamType) {
+            if (logger.isTraceEnabled()) {
+                headerBuf.readBytes(requestSalt);
+                logger.trace("request salt {}", Base64.getEncoder().encodeToString(requestSalt));
+            } else {
+                headerBuf.skipBytes(saltSize);
+            }
+        }
+        int length = headerBuf.readUnsignedShort();
+        if (in.readableBytes() < length + tagSize) {
+            in.resetReaderIndex();
+            return;
+        }
+        byte[] encryptedPayloadBytes = new byte[length + tagSize];
+        in.readBytes(encryptedPayloadBytes);
+        ByteBuf first = Unpooled.wrappedBuffer(auth.open(encryptedPayloadBytes));
+        if (StreamType.Response == streamType) {
+            Address.decode(first, out);
+            int paddingLength = first.readUnsignedShort();
+            first.skipBytes(paddingLength);
+            out.add(first);
+        } else {
+            out.add(first);
+        }
+        this.payloadDecoder = newPayloadDecoder;
     }
 
-    private PayloadDecoder newPayloadDecoder(byte[] salt) {
-        Authenticator auth = new Authenticator(cipherCodec, hkdfsha1(key, salt), NonceGenerator.generateInitialAEADNonce(),
-            BytesGenerator.generateEmptyBytes());
-        AEADChunkSizeParser sizeCodec = new AEADChunkSizeParser(auth);
-        return new PayloadDecoder() {
-            @Override
-            public int payloadLength() {
-                return AEADCipherCodec.this.payloadLength;
-            }
-
-            @Override
-            public void updatePayloadLength(int payloadLength) {
-                AEADCipherCodec.this.payloadLength = payloadLength;
-            }
-
-            @Override
-            public int paddingLength() {
-                return 0;
-            }
-
-            @Override
-            public void updatePaddingLength(int paddingLength) {
-                // unsupported
-            }
-
-            @Override
-            public Authenticator auth() {
-                return auth;
-            }
-
-            @Override
-            public ChunkSizeCodec sizeCodec() {
-                return sizeCodec;
-            }
-
-            @Override
-            public PaddingLengthGenerator padding() {
-                return null;
-            }
-
-            @Override
-            public void decodePacket(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-                byte[] payloadBytes = new byte[in.readableBytes()];
-                in.readBytes(payloadBytes);
-                out.add(Unpooled.wrappedBuffer(auth().open(payloadBytes)));
-            }
-        };
-    }
-
-    private byte[] hkdfsha1(byte[] key, byte[] salt) {
-        byte[] out = new byte[salt.length];
-        HKDFBytesGenerator generator = new HKDFBytesGenerator(new SHA1Digest());
-        generator.init(new HKDFParameters(key, salt, "ss-subkey".getBytes()));
-        generator.generateBytes(out, 0, out.length);
-        return out;
+    private void initPayloadDecoder(StreamType streamType, ByteBuf in, List<Object> out, byte[] salt) throws InvalidCipherTextException {
+        PayloadDecoder newPayloadDecoder = AEAD.TCP.newPayloadDecoder(cipherMethod, key, salt);
+        List<Object> list = new ArrayList<>(1);
+        newPayloadDecoder.decodePayload(in, list);
+        if (list.isEmpty()) {
+            in.resetReaderIndex();
+            return;
+        }
+        if (StreamType.Response == streamType) {
+            Address.decode((ByteBuf) list.get(0), out);
+        }
+        out.addAll(list);
+        this.payloadDecoder = newPayloadDecoder;
     }
 }

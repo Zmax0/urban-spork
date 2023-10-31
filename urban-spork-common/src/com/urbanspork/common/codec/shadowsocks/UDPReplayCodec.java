@@ -3,13 +3,16 @@ package com.urbanspork.common.codec.shadowsocks;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.network.Network;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
-import com.urbanspork.common.protocol.socks.Address;
+import com.urbanspork.common.protocol.shadowsocks.RequestContext;
+import com.urbanspork.common.protocol.shadowsocks.StreamType;
+import com.urbanspork.common.protocol.socks.Socks5;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.EncoderException;
 import io.netty.handler.codec.MessageToMessageCodec;
+import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 
 import java.net.InetSocketAddress;
@@ -19,9 +22,11 @@ import java.util.List;
 public class UDPReplayCodec extends MessageToMessageCodec<DatagramPacket, TernaryDatagramPacket> {
 
     private final AEADCipherCodec cipher;
+    private final StreamType streamType;
 
-    public UDPReplayCodec(ServerConfig config) {
-        this.cipher = AEADCipherCodecs.get(config.getPassword(), config.getCipher(), Network.UDP);
+    public UDPReplayCodec(ServerConfig config, StreamType streamType) {
+        this.cipher = AEADCipherCodecs.get(config.getCipher(), config.getPassword());
+        this.streamType = streamType;
     }
 
     @Override
@@ -32,20 +37,15 @@ public class UDPReplayCodec extends MessageToMessageCodec<DatagramPacket, Ternar
         }
         ByteBuf in = Unpooled.buffer();
         DatagramPacket data = msg.packet();
-        Address.encode(Socks5CommandType.CONNECT, data.recipient(), in);
-        in.writeBytes(data.content().slice());
-        ByteBuf content = ctx.alloc().buffer(in.readableBytes());
-        cipher.encode(ctx, in, content);
-        in.release();
-        out.add(new DatagramPacket(content, proxy, data.sender()));
+        Socks5CommandRequest request = Socks5.toCommandRequest(Socks5CommandType.CONNECT, data.recipient());
+        cipher.encode(new RequestContext(Network.UDP, streamType, request), data.content(), in);
+        out.add(new DatagramPacket(in, proxy, data.sender()));
     }
 
     @Override
     protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List<Object> out) throws Exception {
-        List<Object> list = new ArrayList<>(1);
-        cipher.decode(ctx, msg.content(), list);
-        ByteBuf in = (ByteBuf) list.get(0);
-        InetSocketAddress recipient = Address.decode(in);
-        out.add(new DatagramPacket(in.retainedDuplicate(), recipient, msg.sender()));
+        List<Object> list = new ArrayList<>(2);
+        cipher.decode(new RequestContext(Network.UDP, streamType, null), msg.content(), list);
+        out.add(new DatagramPacket((ByteBuf) list.get(1), (InetSocketAddress) list.get(0), msg.sender()));
     }
 }

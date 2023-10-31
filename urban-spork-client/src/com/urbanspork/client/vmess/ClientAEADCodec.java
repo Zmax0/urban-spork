@@ -1,8 +1,8 @@
 package com.urbanspork.client.vmess;
 
-import com.urbanspork.common.codec.SupportedCipher;
-import com.urbanspork.common.codec.aead.CipherCodec;
-import com.urbanspork.common.codec.aead.CipherCodecs;
+import com.urbanspork.common.codec.CipherKind;
+import com.urbanspork.common.codec.aead.CipherMethod;
+import com.urbanspork.common.codec.aead.CipherMethods;
 import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.codec.vmess.AEADBodyCodec;
@@ -40,11 +40,11 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
     private PayloadEncoder bodyEncoder;
     private PayloadDecoder bodyDecoder;
 
-    public ClientAEADCodec(SupportedCipher cipher, Socks5CommandRequest address, String uuid) {
+    public ClientAEADCodec(CipherKind cipher, Socks5CommandRequest address, String uuid) {
         this(cipher, RequestCommand.TCP, address, uuid);
     }
 
-    ClientAEADCodec(SupportedCipher cipher, RequestCommand command, Socks5CommandRequest address, String uuid) {
+    ClientAEADCodec(CipherKind cipher, RequestCommand command, Socks5CommandRequest address, String uuid) {
         this(RequestHeader.defaultHeader(SecurityType.valueOf(cipher), command, address, uuid), new ClientSession());
     }
 
@@ -85,7 +85,7 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
     @Override
     public void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         if (bodyDecoder == null) {
-            CipherCodec cipher = CipherCodecs.AES_GCM.get();
+            CipherMethod cipher = CipherMethods.AES_GCM.get();
             int tagSize = cipher.tagSize();
             int nonceSize = cipher.nonceSize();
             byte[] aeadResponseHeaderLengthEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_LEN_KEY.getBytes());

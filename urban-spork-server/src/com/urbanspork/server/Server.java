@@ -7,6 +7,7 @@ import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.Direction;
+import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -86,7 +87,7 @@ public class Server {
                         @Override
                         protected void initChannel(Channel ch) {
                             ch.pipeline().addLast(
-                                new UDPReplayCodec(config),
+                                new UDPReplayCodec(config, StreamType.Response),
                                 new ServerUDPReplayHandler(config.getPacketEncoding(), workerGroup),
                                 new ExceptionHandler(config)
                             );
@@ -98,6 +99,7 @@ public class Server {
             b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .attr(AttributeKeys.DIRECTION, Direction.Inbound)
+                .childOption(ChannelOption.SO_LINGER, 1)
                 .childHandler(new ServerInitializer(config))
                 .bind(port).sync().addListener((ChannelFutureListener) future -> {
                     Channel channel = future.channel();

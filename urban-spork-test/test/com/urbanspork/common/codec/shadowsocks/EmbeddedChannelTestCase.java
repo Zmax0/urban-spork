@@ -1,9 +1,10 @@
 package com.urbanspork.common.codec.shadowsocks;
 
-import com.urbanspork.common.codec.SupportedCipher;
+import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -16,8 +17,6 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -25,46 +24,52 @@ import java.nio.charset.StandardCharsets;
 @DisplayName("Shadowsocks - Embedded Channel")
 class EmbeddedChannelTestCase {
 
-    @ParameterizedTest
-    @EnumSource(Network.class)
-    void testCommonChannel(Network network) {
+    @Test
+    void testTCPReplayChannel() {
         int port = TestDice.rollPort();
-        SupportedCipher cipher = TestDice.rollCipher();
-        String password = TestDice.rollString();
-        EmbeddedChannel channel = new EmbeddedChannel();
-        channel.pipeline()
-            .addLast(AEADCipherCodecs.get(password, cipher, network))
-            .addLast(new AddressEncoder(new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "localhost", port)))
-            .addLast(new AddressDecoder());
+        String host = TestDice.rollHost();
+        DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, host, port);
+        CipherKind cipher = TestDice.rollCipher();
+        String password = TestDice.rollPassword(Protocols.shadowsocks, cipher);
+        EmbeddedChannel client = new EmbeddedChannel();
+        client.pipeline().addLast(new TCPReplayCodec(StreamType.Request, request, cipher, password));
+        EmbeddedChannel server = new EmbeddedChannel();
+        server.pipeline().addLast(new TCPReplayCodec(StreamType.Response, cipher, password));
         String message = TestDice.rollString();
-        channel.writeOutbound(Unpooled.wrappedBuffer(message.getBytes()));
-        ByteBuf out = channel.readOutbound();
-        channel.writeInbound(out);
-        InetSocketAddress address = channel.readInbound();
+        client.writeOutbound(Unpooled.wrappedBuffer(message.getBytes()));
+        ByteBuf msg = client.readOutbound();
+        server.writeInbound(msg);
+        InetSocketAddress address = server.readInbound();
         Assertions.assertEquals(address.getPort(), port);
-        ByteBuf msg = channel.readInbound();
+        msg = server.readInbound();
+        server.writeOutbound(msg);
+        msg = server.readOutbound();
+        client.writeInbound(msg);
+        msg = client.readInbound();
         Assertions.assertEquals(message, msg.readCharSequence(msg.readableBytes(), StandardCharsets.UTF_8));
     }
 
     @Test
     void testUDPReplayChannel() {
-        EmbeddedChannel channel = new EmbeddedChannel();
-        SupportedCipher cipher = TestDice.rollCipher();
+        EmbeddedChannel client = new EmbeddedChannel();
+        EmbeddedChannel server = new EmbeddedChannel();
+        CipherKind cipher = TestDice.rollCipher();
         int port = TestDice.rollPort();
         InetSocketAddress replay = new InetSocketAddress("192.168.1.1", port);
         ServerConfig config = new ServerConfig();
-        config.setPassword(TestDice.rollString());
+        config.setPassword(TestDice.rollPassword(Protocols.shadowsocks, cipher));
         config.setCipher(cipher);
-        channel.pipeline().addLast(new UDPReplayCodec(config));
+        client.pipeline().addLast(new UDPReplayCodec(config, StreamType.Request));
+        server.pipeline().addLast(new UDPReplayCodec(config, StreamType.Response));
         String host = "192.168.255.1";
         String message = TestDice.rollString();
         InetSocketAddress dst = new InetSocketAddress(host, port);
         TernaryDatagramPacket noRelayPacket = new TernaryDatagramPacket(new DatagramPacket(Unpooled.wrappedBuffer(message.getBytes()), dst), null);
-        Assertions.assertThrows(EncoderException.class, () -> channel.writeOutbound(noRelayPacket));
-        channel.writeOutbound(new TernaryDatagramPacket(new DatagramPacket(Unpooled.wrappedBuffer(message.getBytes()), dst), replay));
-        DatagramPacket out = channel.readOutbound();
-        channel.writeInbound(out);
-        DatagramPacket in = channel.readInbound();
+        Assertions.assertThrows(EncoderException.class, () -> client.writeOutbound(noRelayPacket));
+        client.writeOutbound(new TernaryDatagramPacket(new DatagramPacket(Unpooled.wrappedBuffer(message.getBytes()), dst), replay));
+        DatagramPacket out = client.readOutbound();
+        server.writeInbound(out);
+        DatagramPacket in = server.readInbound();
         Assertions.assertEquals(in.recipient(), dst);
         ByteBuf content = in.content();
         Assertions.assertEquals(message, content.readCharSequence(content.readableBytes(), StandardCharsets.UTF_8));

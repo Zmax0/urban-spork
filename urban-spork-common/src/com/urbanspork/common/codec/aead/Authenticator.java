@@ -4,7 +4,7 @@ import com.urbanspork.common.codec.BytesGenerator;
 import com.urbanspork.common.codec.NonceGenerator;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
-public record Authenticator(CipherCodec codec, byte[] key, NonceGenerator nonceGenerator, BytesGenerator associatedTextGenerator) {
+public record Authenticator(CipherMethod codec, byte[] key, NonceGenerator nonceGenerator, BytesGenerator associatedTextGenerator) {
 
     public int overhead() {
         return codec.tagSize();

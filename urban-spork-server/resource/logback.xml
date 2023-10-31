@@ -1,5 +1,5 @@
 <configuration debug="false">
-  <property name="defaultPattern" value="%d{yyyy-MM-dd HH:mm:ss} %level [%thread] %logger{5} - %msg%n"/>
+  <property name="defaultPattern" value="%d{yyyy-MM-dd HH:mm:ss} %highlight(%level) [%thread] %logger{5} - %msg%n"/>
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
       <pattern>${defaultPattern}</pattern>
