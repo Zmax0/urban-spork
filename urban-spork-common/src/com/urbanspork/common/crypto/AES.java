@@ -5,8 +5,11 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Security;
 import java.util.function.Supplier;
 
@@ -37,10 +40,10 @@ public enum AES {
         return cipher.doFinal(in);
     }
 
-    private static Cipher getCipher(String transformation) {
+    static Cipher getCipher(String transformation) {
         try {
             return Cipher.getInstance(transformation, BouncyCastleProvider.PROVIDER_NAME);
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException | NoSuchProviderException | NoSuchPaddingException e) {
             throw new UnsupportedOperationException(e);
         }
     }
