@@ -24,6 +24,7 @@ class TCPTestCase extends TCPTestTemplate {
         ServerConfig serverConfig = config.getServers().get(0);
         serverConfig.setProtocol(parameter.protocol());
         serverConfig.setCipher(parameter.cipher());
+        serverConfig.setPassword(parameter.password());
         ExecutorService service = Executors.newFixedThreadPool(2);
         DefaultEventLoop eventLoop = new DefaultEventLoop();
         launchServer(service, eventLoop, config.getServers());

@@ -1,18 +1,17 @@
 package com.urbanspork.common.codec.shadowsocks;
 
-import com.urbanspork.common.codec.SupportedCipher;
-import com.urbanspork.common.codec.aead.CipherCodecs;
-import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.codec.CipherKind;
+import com.urbanspork.common.codec.aead.CipherMethods;
 
 public class AEADCipherCodecs {
 
     private AEADCipherCodecs() {}
 
-    public static AEADCipherCodec get(String password, SupportedCipher cipher, Network network) {
-        return switch (cipher) {
-            case aes_256_gcm -> new AEADCipherCodec(password, 32, CipherCodecs.AES_GCM.get(), network);
-            case chacha20_poly1305 -> new AEADCipherCodec(password, 32, CipherCodecs.CHACHA20_POLY1305.get(), network);
-            default -> new AEADCipherCodec(password, 16, CipherCodecs.AES_GCM.get(), network);
+    static AEADCipherCodec get(CipherKind kind, String password) {
+        return switch (kind) {
+            case aes_256_gcm, aead2022_blake3_aes_256_gcm -> new AEADCipherCodec(kind, CipherMethods.AES_GCM.get(), password, 32);
+            case chacha20_poly1305 -> new AEADCipherCodec(kind, CipherMethods.CHACHA20_POLY1305.get(), password, 32);
+            default -> new AEADCipherCodec(kind, CipherMethods.AES_GCM.get(), password, 16);
         };
     }
 }

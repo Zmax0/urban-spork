@@ -1,11 +1,10 @@
 package com.urbanspork.common.codec.vmess;
 
 import com.urbanspork.common.codec.BytesGenerator;
+import com.urbanspork.common.codec.EmptyPaddingLengthGenerator;
 import com.urbanspork.common.codec.NonceGenerator;
 import com.urbanspork.common.codec.PaddingLengthGenerator;
-import com.urbanspork.common.codec.aead.Authenticator;
-import com.urbanspork.common.codec.aead.CipherCodec;
-import com.urbanspork.common.codec.aead.CipherCodecs;
+import com.urbanspork.common.codec.aead.*;
 import com.urbanspork.common.codec.chunk.AEADChunkSizeParser;
 import com.urbanspork.common.codec.chunk.ChunkSizeCodec;
 import com.urbanspork.common.codec.chunk.PlainChunkSizeParser;
@@ -23,48 +22,49 @@ import java.util.function.Predicate;
 public class AEADBodyCodec {
 
     private static final byte[] AUTH_LEN = "auth_len".getBytes();
+    private static final int PAYLOAD_LIMIT = 2048;
 
     private AEADBodyCodec() {}
 
-    public static AEADBodyEncoder getBodyEncoder(RequestHeader header, Session session) {
+    public static PayloadEncoder getBodyEncoder(RequestHeader header, Session session) {
         Tuple tuple = newTuple(header, session, ServerSession.class::isInstance);
         SecurityType security = header.security();
-        CipherCodec codec = getAEADCipherCodec(security);
+        CipherMethod codec = getAEADCipherCodec(security);
         ChunkSizeCodec sizeParser = tuple.sizeParser;
         if (SecurityType.CHACHA20_POLY1305 == security) {
             if (RequestOption.has(header.option(), RequestOption.AuthenticatedLength)) {
                 sizeParser = newAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN)), session.getRequestBodyIV());
             }
-            return new AEADBodyEncoder(newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(tuple.key), tuple.iv), sizeParser, tuple.padding);
+            return new PayloadEncoder(newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(tuple.key), tuple.iv), sizeParser, tuple.padding, PAYLOAD_LIMIT);
         }
         if (RequestOption.has(header.option(), RequestOption.AuthenticatedLength)) {
             sizeParser = newAEADChunkSizeCodec(codec, KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN), session.getRequestBodyIV());
         }
-        return new AEADBodyEncoder(newAEADAuthenticator(codec, tuple.key, tuple.iv), sizeParser, tuple.padding);
+        return new PayloadEncoder(newAEADAuthenticator(codec, tuple.key, tuple.iv), sizeParser, tuple.padding, PAYLOAD_LIMIT);
     }
 
-    public static AEADBodyDecoder getBodyDecoder(RequestHeader header, Session session) {
+    public static PayloadDecoder getBodyDecoder(RequestHeader header, Session session) {
         Tuple tuple = newTuple(header, session, ClientSession.class::isInstance);
         SecurityType security = header.security();
-        CipherCodec codec = getAEADCipherCodec(security);
+        CipherMethod codec = getAEADCipherCodec(security);
         ChunkSizeCodec sizeParser = tuple.sizeParser;
         if (SecurityType.CHACHA20_POLY1305 == security) {
             if (RequestOption.has(header.option(), RequestOption.AuthenticatedLength)) {
                 sizeParser = newAEADChunkSizeCodec(codec, Auth.generateChacha20Poly1305Key(KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN)), session.getRequestBodyIV());
             }
-            return new AEADBodyDecoder(newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(tuple.key), tuple.iv), sizeParser, tuple.padding);
+            return new PayloadDecoder(newAEADAuthenticator(codec, Auth.generateChacha20Poly1305Key(tuple.key), tuple.iv), sizeParser, tuple.padding);
         }
         if (RequestOption.has(header.option(), RequestOption.AuthenticatedLength)) {
             sizeParser = newAEADChunkSizeCodec(codec, KDF.kdf16(session.getRequestBodyKey(), AUTH_LEN), session.getRequestBodyIV());
         }
-        return new AEADBodyDecoder(newAEADAuthenticator(codec, tuple.key, tuple.iv), sizeParser, tuple.padding);
+        return new PayloadDecoder(newAEADAuthenticator(codec, tuple.key, tuple.iv), sizeParser, tuple.padding);
     }
 
-    private static CipherCodec getAEADCipherCodec(SecurityType security) {
+    private static CipherMethod getAEADCipherCodec(SecurityType security) {
         if (SecurityType.CHACHA20_POLY1305 == security) {
-            return CipherCodecs.CHACHA20_POLY1305.get();
+            return CipherMethods.CHACHA20_POLY1305.get();
         } else {
-            return CipherCodecs.AES_GCM.get();
+            return CipherMethods.AES_GCM.get();
         }
     }
 
@@ -76,11 +76,11 @@ public class AEADBodyCodec {
         return predicate.test(session) ? session.getResponseBodyIV() : session.getRequestBodyIV();
     }
 
-    private static Authenticator newAEADAuthenticator(CipherCodec codec, byte[] key, byte[] nonce) {
+    private static Authenticator newAEADAuthenticator(CipherMethod codec, byte[] key, byte[] nonce) {
         return new Authenticator(codec, key, NonceGenerator.generateCountingNonce(nonce, codec.nonceSize()), BytesGenerator.generateEmptyBytes());
     }
 
-    private static ChunkSizeCodec newAEADChunkSizeCodec(CipherCodec codec, byte[] key, byte[] nonce) {
+    private static ChunkSizeCodec newAEADChunkSizeCodec(CipherMethod codec, byte[] key, byte[] nonce) {
         return new AEADChunkSizeParser(newAEADAuthenticator(codec, key, nonce));
     }
 
@@ -88,7 +88,7 @@ public class AEADBodyCodec {
         byte[] key = getKey(session, predicate);
         byte[] iv = getIV(session, predicate);
         ChunkSizeCodec sizeParser = new PlainChunkSizeParser();
-        PaddingLengthGenerator padding = null;
+        PaddingLengthGenerator padding = EmptyPaddingLengthGenerator.INSTANCE;
         if (RequestOption.has(header.option(), RequestOption.ChunkMasking)) {
             sizeParser = new ShakeSizeParser(iv);
         }

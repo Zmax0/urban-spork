@@ -5,7 +5,7 @@ import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 
-public interface CipherCodec {
+public interface CipherMethod {
 
     AEADCipher cipher();
 

@@ -4,9 +4,7 @@
 
 A sock5 proxy
 
-## Require
-
-Java 17+
+**WARNING**: Be aware of the risk when using this software because neither **Detection Prevention** nor **Replay Protection** is implemented currently
 
 ## Quick start
 
@@ -43,22 +41,28 @@ put *config.json* file into the unpacked folder before running
 
 |     | Shadowsocks | VMess |
 |:----|:-----------:|:-----:|
-| TCP |      ✔      |   ✔   |
-| UDP |      ✔      |   ✔   |
+| TCP |      ✔     |   ✔   |
+| UDP |      ✔     |   ✔   |
 
 ### Ciphers
 
-|                   | Shadowsocks |  VMess  |
-|:------------------|:-----------:|:-------:|
-| aes-128-gcm       |   `C` `S`   | `C` `S` |
-| aes-256-gcm       |   `C` `S`   |         |
-| chacha20-poly1305 |   `C` `S`   | `C` `S` |
+|                         | Shadowsocks |  VMess  |
+|:------------------------|:-----------:|:-------:|
+| aes-128-gcm             |   `C` `S`   | `C` `S` |
+| aes-256-gcm             |   `C` `S`   |         |
+| chacha20-poly1305       |   `C` `S`   | `C` `S` |
+| 2022-blake3-aes-128-gcm |   `C` `S`   |         |
+| 2022-blake3-aes-256-gcm |   `C` `S`   |         |
 
 `C` for client `S` for server
 
 ## Build
 
     mvn clean package
+
+### Require
+
+Java 17+
 
 ### Build Output
 

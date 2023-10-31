@@ -1,6 +1,6 @@
 package com.urbanspork.common.protocol.vmess.header;
 
-import com.urbanspork.common.codec.SupportedCipher;
+import com.urbanspork.common.codec.CipherKind;
 
 import java.util.Arrays;
 
@@ -28,8 +28,8 @@ public enum SecurityType {
         return Arrays.stream(values()).filter(type -> type.value == value).findFirst().orElse(UNKNOWN);
     }
 
-    public static SecurityType valueOf(SupportedCipher cipher) {
-        if (SupportedCipher.chacha20_poly1305 == cipher) {
+    public static SecurityType valueOf(CipherKind cipher) {
+        if (CipherKind.chacha20_poly1305 == cipher) {
             return CHACHA20_POLY1305;
         } else {
             return AES128_GCM;

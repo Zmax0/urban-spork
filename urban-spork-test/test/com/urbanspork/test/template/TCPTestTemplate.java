@@ -14,7 +14,10 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Promise;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -56,7 +59,7 @@ public abstract class TCPTestTemplate extends TestTemplate {
                     if (Arrays.equals(ByteBufUtil.getBytes(msg), bytes)) {
                         promise.setSuccess(null);
                     } else {
-                        promise.setFailure(AssertionFailureBuilder.assertionFailure().message("Received unexpected msg").build());
+                        promise.setFailure(new RuntimeException("Received unexpected msg"));
                     }
                 }
 
@@ -67,7 +70,7 @@ public abstract class TCPTestTemplate extends TestTemplate {
             });
         channel.writeAndFlush(Unpooled.wrappedBuffer(bytes));
         promise.await(10, TimeUnit.SECONDS);
-        Assertions.assertTrue(promise.isSuccess());
+        Assertions.assertTrue(promise.isSuccess(), promise.cause() != null ? promise.cause().getMessage() : "");
         channel.eventLoop().shutdownGracefully();
     }
 

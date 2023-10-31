@@ -9,7 +9,7 @@ import com.jfoenix.validation.RequiredFieldValidator;
 import com.urbanspork.client.gui.Resource;
 import com.urbanspork.client.gui.console.widget.*;
 import com.urbanspork.client.gui.i18n.I18n;
-import com.urbanspork.common.codec.SupportedCipher;
+import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
@@ -80,7 +80,7 @@ public class Console extends Preloader {
 
     private ToggleButton currentConfigPasswordToggleButton;
 
-    private ChoiceBox<SupportedCipher> currentConfigCipherChoiceBox;
+    private ChoiceBox<CipherKind> currentConfigCipherChoiceBox;
 
     private ChoiceBox<Protocols> currentConfigProtocolChoiceBox;
 
@@ -148,7 +148,7 @@ public class Console extends Preloader {
     public void addServerConfig() {
         if (validate()) {
             ServerConfig newValue = new ServerConfig();
-            newValue.setCipher(SupportedCipher.aes_256_gcm);
+            newValue.setCipher(CipherKind.aes_256_gcm);
             serverConfigObservableList.add(newValue);
             serverConfigJFXListView.getSelectionModel().select(newValue);
             display(newValue);
@@ -218,7 +218,7 @@ public class Console extends Preloader {
             boolean isNew = config == null;
             if (config == null) {
                 config = new ServerConfig();
-                config.setCipher(SupportedCipher.aes_128_gcm);
+                config.setCipher(CipherKind.aes_128_gcm);
             }
             pack(config);
             if (isNew) {
@@ -449,9 +449,9 @@ public class Console extends Preloader {
     }
 
     private void initCurrentConfigCipherChoiceBox() {
-        List<SupportedCipher> ciphers = Arrays.asList(SupportedCipher.values());
+        List<CipherKind> ciphers = Arrays.asList(CipherKind.values());
         currentConfigCipherChoiceBox.setItems(FXCollections.observableArrayList(ciphers));
-        currentConfigCipherChoiceBox.setValue(SupportedCipher.aes_128_gcm);
+        currentConfigCipherChoiceBox.setValue(CipherKind.aes_128_gcm);
         // currentConfigHostTextField
         currentConfigHostTextField.getValidators().add(requiredFieldValidator);
         currentConfigHostTextField.textProperty().addListener(

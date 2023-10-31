@@ -4,6 +4,7 @@ import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -19,5 +20,11 @@ class AESTestCase {
         byte[] key = Dice.rollBytes(32);
         String str = TestDice.rollString();
         Assertions.assertEquals(str, new String(aes.decrypt(key, aes.encrypt(key, str.getBytes()))));
+    }
+
+    @Test
+    void testGetCipher() {
+        String transformation = TestDice.rollString(5);
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> AES.getCipher(transformation));
     }
 }
