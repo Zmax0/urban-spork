@@ -2,7 +2,7 @@ package com.urbanspork.common.codec.shadowsocks;
 
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.protocol.network.Network;
-import com.urbanspork.common.protocol.shadowsocks.RequestContext;
+import com.urbanspork.common.protocol.shadowsocks.Context;
 import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -13,7 +13,7 @@ import java.util.List;
 
 public class TCPReplayCodec extends ByteToMessageCodec<ByteBuf> {
 
-    private final RequestContext context;
+    private final Context context;
     private final AEADCipherCodec cipher;
 
     public TCPReplayCodec(StreamType streamType, CipherKind cipher, String password) {
@@ -21,7 +21,7 @@ public class TCPReplayCodec extends ByteToMessageCodec<ByteBuf> {
     }
 
     public TCPReplayCodec(StreamType streamType, Socks5CommandRequest request, CipherKind cipher, String password) {
-        this.context = new RequestContext(Network.TCP, streamType, request);
+        this.context = new Context(Network.TCP, streamType, request);
         this.cipher = AEADCipherCodecs.get(cipher, password);
     }
 

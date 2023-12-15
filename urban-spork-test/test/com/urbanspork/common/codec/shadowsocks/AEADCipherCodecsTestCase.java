@@ -6,7 +6,7 @@ import ch.qos.logback.classic.LoggerContext;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.Network;
-import com.urbanspork.common.protocol.shadowsocks.RequestContext;
+import com.urbanspork.common.protocol.shadowsocks.Context;
 import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
@@ -56,12 +56,12 @@ class AEADCipherCodecsTestCase {
         int port = TestDice.rollPort();
         String host = TestDice.rollHost();
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, host, port);
-        cipherTest(new RequestContext(Network.TCP, StreamType.Request, request), new RequestContext(Network.TCP, StreamType.Response, null), true);
-        cipherTest(new RequestContext(Network.UDP, StreamType.Request, request), new RequestContext(Network.UDP, StreamType.Response, null), false);
+        cipherTest(new Context(Network.TCP, StreamType.Request, request), new Context(Network.TCP, StreamType.Response, null), true);
+        cipherTest(new Context(Network.UDP, StreamType.Request, request), new Context(Network.UDP, StreamType.Response, null), false);
     }
 
 
-    private void cipherTest(RequestContext request, RequestContext response, boolean reRoll) throws Exception {
+    private void cipherTest(Context request, Context response, boolean reRoll) throws Exception {
         List<Object> list = cipherTest(request, response, Unpooled.copiedBuffer(in), reRoll);
         byte[] out = new byte[in.length];
         int len = 0;
@@ -77,7 +77,7 @@ class AEADCipherCodecsTestCase {
         Assertions.assertArrayEquals(in, out);
     }
 
-    private List<Object> cipherTest(RequestContext request, RequestContext response, ByteBuf in, boolean reRoll) throws Exception {
+    private List<Object> cipherTest(Context request, Context response, ByteBuf in, boolean reRoll) throws Exception {
         AEADCipherCodec client = AEADCipherCodecs.get(kind, password);
         AEADCipherCodec server = AEADCipherCodecs.get(kind, password);
         List<ByteBuf> encodeSlices = new ArrayList<>();
