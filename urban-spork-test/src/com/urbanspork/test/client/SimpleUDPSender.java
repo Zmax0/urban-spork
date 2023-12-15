@@ -22,7 +22,7 @@ public class SimpleUDPSender {
                     break;
                 }
                 int port = Integer.parseInt(line);
-                byte[] bytes = "Msg of SimpleUDPTestClient".getBytes();
+                byte[] bytes = "Msg of SimpleUDPSender".getBytes();
                 DatagramPacket packet = new DatagramPacket(bytes, bytes.length, new InetSocketAddress("localhost", port));
                 String sendPacketInfo = MessageFormat.format("Send packet {0}", packet);
                 logger.info(sendPacketInfo);

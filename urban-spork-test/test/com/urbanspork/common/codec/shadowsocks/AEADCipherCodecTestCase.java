@@ -10,7 +10,7 @@ import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.Network;
-import com.urbanspork.common.protocol.shadowsocks.RequestContext;
+import com.urbanspork.common.protocol.shadowsocks.Context;
 import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import com.urbanspork.common.protocol.shadowsocks.aead.AEAD2022;
 import com.urbanspork.common.util.Dice;
@@ -56,7 +56,7 @@ class AEADCipherCodecTestCase {
         AEADCipherCodec codec = newAEADCipherCodec();
         List<Object> out = new ArrayList<>();
         ByteBuf in = Unpooled.wrappedBuffer(Dice.rollBytes(3));
-        RequestContext context = new RequestContext(Network.UDP, StreamType.Request);
+        Context context = new Context(Network.UDP, StreamType.Request, null, null);
         Assertions.assertThrows(DecoderException.class, () -> codec.decode(context, in, out));
     }
 
@@ -66,9 +66,9 @@ class AEADCipherCodecTestCase {
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, TestDice.rollHost(), TestDice.rollPort());
         List<Object> out = new ArrayList<>();
         ByteBuf in = Unpooled.buffer();
-        codec.encode(new RequestContext(Network.UDP, StreamType.Request, request), Unpooled.EMPTY_BUFFER, in);
+        codec.encode(new Context(Network.UDP, StreamType.Request, request), Unpooled.EMPTY_BUFFER, in);
         Assertions.assertTrue(in.isReadable());
-        codec.decode(new RequestContext(Network.UDP, StreamType.Response, request), in, out);
+        codec.decode(new Context(Network.UDP, StreamType.Response, request), in, out);
         Assertions.assertFalse(in.isReadable());
         Assertions.assertFalse(out.isEmpty());
     }
@@ -82,7 +82,7 @@ class AEADCipherCodecTestCase {
         CipherMethod method = CipherMethods.AES_GCM.get();
         AEADCipherCodec codec = new AEADCipherCodec(kind, method, password, saltSize);
         ByteBuf msg = Unpooled.buffer();
-        codec.encode(new RequestContext(Network.TCP, StreamType.Request, request), Unpooled.wrappedBuffer(Dice.rollBytes(10)), msg);
+        codec.encode(new Context(Network.TCP, StreamType.Request, request), Unpooled.wrappedBuffer(Dice.rollBytes(10)), msg);
         byte[] salt = new byte[saltSize];
         msg.readBytes(salt);
         byte[] passwordBytes = Base64.getDecoder().decode(password);
@@ -97,7 +97,7 @@ class AEADCipherCodecTestCase {
         temp.writeBytes(encoder.auth().seal(header));
         temp.writeBytes(msg);
         ArrayList<Object> out = new ArrayList<>();
-        RequestContext context = new RequestContext(Network.TCP, StreamType.Response, request);
+        Context context = new Context(Network.TCP, StreamType.Response, request);
         codec.decode(context, msg, out);
         Assertions.assertThrows(DecoderException.class, () -> codec.decode(context, temp, out));
     }
