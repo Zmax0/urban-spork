@@ -46,7 +46,7 @@ class AEADCipherCodec {
     private PayloadDecoder payloadDecoder;
 
     AEADCipherCodec(CipherKind cipherKind, CipherMethod cipherMethod, String password, int saltSize) {
-        this.key = cipherKind.isAead2022() ? Base64.getDecoder().decode(password) : AEAD.generateKey(password.getBytes(), saltSize);
+        this.key = cipherKind.isAead2022() ? Base64.getDecoder().decode(password) : AEAD.opensslBytesToKey(password.getBytes(), saltSize);
         if (key.length != saltSize) {
             String msg = String.format("%s is expecting a %d bytes key, but password: %s (%d bytes after decode)",
                 cipherKind, saltSize, password, key.length);
