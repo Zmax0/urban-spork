@@ -9,29 +9,34 @@ import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.codec.chunk.AEADChunkSizeParser;
 import com.urbanspork.common.codec.chunk.EmptyChunkSizeParser;
-import com.urbanspork.common.crypto.GeneralDigests;
+import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
 
-import static java.lang.System.arraycopy;
-
 public interface AEAD {
 
-    static byte[] generateKey(byte[] password, int size) {
-        byte[] encoded = new byte[size];
-        byte[] passwordDigest = GeneralDigests.md5.get(password);
-        byte[] container = new byte[password.length + passwordDigest.length];
-        arraycopy(passwordDigest, 0, encoded, 0, Math.min(size, passwordDigest.length));
-        int index = passwordDigest.length;
-        while (index < size) {
-            arraycopy(passwordDigest, 0, container, 0, passwordDigest.length);
-            arraycopy(password, 0, container, passwordDigest.length, password.length);
-            passwordDigest = GeneralDigests.md5.get(container);
-            arraycopy(passwordDigest, 0, encoded, index, Math.min(size - index, passwordDigest.length));
-            index += passwordDigest.length;
+    /**
+     * OpenSSL EVP_BytesToKey
+     */
+    static byte[] opensslBytesToKey(byte[] password, int size) {
+        byte[] key = new byte[size];
+        int offset = 0;
+        byte[] last = null;
+        MD5Digest digest = new MD5Digest();
+        while (offset < size) {
+            if (last != null) {
+                digest.update(last, 0, last.length);
+            }
+            digest.update(password, 0, password.length);
+            byte[] out = new byte[digest.getDigestSize()];
+            digest.doFinal(out, 0);
+            int add = Math.min(size - offset, out.length);
+            System.arraycopy(out, 0, key, offset, add);
+            offset += add;
+            last = out;
         }
-        return encoded;
+        return key;
     }
 
     interface TCP {
