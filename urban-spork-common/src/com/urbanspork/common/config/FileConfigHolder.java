@@ -9,9 +9,16 @@ class FileConfigHolder implements ConfigHolder {
 
     private static final String FILE_NAME = "config.json";
     private static final String FOLDER_NAME = "lib";
-    private static final Path PATH = Path.of(FileConfigHolder.parentPath(), FILE_NAME);
+    private static final Path PATH;
 
-    FileConfigHolder() {}
+    static {
+        String pathStr = System.getProperty("com.urbanspork.configPath");
+        if (pathStr != null) {
+            PATH = Path.of(pathStr);
+        } else {
+            PATH = Path.of(parentPath(), FILE_NAME);
+        }
+    }
 
     private static String parentPath() {
         File file = new File(FileConfigHolder.class.getProtectionDomain().getCodeSource().getLocation().getFile());
@@ -21,6 +28,8 @@ class FileConfigHolder implements ConfigHolder {
         }
         return parentFile.getAbsolutePath();
     }
+
+    FileConfigHolder() {}
 
     @Override
     public void save(String str) throws IOException {
@@ -41,7 +50,7 @@ class FileConfigHolder implements ConfigHolder {
                 return reader.lines().collect(Collectors.joining(System.lineSeparator()));
             }
         } else {
-            throw new IllegalArgumentException("Please put the '" + FILE_NAME + "' file into the folder");
+            throw new IllegalArgumentException("File in path " + PATH + " is not exist");
         }
     }
 
