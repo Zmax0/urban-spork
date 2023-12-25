@@ -10,44 +10,46 @@ import java.util.List;
 
 public record PayloadDecoder(Authenticator auth, ChunkSizeCodec sizeCodec, PaddingLengthGenerator padding, Length length) {
 
-    private static final int INIT_LENGTH = -1;
-
     public PayloadDecoder(Authenticator auth, ChunkSizeCodec sizeCodec, PaddingLengthGenerator padding) {
         this(auth, sizeCodec, padding, new Length());
     }
 
     /**
      * decrypt payload for TCP
-     *
-     * @param in  [salt][encrypted payload length][length tag][encrypted payload][payload tag]
-     * @param out payload
      */
     public void decodePayload(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-        int sizeBytes = sizeCodec.sizeBytes();
-        while (in.readableBytes() >= (length.payload == INIT_LENGTH ? sizeBytes : length.payload)) {
-            if (length.padding == INIT_LENGTH) {
-                length.padding = padding.nextPaddingLength();
-            }
-            if (length.payload == INIT_LENGTH) {
-                byte[] payloadSizeBytes = new byte[sizeBytes];
-                in.readBytes(payloadSizeBytes);
-                length.payload = sizeCodec.decode(payloadSizeBytes);
-            } else {
-                byte[] payloadBytes = new byte[length.payload - length.padding];
-                in.readBytes(payloadBytes);
-                out.add(Unpooled.wrappedBuffer(auth().open(payloadBytes)));
-                in.skipBytes(length.padding);
-                length.payload = INIT_LENGTH;
-                length.padding = INIT_LENGTH;
+        while (in.isReadable()) {
+            switch (length.state) {
+                case Length -> {
+                    int sizeBytes = sizeCodec.sizeBytes();
+                    if (in.readableBytes() < sizeBytes) {
+                        return;
+                    }
+                    byte[] payloadSizeBytes = new byte[sizeBytes];
+                    in.readBytes(payloadSizeBytes);
+                    length.payload = sizeCodec.decode(payloadSizeBytes);
+                    length.state = State.Data;
+                }
+                case Data -> {
+                    if (in.readableBytes() < length.payload) {
+                        return;
+                    }
+                    byte[] payloadBytes = new byte[length.payload - length.padding];
+                    in.readBytes(payloadBytes);
+                    out.add(Unpooled.wrappedBuffer(auth().open(payloadBytes)));
+                    in.skipBytes(length.padding);
+                    length.state = State.Padding;
+                }
+                default -> {
+                    length.padding = padding.nextPaddingLength();
+                    length.state = State.Length;
+                }
             }
         }
     }
 
     /**
      * decrypt packet for UDP
-     *
-     * @param in  [encrypted payload][tag]
-     * @param out payload
      */
     public void decodePacket(ByteBuf in, List<Object> out) throws InvalidCipherTextException {
         out.add(decodePacket(in));
@@ -70,8 +72,15 @@ public record PayloadDecoder(Authenticator auth, ChunkSizeCodec sizeCodec, Paddi
         return Unpooled.wrappedBuffer(auth().open(payloadBytes));
     }
 
-    static class Length {
-        int payload = INIT_LENGTH;
-        int padding = INIT_LENGTH;
+    private static class Length {
+        State state = State.Padding;
+        int payload;
+        int padding;
+    }
+
+    private enum State {
+        Padding,
+        Length,
+        Data,
     }
 }

@@ -10,9 +10,6 @@ public record PayloadEncoder(Authenticator auth, ChunkSizeCodec sizeCodec, Paddi
 
     /**
      * encrypt payload for TCP
-     *
-     * @param msg payload
-     * @param out [salt][encrypted payload length][length tag][encrypted payload][payload tag]
      */
     public void encodePayload(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         while (msg.isReadable()) {
@@ -21,10 +18,7 @@ public record PayloadEncoder(Authenticator auth, ChunkSizeCodec sizeCodec, Paddi
     }
 
     /**
-     * encrypt payload for UDP
-     *
-     * @param msg payload
-     * @param out [salt][encrypted payload][tag]
+     * encrypt packet for UDP
      */
     public void encodePacket(ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         seal(msg, out);
