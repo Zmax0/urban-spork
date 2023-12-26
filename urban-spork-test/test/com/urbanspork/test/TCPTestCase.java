@@ -21,7 +21,7 @@ class TCPTestCase extends TCPTestTemplate {
     void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
         int[] ports = TestUtil.freePorts(2);
         ClientConfig config = ClientConfigTestCase.testConfig(ports[0], ports[1]);
-        ServerConfig serverConfig = config.getServers().get(0);
+        ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setProtocol(parameter.protocol());
         serverConfig.setCipher(parameter.cipher());
         serverConfig.setPassword(parameter.password());

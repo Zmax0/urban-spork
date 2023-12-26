@@ -25,7 +25,7 @@ class ClientSocksHandshakeTestCase {
     @Test
     void testUdpEnable() throws InterruptedException, ExecutionException {
         ClientConfig config = ClientConfigTestCase.testConfig(PORTS[0], PORTS[1]);
-        config.getServers().get(0).setProtocol(Protocols.vmess);
+        config.getServers().getFirst().setProtocol(Protocols.vmess);
         future = ClientTestCase.launchClient(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", TestDice.rollPort());

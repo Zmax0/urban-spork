@@ -282,7 +282,7 @@ class AEADCipherCodec {
             return;
         }
         if (StreamType.Response == streamType) {
-            Address.decode((ByteBuf) list.get(0), out);
+            Address.decode((ByteBuf) list.getFirst(), out);
         }
         out.addAll(list);
         this.payloadDecoder = newPayloadDecoder;
