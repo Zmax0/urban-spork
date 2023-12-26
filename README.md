@@ -62,7 +62,7 @@ put *config.json* file into the unpacked folder before running
 
 ### Require
 
-Java 17+
+Java 21+
 
 ### Build Output
 

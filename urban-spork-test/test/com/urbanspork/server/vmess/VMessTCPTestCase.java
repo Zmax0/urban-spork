@@ -23,7 +23,7 @@ class VMessTCPTestCase extends TCPTestTemplate {
     void testLocal() throws ExecutionException, InterruptedException {
         ClientConfig config = ConfigHandler.DEFAULT.read();
         List<ServerConfig> configs = config.getServers();
-        Assertions.assertEquals(Protocols.vmess, configs.get(0).getProtocol());
+        Assertions.assertEquals(Protocols.vmess, configs.getFirst().getProtocol());
         ExecutorService service = Executors.newSingleThreadExecutor();
         DefaultEventLoop eventLoop = new DefaultEventLoop();
         launchServer(service, eventLoop, configs);

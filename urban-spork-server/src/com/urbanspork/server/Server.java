@@ -46,11 +46,10 @@ public class Server {
 
     public static void launch(List<ServerConfig> configs, Promise<List<ServerSocketChannel>> promise) {
         int size = configs.size();
-        ExecutorService pool = Executors.newFixedThreadPool(size, new WorkingThreadFactory());
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
-        DefaultEventLoop executor = new DefaultEventLoop();
-        try {
+        try (ExecutorService pool = Executors.newFixedThreadPool(size, new WorkingThreadFactory());
+             EventLoopGroup bossGroup = new NioEventLoopGroup();
+             EventLoopGroup workerGroup = new NioEventLoopGroup();
+             DefaultEventLoop executor = new DefaultEventLoop()) {
             List<ServerSocketChannel> result = new ArrayList<>(size);
             for (ServerConfig config : configs) {
                 DefaultPromise<ServerSocketChannel> innerPromise = new DefaultPromise<>(executor);
@@ -67,12 +66,8 @@ public class Server {
             executor.shutdownGracefully();
             new DefaultPromise<>(executor).sync();
         } catch (InterruptedException | ExecutionException e) {
-            pool.shutdownNow();
             logger.error("Interrupt main launch thread");
             Thread.currentThread().interrupt();
-        } finally {
-            workerGroup.shutdownGracefully();
-            bossGroup.shutdownGracefully();
         }
     }
 

@@ -13,7 +13,7 @@ import java.util.List;
 
 public class DatagramPacketDecoder extends MessageToMessageDecoder<DatagramPacket> {
     @Override
-    protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List<Object> out) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List<Object> out) {
         ByteBuf content = msg.content();
         if (content.readableBytes() < 5) {
             throw new DecoderException("Insufficient length of packet");

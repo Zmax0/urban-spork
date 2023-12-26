@@ -20,7 +20,7 @@ public class LanguageMenuItem implements TrayMenuItemBuilder {
         Menu menu = new Menu(getLabel());
         ClientConfig config = Resource.config();
         String language = config.getLanguage();
-        final Locale configLanguage = new Locale(language);
+        final Locale configLanguage = Locale.of(language);
         List<CheckboxMenuItem> items = new ArrayList<>(I18n.languages().length);
         for (Locale locale : I18n.languages()) {
             CheckboxMenuItem item = new CheckboxMenuItem();

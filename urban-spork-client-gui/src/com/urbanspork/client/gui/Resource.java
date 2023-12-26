@@ -38,7 +38,7 @@ public class Resource {
                 bundle = ResourceBundle.getBundle(baseName, locale);
                 config.setLanguage(locale.getLanguage());
             } else {
-                bundle = ResourceBundle.getBundle(baseName, new Locale(language));
+                bundle = ResourceBundle.getBundle(baseName, Locale.of(language));
             }
         } catch (MissingResourceException e) {
             bundle = ResourceBundle.getBundle(baseName, Locale.ENGLISH);

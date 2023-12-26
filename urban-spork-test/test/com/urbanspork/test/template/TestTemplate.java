@@ -25,6 +25,6 @@ public class TestTemplate {
     protected static void launchServer(ExecutorService service, EventExecutor executor, List<ServerConfig> configs) throws InterruptedException, ExecutionException {
         Promise<List<ServerSocketChannel>> promise = new DefaultPromise<>(executor);
         service.submit(() -> Server.launch(configs, promise));
-        Assertions.assertEquals(configs.get(0).getPort(), promise.await().get().get(0).localAddress().getPort());
+        Assertions.assertEquals(configs.getFirst().getPort(), promise.await().get().getFirst().localAddress().getPort());
     }
 }

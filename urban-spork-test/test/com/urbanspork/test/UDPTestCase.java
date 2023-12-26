@@ -22,7 +22,7 @@ class UDPTestCase extends UDPTestTemplate {
     void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
         int[] ports = TestUtil.freePorts(2);
         ClientConfig clientConfig = ClientConfigTestCase.testConfig(ports[0], ports[1]);
-        ServerConfig serverConfig = clientConfig.getServers().get(0);
+        ServerConfig serverConfig = clientConfig.getServers().getFirst();
         serverConfig.setNetworks(new Network[]{Network.TCP, Network.UDP});
         serverConfig.setProtocol(parameter.protocol());
         serverConfig.setCipher(parameter.cipher());

@@ -38,7 +38,7 @@ class ServerTestCase {
         List<ServerConfig> empty = Collections.emptyList();
         Assertions.assertThrows(IllegalArgumentException.class, () -> Server.launch(empty), "Server config in the file is empty");
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(new int[]{TestDice.rollPort()});
-        ServerConfig config = configs.get(0);
+        ServerConfig config = configs.getFirst();
         config.setHost("www.urban-spork.com");
         Assertions.assertThrows(IllegalArgumentException.class, () -> Server.launch(configs), "None available server");
     }
@@ -57,23 +57,24 @@ class ServerTestCase {
     @Test
     void shutdown() {
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(TestUtil.freePorts(2));
-        ExecutorService service = Executors.newSingleThreadExecutor();
-        Future<?> future = service.submit(() -> Server.launch(configs));
-        try {
-            future.get(1, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (ExecutionException | TimeoutException e) {
-            future.cancel(true);
+        Future<?> future;
+        try (ExecutorService service = Executors.newSingleThreadExecutor()) {
+            future = service.submit(() -> Server.launch(configs));
+            try {
+                future.get(1, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (ExecutionException | TimeoutException e) {
+                future.cancel(true);
+            }
+            Assertions.assertTrue(future.isCancelled());
         }
-        Assertions.assertTrue(future.isCancelled());
-        service.shutdown();
     }
 
     @Test
     void sendInvalidUDP() throws InterruptedException, ExecutionException {
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(TestUtil.freePorts(1));
-        ServerConfig config = configs.get(0);
+        ServerConfig config = configs.getFirst();
         config.setNetworks(new Network[]{Network.TCP, Network.UDP});
         DefaultEventLoop executor = new DefaultEventLoop();
         ExecutorService service = Executors.newFixedThreadPool(1);
@@ -93,10 +94,11 @@ class ServerTestCase {
     @Test
     void sendInvalidTCP() throws InterruptedException, ExecutionException {
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(TestUtil.freePorts(1));
-        ServerConfig config = configs.get(0);
+        ServerConfig config = configs.getFirst();
         DefaultEventLoop executor = new DefaultEventLoop();
+        Promise<List<ServerSocketChannel>> promise;
         ExecutorService service = Executors.newFixedThreadPool(1);
-        Promise<List<ServerSocketChannel>> promise = new DefaultPromise<>(executor);
+        promise = new DefaultPromise<>(executor);
         service.submit(() -> Server.launch(configs, promise));
         promise.await().get();
         Channel channel = new Bootstrap().group(new NioEventLoopGroup())

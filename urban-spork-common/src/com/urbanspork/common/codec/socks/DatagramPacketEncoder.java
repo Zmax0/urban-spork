@@ -12,7 +12,7 @@ import java.util.List;
 
 public class DatagramPacketEncoder extends MessageToMessageEncoder<TernaryDatagramPacket> {
     @Override
-    protected void encode(ChannelHandlerContext ctx, TernaryDatagramPacket msg, List<Object> out) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, TernaryDatagramPacket msg, List<Object> out) {
         ByteBuf buffer = ctx.alloc().buffer();
         buffer.writeBytes(new byte[]{0, 0, 0/* fragment */});
         DatagramPacket data = msg.packet();
