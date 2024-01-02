@@ -17,7 +17,6 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
-import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
@@ -35,7 +34,7 @@ public class UDPTestTemplate extends TestTemplate {
     private static final Logger logger = LoggerFactory.getLogger(UDPTestTemplate.class);
     private static final int[] DST_PORTS = TestUtil.freePorts(2);
     private final EventLoopGroup group = new NioEventLoopGroup();
-    private final ExecutorService service = Executors.newFixedThreadPool(2);
+    private final ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
     private final Channel channel = initChannel();
     private Consumer<TernaryDatagramPacket> consumer;
 
@@ -70,11 +69,10 @@ public class UDPTestTemplate extends TestTemplate {
     protected void handshakeAndSendBytes(ClientConfig config, int dstPort) throws InterruptedException, ExecutionException {
         InetSocketAddress proxyAddress = new InetSocketAddress("localhost", config.getPort());
         InetSocketAddress dstAddress = new InetSocketAddress("localhost", dstPort);
-        ClientHandshake.Result result = ClientHandshake.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).await().get();
+        ClientHandshake.Result result = ClientHandshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).await().get();
         Assertions.assertEquals(Socks5CommandStatus.SUCCESS, result.response().status());
-        result.sessionChannel().eventLoop().shutdownGracefully();
         DefaultEventLoop executor = new DefaultEventLoop();
-        Promise<Void> promise = new DefaultPromise<>(executor);
+        Promise<Void> promise = executor.newPromise();
         consumer = msg -> {
             if (dstAddress.equals(msg.third())) {
                 promise.setSuccess(null);
@@ -94,7 +92,7 @@ public class UDPTestTemplate extends TestTemplate {
     @AfterAll
     void shutdown() {
         group.shutdownGracefully();
-        service.shutdownNow();
+        service.shutdown();
     }
 
     private Channel initChannel() {

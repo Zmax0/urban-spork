@@ -1,6 +1,5 @@
 package com.urbanspork.common.codec.shadowsocks;
 
-import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import com.urbanspork.common.codec.CipherKind;
@@ -8,13 +7,13 @@ import com.urbanspork.common.codec.aead.CipherMethod;
 import com.urbanspork.common.codec.aead.CipherMethods;
 import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
+import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.Network;
-import com.urbanspork.common.protocol.shadowsocks.Context;
-import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import com.urbanspork.common.protocol.shadowsocks.aead.AEAD2022;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
+import com.urbanspork.test.template.TraceLevelLoggerTestTemplate;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
@@ -22,33 +21,25 @@ import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class AEADCipherCodecTestCase {
-
-    private Level raw;
-
-    @BeforeAll
-    void beforeAll() {
-        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        Logger logger = loggerContext.getLogger(AEADCipherCodec.class);
-        raw = logger.getEffectiveLevel();
-        logger.setLevel(Level.TRACE);
-    }
+@DisplayName("Shadowsocks - AEAD Cipher Codec")
+class AEADCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
 
     @Test
     void testIncorrectPassword() {
         String password = Base64.getEncoder().encodeToString(Dice.rollBytes(10));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> AEADCipherCodecs.get(CipherKind.aead2022_blake3_aes_128_gcm, password));
+        ServerConfig config = new ServerConfig();
+        config.setPassword(password);
+        config.setCipher(CipherKind.aead2022_blake3_aes_128_gcm);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AEADCipherCodecs.get(config));
     }
 
     @Test
@@ -56,33 +47,37 @@ class AEADCipherCodecTestCase {
         AEADCipherCodec codec = newAEADCipherCodec();
         List<Object> out = new ArrayList<>();
         ByteBuf in = Unpooled.wrappedBuffer(Dice.rollBytes(3));
-        Context context = new Context(Network.UDP, StreamType.Request, null, null);
+        Context context = new Context(Network.UDP, Mode.Client, TestDice.rollCipher(), null);
         Assertions.assertThrows(DecoderException.class, () -> codec.decode(context, in, out));
     }
 
     @Test
-    void testEmptyMsg() throws InvalidCipherTextException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+    void testEmptyMsg() throws InvalidCipherTextException {
         AEADCipherCodec codec = newAEADCipherCodec();
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, TestDice.rollHost(), TestDice.rollPort());
         List<Object> out = new ArrayList<>();
         ByteBuf in = Unpooled.buffer();
-        codec.encode(new Context(Network.UDP, StreamType.Request, request), Unpooled.EMPTY_BUFFER, in);
+        CipherKind kind = TestDice.rollCipher();
+        codec.encode(new Context(Network.UDP, Mode.Client, kind, request), Unpooled.EMPTY_BUFFER, in);
         Assertions.assertTrue(in.isReadable());
-        codec.decode(new Context(Network.UDP, StreamType.Response, request), in, out);
+        codec.decode(new Context(Network.UDP, Mode.Server, kind, request), in, out);
         Assertions.assertFalse(in.isReadable());
         Assertions.assertFalse(out.isEmpty());
     }
 
     @Test
-    void testUnexpectedStreamType() throws InvalidCipherTextException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+    void testUnexpectedStreamType() throws InvalidCipherTextException {
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, TestDice.rollHost(), TestDice.rollPort());
         CipherKind kind = CipherKind.aead2022_blake3_aes_128_gcm;
         int saltSize = 16;
         String password = TestDice.rollPassword(Protocols.shadowsocks, kind);
         CipherMethod method = CipherMethods.AES_GCM.get();
-        AEADCipherCodec codec = new AEADCipherCodec(kind, method, password, saltSize);
+        ServerConfig config = new ServerConfig();
+        config.setPassword(password);
+        config.setCipher(kind);
+        AEADCipherCodec codec = AEADCipherCodecs.get(config);
         ByteBuf msg = Unpooled.buffer();
-        codec.encode(new Context(Network.TCP, StreamType.Request, request), Unpooled.wrappedBuffer(Dice.rollBytes(10)), msg);
+        codec.encode(new Context(Network.TCP, Mode.Client, kind, request), Unpooled.wrappedBuffer(Dice.rollBytes(10)), msg);
         byte[] salt = new byte[saltSize];
         msg.readBytes(salt);
         byte[] passwordBytes = Base64.getDecoder().decode(password);
@@ -97,20 +92,22 @@ class AEADCipherCodecTestCase {
         temp.writeBytes(encoder.auth().seal(header));
         temp.writeBytes(msg);
         ArrayList<Object> out = new ArrayList<>();
-        Context context = new Context(Network.TCP, StreamType.Response, request);
+        Context context = new Context(Network.TCP, Mode.Server, kind, request);
         codec.decode(context, msg, out);
         Assertions.assertThrows(DecoderException.class, () -> codec.decode(context, temp, out));
     }
 
-    @AfterAll
-    void afterAll() {
-        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        Logger logger = loggerContext.getLogger(AEADCipherCodec.class);
-        logger.setLevel(raw);
-    }
-
     static AEADCipherCodec newAEADCipherCodec() {
         CipherKind kind = CipherKind.aead2022_blake3_aes_128_gcm;
-        return new AEADCipherCodec(kind, CipherMethods.AES_GCM.get(), TestDice.rollPassword(Protocols.shadowsocks, kind), 16);
+        ServerConfig config = new ServerConfig();
+        config.setPassword(TestDice.rollPassword(Protocols.shadowsocks, kind));
+        config.setCipher(kind);
+        return AEADCipherCodecs.get(config);
+    }
+
+    @Override
+    protected Logger logger() {
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        return loggerContext.getLogger(AEADCipherCodec.class);
     }
 }

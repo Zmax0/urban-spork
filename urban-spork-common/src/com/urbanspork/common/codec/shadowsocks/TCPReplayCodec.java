@@ -1,9 +1,8 @@
 package com.urbanspork.common.codec.shadowsocks;
 
-import com.urbanspork.common.codec.CipherKind;
+import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.network.Network;
-import com.urbanspork.common.protocol.shadowsocks.Context;
-import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
@@ -16,13 +15,13 @@ public class TCPReplayCodec extends ByteToMessageCodec<ByteBuf> {
     private final Context context;
     private final AEADCipherCodec cipher;
 
-    public TCPReplayCodec(StreamType streamType, CipherKind cipher, String password) {
-        this(streamType, null, cipher, password);
+    public TCPReplayCodec(Mode mode, ServerConfig config) {
+        this(mode, null, config);
     }
 
-    public TCPReplayCodec(StreamType streamType, Socks5CommandRequest request, CipherKind cipher, String password) {
-        this.context = new Context(Network.TCP, streamType, request);
-        this.cipher = AEADCipherCodecs.get(cipher, password);
+    public TCPReplayCodec(Mode mode, Socks5CommandRequest request, ServerConfig config) {
+        this.context = new Context(Network.TCP, mode, Session.tcp(config.getCipher()), request, ServerUserManager.DEFAULT);
+        this.cipher = AEADCipherCodecs.get(config);
     }
 
     @Override

@@ -38,19 +38,19 @@ public interface TestDice {
         return ThreadLocalRandom.current().nextInt(49152, 65535);
     }
 
-    private static String rollAEAD2022Password(CipherKind kind) {
-        return switch (kind) {
-            case aead2022_blake3_aes_128_gcm -> Base64.getEncoder().encodeToString(Dice.rollBytes(16));
-            case aead2022_blake3_aes_256_gcm -> Base64.getEncoder().encodeToString(Dice.rollBytes(32));
-            default -> throw new UnsupportedOperationException();
-        };
-    }
-
     static String rollPassword(Protocols protocols, CipherKind kind) {
         if (Protocols.shadowsocks == protocols && kind.isAead2022()) {
             return rollAEAD2022Password(kind);
         } else {
             return UUID.randomUUID().toString();
         }
+    }
+
+    private static String rollAEAD2022Password(CipherKind kind) {
+        return switch (kind) {
+            case aead2022_blake3_aes_128_gcm -> Base64.getEncoder().encodeToString(Dice.rollBytes(16));
+            case aead2022_blake3_aes_256_gcm -> Base64.getEncoder().encodeToString(Dice.rollBytes(32));
+            default -> throw new UnsupportedOperationException();
+        };
     }
 }

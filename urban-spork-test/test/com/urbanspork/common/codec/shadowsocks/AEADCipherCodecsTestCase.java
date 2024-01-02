@@ -4,10 +4,10 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import com.urbanspork.common.codec.CipherKind;
+import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.Network;
-import com.urbanspork.common.protocol.shadowsocks.Context;
-import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
@@ -56,8 +56,8 @@ class AEADCipherCodecsTestCase {
         int port = TestDice.rollPort();
         String host = TestDice.rollHost();
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, host, port);
-        cipherTest(new Context(Network.TCP, StreamType.Request, request), new Context(Network.TCP, StreamType.Response, null), true);
-        cipherTest(new Context(Network.UDP, StreamType.Request, request), new Context(Network.UDP, StreamType.Response, null), false);
+        cipherTest(new Context(Network.TCP, Mode.Client, kind, request, ServerUserManager.EMPTY), new Context(Network.TCP, Mode.Server, kind, null, ServerUserManager.EMPTY), true);
+        cipherTest(new Context(Network.UDP, Mode.Client, kind, request, ServerUserManager.EMPTY), new Context(Network.UDP, Mode.Server, kind, null, ServerUserManager.EMPTY), false);
     }
 
 
@@ -78,8 +78,11 @@ class AEADCipherCodecsTestCase {
     }
 
     private List<Object> cipherTest(Context request, Context response, ByteBuf in, boolean reRoll) throws Exception {
-        AEADCipherCodec client = AEADCipherCodecs.get(kind, password);
-        AEADCipherCodec server = AEADCipherCodecs.get(kind, password);
+        ServerConfig config = new ServerConfig();
+        config.setCipher(kind);
+        config.setPassword(password);
+        AEADCipherCodec client = AEADCipherCodecs.get(config);
+        AEADCipherCodec server = AEADCipherCodecs.get(config);
         List<ByteBuf> encodeSlices = new ArrayList<>();
         for (ByteBuf slice : randomSlice(in, false)) {
             ByteBuf buf = Unpooled.buffer();
