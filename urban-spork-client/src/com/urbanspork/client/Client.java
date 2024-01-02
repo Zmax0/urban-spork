@@ -28,25 +28,21 @@ public class Client {
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
     public static void main(String[] args) {
-        launch(ConfigHandler.DEFAULT.read());
-    }
-
-    public static void launch(ClientConfig config) {
-        launch(config, new DefaultPromise<>() {});
+        launch(ConfigHandler.DEFAULT.read(), new DefaultPromise<>() {});
     }
 
     public static void launch(ClientConfig config, Promise<ServerSocketChannel> promise) {
         int port = config.getPort();
+        ServerConfig current = config.getCurrent();
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        ServerConfig current = config.getCurrent();
-        ChannelHandler udpTransportHandler;
-        if (Protocols.vmess == current.getProtocol()) {
-            udpTransportHandler = new ClientUDPOverTCPHandler(current, workerGroup);
-        } else {
-            udpTransportHandler = new ClientUDPReplayHandler(current, workerGroup);
-        }
         try {
+            ChannelHandler udpTransportHandler;
+            if (Protocols.vmess == current.getProtocol()) {
+                udpTransportHandler = new ClientUDPOverTCPHandler(current, workerGroup);
+            } else {
+                udpTransportHandler = new ClientUDPReplayHandler(current, workerGroup);
+            }
             new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
                 .attr(AttributeKeys.DIRECTION, Direction.Inbound)
                 .handler(new ChannelInitializer<>() {
@@ -77,8 +73,8 @@ public class Client {
             logger.error("Launch client failed", e);
             promise.setFailure(e);
         } finally {
-            bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
+            bossGroup.shutdownGracefully();
         }
     }
 }

@@ -6,6 +6,7 @@ import com.urbanspork.common.protocol.network.Network;
 import com.urbanspork.common.protocol.network.PacketEncoding;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class ServerConfig {
 
@@ -24,6 +25,8 @@ public class ServerConfig {
     private Network[] networks;
 
     private PacketEncoding packetEncoding;
+
+    private List<ServerUserConfig> user;
 
     public String getHost() {
         return host;
@@ -87,6 +90,14 @@ public class ServerConfig {
 
     public void setPacketEncoding(PacketEncoding packetEncoding) {
         this.packetEncoding = packetEncoding;
+    }
+
+    public List<ServerUserConfig> getUser() {
+        return user;
+    }
+
+    public void setUser(List<ServerUserConfig> serverUserConfig) {
+        this.user = serverUserConfig;
     }
 
     public boolean check() {

@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Tag("dependent")
+@Tag("integration")
 @DisplayName("VMess - TCP")
 class VMessTCPTestCase extends TCPTestTemplate {
     @Test
@@ -28,7 +28,7 @@ class VMessTCPTestCase extends TCPTestTemplate {
         DefaultEventLoop eventLoop = new DefaultEventLoop();
         launchServer(service, eventLoop, configs);
         handshakeAndSendBytes(config);
-        service.shutdownNow();
+        service.shutdown();
         eventLoop.shutdownGracefully();
     }
 }

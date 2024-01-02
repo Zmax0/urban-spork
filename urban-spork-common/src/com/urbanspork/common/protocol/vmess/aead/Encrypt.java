@@ -8,10 +8,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import java.security.InvalidKeyException;
-
 public class Encrypt {
 
     private static final byte[] KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY = "VMess Header AEAD Key_Length".getBytes();
@@ -21,8 +17,7 @@ public class Encrypt {
 
     private Encrypt() {}
 
-    public static void sealVMessAEADHeader(byte[] key, byte[] header, ByteBuf out)
-        throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidCipherTextException {
+    public static void sealVMessAEADHeader(byte[] key, byte[] header, ByteBuf out) throws InvalidCipherTextException {
         byte[] generatedAuthID = AuthID.createAuthID(key, VMess.timestamp(30));
         byte[] connectionNonce = Dice.rollBytes(8);
         byte[] aeadPayloadLengthSerializedByte = new byte[Short.BYTES];

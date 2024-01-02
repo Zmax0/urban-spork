@@ -1,13 +1,13 @@
 package com.urbanspork.test;
 
+import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.ServerSocket;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class TestUtil {
 
@@ -51,4 +51,17 @@ public class TestUtil {
         return ports;
     }
 
+    public static <T> void testEqualsAndHashcode(T t1, T t2) {
+        Set<T> set = new HashSet<>();
+        set.add(t1);
+        set.add(t2);
+        Assertions.assertEquals(t1, set.iterator().next());
+        Assertions.assertTrue(set.contains(t1));
+        Assertions.assertTrue(set.contains(t2));
+        Map<T, T> map = new HashMap<>();
+        map.put(t1, t2);
+        map.remove(t2);
+        Assertions.assertNotEquals(t1, map.get(t2));
+        Assertions.assertNotEquals(t1, new Object());
+    }
 }

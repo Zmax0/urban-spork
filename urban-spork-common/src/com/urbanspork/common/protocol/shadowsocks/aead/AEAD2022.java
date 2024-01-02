@@ -10,14 +10,24 @@ import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.codec.chunk.AEADChunkSizeParser;
 import com.urbanspork.common.codec.chunk.EmptyChunkSizeParser;
-import com.urbanspork.common.protocol.shadowsocks.StreamType;
+import com.urbanspork.common.codec.shadowsocks.Context;
+import com.urbanspork.common.codec.shadowsocks.Keys;
+import com.urbanspork.common.codec.shadowsocks.Mode;
+import com.urbanspork.common.crypto.AES;
+import com.urbanspork.common.crypto.Digests;
+import com.urbanspork.common.manage.shadowsocks.ServerUser;
+import com.urbanspork.common.util.ByteString;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
 import org.bouncycastle.crypto.digests.Blake3Digest;
 import org.bouncycastle.crypto.params.Blake3Parameters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -27,6 +37,8 @@ import java.util.concurrent.ThreadLocalRandom;
  * @see <a href=https://shadowsocks.org/doc/sip022.html>SIP022 AEAD-2022 Ciphers</a>
  */
 public interface AEAD2022 {
+
+    Logger logger = LoggerFactory.getLogger(AEAD2022.class);
     int MIN_PADDING_LENGTH = 0;
     int MAX_PADDING_LENGTH = 900;
     long SERVER_STREAM_TIMESTAMP_MAX_DIFF = 30;
@@ -59,9 +71,8 @@ public interface AEAD2022 {
             +--------+------------------------+---------------------------+------------------------+---------------------------+---+
             | 16/32B |    27/43B + 16B tag    | variable length + 16B tag |  2B length + 16B tag   | variable length + 16B tag |...|
             +--------+------------------------+---------------------------+------------------------+---------------------------+---+
-         */
+        */
 
-        static byte[][] newRequestHeader(ByteBuf msg) {
         /*
             Request fixed-length header:
             +------+------------------+--------+
@@ -77,10 +88,7 @@ public interface AEAD2022 {
             |  1B  | variable | u16be |     u16be      | variable |    variable     |
             +------+----------+-------+----------------+----------+-----------------+
         */
-            return newHeader(StreamType.Request, null, msg);
-        }
 
-        static byte[][] newResponseHeader(byte[] requestSalt, ByteBuf msg) {
         /*
             Response fixed-length header:
             +------+------------------+----------------+--------+
@@ -96,16 +104,14 @@ public interface AEAD2022 {
             |  1B  | variable | u16be |     u16be      | variable |    variable     |
             +------+----------+-------+----------------+----------+-----------------+
         */
-            return newHeader(StreamType.Response, requestSalt, msg);
-        }
 
-        private static byte[][] newHeader(StreamType streamType, byte[] requestSalt, ByteBuf msg) {
+        static byte[][] newHeader(Mode mode, byte[] requestSalt, ByteBuf msg) {
             int saltLength = 0;
             if (requestSalt != null) {
                 saltLength = requestSalt.length;
             }
             ByteBuf fixed = Unpooled.wrappedBuffer(new byte[1 + 8 + saltLength + 2]);
-            fixed.setByte(0, streamType.getValue());
+            fixed.setByte(0, mode.getValue());
             fixed.setLong(1, AEAD2022.newTimestamp());
             if (requestSalt != null) {
                 fixed.setBytes(1 + 8, requestSalt);
@@ -132,12 +138,33 @@ public interface AEAD2022 {
             return new PayloadDecoder(auth, sizeCodec, EmptyPaddingLengthGenerator.INSTANCE);
         }
 
+        static PayloadDecoder newPayloadDecoder(CipherKind cipherKind, CipherMethod cipherMethod, Context context, byte[] key, byte[] salt, byte[] eih) {
+            byte[] identitySubKey = deriveKey("shadowsocks 2022 identity subkey".getBytes(), concat(key, salt));
+            byte[] key0;
+            switch (cipherKind) {
+                case aead2022_blake3_aes_128_gcm -> key0 = Arrays.copyOf(identitySubKey, 16);
+                case aead2022_blake3_aes_256_gcm -> key0 = Arrays.copyOf(identitySubKey, 32);
+                default -> throw new DecoderException(cipherKind + " doesn't support EIH");
+            }
+            byte[] userHash = AES.INSTANCE.decrypt(key0, eih);
+            if (logger.isTraceEnabled()) {
+                logger.trace("server EIH {}, hash: {}", ByteString.valueOf(eih), ByteString.valueOf(userHash));
+            }
+            ServerUser user = context.userManager().getUserByHash(userHash);
+            if (user == null) {
+                throw new DecoderException("invalid client user identity " + ByteString.valueOf(userHash));
+            } else {
+                if (logger.isTraceEnabled()) {
+                    logger.trace("{} chosen by EIH", user);
+                }
+                context.session().setUser(user);
+                return newPayloadDecoder(cipherMethod, user.key(), salt);
+            }
+        }
+
         // session_subkey := blake3::derive_key(context: "shadowsocks 2022 session subkey", key_material: key + salt)
         static byte[] sessionSubkey(byte[] key, byte[] salt) {
-            byte[] in = new byte[key.length + salt.length];
-            System.arraycopy(key, 0, in, 0, key.length);
-            System.arraycopy(salt, 0, in, key.length, salt.length);
-            return deriveKey("shadowsocks 2022 session subkey".getBytes(), in);
+            return deriveKey("shadowsocks 2022 session subkey".getBytes(), concat(key, salt));
         }
     }
 
@@ -221,6 +248,12 @@ public interface AEAD2022 {
         }
     }
 
+    static byte[] concat(byte[] bytes1, byte[] bytes2) {
+        byte[] result = Arrays.copyOf(bytes1, bytes1.length + bytes2.length);
+        System.arraycopy(bytes2, 0, result, bytes1.length, bytes2.length);
+        return result;
+    }
+
     private static byte[] deriveKey(byte[] context, byte[] keyMaterial) {
         Blake3Digest digest = new Blake3Digest();
         Blake3Parameters parameters = Blake3Parameters.context(context);
@@ -229,5 +262,46 @@ public interface AEAD2022 {
         byte[] out = new byte[digest.getDigestSize()];
         digest.doFinal(out, 0);
         return out;
+    }
+
+    static Keys passwordToKeys(String password) {
+        // iPSK1:iPSK2:iPSK3:...:uPSK
+        String[] split = password.split(":");
+        String uPSK = split[split.length - 1];
+        byte[] encKey = Base64.getDecoder().decode(uPSK.getBytes());
+        byte[][] identityKeys = new byte[split.length - 1][];
+        for (int i = 0; i < split.length - 1; i++) {
+            identityKeys[i] = Base64.getDecoder().decode(split[i]);
+        }
+        return new Keys(encKey, identityKeys);
+    }
+
+    static void withEih(CipherKind kind, Keys keys, byte[] salt, ByteBuf out) {
+        byte[] subKey = null;
+        for (byte[] iPSK : keys.identityKeys()) {
+            if (subKey != null) {
+                withEih(kind, subKey, iPSK, out);
+            }
+            subKey = deriveKey("shadowsocks 2022 identity subkey".getBytes(), concat(iPSK, salt));
+        }
+        if (subKey != null) {
+            withEih(kind, subKey, keys.encKey(), out);
+        }
+    }
+
+    private static void withEih(CipherKind kind, byte[] subKey, byte[] iPSK, ByteBuf out) {
+        byte[] iPSKHash = Digests.blake3.hash(iPSK);
+        byte[] iPSKPlainText = Arrays.copyOf(iPSKHash, 16);
+        byte[] key0;
+        switch (kind) {
+            case aead2022_blake3_aes_128_gcm -> key0 = Arrays.copyOf(subKey, 16);
+            case aead2022_blake3_aes_256_gcm -> key0 = Arrays.copyOf(subKey, 32);
+            default -> throw new IllegalArgumentException(kind + "doesn't support EIH");
+        }
+        byte[] iPSKPEncryptText = AES.INSTANCE.encrypt(key0, iPSKPlainText);
+        if (logger.isTraceEnabled()) {
+            logger.trace("client EIH:{}, hash:{}", ByteString.valueOf(iPSKPEncryptText), ByteString.valueOf(iPSKPlainText));
+        }
+        out.writeBytes(iPSKPEncryptText);
     }
 }

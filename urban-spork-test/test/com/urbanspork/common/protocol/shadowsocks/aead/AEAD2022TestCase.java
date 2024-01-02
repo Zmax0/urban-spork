@@ -1,6 +1,14 @@
 package com.urbanspork.common.protocol.shadowsocks.aead;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
 import com.urbanspork.common.codec.CipherKind;
+import com.urbanspork.common.codec.shadowsocks.Keys;
+import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.util.Dice;
+import com.urbanspork.test.TestDice;
+import com.urbanspork.test.template.TraceLevelLoggerTestTemplate;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
 import org.bouncycastle.crypto.digests.Blake3Digest;
@@ -8,12 +16,13 @@ import org.bouncycastle.crypto.params.Blake3Parameters;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 import java.util.Base64;
+import java.util.StringJoiner;
 
 @DisplayName("Shadowsocks - AEAD-2022")
-class AEAD2022TestCase {
-
+class AEAD2022TestCase extends TraceLevelLoggerTestTemplate {
     @Test
     void testBlake3() {
         Blake3Digest digest = new Blake3Digest();
@@ -48,5 +57,27 @@ class AEAD2022TestCase {
     @Test
     void testGetNonceLength() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> AEAD2022.UDP.getNonceLength(CipherKind.aes_128_gcm));
+    }
+
+    @Test
+    void testWithEih() {
+        CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
+        StringJoiner joiner = new StringJoiner(":");
+        for (int i = 0; i < 3; i++) {
+            joiner.add(TestDice.rollPassword(Protocols.shadowsocks, kind));
+        }
+        String password = joiner.toString();
+        Keys keys = AEAD2022.passwordToKeys(password);
+        byte[] salt = Dice.rollBytes(kind.keySize());
+        ByteBuf out = Unpooled.buffer();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AEAD2022.withEih(CipherKind.aes_128_gcm, keys, salt, out));
+        AEAD2022.withEih(kind, keys, salt, out);
+        Assertions.assertTrue(out.isReadable());
+    }
+
+    @Override
+    protected Logger logger() {
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        return loggerContext.getLogger(AEAD2022.class);
     }
 }

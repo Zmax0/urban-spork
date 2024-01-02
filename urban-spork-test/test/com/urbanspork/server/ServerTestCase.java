@@ -17,7 +17,6 @@ import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -48,10 +47,11 @@ class ServerTestCase {
         int port = TestDice.rollPort();
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(new int[]{port, port});
         DefaultEventLoop executor = new DefaultEventLoop();
-        Promise<List<ServerSocketChannel>> promise = new DefaultPromise<>(executor);
+        Promise<List<ServerSocketChannel>> promise = executor.newPromise();
         Server.launch(configs, promise);
         promise.await(5, TimeUnit.SECONDS);
         Assertions.assertFalse(promise.isSuccess());
+        executor.shutdownGracefully();
     }
 
     @Test
@@ -77,8 +77,8 @@ class ServerTestCase {
         ServerConfig config = configs.getFirst();
         config.setNetworks(new Network[]{Network.TCP, Network.UDP});
         DefaultEventLoop executor = new DefaultEventLoop();
-        ExecutorService service = Executors.newFixedThreadPool(1);
-        Promise<List<ServerSocketChannel>> promise = new DefaultPromise<>(executor);
+        ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
+        Promise<List<ServerSocketChannel>> promise = executor.newPromise();
         service.submit(() -> Server.launch(configs, promise));
         promise.await().get();
         InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
@@ -89,6 +89,8 @@ class ServerTestCase {
         ChannelFuture future = channel.writeAndFlush(new DatagramPacket(Unpooled.wrappedBuffer(Dice.rollBytes(512)), serverAddress)).sync();
         future.get();
         Assertions.assertTrue(future.isDone());
+        executor.shutdownGracefully();
+        service.shutdown();
     }
 
     @Test
@@ -96,9 +98,8 @@ class ServerTestCase {
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(TestUtil.freePorts(1));
         ServerConfig config = configs.getFirst();
         DefaultEventLoop executor = new DefaultEventLoop();
-        Promise<List<ServerSocketChannel>> promise;
-        ExecutorService service = Executors.newFixedThreadPool(1);
-        promise = new DefaultPromise<>(executor);
+        ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
+        Promise<List<ServerSocketChannel>> promise = executor.newPromise();
         service.submit(() -> Server.launch(configs, promise));
         promise.await().get();
         Channel channel = new Bootstrap().group(new NioEventLoopGroup())
@@ -108,5 +109,7 @@ class ServerTestCase {
         ChannelFuture future = channel.writeAndFlush(Unpooled.wrappedBuffer(Dice.rollBytes(512))).sync();
         future.get();
         Assertions.assertTrue(future.isDone());
+        executor.shutdownGracefully();
+        service.shutdown();
     }
 }
