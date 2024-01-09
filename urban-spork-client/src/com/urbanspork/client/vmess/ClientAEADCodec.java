@@ -64,7 +64,7 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
             buffer.writeByte(RequestOption.toMask(header.option())); // option
             int paddingLen = ThreadLocalRandom.current().nextInt(16); // dice roll 16
             SecurityType security = header.security();
-            buffer.writeByte((paddingLen << 4) | (int) security.getValue());
+            buffer.writeByte((paddingLen << 4) | security.getValue() & 0xff);
             buffer.writeByte(0);
             buffer.writeByte(header.command().value());
             Address.writeAddressPort(buffer, header.address()); // address

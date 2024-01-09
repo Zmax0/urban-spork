@@ -21,6 +21,12 @@ put *config.json* file into the unpacked folder before running
       "packetEncoding": "{packetEncoding}",
       "networks": [
         "{networks}"
+      ],
+      "user": [
+        {
+          "name": "username",
+          "password": "{user password}"
+        }
       ]
     }
   ]
@@ -34,6 +40,8 @@ put *config.json* file into the unpacked folder before running
 > `networks`: see *Transmission*
 
 > `packetEncoding`: "None" | "Packet"
+
+> `user`: (OPTIONAL) support multiple users with [*Shadowsocks 2022 Extensible Identity Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-shadowsocks-2022-extensible-identity-headers.md)
 
 ## Features
 

@@ -56,6 +56,11 @@ public abstract class AbstractClientUDPReplayHandler<K> extends SimpleChannelInb
             logger.info("New binding => {} - {}", key, channel.localAddress());
             timer.newTimeout(timeout -> channel.close(), 10, TimeUnit.MINUTES);
             timer.newTimeout(timeout -> binding.remove(key), 1, TimeUnit.MINUTES);
+            channel.closeFuture().addListener(future -> {
+                if (binding.remove(key) != null) {
+                    logger.info("Remove binding {} as channel is closed", key);
+                }
+            });
             return channel;
         });
     }

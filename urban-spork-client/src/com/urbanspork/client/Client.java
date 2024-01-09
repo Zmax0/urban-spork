@@ -3,7 +3,6 @@ package com.urbanspork.client;
 import com.urbanspork.client.shadowsocks.ClientUDPReplayHandler;
 import com.urbanspork.client.vmess.ClientUDPOverTCPHandler;
 import com.urbanspork.common.channel.AttributeKeys;
-import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
 import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.config.ClientConfig;
@@ -51,8 +50,7 @@ public class Client {
                         ch.pipeline().addLast(
                             new DatagramPacketEncoder(),
                             new DatagramPacketDecoder(),
-                            udpTransportHandler,
-                            new ExceptionHandler(current)
+                            udpTransportHandler
                         );
                     }
                 })

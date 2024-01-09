@@ -20,7 +20,8 @@ public class TCPReplayCodec extends ByteToMessageCodec<ByteBuf> {
     }
 
     public TCPReplayCodec(Mode mode, Socks5CommandRequest request, ServerConfig config) {
-        this.context = new Context(Network.TCP, mode, Session.tcp(config.getCipher()), request, ServerUserManager.DEFAULT);
+        ServerUserManager userManager = Mode.Server == mode ? ServerUserManager.DEFAULT : ServerUserManager.EMPTY;
+        this.context = new Context(Network.TCP, mode, Session.tcp(config.getCipher()), new Control(), request, userManager);
         this.cipher = AEADCipherCodecs.get(config);
     }
 

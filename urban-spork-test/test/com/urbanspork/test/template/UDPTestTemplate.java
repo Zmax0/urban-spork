@@ -17,6 +17,7 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
+import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
@@ -71,7 +72,7 @@ public class UDPTestTemplate extends TestTemplate {
         InetSocketAddress dstAddress = new InetSocketAddress("localhost", dstPort);
         ClientHandshake.Result result = ClientHandshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).await().get();
         Assertions.assertEquals(Socks5CommandStatus.SUCCESS, result.response().status());
-        DefaultEventLoop executor = new DefaultEventLoop();
+        EventExecutor executor = new DefaultEventLoop();
         Promise<Void> promise = executor.newPromise();
         consumer = msg -> {
             if (dstAddress.equals(msg.third())) {

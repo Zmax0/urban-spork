@@ -23,29 +23,31 @@ class TCPTestCase extends TCPTestTemplate {
     void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
         int[] ports = TestUtil.freePorts(2);
         CipherKind cipher = parameter.cipher();
+        Protocols protocol = parameter.protocol();
         ServerConfig serverConfig = ServerConfigTestCase.testConfig(ports[1]);
-        serverConfig.setProtocol(parameter.protocol());
+        serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
         serverConfig.setPassword(parameter.serverPassword());
-        if (Protocols.shadowsocks == parameter.protocol() && cipher.isAead2022() && cipher.supportEih()) {
+        if (Protocols.shadowsocks == protocol && cipher.isAead2022() && cipher.supportEih()) {
             List<ServerUserConfig> user = new ArrayList<>();
             user.add(new ServerUserConfig(TestDice.rollString(10), parameter.clientPassword()));
             serverConfig.setUser(user);
         }
         ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
-        DefaultEventLoop eventLoop = new DefaultEventLoop();
-        launchServer(service, eventLoop, List.of(serverConfig));
+        DefaultEventLoop executor = new DefaultEventLoop();
+        launchServer(service, executor, List.of(serverConfig));
         ClientConfig config = ClientConfigTestCase.testConfig(ports[0], ports[1]);
-        ServerConfig current = config.getServers().getFirst();
+        ServerConfig current = config.getCurrent();
         current.setCipher(cipher);
-        current.setProtocol(parameter.protocol());
-        current.setPassword(parameter.serverPassword());
-        if (Protocols.shadowsocks == parameter.protocol() && cipher.isAead2022() && cipher.supportEih()) {
+        current.setProtocol(protocol);
+        if (Protocols.shadowsocks == protocol && cipher.isAead2022() && cipher.supportEih()) {
             current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
+        } else {
+            current.setPassword(parameter.serverPassword());
         }
-        launchClient(service, eventLoop, config);
+        launchClient(service, executor, config);
         handshakeAndSendBytes(config);
         service.shutdown();
-        eventLoop.shutdownGracefully();
+        executor.shutdownGracefully();
     }
 }

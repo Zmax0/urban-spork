@@ -7,7 +7,7 @@ import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.shadowsocks.aead.AEAD;
-import com.urbanspork.common.protocol.shadowsocks.aead.AEAD2022;
+import com.urbanspork.common.protocol.shadowsocks.aead2022.AEAD2022;
 
 import java.util.List;
 

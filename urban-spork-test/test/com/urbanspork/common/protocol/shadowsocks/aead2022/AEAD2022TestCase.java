@@ -1,4 +1,4 @@
-package com.urbanspork.common.protocol.shadowsocks.aead;
+package com.urbanspork.common.protocol.shadowsocks.aead2022;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
@@ -60,7 +60,7 @@ class AEAD2022TestCase extends TraceLevelLoggerTestTemplate {
     }
 
     @Test
-    void testWithEih() {
+    void testTCPWithEih() {
         CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
         StringJoiner joiner = new StringJoiner(":");
         for (int i = 0; i < 3; i++) {
@@ -70,8 +70,7 @@ class AEAD2022TestCase extends TraceLevelLoggerTestTemplate {
         Keys keys = AEAD2022.passwordToKeys(password);
         byte[] salt = Dice.rollBytes(kind.keySize());
         ByteBuf out = Unpooled.buffer();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> AEAD2022.withEih(CipherKind.aes_128_gcm, keys, salt, out));
-        AEAD2022.withEih(kind, keys, salt, out);
+        AEAD2022.TCP.withEih(keys, salt, out);
         Assertions.assertTrue(out.isReadable());
     }
 
