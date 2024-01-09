@@ -23,11 +23,15 @@ public class UDPReplayCodec extends MessageToMessageCodec<DatagramPacket, Ternar
     private final AEADCipherCodec cipher;
     private final Mode mode;
     private final Session session;
+    private final Control control;
+    private final ServerUserManager userManager;
 
     public UDPReplayCodec(ServerConfig config, Mode mode) {
         this.cipher = AEADCipherCodecs.get(config);
         this.mode = mode;
-        this.session = Session.udp(mode, config.getCipher());
+        this.session = Session.udp(config.getCipher());
+        this.control = new Control();
+        this.userManager = Mode.Server == mode ? ServerUserManager.DEFAULT : ServerUserManager.EMPTY;
     }
 
     @Override
@@ -39,14 +43,19 @@ public class UDPReplayCodec extends MessageToMessageCodec<DatagramPacket, Ternar
         ByteBuf in = Unpooled.buffer();
         DatagramPacket data = msg.packet();
         Socks5CommandRequest request = Socks5.toCommandRequest(Socks5CommandType.CONNECT, data.recipient());
-        cipher.encode(new Context(Network.UDP, mode, session, request, ServerUserManager.DEFAULT), data.content(), in);
+        cipher.encode(new Context(Network.UDP, mode, session, control, request, userManager), data.content(), in);
+        if (Mode.Client == mode) {
+            session.increasePacketId(1);
+        } else {
+            control.increasePacketId(1);
+        }
         out.add(new DatagramPacket(in, proxy, data.sender()));
     }
 
     @Override
     protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List<Object> out) throws Exception {
         List<Object> list = new ArrayList<>(2);
-        cipher.decode(new Context(Network.UDP, mode, session, null, ServerUserManager.DEFAULT), msg.content(), list);
+        cipher.decode(new Context(Network.UDP, mode, session, control, null, userManager), msg.content(), list);
         out.add(new DatagramPacket((ByteBuf) list.get(1), (InetSocketAddress) list.get(0), msg.sender()));
     }
 }

@@ -8,9 +8,10 @@ import com.urbanspork.common.codec.aead.CipherMethods;
 import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.Network;
-import com.urbanspork.common.protocol.shadowsocks.aead.AEAD2022;
+import com.urbanspork.common.protocol.shadowsocks.aead2022.AEAD2022;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import com.urbanspork.test.template.TraceLevelLoggerTestTemplate;
@@ -47,7 +48,7 @@ class AEADCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
         AEADCipherCodec codec = newAEADCipherCodec();
         List<Object> out = new ArrayList<>();
         ByteBuf in = Unpooled.wrappedBuffer(Dice.rollBytes(3));
-        Context context = new Context(Network.UDP, Mode.Client, TestDice.rollCipher(), null);
+        Context context = new Context(Network.UDP, Mode.Client, TestDice.rollCipher(), null, ServerUserManager.EMPTY);
         Assertions.assertThrows(DecoderException.class, () -> codec.decode(context, in, out));
     }
 
@@ -58,9 +59,9 @@ class AEADCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
         List<Object> out = new ArrayList<>();
         ByteBuf in = Unpooled.buffer();
         CipherKind kind = TestDice.rollCipher();
-        codec.encode(new Context(Network.UDP, Mode.Client, kind, request), Unpooled.EMPTY_BUFFER, in);
+        codec.encode(new Context(Network.UDP, Mode.Client, kind, request, ServerUserManager.EMPTY), Unpooled.EMPTY_BUFFER, in);
         Assertions.assertTrue(in.isReadable());
-        codec.decode(new Context(Network.UDP, Mode.Server, kind, request), in, out);
+        codec.decode(new Context(Network.UDP, Mode.Server, kind, request, ServerUserManager.EMPTY), in, out);
         Assertions.assertFalse(in.isReadable());
         Assertions.assertFalse(out.isEmpty());
     }
@@ -77,7 +78,7 @@ class AEADCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
         config.setCipher(kind);
         AEADCipherCodec codec = AEADCipherCodecs.get(config);
         ByteBuf msg = Unpooled.buffer();
-        codec.encode(new Context(Network.TCP, Mode.Client, kind, request), Unpooled.wrappedBuffer(Dice.rollBytes(10)), msg);
+        codec.encode(new Context(Network.TCP, Mode.Client, kind, request, ServerUserManager.EMPTY), Unpooled.wrappedBuffer(Dice.rollBytes(10)), msg);
         byte[] salt = new byte[saltSize];
         msg.readBytes(salt);
         byte[] passwordBytes = Base64.getDecoder().decode(password);
@@ -92,7 +93,7 @@ class AEADCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
         temp.writeBytes(encoder.auth().seal(header));
         temp.writeBytes(msg);
         ArrayList<Object> out = new ArrayList<>();
-        Context context = new Context(Network.TCP, Mode.Server, kind, request);
+        Context context = new Context(Network.TCP, Mode.Server, kind, request, ServerUserManager.EMPTY);
         codec.decode(context, msg, out);
         Assertions.assertThrows(DecoderException.class, () -> codec.decode(context, temp, out));
     }

@@ -1,6 +1,7 @@
 package com.urbanspork.client.shadowsocks;
 
 import com.urbanspork.client.AbstractClientUDPReplayHandler;
+import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.codec.shadowsocks.UDPReplayCodec;
 import com.urbanspork.common.config.ServerConfig;
@@ -44,7 +45,8 @@ public class ClientUDPReplayHandler extends AbstractClientUDPReplayHandler<InetS
                 protected void initChannel(Channel ch) {
                     ch.pipeline().addLast(
                         new UDPReplayCodec(config, Mode.Client),
-                        new InboundHandler(inboundChannel, sender)// server->client->sender
+                        new InboundHandler(inboundChannel, sender),// server->client->sender
+                        new ExceptionHandler(config)
                     );
                 }
             }).bind(0) // automatically assigned port now, may have security implications

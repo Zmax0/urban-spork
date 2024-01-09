@@ -1,4 +1,4 @@
-package com.urbanspork.common.protocol.shadowsocks.aead;
+package com.urbanspork.common.protocol.shadowsocks.aead2022;
 
 import com.urbanspork.common.codec.BytesGenerator;
 import com.urbanspork.common.codec.CipherKind;
@@ -9,22 +9,25 @@ import com.urbanspork.common.codec.aead.CipherMethod;
 import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.codec.chunk.AEADChunkSizeParser;
-import com.urbanspork.common.codec.chunk.EmptyChunkSizeParser;
 import com.urbanspork.common.codec.shadowsocks.Context;
 import com.urbanspork.common.codec.shadowsocks.Keys;
 import com.urbanspork.common.codec.shadowsocks.Mode;
+import com.urbanspork.common.codec.shadowsocks.UdpCipher;
 import com.urbanspork.common.crypto.AES;
 import com.urbanspork.common.crypto.Digests;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;
+import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.util.ByteString;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.Blake3Digest;
 import org.bouncycastle.crypto.params.Blake3Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Base64;
@@ -138,15 +141,9 @@ public interface AEAD2022 {
             return new PayloadDecoder(auth, sizeCodec, EmptyPaddingLengthGenerator.INSTANCE);
         }
 
-        static PayloadDecoder newPayloadDecoder(CipherKind cipherKind, CipherMethod cipherMethod, Context context, byte[] key, byte[] salt, byte[] eih) {
+        static PayloadDecoder newPayloadDecoder(CipherMethod cipherMethod, Context context, byte[] key, byte[] salt, byte[] eih) {
             byte[] identitySubKey = deriveKey("shadowsocks 2022 identity subkey".getBytes(), concat(key, salt));
-            byte[] key0;
-            switch (cipherKind) {
-                case aead2022_blake3_aes_128_gcm -> key0 = Arrays.copyOf(identitySubKey, 16);
-                case aead2022_blake3_aes_256_gcm -> key0 = Arrays.copyOf(identitySubKey, 32);
-                default -> throw new DecoderException(cipherKind + " doesn't support EIH");
-            }
-            byte[] userHash = AES.INSTANCE.decrypt(key0, eih);
+            byte[] userHash = AES.INSTANCE.decrypt(identitySubKey, eih);
             if (logger.isTraceEnabled()) {
                 logger.trace("server EIH {}, hash: {}", ByteString.valueOf(eih), ByteString.valueOf(userHash));
             }
@@ -165,6 +162,29 @@ public interface AEAD2022 {
         // session_subkey := blake3::derive_key(context: "shadowsocks 2022 session subkey", key_material: key + salt)
         static byte[] sessionSubkey(byte[] key, byte[] salt) {
             return deriveKey("shadowsocks 2022 session subkey".getBytes(), concat(key, salt));
+        }
+
+        static void withEih(Keys keys, byte[] salt, ByteBuf out) {
+            byte[] subKey = null;
+            for (byte[] iPSK : keys.identityKeys()) {
+                if (subKey != null) {
+                    withEih(subKey, iPSK, out);
+                }
+                subKey = deriveKey("shadowsocks 2022 identity subkey".getBytes(), concat(iPSK, salt));
+            }
+            if (subKey != null) {
+                withEih(subKey, keys.encKey(), out);
+            }
+        }
+
+        private static void withEih(byte[] subKey, byte[] iPSK, ByteBuf out) {
+            byte[] iPSKHash = Digests.blake3.hash(iPSK);
+            byte[] iPSKPlainText = Arrays.copyOf(iPSKHash, 16);
+            byte[] iPSKPEncryptText = AES.INSTANCE.encrypt(subKey, iPSKPlainText);
+            if (logger.isTraceEnabled()) {
+                logger.trace("client EIH:{}, hash:{}", ByteString.valueOf(iPSKPEncryptText), ByteString.valueOf(iPSKPlainText));
+            }
+            out.writeBytes(iPSKPEncryptText);
         }
     }
 
@@ -202,6 +222,9 @@ public interface AEAD2022 {
             |  1B  | u64be unix epoch |         8B        |     u16be      | variable |  1B  | variable | u16be |
             +------+------------------+-------------------+----------------+----------+------+----------+-------+
         */
+        Duration CIPHER_CACHE_DURATION = Duration.ofSeconds(30);
+        int CIPHER_CACHE_LIMIT = 102400;
+
         static int getNonceLength(CipherKind kind) {
             if (CipherKind.aead2022_blake3_aes_128_gcm == kind || CipherKind.aead2022_blake3_aes_256_gcm == kind) {
                 return 0;
@@ -209,14 +232,60 @@ public interface AEAD2022 {
             throw new IllegalArgumentException(kind + " is not an AEAD 2022 cipher");
         }
 
-        static PayloadEncoder newPayloadEncoder(CipherMethod cipherMethod, byte[] key, long sessionId, byte[] nonce) {
-            Authenticator auth = new Authenticator(cipherMethod, sessionSubkey(key, sessionId), NonceGenerator.generateStaticNonce(nonce), BytesGenerator.generateEmptyBytes());
-            return new PayloadEncoder(auth, EmptyChunkSizeParser.INSTANCE, EmptyPaddingLengthGenerator.INSTANCE, 0xffff);
+        static UdpCipher getCipher(CipherKind kind, CipherMethod method, byte[] key, long sessionId) {
+            return UDPCipherCaches.INSTANCE.get(kind, method, key, sessionId);
         }
 
-        static PayloadDecoder newPayloadDecoder(CipherMethod cipherMethod, byte[] key, long sessionId, byte[] nonce) {
-            Authenticator auth = new Authenticator(cipherMethod, sessionSubkey(key, sessionId), NonceGenerator.generateStaticNonce(nonce), BytesGenerator.generateEmptyBytes());
-            return new PayloadDecoder(auth, EmptyChunkSizeParser.INSTANCE, EmptyPaddingLengthGenerator.INSTANCE);
+        static void encodePacket(UdpCipher cipher, byte[] iPSK, int eihLength, ByteBuf in, ByteBuf out) throws InvalidCipherTextException {
+            byte[] header = new byte[16];
+            in.readBytes(header);
+            byte[] nonce = Arrays.copyOfRange(header, 4, 16);
+            AES.INSTANCE.encrypt(iPSK, header, header);
+            out.writeBytes(header);
+            if (eihLength > 0) {
+                in.readBytes(out, eihLength);
+            }
+            byte[] encrypting = new byte[in.readableBytes()];
+            in.readBytes(encrypting);
+            out.writeBytes(cipher.seal(encrypting, nonce));
+        }
+
+        static ByteBuf decodePacket(CipherKind kind, CipherMethod method, Context context, byte[] key, ByteBuf in) throws InvalidCipherTextException {
+            byte[] header = new byte[16];
+            in.readBytes(header);
+            AES.INSTANCE.decrypt(key, header, header);
+            ByteBuf headerBuffer = Unpooled.wrappedBuffer(header);
+            long sessionId = headerBuffer.getLong(0);
+            UdpCipher cipher;
+            byte[] eih;
+            ServerUserManager userManager = context.userManager();
+            if (kind.supportEih() && userManager.userCount() > 0) {
+                eih = new byte[16];
+                in.readBytes(eih);
+                if (logger.isTraceEnabled()) {
+                    logger.trace("server EIH {}, session_id_packet_id: {},{}", ByteString.valueOf(eih), sessionId, headerBuffer.getLong(Long.BYTES));
+                }
+                AES.INSTANCE.decrypt(key, eih, eih);
+                for (int i = 0; i < eih.length; i++) {
+                    eih[i] ^= header[i];
+                }
+                ServerUser user = userManager.getUserByHash(eih);
+                if (user == null) {
+                    throw new DecoderException("user with identity " + ByteString.valueOf(eih) + " not found");
+                } else {
+                    logger.trace("{} chosen by EIH", user);
+                    cipher = getCipher(kind, method, user.key(), sessionId);
+                    context.session().setUser(user);
+                }
+            } else {
+                eih = new byte[0];
+                cipher = getCipher(kind, method, key, sessionId);
+            }
+            byte[] nonce = new byte[12];
+            headerBuffer.getBytes(4, nonce);
+            byte[] decrypting = new byte[in.readableBytes()];
+            in.readBytes(decrypting);
+            return Unpooled.wrappedBuffer(header, eih, cipher.open(decrypting, nonce));
         }
 
         static byte[] sessionSubkey(byte[] key, long sessionId) {
@@ -224,6 +293,31 @@ public interface AEAD2022 {
             System.arraycopy(key, 0, in, 0, key.length);
             Unpooled.wrappedBuffer(in).setLong(key.length, sessionId);
             return deriveKey("shadowsocks 2022 session subkey".getBytes(), in);
+        }
+
+        static void withEih(byte[] key, byte[][] identityKeys, byte[] sessionIdPacketId, ByteBuf buffer) {
+            for (int i = 0; i < identityKeys.length; i++) {
+                byte[] identityHeader = new byte[16];
+                if (i != identityKeys.length - 1) {
+                    withEih(identityKeys[i], identityKeys[i + 1], sessionIdPacketId, identityHeader);
+                } else {
+                    withEih(identityKeys[i], key, sessionIdPacketId, identityHeader);
+                }
+                buffer.writeBytes(identityHeader);
+            }
+        }
+
+        private static void withEih(byte[] iPSK, byte[] iPSKn, byte[] sessionIdPacketId, byte[] identityHeader) {
+            byte[] iPSKnHash = Digests.blake3.hash(iPSKn);
+            byte[] iPSKnHashPlainText = Arrays.copyOf(iPSKnHash, 16);
+            System.arraycopy(iPSKnHashPlainText, 0, identityHeader, 0, iPSKnHashPlainText.length);
+            for (int i = 0; i < 16; i++) {
+                identityHeader[i] ^= sessionIdPacketId[i];
+            }
+            AES.INSTANCE.encrypt(iPSK, identityHeader, identityHeader);
+            if (logger.isTraceEnabled()) {
+                logger.trace("client EIH:{}, hash:{}", ByteString.valueOf(identityHeader), ByteString.valueOf(iPSKnHashPlainText));
+            }
         }
     }
 
@@ -274,34 +368,5 @@ public interface AEAD2022 {
             identityKeys[i] = Base64.getDecoder().decode(split[i]);
         }
         return new Keys(encKey, identityKeys);
-    }
-
-    static void withEih(CipherKind kind, Keys keys, byte[] salt, ByteBuf out) {
-        byte[] subKey = null;
-        for (byte[] iPSK : keys.identityKeys()) {
-            if (subKey != null) {
-                withEih(kind, subKey, iPSK, out);
-            }
-            subKey = deriveKey("shadowsocks 2022 identity subkey".getBytes(), concat(iPSK, salt));
-        }
-        if (subKey != null) {
-            withEih(kind, subKey, keys.encKey(), out);
-        }
-    }
-
-    private static void withEih(CipherKind kind, byte[] subKey, byte[] iPSK, ByteBuf out) {
-        byte[] iPSKHash = Digests.blake3.hash(iPSK);
-        byte[] iPSKPlainText = Arrays.copyOf(iPSKHash, 16);
-        byte[] key0;
-        switch (kind) {
-            case aead2022_blake3_aes_128_gcm -> key0 = Arrays.copyOf(subKey, 16);
-            case aead2022_blake3_aes_256_gcm -> key0 = Arrays.copyOf(subKey, 32);
-            default -> throw new IllegalArgumentException(kind + "doesn't support EIH");
-        }
-        byte[] iPSKPEncryptText = AES.INSTANCE.encrypt(key0, iPSKPlainText);
-        if (logger.isTraceEnabled()) {
-            logger.trace("client EIH:{}, hash:{}", ByteString.valueOf(iPSKPEncryptText), ByteString.valueOf(iPSKPlainText));
-        }
-        out.writeBytes(iPSKPEncryptText);
     }
 }

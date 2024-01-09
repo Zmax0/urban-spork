@@ -18,6 +18,17 @@ class AESTestCase {
     }
 
     @Test
+    void testEncryptAndDecryptInPlace() {
+        byte[] key = Dice.rollBytes(16);
+        String str = TestDice.rollString(16);
+        byte[] in = str.getBytes();
+        AES.INSTANCE.encrypt(key, in, in);
+        Assertions.assertNotEquals(str, new String(in));
+        AES.INSTANCE.decrypt(key, in, in);
+        Assertions.assertEquals(str, new String(in));
+    }
+
+    @Test
     void testAes128() {
         byte[] decrypt = AES.INSTANCE.decrypt("4ylXkB2KedlvbLFy".getBytes(), Base64.getDecoder().decode("P1RKHzOxcv1GKRlbD5OZGA=="));
         Assertions.assertEquals("VqaYmC3G66ZuPB6J", new String(decrypt));
