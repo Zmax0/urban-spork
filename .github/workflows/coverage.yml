@@ -1,23 +1,23 @@
 name: coverage
 on:
   push:
-    branches: [ master, coverage ]
+    branches: [ master, dev/* ]
   pull_request:
     branches: [ master ]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
+      - uses: actions/checkout@v4
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          java-version: '21'
+          distribution: 'corretto'
           cache: maven
       - name: Build with Maven
         run: mvn -B package --file pom.xml
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v3.1.4
         with:
           token: ${{secrets.CODECOV}}
