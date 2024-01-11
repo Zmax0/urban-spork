@@ -18,8 +18,8 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import java.net.InetSocketAddress;
 
-@DisplayName("Shadowsocks - Server UDP Handler")
-class ServerUDPHandlerTestCase {
+@DisplayName("Shadowsocks - Server UDP Replay Handler")
+class ServerUDPReplayHandlerTestCase {
     @ParameterizedTest
     @EnumSource(PacketEncoding.class)
     void testWorkAndIdle(PacketEncoding packetEncoding) throws Exception {

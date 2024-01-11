@@ -6,7 +6,6 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.network.Network;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.util.concurrent.FutureListener;
@@ -19,8 +18,6 @@ import java.net.InetSocketAddress;
 class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(RemoteConnectHandler.class);
-    private final Bootstrap b = new Bootstrap();
-    private final EventLoopGroup w = new NioEventLoopGroup(1);
     private final ServerConfig config;
     private Promise<Channel> p;
 
@@ -41,7 +38,7 @@ class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
         if (msg instanceof Socks5CommandRequest request) {
             ctx.pipeline().addLast(
                 new ServerUDPOverTCPCodec(request),
-                new ServerUDPReplayHandler(config.getPacketEncoding(), w)
+                new ServerUDPReplayHandler(config.getPacketEncoding(), ctx.channel().eventLoop().parent().next())
             );
         } else {
             ctx.fireChannelRead(msg);
@@ -69,7 +66,7 @@ class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
 
     private void connect(ChannelHandlerContext ctx, Channel localChannel, InetSocketAddress remoteAddress) {
         p = ctx.executor().newPromise();
-        b.group(localChannel.eventLoop())
+        new Bootstrap().group(localChannel.eventLoop())
             .channel(NioSocketChannel.class)
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
             .handler(new DefaultChannelInboundHandler(localChannel))
