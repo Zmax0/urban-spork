@@ -55,7 +55,7 @@ public class ServerUDPReplayHandler extends SimpleChannelInboundHandler<Datagram
     }
 
     private Channel newWorkerChannel(InetSocketAddress callback, Channel channel) {
-        Channel outboundChannel = new Bootstrap().group(workerGroup).channel(NioDatagramChannel.class)
+        Channel workerChannel = new Bootstrap().group(workerGroup).channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {
                 @Override
                 protected void initChannel(Channel ch) {
@@ -68,11 +68,17 @@ public class ServerUDPReplayHandler extends SimpleChannelInboundHandler<Datagram
             })// callback->server->client
             .bind(0) // automatically assigned port now, may have security implications
             .syncUninterruptibly().channel();
-        logger.info("[udp][binding]{} == {}", callback, outboundChannel.localAddress());
-        return outboundChannel;
+        workerChannel.closeFuture().addListener(future -> {
+            Channel removed = workerChannels.remove(callback);
+            if (removed != null) {
+                logger.info("[udp][binding]{} != {}", callback, removed.localAddress());
+            }
+        });
+        logger.info("[udp][binding]{} == {}", callback, workerChannel.localAddress());
+        return workerChannel;
     }
 
-    private class InboundHandler extends SimpleChannelInboundHandler<DatagramPacket> {
+    private static class InboundHandler extends SimpleChannelInboundHandler<DatagramPacket> {
 
         private final Channel inboundChannel;
 
@@ -98,16 +104,8 @@ public class ServerUDPReplayHandler extends SimpleChannelInboundHandler<Datagram
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
             if (evt instanceof IdleStateEvent) {
-                Channel channel = ctx.channel();
-                workerChannels.entrySet().removeIf(entry -> {
-                    Channel value = entry.getValue();
-                    boolean flag = channel.equals(value);
-                    if (flag) {
-                        logger.info("[udp][binding]{} != {}", entry.getKey(), channel.localAddress());
-                        value.close();
-                    }
-                    return flag;
-                });
+                ctx.close();
+                inboundChannel.close();
             }
         }
     }

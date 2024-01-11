@@ -53,12 +53,13 @@ public abstract class AbstractClientUDPReplayHandler<K> extends SimpleChannelInb
     private Channel getBindingChannel(Channel inboundChannel, K key) {
         return binding.computeIfAbsent(key, k -> {
             Channel channel = newBindingChannel(inboundChannel, key);
-            logger.info("New binding => {} - {}", key, channel.localAddress());
+            logger.info("[udp][binding]{} = {}", key, channel.localAddress());
             timer.newTimeout(timeout -> channel.close(), 10, TimeUnit.MINUTES);
             timer.newTimeout(timeout -> binding.remove(key), 1, TimeUnit.MINUTES);
             channel.closeFuture().addListener(future -> {
-                if (binding.remove(key) != null) {
-                    logger.info("Remove binding {} as channel is closed", key);
+                Channel removed = binding.remove(key);
+                if (removed != null) {
+                    logger.info("[udp][binding]{} != {}", key, removed.localAddress());
                 }
             });
             return channel;
