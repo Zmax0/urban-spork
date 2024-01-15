@@ -98,6 +98,37 @@ class AEADCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
         Assertions.assertThrows(DecoderException.class, () -> codec.decode(context, temp, out));
     }
 
+    @Test
+    void testTooShortPacket() {
+        AEADCipherCodec codec = newAEADCipherCodec();
+        ByteBuf in = Unpooled.buffer();
+        List<Object> out = new ArrayList<>();
+        Context c1 = new Context(Network.UDP, Mode.Client, CipherKind.aead2022_blake3_aes_128_gcm, null, ServerUserManager.EMPTY);
+        Assertions.assertThrows(DecoderException.class, () -> codec.decode(c1, in, out));
+        Context c2 = new Context(Network.UDP, Mode.Server, CipherKind.aead2022_blake3_aes_128_gcm, null, ServerUserManager.EMPTY);
+        Assertions.assertThrows(DecoderException.class, () -> codec.decode(c2, in, out));
+    }
+
+    @Test
+    void testInvalidSocketType() throws InvalidCipherTextException {
+        DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, TestDice.rollHost(), TestDice.rollPort());
+        Context c1 = new Context(Network.UDP, Mode.Client, CipherKind.aead2022_blake3_aes_128_gcm, request, ServerUserManager.EMPTY);
+        testInvalidSocketType(c1);
+        Context c2 = new Context(Network.UDP, Mode.Server, CipherKind.aead2022_blake3_aes_128_gcm, request, ServerUserManager.EMPTY);
+        testInvalidSocketType(c2);
+    }
+
+    private static void testInvalidSocketType(Context c) throws InvalidCipherTextException {
+        AEADCipherCodec codec = newAEADCipherCodec();
+        byte[] msg = Dice.rollBytes(10);
+        ByteBuf in = Unpooled.buffer();
+        in.writeBytes(msg);
+        ByteBuf out = Unpooled.buffer();
+        codec.encode(c, in, out);
+        ArrayList<Object> list = new ArrayList<>();
+        Assertions.assertThrows(DecoderException.class, () -> codec.decode(c, out, list));
+    }
+
     static AEADCipherCodec newAEADCipherCodec() {
         CipherKind kind = CipherKind.aead2022_blake3_aes_128_gcm;
         ServerConfig config = new ServerConfig();
