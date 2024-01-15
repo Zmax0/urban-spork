@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-public record Parameter(Protocols protocol, CipherKind cipher, String password) {
+public record Parameter(Protocols protocol, CipherKind cipher, String clientPassword, String serverPassword) {
     @Override
     public String toString() {
         return String.format("%s|%s", protocol, cipher);
@@ -23,7 +23,7 @@ public record Parameter(Protocols protocol, CipherKind cipher, String password) 
             List<Parameter> parameters = new ArrayList<>();
             for (Protocols protocol : Protocols.values()) {
                 for (CipherKind cipher : CipherKind.values()) {
-                    parameters.add(new Parameter(protocol, cipher, TestDice.rollPassword(protocol, cipher)));
+                    parameters.add(new Parameter(protocol, cipher, TestDice.rollPassword(protocol, cipher), TestDice.rollPassword(protocol, cipher)));
                 }
             }
             return parameters.stream().map(Arguments::of);

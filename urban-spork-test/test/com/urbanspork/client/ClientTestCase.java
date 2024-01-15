@@ -6,10 +6,10 @@ import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.protocol.socks.ClientHandshake;
 import com.urbanspork.test.TestUtil;
 import io.netty.channel.DefaultEventLoop;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.ServerSocketChannel;
-import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
-import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -27,15 +27,15 @@ import java.util.stream.Stream;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ClientTestCase {
-
     private final int[] ports = TestUtil.freePorts(2);
+    private final EventLoopGroup group = new NioEventLoopGroup();
 
     @Test
     @Order(1)
     void testExit() {
         ClientConfig config = ClientConfigTestCase.testConfig(ports);
         ConfigHandler.DEFAULT.save(config);
-        ExecutorService pool = Executors.newFixedThreadPool(1);
+        ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();
         Future<?> future = pool.submit(() -> Client.main(null));
         try {
             future.get(2, TimeUnit.SECONDS);
@@ -46,7 +46,7 @@ class ClientTestCase {
                 throw new RuntimeException(e);
             }
         }
-        pool.shutdownNow();
+        pool.shutdown();
         Assertions.assertTrue(future.isCancelled());
     }
 
@@ -59,17 +59,16 @@ class ClientTestCase {
     @ParameterizedTest
     @ArgumentsSource(Socks5CommandTypeProvider.class)
     @Order(3)
-    void testHandshake(Socks5CommandType type) throws InterruptedException, ExecutionException, TimeoutException {
+    void testHandshake(Socks5CommandType type) {
         InetSocketAddress proxyAddress = new InetSocketAddress(ports[0]);
         InetSocketAddress dstAddress = new InetSocketAddress(ports[1]);
-        ClientHandshake.Result result = ClientHandshake.noAuth(type, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS);
-        Assertions.assertNotEquals(Socks5CommandStatus.SUCCESS, result.response().status());
+        Assertions.assertThrows(ExecutionException.class, () -> ClientHandshake.noAuth(group, type, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS));
     }
 
     public static Future<?> launchClient(ClientConfig config) throws InterruptedException {
         DefaultEventLoop executor = new DefaultEventLoop();
-        Promise<ServerSocketChannel> promise = new DefaultPromise<>(executor);
-        Future<?> future = Executors.newFixedThreadPool(1).submit(() -> Client.launch(config, promise));
+        Promise<ServerSocketChannel> promise = executor.newPromise();
+        Future<?> future = Executors.newVirtualThreadPerTaskExecutor().submit(() -> Client.launch(config, promise));
         promise.await();
         executor.shutdownGracefully();
         return future;

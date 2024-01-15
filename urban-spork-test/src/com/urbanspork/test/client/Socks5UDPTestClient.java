@@ -44,13 +44,13 @@ public class Socks5UDPTestClient {
         InetSocketAddress proxyAddress = new InetSocketAddress(LOCALHOST, proxyPort);
         InetSocketAddress dstAddress1 = new InetSocketAddress(hostname, SimpleEchoTestServer.PORT);
         InetSocketAddress dstAddress2 = new InetSocketAddress(hostname, DelayedEchoTestServer.PORT);
-        ClientHandshake.Result result1 = ClientHandshake.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress1).await().get();
-        ClientHandshake.Result result2 = ClientHandshake.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress2).await().get();
+        EventLoopGroup group = new NioEventLoopGroup();
+        ClientHandshake.Result result1 = ClientHandshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress1).await().get();
+        ClientHandshake.Result result2 = ClientHandshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress2).await().get();
         int bndPort1 = result1.response().bndPort();
         int bndPort2 = result2.response().bndPort();
         logger.info("Associate ports: [{}, {}]", bndPort1, bndPort2);
-        EventLoopGroup bossGroup = new NioEventLoopGroup(2);
-        Channel channel = new Bootstrap().group(bossGroup)
+        Channel channel = new Bootstrap().group(group)
             .channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {
                 @Override
@@ -89,7 +89,7 @@ public class Socks5UDPTestClient {
         }
         result1.sessionChannel().eventLoop().shutdownGracefully();
         result2.sessionChannel().eventLoop().shutdownGracefully();
-        bossGroup.shutdownGracefully();
+        group.shutdownGracefully();
     }
 
     private static void sendMsg(Channel channel, InetSocketAddress dstAddress, InetSocketAddress socksAddress, byte[] bytes) {

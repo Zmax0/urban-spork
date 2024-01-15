@@ -4,17 +4,16 @@ import com.urbanspork.common.codec.BytesGenerator;
 import com.urbanspork.common.codec.NonceGenerator;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
-public record Authenticator(CipherMethod codec, byte[] key, NonceGenerator nonceGenerator, BytesGenerator associatedTextGenerator) {
-
+public record Authenticator(CipherMethod method, byte[] key, NonceGenerator nonceGenerator, BytesGenerator associatedTextGenerator) {
     public int overhead() {
-        return codec.tagSize();
+        return method.tagSize();
     }
 
     public byte[] seal(byte[] in) throws InvalidCipherTextException {
-        return codec.encrypt(key, nonceGenerator.generate(), associatedTextGenerator.generate(), in);
+        return method.encrypt(key, nonceGenerator.generate(), associatedTextGenerator.generate(), in);
     }
 
     public byte[] open(byte[] in) throws InvalidCipherTextException {
-        return codec.decrypt(key, nonceGenerator.generate(), associatedTextGenerator.generate(), in);
+        return method.decrypt(key, nonceGenerator.generate(), associatedTextGenerator.generate(), in);
     }
 }

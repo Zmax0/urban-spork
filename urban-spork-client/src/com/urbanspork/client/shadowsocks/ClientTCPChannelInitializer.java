@@ -1,8 +1,8 @@
 package com.urbanspork.client.shadowsocks;
 
+import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.codec.shadowsocks.TCPReplayCodec;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
@@ -20,6 +20,6 @@ public class ClientTCPChannelInitializer extends ChannelInitializer<Channel> {
 
     @Override
     public void initChannel(Channel channel) {
-        channel.pipeline().addLast(new TCPReplayCodec(StreamType.Request, request, config.getCipher(), config.getPassword()));
+        channel.pipeline().addLast(new TCPReplayCodec(Mode.Client, request, config));
     }
 }

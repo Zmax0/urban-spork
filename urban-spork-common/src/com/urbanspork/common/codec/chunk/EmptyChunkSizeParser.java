@@ -1,7 +1,5 @@
 package com.urbanspork.common.codec.chunk;
 
-import org.bouncycastle.crypto.InvalidCipherTextException;
-
 public enum EmptyChunkSizeParser implements ChunkSizeCodec {
 
     INSTANCE;
@@ -12,12 +10,12 @@ public enum EmptyChunkSizeParser implements ChunkSizeCodec {
     }
 
     @Override
-    public byte[] encode(int size) throws InvalidCipherTextException {
+    public byte[] encode(int size) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public int decode(byte[] data) throws InvalidCipherTextException {
+    public int decode(byte[] data) {
         throw new UnsupportedOperationException();
     }
 }

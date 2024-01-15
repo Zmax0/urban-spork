@@ -6,26 +6,27 @@ import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.socks.ClientHandshake;
 import com.urbanspork.test.TestDice;
 import com.urbanspork.test.TestUtil;
-import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
-import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.*;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 @DisplayName("Client - Socks Handshake")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ClientSocksHandshakeTestCase {
-
     private static final int[] PORTS = TestUtil.freePorts(2);
+    private final EventLoopGroup group = new NioEventLoopGroup();
     private Future<?> future;
 
     @Test
-    void testUdpEnable() throws InterruptedException, ExecutionException {
+    void testUdpEnable() throws InterruptedException {
         ClientConfig config = ClientConfigTestCase.testConfig(PORTS[0], PORTS[1]);
-        config.getServers().get(0).setProtocol(Protocols.vmess);
+        config.getServers().getFirst().setProtocol(Protocols.vmess);
         future = ClientTestCase.launchClient(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", TestDice.rollPort());
@@ -33,7 +34,7 @@ class ClientSocksHandshakeTestCase {
     }
 
     @Test
-    void testIllegalDstAddress() throws InterruptedException, ExecutionException {
+    void testIllegalDstAddress() throws InterruptedException {
         ClientConfig config = ClientConfigTestCase.testConfig(PORTS[0], PORTS[1]);
         future = ClientTestCase.launchClient(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
@@ -48,10 +49,7 @@ class ClientSocksHandshakeTestCase {
         }
     }
 
-    private static void assertFailedHandshake(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) throws InterruptedException, ExecutionException {
-        Promise<ClientHandshake.Result> promise = ClientHandshake.noAuth(Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress);
-        ClientHandshake.Result result = promise.await().get();
-        Assertions.assertEquals(Socks5CommandStatus.FAILURE, result.response().status());
-        result.sessionChannel().eventLoop().shutdownGracefully();
+    private void assertFailedHandshake(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) {
+        Assertions.assertThrows(ExecutionException.class, () -> ClientHandshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS));
     }
 }

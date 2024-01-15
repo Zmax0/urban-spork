@@ -9,10 +9,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.FixedLengthFrameDecoder;
-import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
-import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -25,9 +24,9 @@ import java.util.concurrent.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TCPTestTemplate extends TestTemplate {
-
+    final EventLoopGroup group = new NioEventLoopGroup();
     final DefaultEventLoop executor = new DefaultEventLoop();
-    final ExecutorService pool = Executors.newFixedThreadPool(1);
+    final ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();
     final int dstPort = TestUtil.freePort();
 
     @BeforeAll
@@ -36,7 +35,7 @@ public abstract class TCPTestTemplate extends TestTemplate {
     }
 
     private void launchEchoTestServer() throws InterruptedException, ExecutionException {
-        Promise<Channel> promise = new DefaultPromise<>(executor);
+        Promise<Channel> promise = executor.newPromise();
         pool.submit(() -> EchoTestServer.launch(dstPort, promise));
         InetSocketAddress address = (InetSocketAddress) promise.await().get().localAddress();
         Assertions.assertEquals(dstPort, address.getPort());
@@ -45,11 +44,10 @@ public abstract class TCPTestTemplate extends TestTemplate {
     protected void handshakeAndSendBytes(ClientConfig config) throws InterruptedException, ExecutionException {
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress = new InetSocketAddress("localhost", dstPort);
-        ClientHandshake.Result result = ClientHandshake.noAuth(Socks5CommandType.CONNECT, proxyAddress, dstAddress).await().get();
-        Assertions.assertEquals(Socks5CommandStatus.SUCCESS, result.response().status());
+        ClientHandshake.Result result = ClientHandshake.noAuth(group, Socks5CommandType.CONNECT, proxyAddress, dstAddress).await().get();
+        Channel channel = result.sessionChannel();
         int length = ThreadLocalRandom.current().nextInt(0xfff, 0xffff);
         byte[] bytes = Dice.rollBytes(length);
-        Channel channel = result.sessionChannel();
         ChannelPromise promise = channel.newPromise();
         channel.pipeline().addLast(
             new FixedLengthFrameDecoder(length),
@@ -71,12 +69,12 @@ public abstract class TCPTestTemplate extends TestTemplate {
         channel.writeAndFlush(Unpooled.wrappedBuffer(bytes));
         promise.await(10, TimeUnit.SECONDS);
         Assertions.assertTrue(promise.isSuccess(), promise.cause() != null ? promise.cause().getMessage() : "");
-        channel.eventLoop().shutdownGracefully();
     }
 
     @AfterAll
     protected void afterAll() {
-        pool.shutdownNow();
+        pool.shutdown();
         executor.shutdownGracefully();
+        group.shutdownGracefully();
     }
 }

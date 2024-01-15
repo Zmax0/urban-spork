@@ -32,7 +32,7 @@ class ServerAEADCodecTestCase {
         Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "www.urban-spork.com", TestDice.rollPort());
 
     @Test
-    void testDecodeEmptyHeader() throws Exception {
+    void testDecodeEmptyHeader() {
         ByteBuf buf = Unpooled.buffer();
         buf.writeBytes(AuthID.createAuthID(ID.newID(UUID), VMess.timestamp(30)));
         serverChannel().writeInbound(buf);
