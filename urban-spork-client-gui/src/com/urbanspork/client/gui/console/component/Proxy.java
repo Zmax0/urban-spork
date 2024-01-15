@@ -20,7 +20,7 @@ public class Proxy {
 
     private static final ClientConfig config = Resource.config();
 
-    private static final ExecutorService executor = Executors.newSingleThreadExecutor(Thread.ofVirtual().factory());
+    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private static Future<?> proxyingTask;
 
@@ -54,6 +54,7 @@ public class Proxy {
     }
 
     public static void exit() {
+        proxyingTask.cancel(true);
         executor.shutdown();
     }
 }
