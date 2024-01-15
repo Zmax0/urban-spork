@@ -16,19 +16,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Tag("dependent")
+@Tag("integration")
 @DisplayName("VMess - TCP")
 class VMessTCPTestCase extends TCPTestTemplate {
     @Test
     void testLocal() throws ExecutionException, InterruptedException {
         ClientConfig config = ConfigHandler.DEFAULT.read();
         List<ServerConfig> configs = config.getServers();
-        Assertions.assertEquals(Protocols.vmess, configs.get(0).getProtocol());
+        Assertions.assertEquals(Protocols.vmess, configs.getFirst().getProtocol());
         ExecutorService service = Executors.newSingleThreadExecutor();
         DefaultEventLoop eventLoop = new DefaultEventLoop();
         launchServer(service, eventLoop, configs);
         handshakeAndSendBytes(config);
-        service.shutdownNow();
+        service.shutdown();
         eventLoop.shutdownGracefully();
     }
 }

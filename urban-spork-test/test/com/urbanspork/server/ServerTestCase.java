@@ -17,7 +17,6 @@ import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -38,7 +37,7 @@ class ServerTestCase {
         List<ServerConfig> empty = Collections.emptyList();
         Assertions.assertThrows(IllegalArgumentException.class, () -> Server.launch(empty), "Server config in the file is empty");
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(new int[]{TestDice.rollPort()});
-        ServerConfig config = configs.get(0);
+        ServerConfig config = configs.getFirst();
         config.setHost("www.urban-spork.com");
         Assertions.assertThrows(IllegalArgumentException.class, () -> Server.launch(configs), "None available server");
     }
@@ -48,36 +47,38 @@ class ServerTestCase {
         int port = TestDice.rollPort();
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(new int[]{port, port});
         DefaultEventLoop executor = new DefaultEventLoop();
-        Promise<List<ServerSocketChannel>> promise = new DefaultPromise<>(executor);
+        Promise<List<ServerSocketChannel>> promise = executor.newPromise();
         Server.launch(configs, promise);
         promise.await(5, TimeUnit.SECONDS);
         Assertions.assertFalse(promise.isSuccess());
+        executor.shutdownGracefully();
     }
 
     @Test
     void shutdown() {
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(TestUtil.freePorts(2));
-        ExecutorService service = Executors.newSingleThreadExecutor();
-        Future<?> future = service.submit(() -> Server.launch(configs));
-        try {
-            future.get(1, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (ExecutionException | TimeoutException e) {
-            future.cancel(true);
+        Future<?> future;
+        try (ExecutorService service = Executors.newSingleThreadExecutor()) {
+            future = service.submit(() -> Server.launch(configs));
+            try {
+                future.get(1, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (ExecutionException | TimeoutException e) {
+                future.cancel(true);
+            }
+            Assertions.assertTrue(future.isCancelled());
         }
-        Assertions.assertTrue(future.isCancelled());
-        service.shutdown();
     }
 
     @Test
     void sendInvalidUDP() throws InterruptedException, ExecutionException {
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(TestUtil.freePorts(1));
-        ServerConfig config = configs.get(0);
+        ServerConfig config = configs.getFirst();
         config.setNetworks(new Network[]{Network.TCP, Network.UDP});
         DefaultEventLoop executor = new DefaultEventLoop();
-        ExecutorService service = Executors.newFixedThreadPool(1);
-        Promise<List<ServerSocketChannel>> promise = new DefaultPromise<>(executor);
+        ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
+        Promise<List<ServerSocketChannel>> promise = executor.newPromise();
         service.submit(() -> Server.launch(configs, promise));
         promise.await().get();
         InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
@@ -88,15 +89,17 @@ class ServerTestCase {
         ChannelFuture future = channel.writeAndFlush(new DatagramPacket(Unpooled.wrappedBuffer(Dice.rollBytes(512)), serverAddress)).sync();
         future.get();
         Assertions.assertTrue(future.isDone());
+        executor.shutdownGracefully();
+        service.shutdown();
     }
 
     @Test
     void sendInvalidTCP() throws InterruptedException, ExecutionException {
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(TestUtil.freePorts(1));
-        ServerConfig config = configs.get(0);
+        ServerConfig config = configs.getFirst();
         DefaultEventLoop executor = new DefaultEventLoop();
-        ExecutorService service = Executors.newFixedThreadPool(1);
-        Promise<List<ServerSocketChannel>> promise = new DefaultPromise<>(executor);
+        ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
+        Promise<List<ServerSocketChannel>> promise = executor.newPromise();
         service.submit(() -> Server.launch(configs, promise));
         promise.await().get();
         Channel channel = new Bootstrap().group(new NioEventLoopGroup())
@@ -106,5 +109,7 @@ class ServerTestCase {
         ChannelFuture future = channel.writeAndFlush(Unpooled.wrappedBuffer(Dice.rollBytes(512))).sync();
         future.get();
         Assertions.assertTrue(future.isDone());
+        executor.shutdownGracefully();
+        service.shutdown();
     }
 }

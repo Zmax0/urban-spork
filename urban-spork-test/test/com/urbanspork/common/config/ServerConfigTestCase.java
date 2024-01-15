@@ -60,7 +60,7 @@ public class ServerConfigTestCase {
     }
 
     public static ServerConfig testConfig(int port) {
-        return testConfig(new int[]{port}).get(0);
+        return testConfig(new int[]{port}).getFirst();
     }
 
     public static List<ServerConfig> testConfig(int[] ports) {

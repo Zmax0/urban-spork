@@ -20,7 +20,7 @@ class ConfigHandlerTestCase {
         ConfigHandler.DEFAULT.save(ConfigHandler.DEFAULT.read());
         ClientConfig config = ConfigHandler.DEFAULT.read();
         Assertions.assertEquals(clientPort, config.getPort());
-        Assertions.assertEquals(serverPort, config.getServers().get(0).getPort());
+        Assertions.assertEquals(serverPort, config.getServers().getFirst().getPort());
     }
 
     @Test
@@ -35,7 +35,7 @@ class ConfigHandlerTestCase {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             lines = reader.lines().collect(Collectors.toList());
         }
-        lines.remove(0);
+        lines.removeFirst();
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             for (String line : lines) {
                 writer.write(line);

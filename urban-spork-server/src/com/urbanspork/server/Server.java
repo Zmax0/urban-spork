@@ -2,12 +2,12 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.channel.ExceptionHandler;
+import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.codec.shadowsocks.UDPReplayCodec;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.Direction;
-import com.urbanspork.common.protocol.shadowsocks.StreamType;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -22,8 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class Server {
 
@@ -46,15 +46,14 @@ public class Server {
 
     public static void launch(List<ServerConfig> configs, Promise<List<ServerSocketChannel>> promise) {
         int size = configs.size();
-        ExecutorService pool = Executors.newFixedThreadPool(size, new WorkingThreadFactory());
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         DefaultEventLoop executor = new DefaultEventLoop();
         try {
             List<ServerSocketChannel> result = new ArrayList<>(size);
             for (ServerConfig config : configs) {
-                DefaultPromise<ServerSocketChannel> innerPromise = new DefaultPromise<>(executor);
-                pool.submit(() -> startup(bossGroup, workerGroup, config, innerPromise));
+                Promise<ServerSocketChannel> innerPromise = executor.newPromise();
+                startup(bossGroup, workerGroup, config, innerPromise);
                 innerPromise.await(5, TimeUnit.SECONDS);
                 if (innerPromise.isSuccess()) {
                     result.add(innerPromise.get());
@@ -64,13 +63,14 @@ public class Server {
                 }
             }
             promise.setSuccess(result);
-            executor.shutdownGracefully();
-            new DefaultPromise<>(executor).sync();
-        } catch (InterruptedException | ExecutionException e) {
-            pool.shutdownNow();
+            result.getLast().closeFuture().sync();
+        } catch (InterruptedException e) {
             logger.error("Interrupt main launch thread");
             Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            promise.setFailure(e);
         } finally {
+            executor.shutdownGracefully();
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }
@@ -87,7 +87,7 @@ public class Server {
                         @Override
                         protected void initChannel(Channel ch) {
                             ch.pipeline().addLast(
-                                new UDPReplayCodec(config, StreamType.Response),
+                                new UDPReplayCodec(config, Mode.Server),
                                 new ServerUDPReplayHandler(config.getPacketEncoding(), workerGroup),
                                 new ExceptionHandler(config)
                             );
@@ -105,24 +105,12 @@ public class Server {
                     Channel channel = future.channel();
                     logger.info("Startup tcp server => {}", config);
                     promise.setSuccess((ServerSocketChannel) channel);
-                }).channel().closeFuture().sync();
+                });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
             logger.error("Startup server failed", e);
             promise.setFailure(e);
-        }
-    }
-
-    private static class WorkingThreadFactory implements ThreadFactory {
-
-        private final AtomicInteger count = new AtomicInteger(0);
-
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r);
-            thread.setName("urban-spork-" + count.incrementAndGet());
-            return thread;
         }
     }
 }

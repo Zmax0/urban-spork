@@ -23,8 +23,7 @@ public class DelayedEchoTestServer {
 
     public static void launch(int port) throws IOException {
         Logger logger = Logger.getGlobal();
-        ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
-        try (DatagramSocket socket = new DatagramSocket(port)) {
+        try (ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor(); DatagramSocket socket = new DatagramSocket(port)) {
             String startupInfo = MessageFormat.format("UDP test server startup [{0,number,#}]", socket.getLocalPort());
             logger.info(startupInfo);
             for (; ; ) {

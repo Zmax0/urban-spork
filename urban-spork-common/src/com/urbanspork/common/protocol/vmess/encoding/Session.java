@@ -1,9 +1,9 @@
 package com.urbanspork.common.protocol.vmess.encoding;
 
-import com.urbanspork.common.crypto.GeneralDigests;
+import com.urbanspork.common.crypto.Digests;
+import com.urbanspork.common.util.ByteString;
 
 import java.util.Arrays;
-import java.util.Base64;
 
 public abstract class Session {
 
@@ -17,8 +17,8 @@ public abstract class Session {
         this.requestBodyIV = requestBodyIV;
         this.requestBodyKey = requestBodyKey;
         this.responseHeader = responseHeader;
-        this.responseBodyIV = Arrays.copyOf(GeneralDigests.sha256.get(requestBodyIV), 16);
-        this.responseBodyKey = Arrays.copyOf(GeneralDigests.sha256.get(requestBodyKey), 16);
+        this.responseBodyIV = Arrays.copyOf(Digests.sha256.hash(requestBodyIV), 16);
+        this.responseBodyKey = Arrays.copyOf(Digests.sha256.hash(requestBodyKey), 16);
     }
 
     public byte[] getRequestBodyIV() {
@@ -44,10 +44,10 @@ public abstract class Session {
     @Override
     public String toString() {
         return String.format("RK:%s, RI:%s, SK:%s, SI:%s, SH:%d",
-            Base64.getEncoder().encodeToString(requestBodyKey),
-            Base64.getEncoder().encodeToString(requestBodyIV),
-            Base64.getEncoder().encodeToString(responseBodyKey),
-            Base64.getEncoder().encodeToString(responseBodyIV),
+            ByteString.valueOf(requestBodyKey),
+            ByteString.valueOf(requestBodyIV),
+            ByteString.valueOf(responseBodyKey),
+            ByteString.valueOf(responseBodyIV),
             Byte.toUnsignedInt(responseHeader));
     }
 }

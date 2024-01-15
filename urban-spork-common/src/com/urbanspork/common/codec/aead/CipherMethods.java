@@ -34,7 +34,7 @@ public enum CipherMethods implements Supplier<CipherMethod> {
             return new CipherMethod() {
                 @Override
                 public AEADCipher cipher() {
-                    return new GCMBlockCipher(new AESEngine());
+                    return GCMBlockCipher.newInstance(AESEngine.newInstance());
                 }
 
                 @Override

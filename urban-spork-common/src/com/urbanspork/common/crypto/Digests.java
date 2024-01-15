@@ -1,32 +1,35 @@
 package com.urbanspork.common.crypto;
 
-import org.bouncycastle.crypto.digests.GeneralDigest;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.Blake3Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 
 import java.util.function.Supplier;
 
-public enum GeneralDigests {
+public enum Digests {
 
     md5(MD5Digest::new),
-    sha256(SHA256Digest::new);
+    sha256(SHA256Digest::new),
+    blake3(Blake3Digest::new),
+    ;
 
-    private final Supplier<GeneralDigest> provider;
+    private final Supplier<Digest> provider;
 
-    GeneralDigests(Supplier<GeneralDigest> provider) {
+    Digests(Supplier<Digest> provider) {
         this.provider = provider;
     }
 
-    public byte[] get(byte[] in) {
-        GeneralDigest digest = provider.get();
+    public byte[] hash(byte[] in) {
+        Digest digest = provider.get();
         digest.update(in, 0, in.length);
         byte[] out = new byte[digest.getDigestSize()];
         digest.doFinal(out, 0);
         return out;
     }
 
-    public void get(byte[] in, byte[] out, int outOff) {
-        GeneralDigest digest = provider.get();
+    public void hash(byte[] in, byte[] out, int outOff) {
+        Digest digest = provider.get();
         digest.update(in, 0, in.length);
         digest.doFinal(out, outOff);
     }
