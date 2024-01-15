@@ -48,7 +48,9 @@ public class Tray {
     }
 
     public static void exit() {
-        SystemTray.getSystemTray().remove(trayIcon);
+        if (IS_SUPPORTED) {
+            SystemTray.getSystemTray().remove(trayIcon);
+        }
     }
 
     private static void start() {

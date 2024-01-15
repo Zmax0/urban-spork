@@ -31,6 +31,12 @@
       </resource>
       <resource>
         <directory>resource</directory>
+        <includes>
+          <include>**/*.xml</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>resource</directory>
         <targetPath>resource</targetPath>
         <excludes>
           <exclude>**/*.xml</exclude>
