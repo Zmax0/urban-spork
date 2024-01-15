@@ -25,6 +25,10 @@ public enum ServerUserManager {
         return users.get(new BytesKey(userHash));
     }
 
+    public void removeUserByHash(byte[] userHash) {
+        users.remove(new BytesKey(userHash));
+    }
+
     public int userCount() {
         return users.size();
     }
