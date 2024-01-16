@@ -27,6 +27,14 @@ class SessionTestCase {
         Assertions.assertArrayEquals(requestSalt, session.getRequestSalt());
     }
 
+    @Test
+    void testIncreasePacketId() {
+        Control control = new Control(1, 1, Long.MAX_VALUE, null);
+        control.increasePacketId(1);
+        Assertions.assertEquals(0, control.getPacketId());
+        Assertions.assertNotEquals(1, control.getClientSessionId());
+    }
+
     private static <T, U, R> void testGetterAndSetter(U u, T t, Function<T, R> getter, BiConsumer<T, U> setter) {
         Assertions.assertNotEquals(u, getter.apply(t));
         setter.accept(t, u);

@@ -25,7 +25,11 @@ public class Control {
         try {
             packetId = Math.addExact(packetId, i);
         } catch (ArithmeticException e) {
-            this.clientSessionId = ThreadLocalRandom.current().nextLong();
+            long id;
+            do {
+                id = ThreadLocalRandom.current().nextLong();
+            } while (id == this.clientSessionId);
+            this.clientSessionId = id;
             this.packetId = 0;
         }
     }
