@@ -6,7 +6,6 @@ import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.TCPTestTemplate;
-import io.netty.channel.DefaultEventLoop;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -14,8 +13,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @DisplayName("TCP")
 class TCPTestCase extends TCPTestTemplate {
@@ -24,22 +22,20 @@ class TCPTestCase extends TCPTestTemplate {
     void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
         Protocols protocol = parameter.protocol();
         CipherKind cipher = parameter.cipher();
-        if (Protocols.shadowsocks == protocol && cipher.isAead2022() && cipher.supportEih()) {
+        if (cipher.isAead2022() && cipher.supportEih()) {
             testShadowsocksAEAD2022EihByParameter(parameter);
         }
-        DefaultEventLoop executor = new DefaultEventLoop();
-        ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
         int[] ports = TestUtil.freePorts(2);
         ClientConfig config = ClientConfigTestCase.testConfig(ports[0], ports[1]);
         ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
         serverConfig.setPassword(parameter.serverPassword());
-        launchServer(service, executor, config.getServers());
-        launchClient(service, executor, config);
+        Future<?> server = launchServer(pool, executor, config.getServers());
+        Future<?> client = launchClient(pool, executor, config);
         handshakeAndSendBytes(config);
-        service.shutdown();
-        executor.shutdownGracefully();
+        server.cancel(true);
+        client.cancel(true);
     }
 
     void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
@@ -53,18 +49,16 @@ class TCPTestCase extends TCPTestTemplate {
         List<ServerUserConfig> user = new ArrayList<>();
         user.add(new ServerUserConfig(TestDice.rollString(10), parameter.clientPassword()));
         serverConfig.setUser(user);
-        ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
-        DefaultEventLoop executor = new DefaultEventLoop();
-        launchServer(service, executor, List.of(serverConfig));
+        Future<?> server = launchServer(pool, executor, List.of(serverConfig));
         ClientConfig config = ClientConfigTestCase.testConfig(ports[0], ports[1]);
         ServerConfig current = config.getCurrent();
         current.setCipher(cipher);
         current.setProtocol(protocol);
         current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
-        launchClient(service, executor, config);
+        Future<?> client = launchClient(pool, executor, config);
         handshakeAndSendBytes(config);
         ServerUserManager.DEFAULT.clear();
-        service.shutdown();
-        executor.shutdownGracefully();
+        server.cancel(true);
+        client.cancel(true);
     }
 }

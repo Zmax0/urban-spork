@@ -33,7 +33,7 @@ public class Client {
     public static void launch(ClientConfig config, Promise<ServerSocketChannel> promise) {
         int port = config.getPort();
         ServerConfig current = config.getCurrent();
-        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             ChannelHandler udpTransportHandler;

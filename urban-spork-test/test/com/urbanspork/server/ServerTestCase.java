@@ -77,20 +77,21 @@ class ServerTestCase {
         ServerConfig config = configs.getFirst();
         config.setNetworks(new Network[]{Network.TCP, Network.UDP});
         DefaultEventLoop executor = new DefaultEventLoop();
-        ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
-        Promise<List<ServerSocketChannel>> promise = executor.newPromise();
-        service.submit(() -> Server.launch(configs, promise));
-        promise.await().get();
-        InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
-        Channel channel = new Bootstrap().group(new NioEventLoopGroup())
-            .channel(NioDatagramChannel.class)
-            .handler(new LoggingHandler())
-            .bind(0).syncUninterruptibly().channel();
-        ChannelFuture future = channel.writeAndFlush(new DatagramPacket(Unpooled.wrappedBuffer(Dice.rollBytes(512)), serverAddress)).sync();
-        future.get();
-        Assertions.assertTrue(future.isDone());
-        executor.shutdownGracefully();
-        service.shutdown();
+        try (ExecutorService service = Executors.newVirtualThreadPerTaskExecutor()) {
+            Promise<List<ServerSocketChannel>> promise = executor.newPromise();
+            Future<?> server = service.submit(() -> Server.launch(configs, promise));
+            promise.await().get();
+            InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
+            Channel channel = new Bootstrap().group(new NioEventLoopGroup())
+                .channel(NioDatagramChannel.class)
+                .handler(new LoggingHandler())
+                .bind(0).syncUninterruptibly().channel();
+            ChannelFuture future = channel.writeAndFlush(new DatagramPacket(Unpooled.wrappedBuffer(Dice.rollBytes(512)), serverAddress)).sync();
+            future.get();
+            Assertions.assertTrue(future.isDone());
+            executor.shutdownGracefully();
+            server.cancel(true);
+        }
     }
 
     @Test
@@ -98,18 +99,19 @@ class ServerTestCase {
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(TestUtil.freePorts(1));
         ServerConfig config = configs.getFirst();
         DefaultEventLoop executor = new DefaultEventLoop();
-        ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
-        Promise<List<ServerSocketChannel>> promise = executor.newPromise();
-        service.submit(() -> Server.launch(configs, promise));
-        promise.await().get();
-        Channel channel = new Bootstrap().group(new NioEventLoopGroup())
-            .channel(NioSocketChannel.class)
-            .handler(new LoggingHandler())
-            .connect(new InetSocketAddress(config.getHost(), config.getPort())).syncUninterruptibly().channel();
-        ChannelFuture future = channel.writeAndFlush(Unpooled.wrappedBuffer(Dice.rollBytes(512))).sync();
-        future.get();
-        Assertions.assertTrue(future.isDone());
-        executor.shutdownGracefully();
-        service.shutdown();
+        try (ExecutorService service = Executors.newVirtualThreadPerTaskExecutor()) {
+            Promise<List<ServerSocketChannel>> promise = executor.newPromise();
+            Future<?> server = service.submit(() -> Server.launch(configs, promise));
+            promise.await().get();
+            Channel channel = new Bootstrap().group(new NioEventLoopGroup())
+                .channel(NioSocketChannel.class)
+                .handler(new LoggingHandler())
+                .connect(new InetSocketAddress(config.getHost(), config.getPort())).syncUninterruptibly().channel();
+            ChannelFuture future = channel.writeAndFlush(Unpooled.wrappedBuffer(Dice.rollBytes(512))).sync();
+            future.get();
+            Assertions.assertTrue(future.isDone());
+            executor.shutdownGracefully();
+            server.cancel(true);
+        }
     }
 }

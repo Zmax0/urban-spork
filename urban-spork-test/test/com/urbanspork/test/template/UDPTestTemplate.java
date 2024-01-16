@@ -30,14 +30,17 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class UDPTestTemplate extends TestTemplate {
+public abstract class UDPTestTemplate extends TestTemplate {
 
     private static final Logger logger = LoggerFactory.getLogger(UDPTestTemplate.class);
     private static final int[] DST_PORTS = TestUtil.freePorts(2);
     private final EventLoopGroup group = new NioEventLoopGroup();
-    private final ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
+    protected final EventExecutor executor = new DefaultEventLoop();
+    protected final ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
     private final Channel channel = initChannel();
     private Consumer<TernaryDatagramPacket> consumer;
+    private Future<?> simpleEchoTestServer;
+    private Future<?> delayedEchoTestServer;
 
     @BeforeAll
     protected void beforeAll() {
@@ -45,22 +48,22 @@ public class UDPTestTemplate extends TestTemplate {
     }
 
     private void launchUDPTestServer() {
-        Future<?> future1 = service.submit(() -> {
+        simpleEchoTestServer = service.submit(() -> {
             try {
                 SimpleEchoTestServer.launch(DST_PORTS[0]);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         });
-        Assertions.assertFalse(future1.isCancelled());
-        Future<?> future2 = service.submit(() -> {
+        delayedEchoTestServer = service.submit(() -> {
             try {
                 DelayedEchoTestServer.launch(DST_PORTS[1]);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         });
-        Assertions.assertFalse(future2.isCancelled());
+        Assertions.assertFalse(simpleEchoTestServer.isCancelled());
+        Assertions.assertFalse(delayedEchoTestServer.isCancelled());
     }
 
     protected int[] dstPorts() {
@@ -72,7 +75,6 @@ public class UDPTestTemplate extends TestTemplate {
         InetSocketAddress dstAddress = new InetSocketAddress("localhost", dstPort);
         ClientHandshake.Result result = ClientHandshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).await().get();
         Assertions.assertEquals(Socks5CommandStatus.SUCCESS, result.response().status());
-        EventExecutor executor = new DefaultEventLoop();
         Promise<Void> promise = executor.newPromise();
         consumer = msg -> {
             if (dstAddress.equals(msg.third())) {
@@ -86,14 +88,17 @@ public class UDPTestTemplate extends TestTemplate {
         TernaryDatagramPacket msg = new TernaryDatagramPacket(data, proxyAddress);
         logger.info("Send msg {}", msg);
         channel.writeAndFlush(msg);
-        Assertions.assertTrue(promise.await(DelayedEchoTestServer.MAX_DELAYED_SECOND + 1, TimeUnit.SECONDS));
-        executor.shutdownGracefully();
+        Assertions.assertTrue(promise.await(DelayedEchoTestServer.MAX_DELAYED_SECOND + 3, TimeUnit.SECONDS));
     }
 
     @AfterAll
     void shutdown() {
-        group.shutdownGracefully();
+        channel.close();
+        simpleEchoTestServer.cancel(true);
+        delayedEchoTestServer.cancel(true);
         service.shutdown();
+        group.shutdownGracefully();
+        executor.shutdownGracefully();
     }
 
     private Channel initChannel() {

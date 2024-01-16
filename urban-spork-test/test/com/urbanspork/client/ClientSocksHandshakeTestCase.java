@@ -27,7 +27,7 @@ class ClientSocksHandshakeTestCase {
     void testUdpEnable() throws InterruptedException {
         ClientConfig config = ClientConfigTestCase.testConfig(PORTS[0], PORTS[1]);
         config.getServers().getFirst().setProtocol(Protocols.vmess);
-        future = ClientTestCase.launchClient(config);
+        future = ClientTestCase.asyncLaunchClient(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", TestDice.rollPort());
         assertFailedHandshake(proxyAddress, dstAddress1);
@@ -36,7 +36,7 @@ class ClientSocksHandshakeTestCase {
     @Test
     void testIllegalDstAddress() throws InterruptedException {
         ClientConfig config = ClientConfigTestCase.testConfig(PORTS[0], PORTS[1]);
-        future = ClientTestCase.launchClient(config);
+        future = ClientTestCase.asyncLaunchClient(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", 0);
         assertFailedHandshake(proxyAddress, dstAddress1);

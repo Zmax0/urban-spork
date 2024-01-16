@@ -25,8 +25,8 @@ import java.util.concurrent.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TCPTestTemplate extends TestTemplate {
     final EventLoopGroup group = new NioEventLoopGroup();
-    final DefaultEventLoop executor = new DefaultEventLoop();
-    final ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();
+    protected final DefaultEventLoop executor = new DefaultEventLoop();
+    protected final ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();
     final int dstPort = TestUtil.freePort();
 
     @BeforeAll

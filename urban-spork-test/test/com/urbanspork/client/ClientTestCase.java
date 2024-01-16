@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ClientTestCase {
+    private static final ExecutorService SERVICE = Executors.newVirtualThreadPerTaskExecutor();
     private final int[] ports = TestUtil.freePorts(2);
     private final EventLoopGroup group = new NioEventLoopGroup();
 
@@ -35,25 +36,30 @@ class ClientTestCase {
     void testExit() {
         ClientConfig config = ClientConfigTestCase.testConfig(ports);
         ConfigHandler.DEFAULT.save(config);
-        ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();
-        Future<?> future = pool.submit(() -> Client.main(null));
-        try {
-            future.get(2, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            if (e instanceof TimeoutException) {
-                future.cancel(true);
-            } else {
-                throw new RuntimeException(e);
+        try (ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor()) {
+            Future<?> future = pool.submit(() -> Client.main(null));
+            try {
+                future.get(2, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                if (e instanceof TimeoutException) {
+                    future.cancel(true);
+                } else {
+                    throw new RuntimeException(e);
+                }
             }
+            Assertions.assertTrue(future.isCancelled());
         }
-        pool.shutdown();
-        Assertions.assertTrue(future.isCancelled());
     }
 
-    @RepeatedTest(2)
+    @Test
     @Order(2)
-    void launchClient() throws InterruptedException {
-        launchClient(ClientConfigTestCase.testConfig(ports));
+    void asyncLaunchClient() throws InterruptedException, ExecutionException, TimeoutException {
+        Future<?> f1 = asyncLaunchClient(ClientConfigTestCase.testConfig(ports));
+        Future<?> f2 = asyncLaunchClient(ClientConfigTestCase.testConfig(ports));
+        f2.get(5, TimeUnit.SECONDS);
+        Assertions.assertFalse(f1.isDone());
+        Assertions.assertTrue(f2.isDone());
+        f1.cancel(true);
     }
 
     @ParameterizedTest
@@ -65,10 +71,10 @@ class ClientTestCase {
         Assertions.assertThrows(ExecutionException.class, () -> ClientHandshake.noAuth(group, type, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS));
     }
 
-    public static Future<?> launchClient(ClientConfig config) throws InterruptedException {
+    public static Future<?> asyncLaunchClient(ClientConfig config) throws InterruptedException {
         DefaultEventLoop executor = new DefaultEventLoop();
         Promise<ServerSocketChannel> promise = executor.newPromise();
-        Future<?> future = Executors.newVirtualThreadPerTaskExecutor().submit(() -> Client.launch(config, promise));
+        Future<?> future = SERVICE.submit(() -> Client.launch(config, promise));
         promise.await();
         executor.shutdownGracefully();
         return future;

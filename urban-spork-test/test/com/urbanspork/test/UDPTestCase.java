@@ -7,7 +7,6 @@ import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.Network;
 import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.UDPTestTemplate;
-import io.netty.channel.DefaultEventLoop;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -15,8 +14,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @DisplayName("UDP")
 class UDPTestCase extends UDPTestTemplate {
@@ -25,7 +23,7 @@ class UDPTestCase extends UDPTestTemplate {
     void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
         Protocols protocol = parameter.protocol();
         CipherKind cipher = parameter.cipher();
-        if (Protocols.shadowsocks == protocol && cipher.isAead2022() && cipher.supportEih()) {
+        if (cipher.isAead2022() && cipher.supportEih()) {
             testShadowsocksAEAD2022EihByParameter(parameter);
         }
         int[] ports = TestUtil.freePorts(2);
@@ -36,15 +34,13 @@ class UDPTestCase extends UDPTestTemplate {
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
         serverConfig.setPassword(parameter.serverPassword());
-        ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
-        DefaultEventLoop executor = new DefaultEventLoop();
-        launchServer(service, executor, config.getServers());
-        launchClient(service, executor, config);
+        Future<?> client = launchClient(service, executor, config);
+        Future<?> server = launchServer(service, executor, config.getServers());
         for (int dstPort : dstPorts()) {
             handshakeAndSendBytes(config, dstPort);
         }
-        service.shutdown();
-        executor.shutdownGracefully();
+        client.cancel(true);
+        server.cancel(true);
     }
 
     void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
@@ -60,21 +56,19 @@ class UDPTestCase extends UDPTestTemplate {
         List<ServerUserConfig> user = new ArrayList<>();
         user.add(new ServerUserConfig(TestDice.rollString(10), parameter.clientPassword()));
         serverConfig.setUser(user);
-        ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
-        DefaultEventLoop executor = new DefaultEventLoop();
-        launchServer(service, executor, List.of(serverConfig));
+        Future<?> server = launchServer(service, executor, List.of(serverConfig));
         ClientConfig clientConfig = ClientConfigTestCase.testConfig(ports[0], ports[1]);
         ServerConfig current = clientConfig.getCurrent();
         current.setCipher(cipher);
         current.setNetworks(networks);
         current.setProtocol(protocol);
         current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
-        launchClient(service, executor, clientConfig);
+        Future<?> client = launchClient(service, executor, clientConfig);
         for (int dstPort : dstPorts()) {
             handshakeAndSendBytes(clientConfig, dstPort);
         }
         ServerUserManager.DEFAULT.clear();
-        service.shutdown();
-        executor.shutdownGracefully();
+        server.cancel(true);
+        client.cancel(true);
     }
 }

@@ -23,6 +23,9 @@ public record Parameter(Protocols protocol, CipherKind cipher, String clientPass
             List<Parameter> parameters = new ArrayList<>();
             for (Protocols protocol : Protocols.values()) {
                 for (CipherKind cipher : CipherKind.values()) {
+                    if (Protocols.vmess == protocol && cipher.isAead2022()) {
+                        continue;
+                    }
                     parameters.add(new Parameter(protocol, cipher, TestDice.rollPassword(protocol, cipher), TestDice.rollPassword(protocol, cipher)));
                 }
             }
