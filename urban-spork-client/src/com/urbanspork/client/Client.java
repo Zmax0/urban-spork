@@ -2,14 +2,12 @@ package com.urbanspork.client;
 
 import com.urbanspork.client.shadowsocks.ClientUDPReplayHandler;
 import com.urbanspork.client.vmess.ClientUDPOverTCPHandler;
-import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
 import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.network.Direction;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -43,7 +41,6 @@ public class Client {
                 udpTransportHandler = new ClientUDPReplayHandler(current, workerGroup);
             }
             new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
-                .attr(AttributeKeys.DIRECTION, Direction.Inbound)
                 .handler(new ChannelInitializer<>() {
                     @Override
                     protected void initChannel(Channel ch) {

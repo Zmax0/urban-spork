@@ -1,10 +1,8 @@
 package com.urbanspork.client.vmess;
 
 import com.urbanspork.client.AbstractClientUDPReplayHandler;
-import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.network.Direction;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.socks.Socks5;
 import com.urbanspork.common.protocol.vmess.header.RequestCommand;
@@ -89,7 +87,6 @@ public class ClientUDPOverTCPHandler extends AbstractClientUDPReplayHandler<Clie
         public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
             Channel inboundChannel = ctx.channel();
             logger.info("[udp][vmess]{} ← {} ~ {} ← {}", sender, inboundChannel.localAddress(), inboundChannel.remoteAddress(), recipient);
-            channel.attr(AttributeKeys.DIRECTION).set(Direction.Outbound);
             channel.writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(msg, recipient), sender));
         }
     }

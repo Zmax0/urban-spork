@@ -1,13 +1,11 @@
 package com.urbanspork.server;
 
-import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.codec.shadowsocks.UDPReplayCodec;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.network.Direction;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -72,7 +70,6 @@ public class Server {
         int port = config.getPort();
         if (Protocols.shadowsocks == config.getProtocol() && config.udpEnabled()) {
             new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
-                .attr(AttributeKeys.DIRECTION, Direction.Inbound)
                 .option(ChannelOption.SO_BROADCAST, true)
                 .handler(new ChannelInitializer<>() {
                     @Override
@@ -88,7 +85,6 @@ public class Server {
         }
         new ServerBootstrap().group(bossGroup, workerGroup)
             .channel(NioServerSocketChannel.class)
-            .attr(AttributeKeys.DIRECTION, Direction.Inbound)
             .childOption(ChannelOption.SO_LINGER, 1)
             .childHandler(new ServerInitializer(config))
             .bind(port).sync().addListener((ChannelFutureListener) future -> {
