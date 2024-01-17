@@ -22,8 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 public class Server {
 
@@ -45,29 +43,23 @@ public class Server {
     }
 
     public static void launch(List<ServerConfig> configs, Promise<List<ServerSocketChannel>> promise) {
-        int size = configs.size();
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         DefaultEventLoop executor = new DefaultEventLoop();
+        List<ServerSocketChannel> result = new ArrayList<>(configs.size());
         try {
-            List<ServerSocketChannel> result = new ArrayList<>(size);
             for (ServerConfig config : configs) {
                 Promise<ServerSocketChannel> innerPromise = executor.newPromise();
                 startup(bossGroup, workerGroup, config, innerPromise);
-                innerPromise.await(5, TimeUnit.SECONDS);
-                if (innerPromise.isSuccess()) {
-                    result.add(innerPromise.get());
-                } else {
-                    promise.setFailure(innerPromise.cause());
-                    return;
-                }
+                result.add(innerPromise.get());
             }
             promise.setSuccess(result);
             result.getLast().closeFuture().sync();
         } catch (InterruptedException e) {
-            logger.error("Interrupt main launch thread");
+            logger.warn("Interrupt main launch thread");
             Thread.currentThread().interrupt();
-        } catch (ExecutionException e) {
+        } catch (Exception e) {
+            logger.error("Startup server failed", e);
             promise.setFailure(e);
         } finally {
             executor.shutdownGracefully();
@@ -76,41 +68,33 @@ public class Server {
         }
     }
 
-    private static void startup(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config, Promise<ServerSocketChannel> promise) {
-        try {
-            int port = config.getPort();
-            if (Protocols.shadowsocks == config.getProtocol() && config.udpEnabled()) {
-                new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
-                    .attr(AttributeKeys.DIRECTION, Direction.Inbound)
-                    .option(ChannelOption.SO_BROADCAST, true)
-                    .handler(new ChannelInitializer<>() {
-                        @Override
-                        protected void initChannel(Channel ch) {
-                            ch.pipeline().addLast(
-                                new UDPReplayCodec(config, Mode.Server),
-                                new ServerUDPReplayHandler(config.getPacketEncoding(), workerGroup),
-                                new ExceptionHandler(config)
-                            );
-                        }
-                    })
-                    .bind(port).sync().addListener(future -> logger.info("Startup udp server => {}", config));
-            }
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
+    private static void startup(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config, Promise<ServerSocketChannel> promise) throws InterruptedException {
+        int port = config.getPort();
+        if (Protocols.shadowsocks == config.getProtocol() && config.udpEnabled()) {
+            new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
                 .attr(AttributeKeys.DIRECTION, Direction.Inbound)
-                .childOption(ChannelOption.SO_LINGER, 1)
-                .childHandler(new ServerInitializer(config))
-                .bind(port).sync().addListener((ChannelFutureListener) future -> {
-                    Channel channel = future.channel();
-                    logger.info("Startup tcp server => {}", config);
-                    promise.setSuccess((ServerSocketChannel) channel);
-                });
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (Exception e) {
-            logger.error("Startup server failed", e);
-            promise.setFailure(e);
+                .option(ChannelOption.SO_BROADCAST, true)
+                .handler(new ChannelInitializer<>() {
+                    @Override
+                    protected void initChannel(Channel ch) {
+                        ch.pipeline().addLast(
+                            new UDPReplayCodec(config, Mode.Server),
+                            new ServerUDPReplayHandler(config.getPacketEncoding(), workerGroup),
+                            new ExceptionHandler(config)
+                        );
+                    }
+                })
+                .bind(port).sync().addListener(future -> logger.info("Startup udp server => {}", config));
         }
+        new ServerBootstrap().group(bossGroup, workerGroup)
+            .channel(NioServerSocketChannel.class)
+            .attr(AttributeKeys.DIRECTION, Direction.Inbound)
+            .childOption(ChannelOption.SO_LINGER, 1)
+            .childHandler(new ServerInitializer(config))
+            .bind(port).sync().addListener((ChannelFutureListener) future -> {
+                Channel channel = future.channel();
+                logger.info("Startup tcp server => {}", config);
+                promise.setSuccess((ServerSocketChannel) channel);
+            });
     }
 }

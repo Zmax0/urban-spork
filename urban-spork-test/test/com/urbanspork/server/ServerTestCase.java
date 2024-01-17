@@ -33,23 +33,22 @@ import java.util.concurrent.*;
 class ServerTestCase {
 
     @Test
-    void launch() {
+    void launchRejected() {
         List<ServerConfig> empty = Collections.emptyList();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Server.launch(empty), "Server config in the file is empty");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Server.launch(empty));
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(new int[]{TestDice.rollPort()});
         ServerConfig config = configs.getFirst();
         config.setHost("www.urban-spork.com");
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Server.launch(configs), "None available server");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Server.launch(configs));
     }
 
     @Test
-    void launchFailed() throws InterruptedException {
+    void launchFailed() {
         int port = TestDice.rollPort();
         List<ServerConfig> configs = ServerConfigTestCase.testConfig(new int[]{port, port});
         DefaultEventLoop executor = new DefaultEventLoop();
         Promise<List<ServerSocketChannel>> promise = executor.newPromise();
         Server.launch(configs, promise);
-        promise.await(5, TimeUnit.SECONDS);
         Assertions.assertFalse(promise.isSuccess());
         executor.shutdownGracefully();
     }
