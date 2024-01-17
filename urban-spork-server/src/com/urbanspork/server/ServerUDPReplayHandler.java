@@ -2,7 +2,6 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.channel.ChannelCloseUtils;
-import com.urbanspork.common.protocol.network.Direction;
 import com.urbanspork.common.protocol.network.PacketEncoding;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import io.netty.bootstrap.Bootstrap;
@@ -94,7 +93,6 @@ public class ServerUDPReplayHandler extends SimpleChannelInboundHandler<Datagram
             InetSocketAddress callback = outboundChannel.attr(AttributeKeys.CALLBACK).get().get(sender);
             if (callback != null) {
                 logger.info("[udp][replay]{}←{}~{}←{}", callback, sender, inboundChannel.localAddress(), outboundChannel.localAddress());
-                inboundChannel.attr(AttributeKeys.DIRECTION).set(Direction.Outbound);
                 inboundChannel.writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(msg.content(), sender), callback));
             } else {
                 logger.error("None callback of sender => {}", msg.sender());
