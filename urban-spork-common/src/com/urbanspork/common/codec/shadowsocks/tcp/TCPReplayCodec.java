@@ -1,8 +1,9 @@
-package com.urbanspork.common.codec.shadowsocks;
+package com.urbanspork.common.codec.shadowsocks.tcp;
 
+import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
-import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.protocol.shadowsocks.aead2022.Session;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
@@ -13,7 +14,7 @@ import java.util.List;
 public class TCPReplayCodec extends ByteToMessageCodec<ByteBuf> {
 
     private final Context context;
-    private final AEADCipherCodec cipher;
+    private final AeadCipherCodec cipher;
 
     public TCPReplayCodec(Mode mode, ServerConfig config) {
         this(mode, null, config);
@@ -21,8 +22,8 @@ public class TCPReplayCodec extends ByteToMessageCodec<ByteBuf> {
 
     public TCPReplayCodec(Mode mode, Socks5CommandRequest request, ServerConfig config) {
         ServerUserManager userManager = Mode.Server == mode ? ServerUserManager.DEFAULT : ServerUserManager.EMPTY;
-        this.context = new Context(Network.TCP, mode, Session.tcp(config.getCipher()), new Control(), request, userManager);
-        this.cipher = AEADCipherCodecs.get(config);
+        this.context = new Context(mode, new Session(config.getCipher()), request, userManager);
+        this.cipher = AeadCipherCodecs.get(config);
     }
 
     @Override

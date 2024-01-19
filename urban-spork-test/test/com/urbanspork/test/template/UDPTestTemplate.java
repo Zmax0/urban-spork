@@ -41,6 +41,8 @@ public abstract class UDPTestTemplate extends TestTemplate {
     private Consumer<TernaryDatagramPacket> consumer;
     private Future<?> simpleEchoTestServer;
     private Future<?> delayedEchoTestServer;
+    protected Future<?> server;
+    protected Future<?> client;
 
     @BeforeAll
     protected void beforeAll() {
@@ -89,6 +91,11 @@ public abstract class UDPTestTemplate extends TestTemplate {
         logger.info("Send msg {}", msg);
         channel.writeAndFlush(msg);
         Assertions.assertTrue(promise.await(DelayedEchoTestServer.MAX_DELAYED_SECOND + 3, TimeUnit.SECONDS));
+    }
+
+    @AfterEach
+    void cancel() {
+        cancel(client, server);
     }
 
     @AfterAll

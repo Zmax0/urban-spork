@@ -9,10 +9,8 @@ import com.urbanspork.common.codec.aead.CipherMethod;
 import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.codec.chunk.AEADChunkSizeParser;
-import com.urbanspork.common.codec.shadowsocks.Context;
 import com.urbanspork.common.codec.shadowsocks.Keys;
 import com.urbanspork.common.codec.shadowsocks.Mode;
-import com.urbanspork.common.codec.shadowsocks.UdpCipher;
 import com.urbanspork.common.crypto.AES;
 import com.urbanspork.common.crypto.Digests;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;
@@ -141,20 +139,20 @@ public interface AEAD2022 {
             return new PayloadDecoder(auth, sizeCodec, EmptyPaddingLengthGenerator.INSTANCE);
         }
 
-        static PayloadDecoder newPayloadDecoder(CipherMethod cipherMethod, Context context, byte[] key, byte[] salt, byte[] eih) {
+        static PayloadDecoder newPayloadDecoder(CipherMethod cipherMethod, Session session, ServerUserManager userManager, byte[] key, byte[] salt, byte[] eih) {
             byte[] identitySubKey = deriveKey("shadowsocks 2022 identity subkey".getBytes(), concat(key, salt));
             byte[] userHash = AES.INSTANCE.decrypt(identitySubKey, eih);
             if (logger.isTraceEnabled()) {
                 logger.trace("server EIH {}, hash: {}", ByteString.valueOf(eih), ByteString.valueOf(userHash));
             }
-            ServerUser user = context.userManager().getUserByHash(userHash);
+            ServerUser user = userManager.getUserByHash(userHash);
             if (user == null) {
                 throw new DecoderException("invalid client user identity " + ByteString.valueOf(userHash));
             } else {
                 if (logger.isTraceEnabled()) {
                     logger.trace("{} chosen by EIH", user);
                 }
-                context.session().setUser(user);
+                session.setUser(user);
                 return newPayloadDecoder(cipherMethod, user.key(), salt);
             }
         }
@@ -233,7 +231,7 @@ public interface AEAD2022 {
         }
 
         static UdpCipher getCipher(CipherKind kind, CipherMethod method, byte[] key, long sessionId) {
-            return UDPCipherCaches.INSTANCE.get(kind, method, key, sessionId);
+            return UdpCipherCaches.INSTANCE.get(kind, method, key, sessionId);
         }
 
         static void encodePacket(UdpCipher cipher, byte[] iPSK, int eihLength, ByteBuf in, ByteBuf out) throws InvalidCipherTextException {
@@ -250,7 +248,7 @@ public interface AEAD2022 {
             out.writeBytes(cipher.seal(encrypting, nonce));
         }
 
-        static ByteBuf decodePacket(CipherKind kind, CipherMethod method, Context context, byte[] key, ByteBuf in) throws InvalidCipherTextException {
+        static ByteBuf decodePacket(CipherKind kind, CipherMethod method, Control control, ServerUserManager userManager, byte[] key, ByteBuf in) throws InvalidCipherTextException {
             byte[] header = new byte[16];
             in.readBytes(header);
             AES.INSTANCE.decrypt(key, header, header);
@@ -258,7 +256,6 @@ public interface AEAD2022 {
             long sessionId = headerBuffer.getLong(0);
             UdpCipher cipher;
             byte[] eih;
-            ServerUserManager userManager = context.userManager();
             if (kind.supportEih() && userManager.userCount() > 0) {
                 eih = new byte[16];
                 in.readBytes(eih);
@@ -275,7 +272,7 @@ public interface AEAD2022 {
                 } else {
                     logger.trace("{} chosen by EIH", user);
                     cipher = getCipher(kind, method, user.key(), sessionId);
-                    context.session().setUser(user);
+                    control.setUser(user);
                 }
             } else {
                 eih = new byte[0];

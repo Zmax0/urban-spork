@@ -2,7 +2,6 @@ package com.urbanspork.common.protocol.shadowsocks.aead2022;
 
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.codec.aead.CipherMethod;
-import com.urbanspork.common.codec.shadowsocks.UdpCipher;
 import io.netty.util.HashedWheelTimer;
 
 import java.time.Duration;
@@ -12,7 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-public class UDPCipherCache {
+public class UdpCipherCache {
     private final HashedWheelTimer timer = new HashedWheelTimer(1, TimeUnit.SECONDS);
     private final LinkedHashMap<Key, UdpCipher> map = new LinkedHashMap<>() {
         @Override
@@ -23,7 +22,7 @@ public class UDPCipherCache {
     private final Duration duration;
     private final int limit;
 
-    public UDPCipherCache(Duration duration, int limit) {
+    public UdpCipherCache(Duration duration, int limit) {
         this.duration = duration;
         this.limit = limit;
     }

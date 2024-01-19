@@ -31,11 +31,9 @@ class TCPTestCase extends TCPTestTemplate {
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
         serverConfig.setPassword(parameter.serverPassword());
-        Future<?> server = launchServer(pool, executor, config.getServers());
-        Future<?> client = launchClient(pool, executor, config);
+        server = launchServer(pool, executor, config.getServers());
+        client = launchClient(pool, executor, config);
         handshakeAndSendBytes(config);
-        server.cancel(true);
-        client.cancel(true);
     }
 
     void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
@@ -58,7 +56,6 @@ class TCPTestCase extends TCPTestTemplate {
         Future<?> client = launchClient(pool, executor, config);
         handshakeAndSendBytes(config);
         ServerUserManager.DEFAULT.clear();
-        server.cancel(true);
-        client.cancel(true);
+        cancel(client, server);
     }
 }

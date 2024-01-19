@@ -12,12 +12,12 @@ class UDPCipherCacheTest {
     void testKey() {
         CipherKind kind = CipherKind.aead2022_blake3_aes_128_gcm;
         byte[] key = new byte[]{1};
-        UDPCipherCache.Key k1 = new UDPCipherCache.Key(kind, key, 1);
-        UDPCipherCache.Key k2 = new UDPCipherCache.Key(kind, key, 1);
+        UdpCipherCache.Key k1 = new UdpCipherCache.Key(kind, key, 1);
+        UdpCipherCache.Key k2 = new UdpCipherCache.Key(kind, key, 1);
         TestUtil.testEqualsAndHashcode(k1, k2);
-        UDPCipherCache.Key k3 = new UDPCipherCache.Key(CipherKind.aead2022_blake3_aes_256_gcm, key, 1);
-        UDPCipherCache.Key k4 = new UDPCipherCache.Key(kind, new byte[]{2}, 1);
-        UDPCipherCache.Key k5 = new UDPCipherCache.Key(kind, key, 2);
+        UdpCipherCache.Key k3 = new UdpCipherCache.Key(CipherKind.aead2022_blake3_aes_256_gcm, key, 1);
+        UdpCipherCache.Key k4 = new UdpCipherCache.Key(kind, new byte[]{2}, 1);
+        UdpCipherCache.Key k5 = new UdpCipherCache.Key(kind, key, 2);
         Assertions.assertNotEquals(k1, k3);
         Assertions.assertNotEquals(k1, k4);
         Assertions.assertNotEquals(k1, k5);

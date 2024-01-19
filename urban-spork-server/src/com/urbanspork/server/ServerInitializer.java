@@ -2,7 +2,7 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
-import com.urbanspork.common.codec.shadowsocks.TCPReplayCodec;
+import com.urbanspork.common.codec.shadowsocks.tcp.TCPReplayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.server.vmess.ServerAEADCodec;
