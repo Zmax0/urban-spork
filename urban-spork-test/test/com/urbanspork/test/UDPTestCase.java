@@ -34,13 +34,11 @@ class UDPTestCase extends UDPTestTemplate {
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
         serverConfig.setPassword(parameter.serverPassword());
-        Future<?> client = launchClient(service, executor, config);
-        Future<?> server = launchServer(service, executor, config.getServers());
+        client = launchClient(service, executor, config);
+        server = launchServer(service, executor, config.getServers());
         for (int dstPort : dstPorts()) {
             handshakeAndSendBytes(config, dstPort);
         }
-        client.cancel(true);
-        server.cancel(true);
     }
 
     void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
@@ -68,7 +66,6 @@ class UDPTestCase extends UDPTestTemplate {
             handshakeAndSendBytes(clientConfig, dstPort);
         }
         ServerUserManager.DEFAULT.clear();
-        server.cancel(true);
-        client.cancel(true);
+        cancel(client, server);
     }
 }

@@ -1,7 +1,7 @@
 package com.urbanspork.client.shadowsocks;
 
 import com.urbanspork.common.codec.shadowsocks.Mode;
-import com.urbanspork.common.codec.shadowsocks.TCPReplayCodec;
+import com.urbanspork.common.codec.shadowsocks.tcp.TCPReplayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;

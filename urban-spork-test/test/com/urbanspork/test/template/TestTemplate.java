@@ -29,4 +29,13 @@ public class TestTemplate {
         Assertions.assertEquals(configs.getFirst().getPort(), promise.await().get().getFirst().localAddress().getPort());
         return future;
     }
+
+    protected static void cancel(Future<?> client, Future<?> server) {
+        server.cancel(true);
+        client.cancel(true);
+        boolean cancel;
+        do {
+            cancel = server.isCancelled() && client.isCancelled();
+        } while (!cancel);
+    }
 }

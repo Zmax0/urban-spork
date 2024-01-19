@@ -2,9 +2,12 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
-import com.urbanspork.common.codec.shadowsocks.UDPReplayCodec;
+import com.urbanspork.common.codec.shadowsocks.udp.UDPReplayCodec;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.config.ServerUserConfig;
+import com.urbanspork.common.manage.shadowsocks.ServerUser;
+import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocols;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -68,20 +71,26 @@ public class Server {
 
     private static void startup(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config, Promise<ServerSocketChannel> promise) throws InterruptedException {
         int port = config.getPort();
-        if (Protocols.shadowsocks == config.getProtocol() && config.udpEnabled()) {
-            new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
-                .option(ChannelOption.SO_BROADCAST, true)
-                .handler(new ChannelInitializer<>() {
-                    @Override
-                    protected void initChannel(Channel ch) {
-                        ch.pipeline().addLast(
-                            new UDPReplayCodec(config, Mode.Server),
-                            new ServerUDPReplayHandler(config.getPacketEncoding(), workerGroup),
-                            new ExceptionHandler(config)
-                        );
-                    }
-                })
-                .bind(port).sync().addListener(future -> logger.info("Startup udp server => {}", config));
+        if (Protocols.shadowsocks == config.getProtocol()) {
+            List<ServerUserConfig> user = config.getUser();
+            if (user != null) {
+                user.stream().map(ServerUser::from).forEach(ServerUserManager.DEFAULT::addUser);
+            }
+            if (config.udpEnabled()) {
+                new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
+                    .option(ChannelOption.SO_BROADCAST, true)
+                    .handler(new ChannelInitializer<>() {
+                        @Override
+                        protected void initChannel(Channel ch) {
+                            ch.pipeline().addLast(
+                                new UDPReplayCodec(config, Mode.Server),
+                                new ServerUDPReplayHandler(config.getPacketEncoding(), workerGroup),
+                                new ExceptionHandler(config)
+                            );
+                        }
+                    })
+                    .bind(port).sync().addListener(future -> logger.info("Startup udp server => {}", config));
+            }
         }
         new ServerBootstrap().group(bossGroup, workerGroup)
             .channel(NioServerSocketChannel.class)

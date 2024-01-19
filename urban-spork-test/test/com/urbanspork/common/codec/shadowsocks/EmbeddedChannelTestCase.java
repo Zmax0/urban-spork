@@ -1,6 +1,8 @@
 package com.urbanspork.common.codec.shadowsocks;
 
 import com.urbanspork.common.codec.CipherKind;
+import com.urbanspork.common.codec.shadowsocks.tcp.TCPReplayCodec;
+import com.urbanspork.common.codec.shadowsocks.udp.UDPReplayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;

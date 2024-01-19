@@ -13,6 +13,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 public class TestUtil {
 
@@ -54,7 +56,6 @@ public class TestUtil {
         }
     }
 
-
     public static <T> void testEqualsAndHashcode(T t1, T t2) {
         Set<T> set = new HashSet<>();
         set.add(t1);
@@ -67,5 +68,11 @@ public class TestUtil {
         map.remove(t2);
         Assertions.assertNotEquals(t1, map.get(t2));
         Assertions.assertNotEquals(t1, new Object());
+    }
+
+    public static <T, U, R> void testGetterAndSetter(U u, T t, Function<T, R> getter, BiConsumer<T, U> setter) {
+        Assertions.assertNotEquals(u, getter.apply(t));
+        setter.accept(t, u);
+        Assertions.assertEquals(u, getter.apply(t));
     }
 }

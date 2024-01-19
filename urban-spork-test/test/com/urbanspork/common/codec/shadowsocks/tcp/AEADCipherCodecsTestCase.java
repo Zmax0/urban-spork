@@ -1,19 +1,21 @@
-package com.urbanspork.common.codec.shadowsocks;
+package com.urbanspork.common.codec.shadowsocks.tcp;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import com.urbanspork.common.codec.CipherKind;
+import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.protocol.shadowsocks.aead2022.Session;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
+import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -25,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-@DisplayName("Shadowsocks - AEAD Cipher Codecs")
+@DisplayName("Shadowsocks - AEAD Cipher TCP Codecs")
 @TestInstance(Lifecycle.PER_CLASS)
 class AEADCipherCodecsTestCase {
 
@@ -36,7 +38,7 @@ class AEADCipherCodecsTestCase {
     @BeforeAll
     void beforeAll() {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        Logger logger = loggerContext.getLogger(AEADCipherCodec.class);
+        Logger logger = loggerContext.getLogger(AeadCipherCodec.class);
         logger.setLevel(Level.TRACE);
     }
 
@@ -56,13 +58,11 @@ class AEADCipherCodecsTestCase {
         int port = TestDice.rollPort();
         String host = TestDice.rollHost();
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, host, port);
-        cipherTest(new Context(Network.TCP, Mode.Client, kind, request, ServerUserManager.EMPTY), new Context(Network.TCP, Mode.Server, kind, null, ServerUserManager.EMPTY), true);
-        cipherTest(new Context(Network.UDP, Mode.Client, kind, request, ServerUserManager.EMPTY), new Context(Network.UDP, Mode.Server, kind, null, ServerUserManager.EMPTY), false);
+        cipherTest(newContext(Mode.Client, kind, request), newContext(Mode.Server, kind, null));
     }
 
-
-    private void cipherTest(Context request, Context response, boolean reRoll) throws Exception {
-        List<Object> list = cipherTest(request, response, Unpooled.copiedBuffer(in), reRoll);
+    private void cipherTest(Context request, Context response) throws Exception {
+        List<Object> list = cipherTest(request, response, Unpooled.copiedBuffer(in));
         byte[] out = new byte[in.length];
         int len = 0;
         for (Object obj : list) {
@@ -77,12 +77,12 @@ class AEADCipherCodecsTestCase {
         Assertions.assertArrayEquals(in, out);
     }
 
-    private List<Object> cipherTest(Context request, Context response, ByteBuf in, boolean reRoll) throws Exception {
+    private List<Object> cipherTest(Context request, Context response, ByteBuf in) throws Exception {
         ServerConfig config = new ServerConfig();
         config.setCipher(kind);
         config.setPassword(password);
-        AEADCipherCodec client = AEADCipherCodecs.get(config);
-        AEADCipherCodec server = AEADCipherCodecs.get(config);
+        AeadCipherCodec client = AeadCipherCodecs.get(config);
+        AeadCipherCodec server = AeadCipherCodecs.get(config);
         List<ByteBuf> encodeSlices = new ArrayList<>();
         for (ByteBuf slice : randomSlice(in, false)) {
             ByteBuf buf = Unpooled.buffer();
@@ -90,16 +90,10 @@ class AEADCipherCodecsTestCase {
             encodeSlices.add(buf);
         }
         List<Object> out = new ArrayList<>();
-        if (reRoll) {
-            ByteBuf buffer = Unpooled.buffer();
-            for (ByteBuf slice : randomSlice(merge(encodeSlices), true)) {
-                buffer.writeBytes(slice);
-                server.decode(response, buffer, out);
-            }
-        } else {
-            for (ByteBuf buf : encodeSlices) {
-                server.decode(response, buf, out);
-            }
+        ByteBuf buffer = Unpooled.buffer();
+        for (ByteBuf slice : randomSlice(merge(encodeSlices), true)) {
+            buffer.writeBytes(slice);
+            server.decode(response, buffer, out);
         }
         return out;
     }
@@ -124,4 +118,9 @@ class AEADCipherCodecsTestCase {
         }
         return merged;
     }
+
+    Context newContext(Mode mode, CipherKind kind, Socks5CommandRequest request) {
+        return new Context(mode, new Session(kind), request, ServerUserManager.EMPTY);
+    }
+
 }

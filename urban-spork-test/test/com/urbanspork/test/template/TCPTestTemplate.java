@@ -13,10 +13,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.FixedLengthFrameDecoder;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import io.netty.util.concurrent.Promise;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -28,6 +25,8 @@ public abstract class TCPTestTemplate extends TestTemplate {
     protected final DefaultEventLoop executor = new DefaultEventLoop();
     protected final ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();
     final int dstPort = TestUtil.freePort();
+    protected Future<?> server;
+    protected Future<?> client;
 
     @BeforeAll
     protected void beforeAll() throws ExecutionException, InterruptedException {
@@ -69,6 +68,11 @@ public abstract class TCPTestTemplate extends TestTemplate {
         channel.writeAndFlush(Unpooled.wrappedBuffer(bytes));
         promise.await(10, TimeUnit.SECONDS);
         Assertions.assertTrue(promise.isSuccess(), promise.cause() != null ? promise.cause().getMessage() : "");
+    }
+
+    @AfterEach
+    protected void afterEach() {
+        cancel(client, server);
     }
 
     @AfterAll
