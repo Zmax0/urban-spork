@@ -12,8 +12,6 @@ import com.urbanspork.common.protocol.Protocols;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -25,12 +23,12 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 
 public class Server {
 
@@ -54,20 +52,22 @@ public class Server {
     public static void launch(List<ServerConfig> configs, CompletableFuture<List<Map.Entry<ServerSocketChannel, Optional<DatagramChannel>>>> promise) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        List<CompletableFuture<ChannelFuture>> futures = new ArrayList<>();
         try {
             List<Map.Entry<ServerSocketChannel, Optional<DatagramChannel>>> servers = new ArrayList<>(configs.size());
+            int count = 0;
             for (ServerConfig config : configs) {
-                CompletableFuture<Map.Entry<ServerSocketChannel, Optional<DatagramChannel>>> innerPromise = new CompletableFuture<>();
-                startup(bossGroup, workerGroup, config, innerPromise);
-                servers.add(innerPromise.get());
+                Map.Entry<ServerSocketChannel, Optional<DatagramChannel>> server = startup(bossGroup, workerGroup, config);
+                count += server.getValue().isPresent() ? 2 : 1;
+                servers.add(server);
+            }
+            CountDownLatch latch = new CountDownLatch(count);
+            for (Map.Entry<ServerSocketChannel, Optional<DatagramChannel>> server : servers) {
+                server.getKey().closeFuture().addListener(future -> latch.countDown());
+                server.getValue().ifPresent(v -> v.closeFuture().addListener(future -> latch.countDown()));
             }
             promise.complete(servers);
-            for (Map.Entry<ServerSocketChannel, Optional<DatagramChannel>> server : servers) {
-                futures.add(CompletableFuture.supplyAsync(() -> server.getKey().closeFuture().syncUninterruptibly()));
-                server.getValue().map(v -> CompletableFuture.supplyAsync(() -> v.closeFuture().syncUninterruptibly())).ifPresent(futures::add);
-            }
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[]{})).get();
+            latch.await(); // main thread is waiting here
+            logger.info("Server is terminated");
         } catch (InterruptedException e) {
             logger.warn("Interrupt main launch thread");
             Thread.currentThread().interrupt();
@@ -87,7 +87,7 @@ public class Server {
         }
     }
 
-    private static void startup(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config, CompletableFuture<Map.Entry<ServerSocketChannel, Optional<DatagramChannel>>> promise)
+    private static Map.Entry<ServerSocketChannel, Optional<DatagramChannel>> startup(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config)
         throws InterruptedException {
         if (Protocols.shadowsocks == config.getProtocol()) {
             List<ServerUserConfig> user = config.getUser();
@@ -95,18 +95,14 @@ public class Server {
                 user.stream().map(ServerUser::from).forEach(ServerUserManager.DEFAULT::addUser);
             }
         }
-        new ServerBootstrap().group(bossGroup, workerGroup)
+        ServerSocketChannel tcp = (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
             .channel(NioServerSocketChannel.class)
             .childOption(ChannelOption.SO_LINGER, 1)
             .childHandler(new ServerInitializer(config))
-            .bind(config.getPort()).sync().addListener((ChannelFutureListener) future -> {
-                ServerSocketChannel tcp = (ServerSocketChannel) future.channel();
-                InetSocketAddress tcpLocalAddress = tcp.localAddress();
-                config.setPort(tcpLocalAddress.getPort());
-                logger.info("Startup tcp server => {}", config);
-                Optional<DatagramChannel> udp = startupUdp(bossGroup, workerGroup, config);
-                promise.complete(Map.entry(tcp, udp));
-            });
+            .bind(config.getPort()).sync().addListener(future -> logger.info("Startup tcp server => {}", config)).channel();
+        config.setPort(tcp.localAddress().getPort());
+        Optional<DatagramChannel> udp = startupUdp(bossGroup, workerGroup, config);
+        return Map.entry(tcp, udp);
     }
 
     private static Optional<DatagramChannel> startupUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config) throws InterruptedException {
