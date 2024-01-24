@@ -10,13 +10,12 @@ public class Session {
     private byte[] requestSalt;
     private ServerUser user;
 
-    Session(byte[] salt, byte[] requestSalt) {
+    Session(byte[] salt) {
         this.salt = salt;
-        this.requestSalt = requestSalt;
     }
 
     public Session(CipherKind kind) {
-        this(Dice.rollBytes(kind.keySize()), null);
+        this(Dice.rollBytes(kind.keySize()));
     }
 
     public byte[] salt() {

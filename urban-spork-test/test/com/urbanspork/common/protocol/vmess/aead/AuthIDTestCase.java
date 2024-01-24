@@ -5,15 +5,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import java.security.InvalidKeyException;
 import java.util.concurrent.ThreadLocalRandom;
 
 @DisplayName("VMess - AuthID")
 class AuthIDTestCase {
     @Test
-    void testMatch() throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+    void testMatch() {
         byte[] key = KDF.kdf16("Demo Key for Auth ID Test".getBytes(), "Demo Path for Auth ID Test".getBytes());
         byte[] authid = AuthID.createAuthID(key, VMess.now());
         int size = 10000;

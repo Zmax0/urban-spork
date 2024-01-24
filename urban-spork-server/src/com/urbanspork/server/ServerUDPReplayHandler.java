@@ -1,11 +1,14 @@
 package com.urbanspork.server;
 
 import com.urbanspork.common.channel.AttributeKeys;
-import com.urbanspork.common.channel.ChannelCloseUtils;
 import com.urbanspork.common.protocol.network.PacketEncoding;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -41,9 +44,10 @@ public class ServerUDPReplayHandler extends SimpleChannelInboundHandler<Datagram
     }
 
     @Override
-    public void channelUnregistered(ChannelHandlerContext ctx) {
-        ctx.fireChannelUnregistered();
-        ChannelCloseUtils.clearMap(workerChannels);
+    public void handlerRemoved(ChannelHandlerContext ctx) {
+        for (Map.Entry<?, Channel> entry : workerChannels.entrySet()) {
+            entry.getValue().close();
+        }
     }
 
     Channel workerChannel(InetSocketAddress callback, Channel inboundChannel) {

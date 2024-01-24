@@ -4,14 +4,18 @@ import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ClientConfigTestCase;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.protocol.socks.ClientHandshake;
-import com.urbanspork.test.TestUtil;
-import io.netty.channel.DefaultEventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
-import io.netty.util.concurrent.Promise;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -20,7 +24,14 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.concurrent.*;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 @DisplayName("Client")
@@ -28,13 +39,12 @@ import java.util.stream.Stream;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ClientTestCase {
     private static final ExecutorService SERVICE = Executors.newVirtualThreadPerTaskExecutor();
-    private final int[] ports = TestUtil.freePorts(2);
     private final EventLoopGroup group = new NioEventLoopGroup();
 
     @Test
     @Order(1)
     void testExit() {
-        ClientConfig config = ClientConfigTestCase.testConfig(ports);
+        ClientConfig config = ClientConfigTestCase.testConfig(0, 0);
         ConfigHandler.DEFAULT.save(config);
         try (ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor()) {
             Future<?> future = pool.submit(() -> Client.main(null));
@@ -53,31 +63,25 @@ class ClientTestCase {
 
     @Test
     @Order(2)
-    void asyncLaunchClient() throws InterruptedException, ExecutionException, TimeoutException {
-        Future<?> f1 = asyncLaunchClient(ClientConfigTestCase.testConfig(ports));
-        Future<?> f2 = asyncLaunchClient(ClientConfigTestCase.testConfig(ports));
-        f2.get(5, TimeUnit.SECONDS);
-        Assertions.assertFalse(f1.isDone());
-        Assertions.assertTrue(f2.isDone());
-        f1.cancel(true);
+    void asyncLaunchClient() throws InterruptedException, ExecutionException {
+        ServerSocketChannel c1 = asyncLaunchClient(ClientConfigTestCase.testConfig(0, 0)).getKey();
+        ClientConfig config = ClientConfigTestCase.testConfig(c1.localAddress().getPort(), 0);
+        Assertions.assertThrows(ExecutionException.class, () -> asyncLaunchClient(config));
     }
 
     @ParameterizedTest
     @ArgumentsSource(Socks5CommandTypeProvider.class)
     @Order(3)
     void testHandshake(Socks5CommandType type) {
-        InetSocketAddress proxyAddress = new InetSocketAddress(ports[0]);
-        InetSocketAddress dstAddress = new InetSocketAddress(ports[1]);
+        InetSocketAddress proxyAddress = new InetSocketAddress(0);
+        InetSocketAddress dstAddress = new InetSocketAddress(0);
         Assertions.assertThrows(ExecutionException.class, () -> ClientHandshake.noAuth(group, type, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS));
     }
 
-    public static Future<?> asyncLaunchClient(ClientConfig config) throws InterruptedException {
-        DefaultEventLoop executor = new DefaultEventLoop();
-        Promise<ServerSocketChannel> promise = executor.newPromise();
-        Future<?> future = SERVICE.submit(() -> Client.launch(config, promise));
-        promise.await();
-        executor.shutdownGracefully();
-        return future;
+    public static Map.Entry<ServerSocketChannel, DatagramChannel> asyncLaunchClient(ClientConfig config) throws InterruptedException, ExecutionException {
+        CompletableFuture<Map.Entry<ServerSocketChannel, DatagramChannel>> promise = new CompletableFuture<>();
+        SERVICE.submit(() -> Client.launch(config, promise));
+        return promise.get();
     }
 
     private static class Socks5CommandTypeProvider implements ArgumentsProvider {

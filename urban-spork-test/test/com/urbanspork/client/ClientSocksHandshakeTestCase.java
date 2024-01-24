@@ -5,49 +5,48 @@ import com.urbanspork.common.config.ClientConfigTestCase;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.socks.ClientHandshake;
 import com.urbanspork.test.TestDice;
-import com.urbanspork.test.TestUtil;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.DatagramChannel;
+import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 @DisplayName("Client - Socks Handshake")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ClientSocksHandshakeTestCase {
-    private static final int[] PORTS = TestUtil.freePorts(2);
     private final EventLoopGroup group = new NioEventLoopGroup();
-    private Future<?> future;
 
     @Test
-    void testUdpEnable() throws InterruptedException {
-        ClientConfig config = ClientConfigTestCase.testConfig(PORTS[0], PORTS[1]);
+    void testUdpEnable() throws InterruptedException, ExecutionException {
+        ClientConfig config = ClientConfigTestCase.testConfig(0, 0);
         config.getServers().getFirst().setProtocol(Protocols.vmess);
-        future = ClientTestCase.asyncLaunchClient(config);
+        Map.Entry<ServerSocketChannel, DatagramChannel> client = ClientTestCase.asyncLaunchClient(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
-        InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", TestDice.rollPort());
+        InetSocketAddress dstAddress1 = new InetSocketAddress(InetAddress.getLoopbackAddress(), TestDice.rollPort());
         assertFailedHandshake(proxyAddress, dstAddress1);
+        Client.close(client);
     }
 
     @Test
-    void testIllegalDstAddress() throws InterruptedException {
-        ClientConfig config = ClientConfigTestCase.testConfig(PORTS[0], PORTS[1]);
-        future = ClientTestCase.asyncLaunchClient(config);
+    void testIllegalDstAddress() throws InterruptedException, ExecutionException {
+        ClientConfig config = ClientConfigTestCase.testConfig(0, 0);
+        Map.Entry<ServerSocketChannel, DatagramChannel> client = ClientTestCase.asyncLaunchClient(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
-        InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", 0);
+        InetSocketAddress dstAddress1 = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         assertFailedHandshake(proxyAddress, dstAddress1);
+        Client.close(client);
     }
 
-    @AfterEach
-    void reset() {
-        if (future != null) {
-            future.cancel(true);
-        }
-    }
 
     private void assertFailedHandshake(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) {
         Assertions.assertThrows(ExecutionException.class, () -> ClientHandshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS));

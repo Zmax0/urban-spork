@@ -12,7 +12,7 @@ class SessionTestCase {
     void testGetterAndSetter() {
         byte[] salt = Dice.rollBytes(32);
         byte[] requestSalt = Dice.rollBytes(32);
-        Session session = new Session(salt, null);
+        Session session = new Session(salt);
         TestUtil.testGetterAndSetter(requestSalt, session, Session::getRequestSalt, Session::setRequestSalt);
         Assertions.assertArrayEquals(salt, session.salt());
         Assertions.assertArrayEquals(requestSalt, session.getRequestSalt());

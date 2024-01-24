@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.text.MessageFormat;
 import java.util.logging.Logger;
@@ -23,7 +24,9 @@ public class SimpleUDPSender {
                 }
                 int port = Integer.parseInt(line);
                 byte[] bytes = "Msg of SimpleUDPSender".getBytes();
-                DatagramPacket packet = new DatagramPacket(bytes, bytes.length, new InetSocketAddress("localhost", port));
+
+                InetSocketAddress address = new InetSocketAddress(InetAddress.getLoopbackAddress(), port);
+                DatagramPacket packet = new DatagramPacket(bytes, bytes.length, address);
                 String sendPacketInfo = MessageFormat.format("Send packet {0}", packet);
                 logger.info(sendPacketInfo);
                 socket.send(packet);
