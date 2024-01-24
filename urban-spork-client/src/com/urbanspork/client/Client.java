@@ -10,66 +10,93 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.util.concurrent.DefaultPromise;
-import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public class Client {
 
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
     public static void main(String[] args) {
-        launch(ConfigHandler.DEFAULT.read(), new DefaultPromise<>() {});
+        launch(ConfigHandler.DEFAULT.read(), new CompletableFuture<>());
     }
 
-    public static void launch(ClientConfig config, Promise<ServerSocketChannel> promise) {
-        int port = config.getPort();
-        ServerConfig current = config.getCurrent();
+    public static void launch(ClientConfig config, CompletableFuture<Map.Entry<ServerSocketChannel, DatagramChannel>> promise) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
-            ChannelHandler udpTransportHandler;
-            if (Protocols.vmess == current.getProtocol()) {
-                udpTransportHandler = new ClientUDPOverTCPHandler(current, workerGroup);
-            } else {
-                udpTransportHandler = new ClientUDPReplayHandler(current, workerGroup);
-            }
-            new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
-                .handler(new ChannelInitializer<>() {
-                    @Override
-                    protected void initChannel(Channel ch) {
-                        ch.pipeline().addLast(
-                            new DatagramPacketEncoder(),
-                            new DatagramPacketDecoder(),
-                            udpTransportHandler
-                        );
-                    }
-                })
-                .bind(port).sync();
             new ServerBootstrap().group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childOption(ChannelOption.SO_KEEPALIVE, true) // socks5 require
                 .childOption(ChannelOption.TCP_NODELAY, false)
                 .childOption(ChannelOption.SO_LINGER, 1)
-                .childHandler(new ClientSocksInitializer(current, port))
-                .bind(port).sync().addListener((ChannelFutureListener) future -> {
-                    logger.info("Launch client => {} ", config);
-                    promise.setSuccess((ServerSocketChannel) future.channel());
-                }).channel().closeFuture().sync();
+                .childHandler(new ClientSocksInitializer(config.getCurrent()))
+                .bind(InetAddress.getLoopbackAddress(), config.getPort()).sync().addListener((ChannelFutureListener) future -> {
+                    ServerSocketChannel tcp = (ServerSocketChannel) future.channel();
+                    InetSocketAddress tcpLocalAddress = tcp.localAddress();
+                    int localPort = tcpLocalAddress.getPort();
+                    config.setPort(localPort);
+                    DatagramChannel udp = launchUdp(bossGroup, workerGroup, config);
+                    logger.info("Launch client => tcp{} udp{} ", tcpLocalAddress, udp.localAddress());
+                    Map.Entry<ServerSocketChannel, DatagramChannel> client = Map.entry(tcp, udp);
+                    promise.complete(client);
+                });
+            Map.Entry<ServerSocketChannel, DatagramChannel> client = promise.get();
+            CompletableFuture.allOf(
+                CompletableFuture.supplyAsync(() -> client.getKey().closeFuture().syncUninterruptibly()),
+                CompletableFuture.supplyAsync(() -> client.getValue().closeFuture().syncUninterruptibly())
+            ).get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
             logger.error("Launch client failed", e);
-            promise.setFailure(e);
+            promise.completeExceptionally(e);
         } finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }
+    }
+
+    public static void close(Map.Entry<ServerSocketChannel, DatagramChannel> client) {
+        client.getKey().close().awaitUninterruptibly();
+        client.getValue().close().awaitUninterruptibly();
+    }
+
+    private static DatagramChannel launchUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ClientConfig config) throws InterruptedException {
+        ServerConfig current = config.getCurrent();
+        ChannelHandler udpTransportHandler;
+        if (Protocols.vmess == current.getProtocol()) {
+            udpTransportHandler = new ClientUDPOverTCPHandler(current, workerGroup);
+        } else {
+            udpTransportHandler = new ClientUDPReplayHandler(current, workerGroup);
+        }
+        return (DatagramChannel) new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
+            .handler(new ChannelInitializer<>() {
+                @Override
+                protected void initChannel(Channel ch) {
+                    ch.pipeline().addLast(
+                        new DatagramPacketEncoder(),
+                        new DatagramPacketDecoder(),
+                        udpTransportHandler
+                    );
+                }
+            })
+            .bind(InetAddress.getLoopbackAddress(), config.getPort()).sync().channel();
     }
 }

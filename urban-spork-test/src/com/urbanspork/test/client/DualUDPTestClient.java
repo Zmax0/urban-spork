@@ -5,7 +5,11 @@ import com.urbanspork.test.server.udp.SimpleEchoTestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
@@ -15,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
@@ -42,8 +47,8 @@ public class DualUDPTestClient {
             })
             .bind(0).sync().channel();
         logger.info("Bind local address {}", channel.localAddress());
-        InetSocketAddress dstAddress1 = new InetSocketAddress("localhost", SimpleEchoTestServer.PORT);
-        InetSocketAddress dstAddress2 = new InetSocketAddress("localhost", DelayedEchoTestServer.PORT);
+        InetSocketAddress dstAddress1 = new InetSocketAddress(InetAddress.getLoopbackAddress(), SimpleEchoTestServer.PORT);
+        InetSocketAddress dstAddress2 = new InetSocketAddress(InetAddress.getLoopbackAddress(), DelayedEchoTestServer.PORT);
         sendMsg(channel, dstAddress1, dstAddress2);
         bossGroup.shutdownGracefully();
     }

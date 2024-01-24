@@ -28,7 +28,7 @@ public class ClientConfigTestCase {
         config.setPort(ports[0]);
         config.setIndex(0);
         int[] serverPorts = Arrays.copyOfRange(ports, 1, ports.length);
-        config.setServers(ServerConfigTestCase.testConfig(serverPorts));
+        config.setServers(ServerConfigTestCase.testConfigs(serverPorts));
         return config;
     }
 }

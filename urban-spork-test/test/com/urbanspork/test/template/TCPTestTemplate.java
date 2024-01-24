@@ -1,32 +1,36 @@
 package com.urbanspork.test.template;
 
-import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.protocol.socks.ClientHandshake;
 import com.urbanspork.common.util.Dice;
-import com.urbanspork.test.TestUtil;
 import com.urbanspork.test.server.tcp.EchoTestServer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.handler.codec.FixedLengthFrameDecoder;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
-import io.netty.util.concurrent.Promise;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TCPTestTemplate extends TestTemplate {
     final EventLoopGroup group = new NioEventLoopGroup();
-    protected final DefaultEventLoop executor = new DefaultEventLoop();
-    protected final ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();
-    final int dstPort = TestUtil.freePort();
-    protected Future<?> server;
-    protected Future<?> client;
+    InetSocketAddress dstAddress;
 
     @BeforeAll
     protected void beforeAll() throws ExecutionException, InterruptedException {
@@ -34,15 +38,12 @@ public abstract class TCPTestTemplate extends TestTemplate {
     }
 
     private void launchEchoTestServer() throws InterruptedException, ExecutionException {
-        Promise<Channel> promise = executor.newPromise();
-        pool.submit(() -> EchoTestServer.launch(dstPort, promise));
-        InetSocketAddress address = (InetSocketAddress) promise.await().get().localAddress();
-        Assertions.assertEquals(dstPort, address.getPort());
+        CompletableFuture<ServerSocketChannel> promise = new CompletableFuture<>();
+        POOL.submit(() -> EchoTestServer.launch(0, promise));
+        dstAddress = promise.get().localAddress();
     }
 
-    protected void handshakeAndSendBytes(ClientConfig config) throws InterruptedException, ExecutionException {
-        InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
-        InetSocketAddress dstAddress = new InetSocketAddress("localhost", dstPort);
+    protected void handshakeAndSendBytes(InetSocketAddress proxyAddress) throws InterruptedException, ExecutionException {
         ClientHandshake.Result result = ClientHandshake.noAuth(group, Socks5CommandType.CONNECT, proxyAddress, dstAddress).await().get();
         Channel channel = result.sessionChannel();
         int length = ThreadLocalRandom.current().nextInt(0xfff, 0xffff);
@@ -70,15 +71,8 @@ public abstract class TCPTestTemplate extends TestTemplate {
         Assertions.assertTrue(promise.isSuccess(), promise.cause() != null ? promise.cause().getMessage() : "");
     }
 
-    @AfterEach
-    protected void afterEach() {
-        cancel(client, server);
-    }
-
     @AfterAll
     protected void afterAll() {
-        pool.shutdown();
-        executor.shutdownGracefully();
         group.shutdownGracefully();
     }
 }

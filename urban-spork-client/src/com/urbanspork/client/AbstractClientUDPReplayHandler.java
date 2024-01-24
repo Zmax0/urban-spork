@@ -1,6 +1,5 @@
 package com.urbanspork.client;
 
-import com.urbanspork.common.channel.ChannelCloseUtils;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import io.netty.channel.Channel;
@@ -23,7 +22,6 @@ public abstract class AbstractClientUDPReplayHandler<K> extends SimpleChannelInb
     protected final ServerConfig config;
 
     protected AbstractClientUDPReplayHandler(ServerConfig config) {
-        super(false);
         this.config = config;
     }
 
@@ -43,11 +41,12 @@ public abstract class AbstractClientUDPReplayHandler<K> extends SimpleChannelInb
     }
 
     @Override
-    public void channelUnregistered(ChannelHandlerContext ctx) {
-        ctx.fireChannelUnregistered();
-        logger.info("Stop timer and clean binding");
+    public void handlerRemoved(ChannelHandlerContext ctx) {
+        logger.info("Stop timer and close binding");
+        for (Map.Entry<?, Channel> entry : binding.entrySet()) {
+            entry.getValue().close();
+        }
         timer.stop();
-        ChannelCloseUtils.clearMap(binding);
     }
 
     private Channel getBindingChannel(Channel inboundChannel, K key) {
@@ -65,5 +64,4 @@ public abstract class AbstractClientUDPReplayHandler<K> extends SimpleChannelInb
             return channel;
         });
     }
-
 }

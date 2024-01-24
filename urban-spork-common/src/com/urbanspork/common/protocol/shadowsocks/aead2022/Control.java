@@ -14,15 +14,14 @@ public class Control {
     private ServerUser user;
 
     public Control(CipherKind kind) {
-        this(Dice.rollBytes(kind.keySize()), ThreadLocalRandom.current().nextLong(), ThreadLocalRandom.current().nextLong(), 0, null);
+        this(Dice.rollBytes(kind.keySize()), ThreadLocalRandom.current().nextLong(), ThreadLocalRandom.current().nextLong(), 0);
     }
 
-    Control(byte[] salt, long clientSessionId, long serverSessionId, long packetId, ServerUser user) {
+    Control(byte[] salt, long clientSessionId, long serverSessionId, long packetId) {
         this.salt = salt;
         this.clientSessionId = clientSessionId;
         this.serverSessionId = serverSessionId;
         this.packetId = packetId;
-        this.user = user;
     }
 
     public void increasePacketId(long i) {

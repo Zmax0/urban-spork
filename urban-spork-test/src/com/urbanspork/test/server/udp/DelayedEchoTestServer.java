@@ -6,6 +6,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.text.MessageFormat;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
@@ -18,13 +19,14 @@ public class DelayedEchoTestServer {
     public static final int MAX_DELAYED_SECOND = 5;
 
     public static void main(String[] args) throws IOException {
-        launch(PORT);
+        launch(PORT, new CompletableFuture<>());
     }
 
-    public static void launch(int port) throws IOException {
+    public static void launch(int port, CompletableFuture<DatagramSocket> future) throws IOException {
         Logger logger = Logger.getGlobal();
         try (ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor(); DatagramSocket socket = new DatagramSocket(port)) {
-            String startupInfo = MessageFormat.format("UDP test server startup [{0,number,#}]", socket.getLocalPort());
+            future.complete(socket);
+            String startupInfo = MessageFormat.format("UDP test server startup [{0}]", socket.getLocalSocketAddress());
             logger.info(startupInfo);
             for (; ; ) {
                 byte[] data = new byte[1024];

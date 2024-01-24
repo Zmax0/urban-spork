@@ -29,5 +29,6 @@ class ClientUDPOverTCPHandlerTestCase {
         EmbeddedChannel channel = new EmbeddedChannel(new ClientUDPOverTCPHandler(config, executor));
         TernaryDatagramPacket packet = new TernaryDatagramPacket(new DatagramPacket(Unpooled.EMPTY_BUFFER, new InetSocketAddress(TestDice.rollPort())), new InetSocketAddress(0));
         Assertions.assertThrows(ConnectException.class, () -> channel.writeInbound(packet));
+        channel.close();
     }
 }

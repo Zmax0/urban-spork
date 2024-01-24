@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
@@ -26,7 +27,6 @@ import java.util.concurrent.ExecutionException;
 public class Socks5TCPTestClient {
 
     private static final Logger logger = LoggerFactory.getLogger(Socks5TCPTestClient.class);
-    private static final String LOCALHOST = "localhost";
     private static Channel channel;
     private static final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
 
@@ -38,9 +38,9 @@ public class Socks5TCPTestClient {
             proxyPort = config.getPort();
             hostname = config.getCurrent().getHost();
         } catch (Exception ignore) {
-            hostname = LOCALHOST;
+            hostname = InetAddress.getLoopbackAddress().getHostName();
         }
-        InetSocketAddress proxyAddress = new InetSocketAddress(LOCALHOST, proxyPort);
+        InetSocketAddress proxyAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), proxyPort);
         InetSocketAddress dstAddress = new InetSocketAddress(hostname, HttpTestServer.PORT);
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         logger.info("Enter text (quit to end)");

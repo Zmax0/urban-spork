@@ -12,7 +12,7 @@ import java.util.concurrent.ThreadLocalRandom;
 class ControlTestCase {
     @Test
     void testIncreasePacketId() {
-        Control control = new Control(null, 1, 1, Long.MAX_VALUE, null);
+        Control control = new Control(null, 1, 1, Long.MAX_VALUE);
         control.increasePacketId(1);
         Assertions.assertEquals(0, control.getPacketId());
         Assertions.assertNotEquals(1, control.getClientSessionId());
@@ -22,7 +22,7 @@ class ControlTestCase {
     void testGetterAndSetter() {
         byte[] salt = Dice.rollBytes(32);
         long id = ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE);
-        Control control = new Control(salt, 0, 0, 0, null);
+        Control control = new Control(salt, 0, 0, 0);
         TestUtil.testGetterAndSetter(id, control, Control::getClientSessionId, Control::setClientSessionId);
         TestUtil.testGetterAndSetter(id, control, Control::getServerSessionId, Control::setServerSessionId);
         TestUtil.testGetterAndSetter(id, control, Control::getPacketId, Control::setPacketId);

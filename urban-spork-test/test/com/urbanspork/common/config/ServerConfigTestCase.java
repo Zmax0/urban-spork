@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,14 +61,14 @@ public class ServerConfigTestCase {
     }
 
     public static ServerConfig testConfig(int port) {
-        return testConfig(new int[]{port}).getFirst();
+        return testConfigs(port).getFirst();
     }
 
-    public static List<ServerConfig> testConfig(int[] ports) {
+    public static List<ServerConfig> testConfigs(int... ports) {
         List<ServerConfig> serverConfigs = new ArrayList<>(ports.length);
         for (int port : ports) {
             ServerConfig serverConfig = new ServerConfig();
-            serverConfig.setHost("localhost");
+            serverConfig.setHost(InetAddress.getLoopbackAddress().getHostName());
             serverConfig.setPort(port);
             serverConfig.setProtocol(Protocols.shadowsocks);
             serverConfig.setCipher(TestDice.rollCipher());

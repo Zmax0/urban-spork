@@ -1,9 +1,23 @@
 package com.urbanspork.common.protocol.socks;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.socksx.v5.*;
+import io.netty.handler.codec.socksx.v5.DefaultSocks5InitialRequest;
+import io.netty.handler.codec.socksx.v5.Socks5AddressEncoder;
+import io.netty.handler.codec.socksx.v5.Socks5AuthMethod;
+import io.netty.handler.codec.socksx.v5.Socks5ClientEncoder;
+import io.netty.handler.codec.socksx.v5.Socks5CommandResponse;
+import io.netty.handler.codec.socksx.v5.Socks5CommandResponseDecoder;
+import io.netty.handler.codec.socksx.v5.Socks5CommandType;
+import io.netty.handler.codec.socksx.v5.Socks5InitialResponse;
+import io.netty.handler.codec.socksx.v5.Socks5InitialResponseDecoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.Promise;
@@ -12,8 +26,7 @@ import java.net.InetSocketAddress;
 
 public interface ClientHandshake {
     static Promise<Result> noAuth(EventLoopGroup worker, Socks5CommandType type, InetSocketAddress proxyAddress, InetSocketAddress dstAddress) {
-        DefaultEventLoop executor = new DefaultEventLoop();
-        Promise<Result> promise = executor.newPromise();
+        Promise<Result> promise = worker.next().newPromise();
         try {
             new Bootstrap().group(worker).channel(NioSocketChannel.class)
                 .option(ChannelOption.SO_KEEPALIVE, true)
@@ -46,7 +59,6 @@ public interface ClientHandshake {
                                     } else {
                                         promise.setFailure(new IllegalStateException("Unsuccessful response status: " + msg.status().toString()));
                                     }
-                                    executor.shutdownGracefully();
                                 }
                             }
                         );
