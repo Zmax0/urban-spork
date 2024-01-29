@@ -1,7 +1,7 @@
 package com.urbanspork.client;
 
-import com.urbanspork.client.shadowsocks.ClientUDPReplayHandler;
-import com.urbanspork.client.vmess.ClientUDPOverTCPHandler;
+import com.urbanspork.client.shadowsocks.ClientUdpRelayHandler;
+import com.urbanspork.client.vmess.ClientUdpOverTCPHandler;
 import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
 import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.config.ClientConfig;
@@ -82,9 +82,9 @@ public class Client {
         ServerConfig current = config.getCurrent();
         ChannelHandler udpTransportHandler;
         if (Protocols.vmess == current.getProtocol()) {
-            udpTransportHandler = new ClientUDPOverTCPHandler(current, workerGroup);
+            udpTransportHandler = new ClientUdpOverTCPHandler(current, workerGroup);
         } else {
-            udpTransportHandler = new ClientUDPReplayHandler(current, workerGroup);
+            udpTransportHandler = new ClientUdpRelayHandler(current, workerGroup);
         }
         return (DatagramChannel) new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {

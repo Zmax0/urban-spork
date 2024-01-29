@@ -2,7 +2,7 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
-import com.urbanspork.common.codec.shadowsocks.tcp.TCPReplayCodec;
+import com.urbanspork.common.codec.shadowsocks.tcp.TCPRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.server.vmess.ServerAEADCodec;
@@ -24,7 +24,7 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
         if (Protocols.vmess == config.getProtocol()) {
             pipeline.addLast(new ServerAEADCodec(config));
         } else {
-            pipeline.addLast(new TCPReplayCodec(Mode.Server, config));
+            pipeline.addLast(new TCPRelayCodec(Mode.Server, config));
         }
         pipeline.addLast(new RemoteConnectHandler(config), new ExceptionHandler(config));
     }

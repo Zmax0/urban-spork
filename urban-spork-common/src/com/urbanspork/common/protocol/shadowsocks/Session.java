@@ -1,4 +1,4 @@
-package com.urbanspork.common.protocol.shadowsocks.aead2022;
+package com.urbanspork.common.protocol.shadowsocks;
 
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;

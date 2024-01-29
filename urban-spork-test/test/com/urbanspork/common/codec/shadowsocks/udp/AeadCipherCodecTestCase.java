@@ -1,13 +1,11 @@
 package com.urbanspork.common.codec.shadowsocks.udp;
 
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.LoggerContext;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.shadowsocks.aead2022.Control;
+import com.urbanspork.common.protocol.shadowsocks.Control;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import com.urbanspork.test.template.TraceLevelLoggerTestTemplate;
@@ -18,7 +16,6 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -26,7 +23,7 @@ import java.util.Base64;
 import java.util.List;
 
 @DisplayName("Shadowsocks - AEAD Cipher UDP Codec")
-class AEADCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
+class AeadCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
 
     @Test
     void testIncorrectPassword() {
@@ -100,8 +97,7 @@ class AEADCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
     }
 
     @Override
-    protected Logger logger() {
-        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        return loggerContext.getLogger(AeadCipherCodec.class);
+    protected Class<?> loggerClass() {
+        return AeadCipherCodec.class;
     }
 }

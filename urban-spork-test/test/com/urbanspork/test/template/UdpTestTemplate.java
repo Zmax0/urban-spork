@@ -43,9 +43,9 @@ import java.util.function.Consumer;
 
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public abstract class UDPTestTemplate extends TestTemplate {
+public abstract class UdpTestTemplate extends TestTemplate {
 
-    private static final Logger logger = LoggerFactory.getLogger(UDPTestTemplate.class);
+    private static final Logger logger = LoggerFactory.getLogger(UdpTestTemplate.class);
     private final List<InetSocketAddress> dstAddress = new ArrayList<>();
     private final EventLoopGroup group = new NioEventLoopGroup();
     private Channel channel;
@@ -127,7 +127,7 @@ public abstract class UDPTestTemplate extends TestTemplate {
         simpleEchoTestServer.close();
         delayedEchoTestServer.close();
         channel.close();
-        channel.eventLoop().shutdownGracefully();
+        group.shutdownGracefully();
     }
 
     private void initChannel() {

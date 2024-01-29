@@ -1,6 +1,6 @@
 package com.urbanspork.client.vmess;
 
-import com.urbanspork.client.AbstractClientUDPReplayHandler;
+import com.urbanspork.client.AbstractClientUdpRelayHandler;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
@@ -24,12 +24,12 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
-public class ClientUDPOverTCPHandler extends AbstractClientUDPReplayHandler<ClientUDPOverTCPHandler.Key> {
+public class ClientUdpOverTCPHandler extends AbstractClientUdpRelayHandler<ClientUdpOverTCPHandler.Key> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ClientUDPOverTCPHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ClientUdpOverTCPHandler.class);
     private final EventLoopGroup workerGroup;
 
-    public ClientUDPOverTCPHandler(ServerConfig config, EventLoopGroup workerGroup) {
+    public ClientUdpOverTCPHandler(ServerConfig config, EventLoopGroup workerGroup) {
         super(config);
         this.workerGroup = workerGroup;
     }
@@ -64,7 +64,7 @@ public class ClientUDPOverTCPHandler extends AbstractClientUDPReplayHandler<Clie
                     outbound.pipeline().addLast(new InboundHandler(inboundChannel, key.recipient, key.sender)); // R → L
                     inboundChannel.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
                 } else {
-                    logger.error("Connect replay server {} failed", serverAddress);
+                    logger.error("Connect relay server {} failed", serverAddress);
                 }
             }).syncUninterruptibly().channel();
     }

@@ -1,7 +1,5 @@
 package com.urbanspork.common.protocol.shadowsocks.aead2022;
 
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.LoggerContext;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.codec.aead.CipherMethod;
 import com.urbanspork.common.codec.aead.CipherMethods;
@@ -10,6 +8,7 @@ import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.shadowsocks.Control;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import com.urbanspork.test.template.TraceLevelLoggerTestTemplate;
@@ -20,7 +19,6 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -123,8 +121,7 @@ class Aead2022TestCase extends TraceLevelLoggerTestTemplate {
     }
 
     @Override
-    protected Logger logger() {
-        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        return loggerContext.getLogger(AEAD2022.class);
+    protected Class<?> loggerClass() {
+        return AEAD2022.class;
     }
 }

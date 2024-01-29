@@ -1,4 +1,4 @@
-package com.urbanspork.common.protocol.shadowsocks.aead2022;
+package com.urbanspork.common.protocol.shadowsocks;
 
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestUtil;
