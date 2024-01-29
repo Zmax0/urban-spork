@@ -2,7 +2,7 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
-import com.urbanspork.common.codec.shadowsocks.udp.UDPReplayCodec;
+import com.urbanspork.common.codec.shadowsocks.udp.UdpRelayCodec;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerUserConfig;
@@ -107,19 +107,20 @@ public class Server {
 
     private static Optional<DatagramChannel> startupUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config) throws InterruptedException {
         if (Protocols.shadowsocks == config.getProtocol() && config.udpEnabled()) {
-            return Optional.of((DatagramChannel) new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
+            Channel channel = new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
                 .option(ChannelOption.SO_BROADCAST, true)
                 .handler(new ChannelInitializer<>() {
                     @Override
                     protected void initChannel(Channel ch) {
                         ch.pipeline().addLast(
-                            new UDPReplayCodec(config, Mode.Server),
-                            new ServerUDPReplayHandler(config.getPacketEncoding(), workerGroup),
+                            new UdpRelayCodec(config, Mode.Server),
+                            new ServerUDPRelayHandler(config.getPacketEncoding(), workerGroup),
                             new ExceptionHandler(config)
                         );
                     }
                 })
-                .bind(config.getPort()).sync().addListener(future -> logger.info("Startup upd server => {}", config)).channel());
+                .bind(config.getPort()).sync().addListener(future -> logger.info("Startup upd server => {}", config)).channel();
+            return Optional.of((DatagramChannel) channel);
         } else {
             return Optional.empty();
         }

@@ -5,8 +5,8 @@ import com.urbanspork.common.codec.aead.CipherMethod;
 import com.urbanspork.common.codec.shadowsocks.Keys;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;
+import com.urbanspork.common.protocol.shadowsocks.Control;
 import com.urbanspork.common.protocol.shadowsocks.aead2022.AEAD2022;
-import com.urbanspork.common.protocol.shadowsocks.aead2022.Control;
 import com.urbanspork.common.protocol.shadowsocks.aead2022.UdpCipher;
 import com.urbanspork.common.protocol.socks.Address;
 import com.urbanspork.common.util.Dice;
@@ -44,7 +44,6 @@ class Aead2022CipherCodecImpl implements AeadCipherCodec {
     // Client -> Server
     private void encodeClientPacketAead2022(Context context, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         Control control = context.control();
-        logger.trace("[udp][encode control]{}", control);
         InetSocketAddress address = context.address();
         int paddingLength = AEAD2022.getPaddingLength(msg);
         int nonceLength = AEAD2022.UDP.getNonceLength(cipherKind);
@@ -75,7 +74,6 @@ class Aead2022CipherCodecImpl implements AeadCipherCodec {
     // Server -> Client
     private void encodeServerPacketAead2022(Context context, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         Control control = context.control();
-        logger.trace("[udp][encode control]{}", control);
         int paddingLength = AEAD2022.getPaddingLength(msg);
         int nonceLength = AEAD2022.UDP.getNonceLength(cipherKind);
         InetSocketAddress address = context.address();
@@ -142,7 +140,6 @@ class Aead2022CipherCodecImpl implements AeadCipherCodec {
         control.setClientSessionId(clientSessionId);
         control.setServerSessionId(0);
         control.setPacketId(packetId);
-        logger.trace("[udp][decode control]{}", control);
         Address.decode(packet, out);
         out.add(packet.slice());
     }

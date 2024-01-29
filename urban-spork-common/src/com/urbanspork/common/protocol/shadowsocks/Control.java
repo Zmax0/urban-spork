@@ -1,7 +1,8 @@
-package com.urbanspork.common.protocol.shadowsocks.aead2022;
+package com.urbanspork.common.protocol.shadowsocks;
 
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;
+import com.urbanspork.common.protocol.shadowsocks.replay.PacketWindowFilter;
 import com.urbanspork.common.util.Dice;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -12,6 +13,7 @@ public class Control {
     private long serverSessionId;
     private long packetId;
     private ServerUser user;
+    private final PacketWindowFilter packetWindowFilter;
 
     public Control(CipherKind kind) {
         this(Dice.rollBytes(kind.keySize()), ThreadLocalRandom.current().nextLong(), ThreadLocalRandom.current().nextLong(), 0);
@@ -22,6 +24,7 @@ public class Control {
         this.clientSessionId = clientSessionId;
         this.serverSessionId = serverSessionId;
         this.packetId = packetId;
+        this.packetWindowFilter = new PacketWindowFilter();
     }
 
     public void increasePacketId(long i) {
@@ -35,6 +38,10 @@ public class Control {
             this.clientSessionId = id;
             this.packetId = 0;
         }
+    }
+
+    public boolean validatePacketId() {
+        return packetWindowFilter.validatePacketId(packetId, Long.MAX_VALUE);
     }
 
     public byte[] salt() {

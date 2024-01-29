@@ -1,4 +1,4 @@
-package com.urbanspork.common.replay;
+package com.urbanspork.common.protocol.shadowsocks.replay;
 
 /**
  * Package replay implements an efficient anti-replay algorithm as specified in RFC 6479

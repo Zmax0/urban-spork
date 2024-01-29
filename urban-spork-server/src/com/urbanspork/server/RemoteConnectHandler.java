@@ -42,7 +42,7 @@ class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
         if (msg instanceof Socks5CommandRequest request) {
             ctx.pipeline().addLast(
                 new ServerUDPOverTCPCodec(request),
-                new ServerUDPReplayHandler(config.getPacketEncoding(), ctx.channel().eventLoop().parent().next())
+                new ServerUDPRelayHandler(config.getPacketEncoding(), ctx.channel().eventLoop().parent().next())
             );
         } else {
             ctx.fireChannelRead(msg);

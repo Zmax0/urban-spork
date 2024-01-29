@@ -1,4 +1,4 @@
-package com.urbanspork.common.replay;
+package com.urbanspork.common.protocol.shadowsocks.replay;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;

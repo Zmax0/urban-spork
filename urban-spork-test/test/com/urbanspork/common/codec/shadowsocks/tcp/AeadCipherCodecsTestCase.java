@@ -8,7 +8,7 @@ import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.shadowsocks.aead2022.Session;
+import com.urbanspork.common.protocol.shadowsocks.Session;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
@@ -17,7 +17,11 @@ import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -29,7 +33,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @DisplayName("Shadowsocks - AEAD Cipher TCP Codecs")
 @TestInstance(Lifecycle.PER_CLASS)
-class AEADCipherCodecsTestCase {
+class AeadCipherCodecsTestCase {
 
     private final byte[] in = Dice.rollBytes(0xffff * 10);
     private CipherKind kind;

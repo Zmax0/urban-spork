@@ -12,7 +12,7 @@ import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.Network;
 import com.urbanspork.server.Server;
 import com.urbanspork.test.template.Parameter;
-import com.urbanspork.test.template.UDPTestTemplate;
+import com.urbanspork.test.template.UdpTestTemplate;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +28,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 @DisplayName("UDP")
-class UDPTestCase extends UDPTestTemplate {
+class UdpTestCase extends UdpTestTemplate {
     @ParameterizedTest
     @ArgumentsSource(Parameter.Provider.class)
     void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {

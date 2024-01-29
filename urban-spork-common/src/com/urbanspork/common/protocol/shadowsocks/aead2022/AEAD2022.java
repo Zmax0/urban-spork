@@ -15,6 +15,8 @@ import com.urbanspork.common.crypto.AES;
 import com.urbanspork.common.crypto.Digests;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
+import com.urbanspork.common.protocol.shadowsocks.Control;
+import com.urbanspork.common.protocol.shadowsocks.Session;
 import com.urbanspork.common.util.ByteString;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
