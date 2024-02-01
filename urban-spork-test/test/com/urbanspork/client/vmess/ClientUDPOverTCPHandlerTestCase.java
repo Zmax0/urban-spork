@@ -26,8 +26,9 @@ class ClientUDPOverTCPHandlerTestCase {
         config.setProtocol(Protocols.vmess);
         config.setPassword(TestDice.rollPassword(Protocols.vmess, CipherKind.chacha20_poly1305));
         EventLoopGroup executor = new NioEventLoopGroup();
-        EmbeddedChannel channel = new EmbeddedChannel(new ClientUDPOverTCPHandler(config, executor));
+        EmbeddedChannel channel = new EmbeddedChannel(new ClientUdpOverTCPHandler(config, executor));
         TernaryDatagramPacket packet = new TernaryDatagramPacket(new DatagramPacket(Unpooled.EMPTY_BUFFER, new InetSocketAddress(TestDice.rollPort())), new InetSocketAddress(0));
         Assertions.assertThrows(ConnectException.class, () -> channel.writeInbound(packet));
+        channel.close();
     }
 }

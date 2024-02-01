@@ -1,13 +1,17 @@
 package com.urbanspork.client.shadowsocks;
 
-import com.urbanspork.client.AbstractClientUDPReplayHandler;
+import com.urbanspork.client.AbstractClientUdpRelayHandler;
 import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
-import com.urbanspork.common.codec.shadowsocks.UDPReplayCodec;
+import com.urbanspork.common.codec.shadowsocks.udp.UdpRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.slf4j.Logger;
@@ -15,21 +19,21 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
-public class ClientUDPReplayHandler extends AbstractClientUDPReplayHandler<InetSocketAddress> {
+public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSocketAddress> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ClientUDPReplayHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ClientUdpRelayHandler.class);
     private final EventLoopGroup workerGroup;
-    private final InetSocketAddress replay;
+    private final InetSocketAddress relay;
 
-    public ClientUDPReplayHandler(ServerConfig config, EventLoopGroup workerGroup) {
+    public ClientUdpRelayHandler(ServerConfig config, EventLoopGroup workerGroup) {
         super(config);
         this.workerGroup = workerGroup;
-        this.replay = new InetSocketAddress(config.getHost(), config.getPort());
+        this.relay = new InetSocketAddress(config.getHost(), config.getPort());
     }
 
     @Override
     protected Object convertToWrite(TernaryDatagramPacket msg) {
-        return new TernaryDatagramPacket(new DatagramPacket(msg.packet().content(), msg.third()), replay);
+        return new TernaryDatagramPacket(new DatagramPacket(msg.packet().content(), msg.third()), relay);
     }
 
     @Override
@@ -44,7 +48,7 @@ public class ClientUDPReplayHandler extends AbstractClientUDPReplayHandler<InetS
                 @Override
                 protected void initChannel(Channel ch) {
                     ch.pipeline().addLast(
-                        new UDPReplayCodec(config, Mode.Client),
+                        new UdpRelayCodec(config, Mode.Client),
                         new InboundHandler(inboundChannel, sender),// server->client->sender
                         new ExceptionHandler(config)
                     );

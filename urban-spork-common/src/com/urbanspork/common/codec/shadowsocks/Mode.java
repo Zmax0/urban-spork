@@ -12,4 +12,9 @@ public enum Mode {
     public byte getValue() {
         return value;
     }
+
+    @Override
+    public String toString() {
+        return name().toLowerCase();
+    }
 }

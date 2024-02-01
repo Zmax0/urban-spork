@@ -1,4 +1,4 @@
-package com.urbanspork.common.codec.shadowsocks;
+package com.urbanspork.common.protocol.shadowsocks.aead2022;
 
 import com.urbanspork.common.codec.aead.CipherMethod;
 import org.bouncycastle.crypto.InvalidCipherTextException;

@@ -43,8 +43,7 @@ public class ClientUDPAssociateHandler extends ChannelInboundHandlerAdapter {
             channel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()));
             return;
         }
-        Integer bndPort = channel.attr(AttributeKeys.SOCKS_PORT).get();
-        Socks5CommandRequest bndRequest = Socks5.toCommandRequest(Socks5CommandType.UDP_ASSOCIATE, new InetSocketAddress(bndPort));
+        Socks5CommandRequest bndRequest = Socks5.toCommandRequest(Socks5CommandType.UDP_ASSOCIATE, (InetSocketAddress) channel.localAddress());
         DefaultSocks5CommandResponse response = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, bndRequest.dstAddrType(), bndRequest.dstAddr(), bndRequest.dstPort());
         channel.writeAndFlush(response);
     }

@@ -11,10 +11,15 @@ import com.urbanspork.test.server.udp.SimpleEchoTestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.handler.codec.socksx.v5.Socks5CommandResponse;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
@@ -29,7 +35,6 @@ import java.util.concurrent.ExecutionException;
 public class Socks5UDPTestClient {
 
     private static final Logger logger = LoggerFactory.getLogger(Socks5UDPTestClient.class);
-    private static final String LOCALHOST = "localhost";
 
     public static void main(String[] args) throws InterruptedException, IOException, ExecutionException {
         int proxyPort = 1089;
@@ -39,17 +44,17 @@ public class Socks5UDPTestClient {
             proxyPort = config.getPort();
             hostname = config.getCurrent().getHost();
         } catch (Exception ignore) {
-            hostname = LOCALHOST;
+            hostname = InetAddress.getLoopbackAddress().getHostName();
         }
-        InetSocketAddress proxyAddress = new InetSocketAddress(LOCALHOST, proxyPort);
+        InetSocketAddress proxyAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), proxyPort);
         InetSocketAddress dstAddress1 = new InetSocketAddress(hostname, SimpleEchoTestServer.PORT);
         InetSocketAddress dstAddress2 = new InetSocketAddress(hostname, DelayedEchoTestServer.PORT);
         EventLoopGroup group = new NioEventLoopGroup();
         ClientHandshake.Result result1 = ClientHandshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress1).await().get();
         ClientHandshake.Result result2 = ClientHandshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress2).await().get();
-        int bndPort1 = result1.response().bndPort();
-        int bndPort2 = result2.response().bndPort();
-        logger.info("Associate ports: [{}, {}]", bndPort1, bndPort2);
+        Socks5CommandResponse response1 = result1.response();
+        Socks5CommandResponse response2 = result2.response();
+        logger.info("Associate ports: [{}, {}]", response1.bndPort(), response2.bndPort());
         Channel channel = new Bootstrap().group(group)
             .channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {
@@ -76,16 +81,14 @@ public class Socks5UDPTestClient {
         logger.info("Bind local address {}", channel.localAddress());
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         logger.info("Enter text (quit to end)");
-        InetSocketAddress socksAddress1 = new InetSocketAddress(LOCALHOST, bndPort1);
-        InetSocketAddress socksAddress2 = new InetSocketAddress(LOCALHOST, bndPort2);
         for (; ; ) {
             String line = in.readLine();
             if (line == null || "quit".equalsIgnoreCase(line)) {
                 break;
             }
             byte[] bytes = line.getBytes();
-            sendMsg(channel, dstAddress1, socksAddress1, bytes);
-            sendMsg(channel, dstAddress2, socksAddress2, bytes);
+            sendMsg(channel, dstAddress1, new InetSocketAddress(response1.bndAddr(), response1.bndPort()), bytes);
+            sendMsg(channel, dstAddress2, new InetSocketAddress(response2.bndAddr(), response2.bndPort()), bytes);
         }
         result1.sessionChannel().eventLoop().shutdownGracefully();
         result2.sessionChannel().eventLoop().shutdownGracefully();

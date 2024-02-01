@@ -4,7 +4,11 @@ import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.Objects;
+import java.util.ResourceBundle;
 
 public class Resource {
 

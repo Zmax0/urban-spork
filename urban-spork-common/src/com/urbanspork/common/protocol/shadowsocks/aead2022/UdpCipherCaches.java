@@ -2,14 +2,13 @@ package com.urbanspork.common.protocol.shadowsocks.aead2022;
 
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.codec.aead.CipherMethod;
-import com.urbanspork.common.codec.shadowsocks.UdpCipher;
 
-public enum UDPCipherCaches {
-    INSTANCE(new UDPCipherCache(AEAD2022.UDP.CIPHER_CACHE_DURATION, AEAD2022.UDP.CIPHER_CACHE_LIMIT));
+public enum UdpCipherCaches {
+    INSTANCE(new UdpCipherCache(AEAD2022.UDP.CIPHER_CACHE_DURATION, AEAD2022.UDP.CIPHER_CACHE_LIMIT));
 
-    private final UDPCipherCache cache;
+    private final UdpCipherCache cache;
 
-    UDPCipherCaches(UDPCipherCache cache) {
+    UdpCipherCaches(UdpCipherCache cache) {
         this.cache = cache;
     }
 
