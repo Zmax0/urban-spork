@@ -2,13 +2,19 @@ package com.urbanspork.test.server.tcp;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.util.concurrent.DefaultPromise;
-import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.CompletableFuture;
 
 public class EchoTestServer {
 
@@ -16,10 +22,10 @@ public class EchoTestServer {
     public static final int PORT = 16802;
 
     public static void main(String[] args) {
-        launch(PORT, new DefaultPromise<>() {});
+        launch(PORT, new CompletableFuture<>());
     }
 
-    public static void launch(int port, Promise<Channel> promise) {
+    public static void launch(int port, CompletableFuture<ServerSocketChannel> promise) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -39,11 +45,11 @@ public class EchoTestServer {
                 })
                 .bind(port).addListener((ChannelFutureListener) future -> {
                     if (future.isSuccess()) {
-                        Channel channel = future.channel();
+                        ServerSocketChannel channel = (ServerSocketChannel) future.channel();
                         logger.info("Launch echo test server => {}", channel.localAddress());
-                        promise.setSuccess(channel);
+                        promise.complete(channel);
                     } else {
-                        promise.setFailure(future.cause());
+                        promise.completeExceptionally(future.cause());
                     }
                 }).sync().channel().closeFuture().sync();
         } catch (InterruptedException e) {

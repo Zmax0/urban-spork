@@ -64,9 +64,6 @@ public class ServersMenuItem implements TrayMenuItemBuilder {
                 return;
             }
             Proxy.launch();
-            String message = config.getCurrent().toString();
-            Tray.displayMessage("Proxy is running", message, MessageType.INFO);
-            Tray.setToolTip(message);
         } else {
             item.setState(true);
         }

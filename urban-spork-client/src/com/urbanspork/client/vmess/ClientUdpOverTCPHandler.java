@@ -1,16 +1,20 @@
 package com.urbanspork.client.vmess;
 
-import com.urbanspork.client.AbstractClientUDPReplayHandler;
-import com.urbanspork.common.channel.AttributeKeys;
+import com.urbanspork.client.AbstractClientUdpRelayHandler;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.network.Direction;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.socks.Socks5;
 import com.urbanspork.common.protocol.vmess.header.RequestCommand;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
@@ -20,12 +24,12 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
-public class ClientUDPOverTCPHandler extends AbstractClientUDPReplayHandler<ClientUDPOverTCPHandler.Key> {
+public class ClientUdpOverTCPHandler extends AbstractClientUdpRelayHandler<ClientUdpOverTCPHandler.Key> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ClientUDPOverTCPHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ClientUdpOverTCPHandler.class);
     private final EventLoopGroup workerGroup;
 
-    public ClientUDPOverTCPHandler(ServerConfig config, EventLoopGroup workerGroup) {
+    public ClientUdpOverTCPHandler(ServerConfig config, EventLoopGroup workerGroup) {
         super(config);
         this.workerGroup = workerGroup;
     }
@@ -60,7 +64,7 @@ public class ClientUDPOverTCPHandler extends AbstractClientUDPReplayHandler<Clie
                     outbound.pipeline().addLast(new InboundHandler(inboundChannel, key.recipient, key.sender)); // R → L
                     inboundChannel.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
                 } else {
-                    logger.error("Connect replay server {} failed", serverAddress);
+                    logger.error("Connect relay server {} failed", serverAddress);
                 }
             }).syncUninterruptibly().channel();
     }
@@ -89,7 +93,6 @@ public class ClientUDPOverTCPHandler extends AbstractClientUDPReplayHandler<Clie
         public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
             Channel inboundChannel = ctx.channel();
             logger.info("[udp][vmess]{} ← {} ~ {} ← {}", sender, inboundChannel.localAddress(), inboundChannel.remoteAddress(), recipient);
-            channel.attr(AttributeKeys.DIRECTION).set(Direction.Outbound);
             channel.writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(msg, recipient), sender));
         }
     }

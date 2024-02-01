@@ -1,9 +1,12 @@
 package com.urbanspork.common.codec.shadowsocks;
 
 import com.urbanspork.common.codec.CipherKind;
+import com.urbanspork.common.codec.shadowsocks.tcp.TCPRelayCodec;
+import com.urbanspork.common.codec.shadowsocks.udp.UdpRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
+import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -17,6 +20,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
@@ -24,7 +28,7 @@ import java.nio.charset.StandardCharsets;
 class EmbeddedChannelTestCase {
 
     @Test
-    void testTCPReplayChannel() {
+    void testTcpRelayChannel() {
         int port = TestDice.rollPort();
         String host = TestDice.rollHost();
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, host, port);
@@ -34,9 +38,9 @@ class EmbeddedChannelTestCase {
         config.setCipher(cipher);
         config.setPassword(password);
         EmbeddedChannel client = new EmbeddedChannel();
-        client.pipeline().addLast(new TCPReplayCodec(Mode.Client, request, config));
+        client.pipeline().addLast(new TCPRelayCodec(Mode.Client, request, config));
         EmbeddedChannel server = new EmbeddedChannel();
-        server.pipeline().addLast(new TCPReplayCodec(Mode.Server, config));
+        server.pipeline().addLast(new TCPRelayCodec(Mode.Server, config));
         String message = TestDice.rollString();
         client.writeOutbound(Unpooled.wrappedBuffer(message.getBytes()));
         ByteBuf msg = client.readOutbound();
@@ -52,28 +56,50 @@ class EmbeddedChannelTestCase {
     }
 
     @Test
-    void testUDPReplayChannel() {
+    void testUdpRelayChannel() {
         EmbeddedChannel client = new EmbeddedChannel();
         EmbeddedChannel server = new EmbeddedChannel();
         CipherKind cipher = TestDice.rollCipher();
         int port = TestDice.rollPort();
-        InetSocketAddress replay = new InetSocketAddress("192.168.1.1", port);
+        InetSocketAddress relay = new InetSocketAddress("192.168.1.1", port);
         ServerConfig config = new ServerConfig();
         config.setPassword(TestDice.rollPassword(Protocols.shadowsocks, cipher));
         config.setCipher(cipher);
-        client.pipeline().addLast(new UDPReplayCodec(config, Mode.Client));
-        server.pipeline().addLast(new UDPReplayCodec(config, Mode.Server));
+        client.pipeline().addLast(new UdpRelayCodec(config, Mode.Client));
+        server.pipeline().addLast(new UdpRelayCodec(config, Mode.Server));
         String host = "192.168.255.1";
         String message = TestDice.rollString();
         InetSocketAddress dst = new InetSocketAddress(host, port);
         TernaryDatagramPacket noRelayPacket = new TernaryDatagramPacket(new DatagramPacket(Unpooled.wrappedBuffer(message.getBytes()), dst), null);
         Assertions.assertThrows(EncoderException.class, () -> client.writeOutbound(noRelayPacket));
-        client.writeOutbound(new TernaryDatagramPacket(new DatagramPacket(Unpooled.wrappedBuffer(message.getBytes()), dst), replay));
+        client.writeOutbound(new TernaryDatagramPacket(new DatagramPacket(Unpooled.wrappedBuffer(message.getBytes()), dst), relay));
         DatagramPacket out = client.readOutbound();
         server.writeInbound(out);
         DatagramPacket in = server.readInbound();
         Assertions.assertEquals(in.recipient(), dst);
         ByteBuf content = in.content();
         Assertions.assertEquals(message, content.readCharSequence(content.readableBytes(), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void testAead2022UdpAntiReplay() {
+        EmbeddedChannel server = new EmbeddedChannel();
+        EmbeddedChannel client = new EmbeddedChannel();
+        CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
+        ServerConfig config = new ServerConfig();
+        config.setPassword(TestDice.rollPassword(Protocols.shadowsocks, kind));
+        config.setCipher(kind);
+        client.pipeline().addLast(new UdpRelayCodec(config, Mode.Client));
+        server.pipeline().addLast(new UdpRelayCodec(config, Mode.Server));
+        InetSocketAddress sender = new InetSocketAddress(InetAddress.getLoopbackAddress(), 16801);
+        InetSocketAddress recipient = new InetSocketAddress(InetAddress.getLoopbackAddress(), 16802);
+        InetSocketAddress porxy = new InetSocketAddress(InetAddress.getLoopbackAddress(), 16803);
+        DatagramPacket packet = new DatagramPacket(Unpooled.wrappedBuffer(Dice.rollBytes(10)), recipient, sender);
+        client.writeOutbound(new TernaryDatagramPacket(packet, porxy));
+        DatagramPacket outbound = client.readOutbound();
+        server.writeInbound(outbound.copy());
+        Assertions.assertNotNull(server.readInbound());
+        server.writeInbound(outbound);
+        Assertions.assertNull(server.readInbound());
     }
 }

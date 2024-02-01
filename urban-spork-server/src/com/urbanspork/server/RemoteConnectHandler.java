@@ -5,7 +5,11 @@ import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.network.Network;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.util.concurrent.FutureListener;
@@ -38,7 +42,7 @@ class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
         if (msg instanceof Socks5CommandRequest request) {
             ctx.pipeline().addLast(
                 new ServerUDPOverTCPCodec(request),
-                new ServerUDPReplayHandler(config.getPacketEncoding(), ctx.channel().eventLoop().parent().next())
+                new ServerUDPRelayHandler(config.getPacketEncoding(), ctx.channel().eventLoop().parent().next())
             );
         } else {
             ctx.fireChannelRead(msg);

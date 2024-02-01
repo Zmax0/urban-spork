@@ -1,18 +1,14 @@
 package com.urbanspork.common.protocol.shadowsocks.aead2022;
 
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.LoggerContext;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.codec.aead.CipherMethod;
 import com.urbanspork.common.codec.aead.CipherMethods;
-import com.urbanspork.common.codec.shadowsocks.Context;
 import com.urbanspork.common.codec.shadowsocks.Keys;
-import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.protocol.shadowsocks.Control;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import com.urbanspork.test.template.TraceLevelLoggerTestTemplate;
@@ -23,7 +19,6 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -31,7 +26,7 @@ import java.util.StringJoiner;
 import java.util.concurrent.ThreadLocalRandom;
 
 @DisplayName("Shadowsocks - AEAD 2022")
-class AEAD2022TestCase extends TraceLevelLoggerTestTemplate {
+class Aead2022TestCase extends TraceLevelLoggerTestTemplate {
     @Test
     void testSessionSubkey() {
         byte[] key = Base64.getDecoder().decode("Lc3tTx0BY6ZJ/fCwOx3JvF0I/anhwJBO5p2+FA5Vce4=");
@@ -78,11 +73,10 @@ class AEAD2022TestCase extends TraceLevelLoggerTestTemplate {
         ServerUser user = rollUser(kind);
         ServerUserManager userManager = ServerUserManager.DEFAULT;
         userManager.addUser(user);
-        Context context = new Context(Network.UDP, Mode.Server, null, null, null, userManager);
         byte[] key = Dice.rollBytes(kind.keySize());
         byte[] salt = Dice.rollBytes(kind.keySize());
         byte[] eih = Dice.rollBytes(16);
-        Assertions.assertThrows(DecoderException.class, () -> AEAD2022.TCP.newPayloadDecoder(method, context, key, salt, eih));
+        Assertions.assertThrows(DecoderException.class, () -> AEAD2022.TCP.newPayloadDecoder(method, null, userManager, key, salt, eih));
         userManager.removeUserByHash(user.identityHash());
     }
 
@@ -104,8 +98,8 @@ class AEAD2022TestCase extends TraceLevelLoggerTestTemplate {
         in.writeCharSequence(msg, StandardCharsets.US_ASCII);
         ByteBuf out = Unpooled.buffer();
         AEAD2022.UDP.encodePacket(AEAD2022.UDP.getCipher(kind, method, iPSK, sessionId), iPSK, 16, in, out);
-        Context context = new Context(Network.UDP, Mode.Server, null, null, null, userManager);
-        Assertions.assertThrows(DecoderException.class, () -> AEAD2022.UDP.decodePacket(kind, method, context, iPSK, out));
+        Control control = new Control(kind);
+        Assertions.assertThrows(DecoderException.class, () -> AEAD2022.UDP.decodePacket(kind, method, control, userManager, iPSK, out));
         userManager.removeUserByHash(user.identityHash());
     }
 
@@ -127,8 +121,7 @@ class AEAD2022TestCase extends TraceLevelLoggerTestTemplate {
     }
 
     @Override
-    protected Logger logger() {
-        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        return loggerContext.getLogger(AEAD2022.class);
+    protected Class<?> loggerClass() {
+        return AEAD2022.class;
     }
 }

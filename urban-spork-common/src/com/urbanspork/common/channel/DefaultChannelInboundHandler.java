@@ -1,6 +1,5 @@
 package com.urbanspork.common.channel;
 
-import com.urbanspork.common.protocol.network.Direction;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -18,7 +17,6 @@ public class DefaultChannelInboundHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        channel.attr(AttributeKeys.DIRECTION).set(Direction.Outbound);
         channel.writeAndFlush(msg);
     }
 
@@ -27,6 +25,7 @@ public class DefaultChannelInboundHandler extends ChannelInboundHandlerAdapter {
         if (channel.isActive()) {
             ChannelCloseUtils.closeOnFlush(channel);
         }
+        ctx.fireChannelInactive();
     }
 
     @Override
