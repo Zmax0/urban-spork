@@ -14,7 +14,9 @@ import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.TCPTestTemplate;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -43,6 +45,14 @@ class TCPTestCase extends TCPTestTemplate {
         Map.Entry<ServerSocketChannel, DatagramChannel> client = launchClient(config);
         handshakeAndSendBytes(client.getKey().localAddress());
         Server.close(server);
+        Client.close(client);
+    }
+
+    @Test
+    void testConnectServerFailed() throws ExecutionException, InterruptedException {
+        ClientConfig config = ClientConfigTestCase.testConfig(0, TestDice.rollPort());
+        Map.Entry<ServerSocketChannel, DatagramChannel> client = launchClient(config);
+        Assertions.assertThrows(ExecutionException.class, () -> handshakeAndSendBytes(client.getKey().localAddress()));
         Client.close(client);
     }
 

@@ -68,7 +68,7 @@ public abstract class TCPTestTemplate extends TestTemplate {
             });
         channel.writeAndFlush(Unpooled.wrappedBuffer(bytes));
         promise.await(10, TimeUnit.SECONDS);
-        Assertions.assertTrue(promise.isSuccess(), promise.cause() != null ? promise.cause().getMessage() : "");
+        Assertions.assertTrue(promise.isSuccess());
     }
 
     @AfterAll
