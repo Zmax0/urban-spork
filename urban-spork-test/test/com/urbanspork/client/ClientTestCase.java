@@ -46,7 +46,7 @@ class ClientTestCase {
     void testExit() {
         ClientConfig config = ClientConfigTestCase.testConfig(0, 0);
         ConfigHandler.DEFAULT.save(config);
-        try (ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor()) {
+        try (ExecutorService pool = Executors.newSingleThreadExecutor()) {
             Future<?> future = pool.submit(() -> Client.main(null));
             try {
                 future.get(2, TimeUnit.SECONDS);
@@ -63,10 +63,11 @@ class ClientTestCase {
 
     @Test
     @Order(2)
-    void asyncLaunchClient() throws InterruptedException, ExecutionException {
+    void testLaunchFailed() throws InterruptedException, ExecutionException {
         ServerSocketChannel c1 = asyncLaunchClient(ClientConfigTestCase.testConfig(0, 0)).getKey();
         ClientConfig config = ClientConfigTestCase.testConfig(c1.localAddress().getPort(), 0);
         Assertions.assertThrows(ExecutionException.class, () -> asyncLaunchClient(config));
+        c1.close();
     }
 
     @ParameterizedTest
