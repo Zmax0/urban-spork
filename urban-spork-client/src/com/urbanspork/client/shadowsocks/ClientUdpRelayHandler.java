@@ -50,7 +50,7 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
                     ch.pipeline().addLast(
                         new UdpRelayCodec(config, Mode.Client),
                         new InboundHandler(inboundChannel, sender),// server->client->sender
-                        new ExceptionHandler(config)
+                        new ExceptionHandler(config, Mode.Client)
                     );
                 }
             }).bind(0) // automatically assigned port now, may have security implications
