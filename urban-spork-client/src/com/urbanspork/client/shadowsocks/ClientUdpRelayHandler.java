@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
 
 public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSocketAddress> {
 
@@ -26,7 +27,7 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
     private final InetSocketAddress relay;
 
     public ClientUdpRelayHandler(ServerConfig config, EventLoopGroup workerGroup) {
-        super(config);
+        super(config, Duration.ofMinutes(10));
         this.workerGroup = workerGroup;
         this.relay = new InetSocketAddress(config.getHost(), config.getPort());
     }

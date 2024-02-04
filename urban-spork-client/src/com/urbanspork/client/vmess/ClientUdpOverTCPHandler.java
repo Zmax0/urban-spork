@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
 
 public class ClientUdpOverTCPHandler extends AbstractClientUdpRelayHandler<ClientUdpOverTCPHandler.Key> {
 
@@ -30,7 +31,7 @@ public class ClientUdpOverTCPHandler extends AbstractClientUdpRelayHandler<Clien
     private final EventLoopGroup workerGroup;
 
     public ClientUdpOverTCPHandler(ServerConfig config, EventLoopGroup workerGroup) {
-        super(config);
+        super(config, Duration.ofMinutes(10));
         this.workerGroup = workerGroup;
     }
 
