@@ -8,7 +8,7 @@ import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.shadowsocks.Session;
+import com.urbanspork.common.protocol.shadowsocks.Identity;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
@@ -65,7 +65,7 @@ class AeadCipherCodecsTestCase {
         cipherTest(newContext(Mode.Client, kind, request), newContext(Mode.Server, kind, null));
     }
 
-    private void cipherTest(Context request, Context response) throws Exception {
+    private void cipherTest(Session request, Session response) throws Exception {
         List<Object> list = cipherTest(request, response, Unpooled.copiedBuffer(in));
         byte[] out = new byte[in.length];
         int len = 0;
@@ -81,7 +81,7 @@ class AeadCipherCodecsTestCase {
         Assertions.assertArrayEquals(in, out);
     }
 
-    private List<Object> cipherTest(Context request, Context response, ByteBuf in) throws Exception {
+    private List<Object> cipherTest(Session request, Session response, ByteBuf in) throws Exception {
         ServerConfig config = new ServerConfig();
         config.setCipher(kind);
         config.setPassword(password);
@@ -123,8 +123,8 @@ class AeadCipherCodecsTestCase {
         return merged;
     }
 
-    Context newContext(Mode mode, CipherKind kind, Socks5CommandRequest request) {
-        return new Context(mode, new Session(kind), request, ServerUserManager.EMPTY);
+    Session newContext(Mode mode, CipherKind kind, Socks5CommandRequest request) {
+        return new Session(mode, new Identity(kind), request, ServerUserManager.EMPTY, new Context());
     }
 
 }

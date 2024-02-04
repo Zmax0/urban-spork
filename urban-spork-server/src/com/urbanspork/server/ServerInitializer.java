@@ -2,7 +2,8 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
-import com.urbanspork.common.codec.shadowsocks.tcp.TCPRelayCodec;
+import com.urbanspork.common.codec.shadowsocks.tcp.Context;
+import com.urbanspork.common.codec.shadowsocks.tcp.TcpRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocols;
 import com.urbanspork.server.vmess.ServerAEADCodec;
@@ -13,6 +14,7 @@ import io.netty.channel.ChannelPipeline;
 public class ServerInitializer extends ChannelInitializer<Channel> {
 
     private final ServerConfig config;
+    private final Context context = Context.checkReplay();
 
     public ServerInitializer(ServerConfig config) {
         this.config = config;
@@ -24,7 +26,7 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
         if (Protocols.vmess == config.getProtocol()) {
             pipeline.addLast(new ServerAEADCodec(config));
         } else {
-            pipeline.addLast(new TCPRelayCodec(Mode.Server, config));
+            pipeline.addLast(new TcpRelayCodec(context, config, Mode.Server));
         }
         pipeline.addLast(new RemoteConnectHandler(config), new ExceptionHandler(config, Mode.Server));
     }
