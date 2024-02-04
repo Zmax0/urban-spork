@@ -67,6 +67,11 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Ternary
         out.add(new DatagramPacket((ByteBuf) list.get(1), (InetSocketAddress) list.get(0), msg.sender()));
     }
 
+    @Override
+    public void handlerRemoved(ChannelHandlerContext ctx) {
+        controlMap.clear();
+    }
+
     private Control getControl(InetSocketAddress key) {
         if (Mode.Client == mode) {
             return control0;
