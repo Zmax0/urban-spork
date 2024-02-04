@@ -44,25 +44,25 @@ class AeadCipherCodec {
         this.cipherMethod = cipherMethod;
     }
 
-    public void encode(Context context, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+    public void encode(Session session, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         boolean isAead2022 = cipherKind.isAead2022();
         if (payloadEncoder == null) {
-            initTcpPayloadEncoder(context, isAead2022, out);
-            logger.trace("[tcp][encode session]{}", context.session());
-            if (Mode.Client == context.mode()) {
-                msg = handleRequestHeader(context, isAead2022, msg, out);
+            initTcpPayloadEncoder(session, isAead2022, out);
+            logger.trace("[tcp][encode identity]{}", session.identity());
+            if (Mode.Client == session.mode()) {
+                msg = handleRequestHeader(session, isAead2022, msg, out);
             } else {
-                handleResponseHeader(context, isAead2022, msg, out);
+                handleResponseHeader(session, isAead2022, msg, out);
             }
         }
         payloadEncoder.encodePayload(msg, out);
     }
 
-    private void initTcpPayloadEncoder(Context context, boolean isAead2022, ByteBuf out) {
-        withIdentity(context, cipherKind, keys, out);
-        byte[] salt = context.session().salt();
+    private void initTcpPayloadEncoder(Session session, boolean isAead2022, ByteBuf out) {
+        withIdentity(session, cipherKind, keys, out);
+        byte[] salt = session.identity().salt();
         if (isAead2022) {
-            ServerUser user = context.session().getUser();
+            ServerUser user = session.identity().getUser();
             if (user != null) {
                 payloadEncoder = AEAD2022.TCP.newPayloadEncoder(cipherMethod, user.key(), salt);
             } else {
@@ -73,9 +73,9 @@ class AeadCipherCodec {
         }
     }
 
-    private ByteBuf handleRequestHeader(Context context, boolean isAead2022, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+    private ByteBuf handleRequestHeader(Session session, boolean isAead2022, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         ByteBuf temp = Unpooled.buffer();
-        Address.encode(context.request(), temp);
+        Address.encode(session.request(), temp);
         if (isAead2022) {
             int paddingLength = AEAD2022.getPaddingLength(msg);
             temp.writeShort(paddingLength);
@@ -84,66 +84,66 @@ class AeadCipherCodec {
         temp = Unpooled.wrappedBuffer(temp, msg);
         msg.skipBytes(msg.readableBytes());
         if (isAead2022) {
-            for (byte[] bytes : AEAD2022.TCP.newHeader(context.mode(), context.session().getRequestSalt(), temp)) {
+            for (byte[] bytes : AEAD2022.TCP.newHeader(session.mode(), session.identity().getRequestSalt(), temp)) {
                 out.writeBytes(payloadEncoder.auth().seal(bytes));
             }
         }
         return temp;
     }
 
-    private void handleResponseHeader(Context context, boolean isAead2022, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+    private void handleResponseHeader(Session session, boolean isAead2022, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         if (isAead2022) {
-            for (byte[] bytes : AEAD2022.TCP.newHeader(context.mode(), context.session().getRequestSalt(), msg)) {
+            for (byte[] bytes : AEAD2022.TCP.newHeader(session.mode(), session.identity().getRequestSalt(), msg)) {
                 out.writeBytes(payloadEncoder.auth().seal(bytes));
             }
         }
     }
 
-    public void decode(Context context, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+    public void decode(Session session, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
         if (payloadDecoder == null) {
-            initPayloadDecoder(context, cipherKind, in, out);
+            initPayloadDecoder(session, cipherKind, in, out);
             if (payloadDecoder == null) {
                 return;
             }
-            logger.trace("[tcp][decode session]{}", context.session());
+            logger.trace("[tcp][decode identity]{}", session.identity());
         }
         payloadDecoder.decodePayload(in, out);
     }
 
-    private void initPayloadDecoder(Context context, CipherKind kind, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-        if (in.readableBytes() < context.session().salt().length) {
+    private void initPayloadDecoder(Session session, CipherKind kind, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+        if (in.readableBytes() < session.identity().salt().length) {
             return;
         }
         in.markReaderIndex();
         if (kind.isAead2022()) {
-            initAEAD2022PayloadDecoder(context, in, out);
+            initAEAD2022PayloadDecoder(session, in, out);
         } else {
-            initPayloadDecoder(context, in, out);
+            initPayloadDecoder(session, in, out);
         }
     }
 
-    private void initAEAD2022PayloadDecoder(Context context, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+    private void initAEAD2022PayloadDecoder(Session session, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
         int tagSize = cipherMethod.tagSize();
         int saltLength = cipherKind.keySize();
-        int requestSaltLength = Mode.Server == context.mode() ? 0 : saltLength;
-        boolean requireEih = Mode.Server == context.mode() && cipherKind.supportEih() && context.userManager().userCount() > 0;
+        int requestSaltLength = Mode.Server == session.mode() ? 0 : saltLength;
+        boolean requireEih = Mode.Server == session.mode() && cipherKind.supportEih() && session.userManager().userCount() > 0;
         int eihLength = requireEih ? 16 : 0;
         byte[] salt = new byte[saltLength];
         in.readBytes(salt);
         if (logger.isTraceEnabled()) {
             logger.trace("get AEAD salt {}", ByteString.valueOf(salt));
         }
-        context.session().setRequestSalt(salt);
+        if (session.context().checkNonceReplay(salt)) {
+            String msg = String.format("detected repeated nonce salt %s", ByteString.valueOf(salt));
+            throw new DecoderException(msg);
+        }
+        session.identity().setRequestSalt(salt);
         ByteBuf sealedHeaderBuf = in.readBytes(eihLength + 1 + 8 + requestSaltLength + 2 + tagSize);
         PayloadDecoder newPayloadDecoder;
         if (requireEih) {
-            if (sealedHeaderBuf.readableBytes() < 16) {
-                String msg = String.format("expecting EIH, but header chunk len: %d", sealedHeaderBuf.readableBytes());
-                throw new DecoderException(msg);
-            }
             byte[] eih = new byte[16];
             sealedHeaderBuf.readBytes(eih);
-            newPayloadDecoder = AEAD2022.TCP.newPayloadDecoder(cipherMethod, context.session(), context.userManager(), keys.encKey(), salt, eih);
+            newPayloadDecoder = AEAD2022.TCP.newPayloadDecoder(cipherMethod, session.identity(), session.userManager(), keys.encKey(), salt, eih);
         } else {
             newPayloadDecoder = AEAD2022.TCP.newPayloadDecoder(cipherMethod, keys.encKey(), salt);
         }
@@ -153,7 +153,7 @@ class AeadCipherCodec {
         sealedHeaderBuf.release();
         ByteBuf headerBuf = Unpooled.wrappedBuffer(auth.open(sealedHeaderBytes));
         byte streamTypeByte = headerBuf.readByte();
-        Mode expectedMode = switch (context.mode()) {
+        Mode expectedMode = switch (session.mode()) {
             case Client -> Mode.Server;
             case Server -> Mode.Client;
         };
@@ -163,10 +163,10 @@ class AeadCipherCodec {
             throw new DecoderException(msg);
         }
         AEAD2022.validateTimestamp(headerBuf.readLong());
-        if (Mode.Client == context.mode()) {
+        if (Mode.Client == session.mode()) {
             byte[] requestSalt = new byte[salt.length];
             headerBuf.readBytes(requestSalt);
-            context.session().setRequestSalt(requestSalt);
+            session.identity().setRequestSalt(requestSalt);
         }
         int length = headerBuf.readUnsignedShort();
         if (in.readableBytes() < length + tagSize) {
@@ -176,7 +176,7 @@ class AeadCipherCodec {
         byte[] encryptedPayloadBytes = new byte[length + tagSize];
         in.readBytes(encryptedPayloadBytes);
         ByteBuf first = Unpooled.wrappedBuffer(auth.open(encryptedPayloadBytes));
-        if (Mode.Server == context.mode()) {
+        if (Mode.Server == session.mode()) {
             Address.decode(first, out);
             int paddingLength = first.readUnsignedShort();
             first.skipBytes(paddingLength);
@@ -187,8 +187,8 @@ class AeadCipherCodec {
         this.payloadDecoder = newPayloadDecoder;
     }
 
-    private void initPayloadDecoder(Context context, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-        byte[] salt = context.session().salt();
+    private void initPayloadDecoder(Session session, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+        byte[] salt = session.identity().salt();
         in.readBytes(salt);
         PayloadDecoder newPayloadDecoder = AEAD.TCP.newPayloadDecoder(cipherMethod, keys.encKey(), salt);
         List<Object> list = new ArrayList<>(1);
@@ -197,17 +197,17 @@ class AeadCipherCodec {
             in.resetReaderIndex();
             return;
         }
-        if (Mode.Server == context.mode()) {
+        if (Mode.Server == session.mode()) {
             Address.decode((ByteBuf) list.getFirst(), out);
         }
         out.addAll(list);
         this.payloadDecoder = newPayloadDecoder;
     }
 
-    static void withIdentity(Context context, CipherKind kind, Keys keys, ByteBuf out) {
-        byte[] salt = context.session().salt();
+    static void withIdentity(Session session, CipherKind kind, Keys keys, ByteBuf out) {
+        byte[] salt = session.identity().salt();
         out.writeBytes(salt); // salt should be sent with the first chunk
-        if (Mode.Client == context.mode() && kind.supportEih()) {
+        if (Mode.Client == session.mode() && kind.supportEih()) {
             AEAD2022.TCP.withEih(keys, salt, out);
         }
     }
