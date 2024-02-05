@@ -4,11 +4,8 @@ import com.urbanspork.client.Client;
 import com.urbanspork.client.gui.Resource;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ServerConfig;
-import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.ServerSocketChannel;
 
 import java.awt.TrayIcon.MessageType;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -20,7 +17,7 @@ public class Proxy {
 
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    private static Map.Entry<ServerSocketChannel, DatagramChannel> client;
+    private static Client.Instance client;
 
     private Proxy() {}
 
@@ -31,9 +28,9 @@ public class Proxy {
             return;
         }
         if (client != null) {
-            Client.close(client);
+            client.close();
         }
-        CompletableFuture<Map.Entry<ServerSocketChannel, DatagramChannel>> promise = new CompletableFuture<>();
+        CompletableFuture<Client.Instance> promise = new CompletableFuture<>();
         executor.submit(() -> Client.launch(config, promise));
         try {
             client = promise.get();
@@ -50,7 +47,7 @@ public class Proxy {
     }
 
     public static void exit() {
-        Client.close(client);
+        client.close();
         executor.shutdown();
     }
 }
