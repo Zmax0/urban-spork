@@ -6,8 +6,6 @@ import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.protocol.socks.ClientHandshake;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +22,6 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -64,10 +61,10 @@ class ClientTestCase {
     @Test
     @Order(2)
     void testLaunchFailed() throws InterruptedException, ExecutionException {
-        ServerSocketChannel c1 = asyncLaunchClient(ClientConfigTestCase.testConfig(0, 0)).getKey();
-        ClientConfig config = ClientConfigTestCase.testConfig(c1.localAddress().getPort(), 0);
+        Client.Instance client = asyncLaunchClient(ClientConfigTestCase.testConfig(0, 0));
+        ClientConfig config = ClientConfigTestCase.testConfig(client.tcp().localAddress().getPort(), 0);
         Assertions.assertThrows(ExecutionException.class, () -> asyncLaunchClient(config));
-        c1.close();
+        client.close();
     }
 
     @ParameterizedTest
@@ -79,8 +76,8 @@ class ClientTestCase {
         Assertions.assertThrows(ExecutionException.class, () -> ClientHandshake.noAuth(group, type, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS));
     }
 
-    public static Map.Entry<ServerSocketChannel, DatagramChannel> asyncLaunchClient(ClientConfig config) throws InterruptedException, ExecutionException {
-        CompletableFuture<Map.Entry<ServerSocketChannel, DatagramChannel>> promise = new CompletableFuture<>();
+    public static Client.Instance asyncLaunchClient(ClientConfig config) throws InterruptedException, ExecutionException {
+        CompletableFuture<Client.Instance> promise = new CompletableFuture<>();
         SERVICE.submit(() -> Client.launch(config, promise));
         return promise.get();
     }

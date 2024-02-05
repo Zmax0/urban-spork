@@ -10,9 +10,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
-import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
@@ -24,8 +22,6 @@ import org.junit.jupiter.api.TestInstance;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -52,7 +48,7 @@ class ServerTestCase {
     void launchFailed() {
         int port = TestDice.rollPort();
         List<ServerConfig> configs = ServerConfigTestCase.testConfigs(port, port);
-        CompletableFuture<List<Map.Entry<ServerSocketChannel, Optional<DatagramChannel>>>> promise = new CompletableFuture<>();
+        CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
         Server.launch(configs, promise);
         Assertions.assertTrue(promise.isCompletedExceptionally());
     }
@@ -78,9 +74,9 @@ class ServerTestCase {
         ServerConfig config = ServerConfigTestCase.testConfig(0);
         config.setNetworks(new Network[]{Network.TCP, Network.UDP});
         try (ExecutorService service = Executors.newVirtualThreadPerTaskExecutor()) {
-            CompletableFuture<List<Map.Entry<ServerSocketChannel, Optional<DatagramChannel>>>> promise = new CompletableFuture<>();
+            CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
             service.submit(() -> Server.launch(List.of(config), promise));
-            List<Map.Entry<ServerSocketChannel, Optional<DatagramChannel>>> servers = promise.get();
+            List<Server.Instance> servers = promise.get();
             InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
             Channel channel = new Bootstrap().group(new NioEventLoopGroup())
                 .channel(NioDatagramChannel.class)
@@ -89,7 +85,9 @@ class ServerTestCase {
             ChannelFuture future = channel.writeAndFlush(new DatagramPacket(Unpooled.wrappedBuffer(Dice.rollBytes(512)), serverAddress)).sync();
             future.get();
             Assertions.assertTrue(future.isDone());
-            Server.close(servers);
+            for (Server.Instance server : servers) {
+                server.close();
+            }
         }
     }
 
@@ -97,7 +95,7 @@ class ServerTestCase {
     void sendInvalidTCP() throws InterruptedException, ExecutionException {
         ServerConfig config = ServerConfigTestCase.testConfig(0);
         try (ExecutorService service = Executors.newVirtualThreadPerTaskExecutor()) {
-            CompletableFuture<List<Map.Entry<ServerSocketChannel, Optional<DatagramChannel>>>> promise = new CompletableFuture<>();
+            CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
             Future<?> server = service.submit(() -> Server.launch(List.of(config), promise));
             promise.get();
             Channel channel = new Bootstrap().group(new NioEventLoopGroup())

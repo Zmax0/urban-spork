@@ -94,6 +94,28 @@ public abstract class UdpTestTemplate extends TestTemplate {
         }
     }
 
+    private void initChannel() {
+        channel = new Bootstrap().group(group)
+            .channel(NioDatagramChannel.class)
+            .handler(new ChannelInitializer<>() {
+                @Override
+                protected void initChannel(Channel ch) {
+                    ch.pipeline().addLast(
+                        new DatagramPacketEncoder(),
+                        new DatagramPacketDecoder(),
+                        new SimpleChannelInboundHandler<TernaryDatagramPacket>(false) {
+                            @Override
+                            protected void channelRead0(ChannelHandlerContext ctx, TernaryDatagramPacket msg) {
+                                logger.info("Receive msg {}", msg);
+                                consumer.accept(msg);
+                            }
+                        }
+                    );
+                }
+            })
+            .bind(0).syncUninterruptibly().channel();
+    }
+
     protected void handshakeAndSendBytes(InetSocketAddress proxyAddress) throws InterruptedException, ExecutionException, TimeoutException {
         for (InetSocketAddress address : dstAddress) {
             handshakeAndSendBytes(proxyAddress, address);
@@ -128,27 +150,5 @@ public abstract class UdpTestTemplate extends TestTemplate {
         delayedEchoTestServer.close();
         channel.close();
         group.shutdownGracefully();
-    }
-
-    private void initChannel() {
-        channel = new Bootstrap().group(group)
-            .channel(NioDatagramChannel.class)
-            .handler(new ChannelInitializer<>() {
-                @Override
-                protected void initChannel(Channel ch) {
-                    ch.pipeline().addLast(
-                        new DatagramPacketEncoder(),
-                        new DatagramPacketDecoder(),
-                        new SimpleChannelInboundHandler<TernaryDatagramPacket>(false) {
-                            @Override
-                            protected void channelRead0(ChannelHandlerContext ctx, TernaryDatagramPacket msg) {
-                                logger.info("Receive msg {}", msg);
-                                consumer.accept(msg);
-                            }
-                        }
-                    );
-                }
-            })
-            .bind(0).syncUninterruptibly().channel();
     }
 }

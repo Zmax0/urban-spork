@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -49,21 +48,21 @@ public class Server {
         launch(configs, new CompletableFuture<>());
     }
 
-    public static void launch(List<ServerConfig> configs, CompletableFuture<List<Map.Entry<ServerSocketChannel, Optional<DatagramChannel>>>> promise) {
+    public static void launch(List<ServerConfig> configs, CompletableFuture<List<Instance>> promise) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
-            List<Map.Entry<ServerSocketChannel, Optional<DatagramChannel>>> servers = new ArrayList<>(configs.size());
+            List<Instance> servers = new ArrayList<>(configs.size());
             int count = 0;
             for (ServerConfig config : configs) {
-                Map.Entry<ServerSocketChannel, Optional<DatagramChannel>> server = startup(bossGroup, workerGroup, config);
-                count += server.getValue().isPresent() ? 2 : 1;
+                Instance server = startup(bossGroup, workerGroup, config);
+                count += server.udp().isPresent() ? 2 : 1;
                 servers.add(server);
             }
             CountDownLatch latch = new CountDownLatch(count);
-            for (Map.Entry<ServerSocketChannel, Optional<DatagramChannel>> server : servers) {
-                server.getKey().closeFuture().addListener(future -> latch.countDown());
-                server.getValue().ifPresent(v -> v.closeFuture().addListener(future -> latch.countDown()));
+            for (Instance server : servers) {
+                server.tcp().closeFuture().addListener(future -> latch.countDown());
+                server.udp().ifPresent(v -> v.closeFuture().addListener(future -> latch.countDown()));
             }
             promise.complete(servers);
             latch.await(); // main thread is waiting here
@@ -80,14 +79,7 @@ public class Server {
         }
     }
 
-    public static void close(List<Map.Entry<ServerSocketChannel, Optional<DatagramChannel>>> servers) {
-        for (Map.Entry<ServerSocketChannel, Optional<DatagramChannel>> entry : servers) {
-            entry.getKey().close().awaitUninterruptibly();
-            entry.getValue().ifPresent(c -> c.close().awaitUninterruptibly());
-        }
-    }
-
-    private static Map.Entry<ServerSocketChannel, Optional<DatagramChannel>> startup(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config)
+    private static Instance startup(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config)
         throws InterruptedException {
         if (Protocols.shadowsocks == config.getProtocol()) {
             List<ServerUserConfig> user = config.getUser();
@@ -101,7 +93,7 @@ public class Server {
             .bind(config.getPort()).sync().addListener(future -> logger.info("Startup tcp server => {}", config)).channel();
         config.setPort(tcp.localAddress().getPort());
         Optional<DatagramChannel> udp = startupUdp(bossGroup, workerGroup, config);
-        return Map.entry(tcp, udp);
+        return new Instance(tcp, udp);
     }
 
     private static Optional<DatagramChannel> startupUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config) throws InterruptedException {
@@ -122,6 +114,13 @@ public class Server {
             return Optional.of((DatagramChannel) channel);
         } else {
             return Optional.empty();
+        }
+    }
+
+    public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp) {
+        public void close() {
+            tcp.close().awaitUninterruptibly();
+            udp.ifPresent(c -> c.close().awaitUninterruptibly());
         }
     }
 }
