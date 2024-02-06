@@ -7,7 +7,7 @@ import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.Protocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class Client {
@@ -37,7 +36,7 @@ public class Client {
         launch(ConfigHandler.DEFAULT.read(), new CompletableFuture<>());
     }
 
-    public static void launch(ClientConfig config, CompletableFuture<Map.Entry<ServerSocketChannel, DatagramChannel>> promise) {
+    public static void launch(ClientConfig config, CompletableFuture<Instance> promise) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -54,13 +53,13 @@ public class Client {
                     config.setPort(localPort);
                     DatagramChannel udp = launchUdp(bossGroup, workerGroup, config);
                     logger.info("Launch client => tcp{} udp{} ", tcpLocalAddress, udp.localAddress());
-                    Map.Entry<ServerSocketChannel, DatagramChannel> client = Map.entry(tcp, udp);
+                    Instance client = new Instance(tcp, udp);
                     promise.complete(client);
                 });
-            Map.Entry<ServerSocketChannel, DatagramChannel> client = promise.get();
+            Instance client = promise.get();
             CompletableFuture.allOf(
-                CompletableFuture.supplyAsync(() -> client.getKey().closeFuture().syncUninterruptibly()),
-                CompletableFuture.supplyAsync(() -> client.getValue().closeFuture().syncUninterruptibly())
+                CompletableFuture.supplyAsync(() -> client.tcp().closeFuture().syncUninterruptibly()),
+                CompletableFuture.supplyAsync(() -> client.udp().closeFuture().syncUninterruptibly())
             ).get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -73,15 +72,10 @@ public class Client {
         }
     }
 
-    public static void close(Map.Entry<ServerSocketChannel, DatagramChannel> client) {
-        client.getKey().close().awaitUninterruptibly();
-        client.getValue().close().awaitUninterruptibly();
-    }
-
     private static DatagramChannel launchUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ClientConfig config) throws InterruptedException {
         ServerConfig current = config.getCurrent();
         ChannelHandler udpTransportHandler;
-        if (Protocols.vmess == current.getProtocol()) {
+        if (Protocol.vmess == current.getProtocol()) {
             udpTransportHandler = new ClientUdpOverTCPHandler(current, workerGroup);
         } else {
             udpTransportHandler = new ClientUdpRelayHandler(current, workerGroup);
@@ -98,5 +92,12 @@ public class Client {
                 }
             })
             .bind(InetAddress.getLoopbackAddress(), config.getPort()).sync().channel();
+    }
+
+    public record Instance(ServerSocketChannel tcp, DatagramChannel udp) {
+        public void close() {
+            tcp.close().awaitUninterruptibly();
+            udp.close().awaitUninterruptibly();
+        }
     }
 }

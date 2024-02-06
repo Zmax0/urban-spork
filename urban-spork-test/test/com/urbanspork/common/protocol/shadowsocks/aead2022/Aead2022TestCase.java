@@ -7,7 +7,7 @@ import com.urbanspork.common.codec.shadowsocks.Keys;
 import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
-import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.shadowsocks.Control;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
@@ -56,7 +56,7 @@ class Aead2022TestCase extends TraceLevelLoggerTestTemplate {
         CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
         StringJoiner joiner = new StringJoiner(":");
         for (int i = 0; i < 3; i++) {
-            joiner.add(TestDice.rollPassword(Protocols.shadowsocks, kind));
+            joiner.add(TestDice.rollPassword(Protocol.shadowsocks, kind));
         }
         String password = joiner.toString();
         Keys keys = AEAD2022.passwordToKeys(password);
@@ -84,7 +84,7 @@ class Aead2022TestCase extends TraceLevelLoggerTestTemplate {
     void testUdpUserNotFound() throws InvalidCipherTextException {
         CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
         CipherMethod method = CipherMethods.AES_GCM.get();
-        byte[] iPSK = Base64.getDecoder().decode(TestDice.rollPassword(Protocols.shadowsocks, kind));
+        byte[] iPSK = Base64.getDecoder().decode(TestDice.rollPassword(Protocol.shadowsocks, kind));
         ServerUser user = rollUser(kind);
         ServerUserManager userManager = ServerUserManager.DEFAULT;
         userManager.addUser(user);
@@ -117,7 +117,7 @@ class Aead2022TestCase extends TraceLevelLoggerTestTemplate {
     }
 
     private static ServerUser rollUser(CipherKind kind) {
-        return ServerUser.from(new ServerUserConfig("underdog", TestDice.rollPassword(Protocols.shadowsocks, kind)));
+        return ServerUser.from(new ServerUserConfig("underdog", TestDice.rollPassword(Protocol.shadowsocks, kind)));
     }
 
     @Override

@@ -1,6 +1,6 @@
 package com.urbanspork.server;
 
-import com.urbanspork.common.protocol.network.PacketEncoding;
+import com.urbanspork.common.transport.udp.PacketEncoding;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;

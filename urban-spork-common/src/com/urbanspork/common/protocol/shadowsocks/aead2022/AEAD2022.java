@@ -16,7 +16,7 @@ import com.urbanspork.common.crypto.Digests;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.shadowsocks.Control;
-import com.urbanspork.common.protocol.shadowsocks.Session;
+import com.urbanspork.common.protocol.shadowsocks.Identity;
 import com.urbanspork.common.util.ByteString;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -141,7 +141,7 @@ public interface AEAD2022 {
             return new PayloadDecoder(auth, sizeCodec, EmptyPaddingLengthGenerator.INSTANCE);
         }
 
-        static PayloadDecoder newPayloadDecoder(CipherMethod cipherMethod, Session session, ServerUserManager userManager, byte[] key, byte[] salt, byte[] eih) {
+        static PayloadDecoder newPayloadDecoder(CipherMethod cipherMethod, Identity identity, ServerUserManager userManager, byte[] key, byte[] salt, byte[] eih) {
             byte[] identitySubKey = deriveKey("shadowsocks 2022 identity subkey".getBytes(), concat(key, salt));
             byte[] userHash = AES.INSTANCE.decrypt(identitySubKey, eih);
             if (logger.isTraceEnabled()) {
@@ -154,7 +154,7 @@ public interface AEAD2022 {
                 if (logger.isTraceEnabled()) {
                     logger.trace("{} chosen by EIH", user);
                 }
-                session.setUser(user);
+                identity.setUser(user);
                 return newPayloadDecoder(cipherMethod, user.key(), salt);
             }
         }
@@ -197,8 +197,7 @@ public interface AEAD2022 {
             +---------------------------+---------------------------+
             |            16B            | variable length + 16B tag |
             +---------------------------+---------------------------+
-         */
-
+        */
 
         /*
             Separate header:

@@ -14,7 +14,7 @@ import java.util.function.Function;
 
 public class LruCache<K, V> {
     private static final Logger logger = LoggerFactory.getLogger(LruCache.class);
-    final int capacity;
+    final long capacity;
     final Duration timeToLive;
     final HashedWheelTimer timer = new HashedWheelTimer(1, TimeUnit.SECONDS);
     final BiConsumer<K, V> afterExpired;
@@ -33,7 +33,7 @@ public class LruCache<K, V> {
         }
     };
 
-    public LruCache(int capacity, Duration timeToLive, BiConsumer<K, V> afterExpired) {
+    public LruCache(long capacity, Duration timeToLive, BiConsumer<K, V> afterExpired) {
         this.capacity = capacity;
         this.timeToLive = timeToLive;
         this.afterExpired = afterExpired;

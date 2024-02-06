@@ -8,20 +8,18 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTestCase;
 import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
-import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.server.Server;
 import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.TCPTestTemplate;
-import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.ServerSocketChannel;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 @DisplayName("TCP")
@@ -29,7 +27,7 @@ class TCPTestCase extends TCPTestTemplate {
     @ParameterizedTest
     @ArgumentsSource(Parameter.Provider.class)
     void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
-        Protocols protocol = parameter.protocol();
+        Protocol protocol = parameter.protocol();
         CipherKind cipher = parameter.cipher();
         if (cipher.isAead2022() && cipher.supportEih()) {
             testShadowsocksAEAD2022EihByParameter(parameter);
@@ -39,15 +37,23 @@ class TCPTestCase extends TCPTestTemplate {
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
         serverConfig.setPassword(parameter.serverPassword());
-        List<Map.Entry<ServerSocketChannel, Optional<DatagramChannel>>> server = launchServer(config.getServers());
-        Map.Entry<ServerSocketChannel, DatagramChannel> client = launchClient(config);
-        handshakeAndSendBytes(client.getKey().localAddress());
-        Server.close(server);
-        Client.close(client);
+        List<Server.Instance> server = launchServer(config.getServers());
+        Client.Instance client = launchClient(config);
+        handshakeAndSendBytes(client.tcp().localAddress());
+        closeServer(server);
+        client.close();
+    }
+
+    @Test
+    void testConnectServerFailed() throws ExecutionException, InterruptedException {
+        ClientConfig config = ClientConfigTestCase.testConfig(0, TestDice.rollPort());
+        Client.Instance client = launchClient(config);
+        Assertions.assertThrows(ExecutionException.class, () -> handshakeAndSendBytes(client.tcp().localAddress()));
+        client.close();
     }
 
     void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
-        Protocols protocol = parameter.protocol();
+        Protocol protocol = parameter.protocol();
         CipherKind cipher = parameter.cipher();
         ServerConfig serverConfig = ServerConfigTestCase.testConfig(0);
         serverConfig.setProtocol(protocol);
@@ -56,16 +62,16 @@ class TCPTestCase extends TCPTestTemplate {
         List<ServerUserConfig> user = new ArrayList<>();
         user.add(new ServerUserConfig(TestDice.rollString(10), parameter.clientPassword()));
         serverConfig.setUser(user);
-        List<Map.Entry<ServerSocketChannel, Optional<DatagramChannel>>> server = launchServer(List.of(serverConfig));
+        List<Server.Instance> server = launchServer(List.of(serverConfig));
         ClientConfig config = ClientConfigTestCase.testConfig(0, serverConfig.getPort());
         ServerConfig current = config.getCurrent();
         current.setCipher(cipher);
         current.setProtocol(protocol);
         current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
-        Map.Entry<ServerSocketChannel, DatagramChannel> client = launchClient(config);
-        handshakeAndSendBytes(client.getKey().localAddress());
+        Client.Instance client = launchClient(config);
+        handshakeAndSendBytes(client.udp().localAddress());
         ServerUserManager.DEFAULT.clear();
-        Server.close(server);
-        Client.close(client);
+        closeServer(server);
+        client.close();
     }
 }

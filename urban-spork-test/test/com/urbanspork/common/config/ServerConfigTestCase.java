@@ -1,8 +1,8 @@
 package com.urbanspork.common.config;
 
-import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.network.Network;
-import com.urbanspork.common.protocol.network.PacketEncoding;
+import com.urbanspork.common.protocol.Protocol;
+import com.urbanspork.common.transport.Transport;
+import com.urbanspork.common.transport.udp.PacketEncoding;
 import com.urbanspork.test.TestDice;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -30,11 +30,11 @@ public class ServerConfigTestCase {
     @Test
     void testUDPEnable() {
         ServerConfig config = testConfig(TestDice.rollPort());
-        config.setNetworks(new Network[]{Network.UDP});
+        config.setTransport(new Transport[]{Transport.UDP});
         Assertions.assertTrue(config.udpEnabled());
-        config.setNetworks(new Network[]{Network.TCP});
+        config.setTransport(new Transport[]{Transport.TCP});
         Assertions.assertFalse(config.udpEnabled());
-        config.setNetworks(null);
+        config.setTransport(null);
         Assertions.assertFalse(config.udpEnabled());
     }
 
@@ -70,7 +70,7 @@ public class ServerConfigTestCase {
             ServerConfig serverConfig = new ServerConfig();
             serverConfig.setHost(InetAddress.getLoopbackAddress().getHostName());
             serverConfig.setPort(port);
-            serverConfig.setProtocol(Protocols.shadowsocks);
+            serverConfig.setProtocol(Protocol.shadowsocks);
             serverConfig.setCipher(TestDice.rollCipher());
             serverConfig.setPassword(TestDice.rollPassword(serverConfig.getProtocol(), serverConfig.getCipher()));
             serverConfig.setPacketEncoding(PacketEncoding.Packet);

@@ -13,7 +13,7 @@ import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.Protocol;
 import javafx.application.Platform;
 import javafx.application.Preloader;
 import javafx.beans.value.ChangeListener;
@@ -22,7 +22,13 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.MultipleSelectionModel;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.image.Image;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -82,7 +88,7 @@ public class Console extends Preloader {
 
     private ChoiceBox<CipherKind> currentConfigCipherChoiceBox;
 
-    private ChoiceBox<Protocols> currentConfigProtocolChoiceBox;
+    private ChoiceBox<Protocol> currentConfigProtocolChoiceBox;
 
     private NumericTextField clientConfigPortTextField;
 
@@ -459,9 +465,9 @@ public class Console extends Preloader {
     }
 
     private void initCurrentConfigProtocolChoiceBox() {
-        List<Protocols> ciphers = Arrays.asList(Protocols.values());
+        List<Protocol> ciphers = Arrays.asList(Protocol.values());
         currentConfigProtocolChoiceBox.setItems(FXCollections.observableArrayList(ciphers));
-        currentConfigProtocolChoiceBox.setValue(Protocols.shadowsocks);
+        currentConfigProtocolChoiceBox.setValue(Protocol.shadowsocks);
     }
 
     private void initServerConfigListView() {

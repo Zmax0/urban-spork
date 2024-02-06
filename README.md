@@ -19,8 +19,8 @@ put *config.json* file into the unpacked folder before running
       "port": "{port}",
       "protocol": "{protocol}",
       "packetEncoding": "{packetEncoding}",
-      "networks": [
-        "{networks}"
+      "transport": [
+        "{transport}"
       ],
       "user": [
         {
@@ -37,7 +37,7 @@ put *config.json* file into the unpacked folder before running
 
 > `cipher`: see *Ciphers*
 
-> `networks`: see *Transmission*
+> `transport`: see *Transport*
 
 > `packetEncoding`: "None" | "Packet"
 
@@ -45,7 +45,7 @@ put *config.json* file into the unpacked folder before running
 
 ## Features
 
-### Transmission
+### Transport
 
 |     | Shadowsocks | VMess |
 |:----|:-----------:|:-----:|

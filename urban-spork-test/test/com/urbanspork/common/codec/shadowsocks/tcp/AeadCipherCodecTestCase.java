@@ -8,8 +8,8 @@ import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
-import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.shadowsocks.Session;
+import com.urbanspork.common.protocol.Protocol;
+import com.urbanspork.common.protocol.shadowsocks.Identity;
 import com.urbanspork.common.protocol.shadowsocks.aead2022.AEAD2022;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
@@ -45,14 +45,14 @@ class AeadCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, TestDice.rollHost(), TestDice.rollPort());
         CipherKind kind = CipherKind.aead2022_blake3_aes_128_gcm;
         int saltSize = 16;
-        String password = TestDice.rollPassword(Protocols.shadowsocks, kind);
+        String password = TestDice.rollPassword(Protocol.shadowsocks, kind);
         CipherMethod method = CipherMethods.AES_GCM.get();
         ServerConfig config = new ServerConfig();
         config.setPassword(password);
         config.setCipher(kind);
         AeadCipherCodec codec = AeadCipherCodecs.get(config);
         ByteBuf msg = Unpooled.buffer();
-        codec.encode(new Context(Mode.Client, new Session(kind), request, ServerUserManager.EMPTY), Unpooled.wrappedBuffer(Dice.rollBytes(10)), msg);
+        codec.encode(new Session(Mode.Client, new Identity(kind), request, ServerUserManager.EMPTY, new Context()), Unpooled.wrappedBuffer(Dice.rollBytes(10)), msg);
         byte[] salt = new byte[saltSize];
         msg.readBytes(salt);
         byte[] passwordBytes = Base64.getDecoder().decode(password);
@@ -67,9 +67,9 @@ class AeadCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
         temp.writeBytes(encoder.auth().seal(header));
         temp.writeBytes(msg);
         ArrayList<Object> out = new ArrayList<>();
-        Context context = new Context(Mode.Server, new Session(kind), request, ServerUserManager.EMPTY);
-        codec.decode(context, msg, out);
-        Assertions.assertThrows(DecoderException.class, () -> codec.decode(context, temp, out));
+        Session session = new Session(Mode.Server, new Identity(kind), request, ServerUserManager.EMPTY, new Context());
+        codec.decode(session, msg, out);
+        Assertions.assertThrows(DecoderException.class, () -> codec.decode(session, temp, out));
     }
 
     @Override

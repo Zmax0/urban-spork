@@ -5,7 +5,7 @@ import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.codec.shadowsocks.udp.UdpRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
 
 public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSocketAddress> {
 
@@ -26,7 +27,7 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
     private final InetSocketAddress relay;
 
     public ClientUdpRelayHandler(ServerConfig config, EventLoopGroup workerGroup) {
-        super(config);
+        super(config, Duration.ofMinutes(10));
         this.workerGroup = workerGroup;
         this.relay = new InetSocketAddress(config.getHost(), config.getPort());
     }
@@ -50,7 +51,7 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
                     ch.pipeline().addLast(
                         new UdpRelayCodec(config, Mode.Client),
                         new InboundHandler(inboundChannel, sender),// server->client->sender
-                        new ExceptionHandler(config)
+                        new ExceptionHandler(config, Mode.Client)
                     );
                 }
             }).bind(0) // automatically assigned port now, may have security implications
