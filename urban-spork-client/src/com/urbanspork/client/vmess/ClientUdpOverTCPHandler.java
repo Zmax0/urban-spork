@@ -3,9 +3,9 @@ package com.urbanspork.client.vmess;
 import com.urbanspork.client.AbstractClientUdpRelayHandler;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.socks.Socks5;
 import com.urbanspork.common.protocol.vmess.header.RequestCommand;
+import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
 
 public class ClientUdpOverTCPHandler extends AbstractClientUdpRelayHandler<ClientUdpOverTCPHandler.Key> {
 
@@ -30,7 +31,7 @@ public class ClientUdpOverTCPHandler extends AbstractClientUdpRelayHandler<Clien
     private final EventLoopGroup workerGroup;
 
     public ClientUdpOverTCPHandler(ServerConfig config, EventLoopGroup workerGroup) {
-        super(config);
+        super(config, Duration.ofMinutes(10));
         this.workerGroup = workerGroup;
     }
 

@@ -5,16 +5,16 @@ import com.urbanspork.common.manage.shadowsocks.ServerUser;
 import com.urbanspork.common.util.ByteString;
 import com.urbanspork.common.util.Dice;
 
-public class Session {
+public class Identity {
     private final byte[] salt;
     private byte[] requestSalt;
     private ServerUser user;
 
-    Session(byte[] salt) {
+    Identity(byte[] salt) {
         this.salt = salt;
     }
 
-    public Session(CipherKind kind) {
+    public Identity(CipherKind kind) {
         this(Dice.rollBytes(kind.keySize()));
     }
 

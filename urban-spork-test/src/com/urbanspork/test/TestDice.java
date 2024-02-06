@@ -1,7 +1,7 @@
 package com.urbanspork.test;
 
 import com.urbanspork.common.codec.CipherKind;
-import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.util.Dice;
 
 import java.util.Base64;
@@ -38,8 +38,8 @@ public interface TestDice {
         return ThreadLocalRandom.current().nextInt(49152, 65535);
     }
 
-    static String rollPassword(Protocols protocols, CipherKind kind) {
-        if (Protocols.shadowsocks == protocols && kind.isAead2022()) {
+    static String rollPassword(Protocol protocol, CipherKind kind) {
+        if (Protocol.shadowsocks == protocol && kind.isAead2022()) {
             return rollAEAD2022Password(kind);
         } else {
             return UUID.randomUUID().toString();

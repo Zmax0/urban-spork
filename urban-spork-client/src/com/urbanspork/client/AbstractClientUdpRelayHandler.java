@@ -1,7 +1,7 @@
 package com.urbanspork.client;
 
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
 import com.urbanspork.common.util.LruCache;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -16,14 +16,14 @@ public abstract class AbstractClientUdpRelayHandler<K> extends SimpleChannelInbo
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractClientUdpRelayHandler.class);
     protected final ServerConfig config;
-    private final Duration keepAlive = Duration.ofMinutes(10);
-    private final LruCache<K, Channel> binding = new LruCache<>(1024, keepAlive, (k, channel) -> {
-        logger.info("[udp][binding][expire]{} != {}", k, channel.localAddress());
-        channel.close();
-    });
+    private final LruCache<K, Channel> binding;
 
-    protected AbstractClientUdpRelayHandler(ServerConfig config) {
+    protected AbstractClientUdpRelayHandler(ServerConfig config, Duration keepAlive) {
         this.config = config;
+        this.binding = new LruCache<>(1024, keepAlive, (k, channel) -> {
+            logger.info("[udp][binding][expire]{} != {}", k, channel.localAddress());
+            channel.close();
+        });
     }
 
     protected abstract Object convertToWrite(TernaryDatagramPacket msg);
@@ -48,16 +48,15 @@ public abstract class AbstractClientUdpRelayHandler<K> extends SimpleChannelInbo
     }
 
     private Channel getBindingChannel(Channel inboundChannel, K key) {
-        Channel channel = binding.get(key);
-        if (channel == null) {
-            channel = newBindingChannel(inboundChannel, key);
+        return binding.computeIfAbsent(key, k -> {
+            Channel channel = newBindingChannel(inboundChannel, key);
             channel.closeFuture().addListener(future -> {
                 Channel removed = binding.remove(key);
                 if (removed != null) {
                     logger.info("[udp][binding][close]{} != {}", key, removed.localAddress());
                 }
             });
-        }
-        return channel;
+            return channel;
+        });
     }
 }

@@ -1,9 +1,9 @@
 package com.urbanspork.common.config;
 
 import com.urbanspork.common.codec.CipherKind;
-import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.network.Network;
-import com.urbanspork.common.protocol.network.PacketEncoding;
+import com.urbanspork.common.protocol.Protocol;
+import com.urbanspork.common.transport.Transport;
+import com.urbanspork.common.transport.udp.PacketEncoding;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,11 +18,11 @@ public class ServerConfig {
 
     private CipherKind cipher;
 
-    private Protocols protocol;
+    private Protocol protocol;
 
     private String remark;
 
-    private Network[] networks;
+    private Transport[] transport;
 
     private PacketEncoding packetEncoding;
 
@@ -60,11 +60,11 @@ public class ServerConfig {
         this.password = password;
     }
 
-    public Protocols getProtocol() {
+    public Protocol getProtocol() {
         return protocol;
     }
 
-    public void setProtocol(Protocols protocol) {
+    public void setProtocol(Protocol protocol) {
         this.protocol = protocol;
     }
 
@@ -76,12 +76,12 @@ public class ServerConfig {
         this.remark = remark;
     }
 
-    public Network[] getNetworks() {
-        return networks;
+    public Transport[] getTransport() {
+        return transport;
     }
 
-    public void setNetworks(Network[] networks) {
-        this.networks = networks;
+    public void setTransport(Transport[] transports) {
+        this.transport = transports;
     }
 
     public PacketEncoding getPacketEncoding() {
@@ -109,7 +109,7 @@ public class ServerConfig {
         StringBuilder builder = new StringBuilder(listItemText());
         if (protocol != null) {
             builder.append('|').append(protocol);
-            if (Protocols.vmess == protocol) {
+            if (Protocol.vmess == protocol) {
                 builder.append('|').append("negotiated");
             } else {
                 builder.append('|').append(cipher.toString());
@@ -127,7 +127,7 @@ public class ServerConfig {
     }
 
     public boolean udpEnabled() {
-        return networks != null && Arrays.stream(networks).anyMatch(n -> n == Network.UDP);
+        return transport != null && Arrays.stream(transport).anyMatch(n -> n == Transport.UDP);
     }
 
     private boolean isEmpty(String s) {

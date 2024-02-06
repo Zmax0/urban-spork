@@ -3,7 +3,7 @@ package com.urbanspork.server;
 import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.transport.Transport;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -31,7 +31,7 @@ class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        if (Network.UDP.equals(ctx.channel().attr(AttributeKeys.NETWORK).get())) {
+        if (Transport.UDP.equals(ctx.channel().attr(AttributeKeys.TRANSPORT).get())) {
             udp(ctx, msg);
         } else {
             tcp(ctx, msg);

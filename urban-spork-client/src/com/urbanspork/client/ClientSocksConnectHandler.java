@@ -6,7 +6,7 @@ import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.channel.ChannelCloseUtils;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.socks.Socks5;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -34,7 +34,7 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
         ServerConfig config = inboundChannel.attr(AttributeKeys.SERVER_CONFIG).get();
         InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
         ChannelHandler outboundHandler;
-        if (Protocols.vmess == config.getProtocol()) {
+        if (Protocol.vmess == config.getProtocol()) {
             outboundHandler = new ClientChannelInitializer(request, config);
         } else {
             outboundHandler = new ClientTCPChannelInitializer(request, config);

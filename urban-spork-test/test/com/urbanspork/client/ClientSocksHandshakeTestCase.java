@@ -2,13 +2,11 @@ package com.urbanspork.client;
 
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ClientConfigTestCase;
-import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.socks.ClientHandshake;
 import com.urbanspork.test.TestDice;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -17,7 +15,6 @@ import org.junit.jupiter.api.TestInstance;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -29,22 +26,22 @@ class ClientSocksHandshakeTestCase {
     @Test
     void testUdpEnable() throws InterruptedException, ExecutionException {
         ClientConfig config = ClientConfigTestCase.testConfig(0, 0);
-        config.getServers().getFirst().setProtocol(Protocols.vmess);
-        Map.Entry<ServerSocketChannel, DatagramChannel> client = ClientTestCase.asyncLaunchClient(config);
+        config.getServers().getFirst().setProtocol(Protocol.vmess);
+        Client.Instance client = ClientTestCase.asyncLaunchClient(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress1 = new InetSocketAddress(InetAddress.getLoopbackAddress(), TestDice.rollPort());
         assertFailedHandshake(proxyAddress, dstAddress1);
-        Client.close(client);
+        client.close();
     }
 
     @Test
     void testIllegalDstAddress() throws InterruptedException, ExecutionException {
         ClientConfig config = ClientConfigTestCase.testConfig(0, 0);
-        Map.Entry<ServerSocketChannel, DatagramChannel> client = ClientTestCase.asyncLaunchClient(config);
+        Client.Instance client = ClientTestCase.asyncLaunchClient(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress1 = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         assertFailedHandshake(proxyAddress, dstAddress1);
-        Client.close(client);
+        client.close();
     }
 
 

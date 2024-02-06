@@ -1,7 +1,7 @@
 package com.urbanspork.server;
 
-import com.urbanspork.common.protocol.network.PacketEncoding;
-import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.PacketEncoding;
+import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;

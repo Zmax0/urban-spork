@@ -4,11 +4,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public interface Dice {
 
-    byte[] EMPTY = new byte[0];
-
     static byte[] rollBytes(int length) {
         if (length <= 0) {
-            return EMPTY;
+            return new byte[0];
         }
         byte[] bytes = new byte[length];
         rollBytes(bytes);
@@ -16,6 +14,16 @@ public interface Dice {
     }
 
     static void rollBytes(byte[] btyes) {
-        ThreadLocalRandom.current().nextBytes(btyes);
+        do {
+            ThreadLocalRandom.current().nextBytes(btyes);
+        } while (allZeros(btyes));
+    }
+
+    static boolean allZeros(byte[] bytes) {
+        int sum = 0;
+        for (byte b : bytes) {
+            sum |= b;
+        }
+        return (sum == 0);
     }
 }

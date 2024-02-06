@@ -3,8 +3,8 @@ package com.urbanspork.common.codec.shadowsocks.udp;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
-import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.shadowsocks.Control;
+import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
 import com.urbanspork.common.util.LruCache;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -65,6 +65,11 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Ternary
             return;
         }
         out.add(new DatagramPacket((ByteBuf) list.get(1), (InetSocketAddress) list.get(0), msg.sender()));
+    }
+
+    @Override
+    public void handlerRemoved(ChannelHandlerContext ctx) {
+        controlMap.clear();
     }
 
     private Control getControl(InetSocketAddress key) {
