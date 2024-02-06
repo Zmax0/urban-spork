@@ -1,5 +1,5 @@
 package com.urbanspork.common.protocol;
 
-public enum Protocols {
+public enum Protocol {
     shadowsocks, vmess,
 }

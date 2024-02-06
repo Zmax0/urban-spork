@@ -3,8 +3,8 @@ package com.urbanspork.client.vmess;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTestCase;
-import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.Protocol;
+import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoopGroup;
@@ -23,8 +23,8 @@ class ClientUDPOverTCPHandlerTestCase {
     @Test
     void testConnectFailed() {
         ServerConfig config = ServerConfigTestCase.testConfig(TestDice.rollPort());
-        config.setProtocol(Protocols.vmess);
-        config.setPassword(TestDice.rollPassword(Protocols.vmess, CipherKind.chacha20_poly1305));
+        config.setProtocol(Protocol.vmess);
+        config.setPassword(TestDice.rollPassword(Protocol.vmess, CipherKind.chacha20_poly1305));
         EventLoopGroup executor = new NioEventLoopGroup();
         EmbeddedChannel channel = new EmbeddedChannel(new ClientUdpOverTCPHandler(config, executor));
         TernaryDatagramPacket packet = new TernaryDatagramPacket(new DatagramPacket(Unpooled.EMPTY_BUFFER, new InetSocketAddress(TestDice.rollPort())), new InetSocketAddress(0));

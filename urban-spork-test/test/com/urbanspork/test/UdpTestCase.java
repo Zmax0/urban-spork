@@ -8,8 +8,8 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTestCase;
 import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
-import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.protocol.Protocol;
+import com.urbanspork.common.transport.Transport;
 import com.urbanspork.server.Server;
 import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.UdpTestTemplate;
@@ -28,15 +28,15 @@ class UdpTestCase extends UdpTestTemplate {
     @ParameterizedTest
     @ArgumentsSource(Parameter.Provider.class)
     void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
-        Protocols protocol = parameter.protocol();
+        Protocol protocol = parameter.protocol();
         CipherKind cipher = parameter.cipher();
         if (cipher.isAead2022() && cipher.supportEih()) {
             testShadowsocksAEAD2022EihByParameter(parameter);
         }
         ClientConfig config = ClientConfigTestCase.testConfig(0, 0);
         ServerConfig serverConfig = config.getServers().getFirst();
-        Network[] networks = {Network.TCP, Network.UDP};
-        serverConfig.setNetworks(networks);
+        Transport[] transports = {Transport.TCP, Transport.UDP};
+        serverConfig.setTransport(transports);
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
         serverConfig.setPassword(parameter.serverPassword());
@@ -50,10 +50,10 @@ class UdpTestCase extends UdpTestTemplate {
 
     void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
         CipherKind cipher = parameter.cipher();
-        Protocols protocol = parameter.protocol();
-        Network[] networks = {Network.TCP, Network.UDP};
+        Protocol protocol = parameter.protocol();
+        Transport[] transports = {Transport.TCP, Transport.UDP};
         ServerConfig serverConfig = ServerConfigTestCase.testConfig(0);
-        serverConfig.setNetworks(networks);
+        serverConfig.setTransport(transports);
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
         serverConfig.setPassword(parameter.serverPassword());
@@ -64,7 +64,7 @@ class UdpTestCase extends UdpTestTemplate {
         ClientConfig clientConfig = ClientConfigTestCase.testConfig(0, serverConfig.getPort());
         ServerConfig current = clientConfig.getCurrent();
         current.setCipher(cipher);
-        current.setNetworks(networks);
+        current.setTransport(transports);
         current.setProtocol(protocol);
         current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
         Client.Instance client = launchClient(clientConfig);

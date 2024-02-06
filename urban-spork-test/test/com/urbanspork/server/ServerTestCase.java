@@ -2,7 +2,7 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTestCase;
-import com.urbanspork.common.protocol.network.Network;
+import com.urbanspork.common.transport.Transport;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import io.netty.bootstrap.Bootstrap;
@@ -72,7 +72,7 @@ class ServerTestCase {
     @Test
     void sendInvalidUDP() throws InterruptedException, ExecutionException {
         ServerConfig config = ServerConfigTestCase.testConfig(0);
-        config.setNetworks(new Network[]{Network.TCP, Network.UDP});
+        config.setTransport(new Transport[]{Transport.TCP, Transport.UDP});
         try (ExecutorService service = Executors.newVirtualThreadPerTaskExecutor()) {
             CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
             service.submit(() -> Server.launch(List.of(config), promise));

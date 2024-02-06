@@ -8,7 +8,7 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTestCase;
 import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
-import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.server.Server;
 import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.TCPTestTemplate;
@@ -27,7 +27,7 @@ class TCPTestCase extends TCPTestTemplate {
     @ParameterizedTest
     @ArgumentsSource(Parameter.Provider.class)
     void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
-        Protocols protocol = parameter.protocol();
+        Protocol protocol = parameter.protocol();
         CipherKind cipher = parameter.cipher();
         if (cipher.isAead2022() && cipher.supportEih()) {
             testShadowsocksAEAD2022EihByParameter(parameter);
@@ -53,7 +53,7 @@ class TCPTestCase extends TCPTestTemplate {
     }
 
     void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
-        Protocols protocol = parameter.protocol();
+        Protocol protocol = parameter.protocol();
         CipherKind cipher = parameter.cipher();
         ServerConfig serverConfig = ServerConfigTestCase.testConfig(0);
         serverConfig.setProtocol(protocol);
