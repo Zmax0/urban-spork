@@ -8,7 +8,7 @@ import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
-import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.shadowsocks.Identity;
 import com.urbanspork.common.protocol.shadowsocks.aead2022.AEAD2022;
 import com.urbanspork.common.util.Dice;
@@ -45,7 +45,7 @@ class AeadCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, TestDice.rollHost(), TestDice.rollPort());
         CipherKind kind = CipherKind.aead2022_blake3_aes_128_gcm;
         int saltSize = 16;
-        String password = TestDice.rollPassword(Protocols.shadowsocks, kind);
+        String password = TestDice.rollPassword(Protocol.shadowsocks, kind);
         CipherMethod method = CipherMethods.AES_GCM.get();
         ServerConfig config = new ServerConfig();
         config.setPassword(password);

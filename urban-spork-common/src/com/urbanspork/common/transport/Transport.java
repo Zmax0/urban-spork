@@ -1,12 +1,12 @@
-package com.urbanspork.common.protocol.network;
+package com.urbanspork.common.transport;
 
-public enum Network {
+public enum Transport {
 
     TCP, UDP;
 
     private final String value;
 
-    Network() {
+    Transport() {
         value = name().toLowerCase();
     }
 

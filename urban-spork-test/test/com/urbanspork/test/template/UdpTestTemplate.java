@@ -2,8 +2,8 @@ package com.urbanspork.test.template;
 
 import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
 import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
-import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
 import com.urbanspork.common.protocol.socks.ClientHandshake;
+import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
 import com.urbanspork.test.TestDice;
 import com.urbanspork.test.server.udp.DelayedEchoTestServer;
 import com.urbanspork.test.server.udp.SimpleEchoTestServer;

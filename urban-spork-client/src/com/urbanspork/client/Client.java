@@ -7,7 +7,7 @@ import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.Protocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -75,7 +75,7 @@ public class Client {
     private static DatagramChannel launchUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ClientConfig config) throws InterruptedException {
         ServerConfig current = config.getCurrent();
         ChannelHandler udpTransportHandler;
-        if (Protocols.vmess == current.getProtocol()) {
+        if (Protocol.vmess == current.getProtocol()) {
             udpTransportHandler = new ClientUdpOverTCPHandler(current, workerGroup);
         } else {
             udpTransportHandler = new ClientUdpRelayHandler(current, workerGroup);

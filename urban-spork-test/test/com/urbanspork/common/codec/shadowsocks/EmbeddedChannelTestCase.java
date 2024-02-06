@@ -5,8 +5,8 @@ import com.urbanspork.common.codec.shadowsocks.tcp.Context;
 import com.urbanspork.common.codec.shadowsocks.tcp.TcpRelayCodec;
 import com.urbanspork.common.codec.shadowsocks.udp.UdpRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.Protocols;
-import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
+import com.urbanspork.common.protocol.Protocol;
+import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
@@ -35,7 +35,7 @@ class EmbeddedChannelTestCase {
         String host = TestDice.rollHost();
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, host, port);
         CipherKind cipher = TestDice.rollCipher();
-        String password = TestDice.rollPassword(Protocols.shadowsocks, cipher);
+        String password = TestDice.rollPassword(Protocol.shadowsocks, cipher);
         ServerConfig config = new ServerConfig();
         config.setCipher(cipher);
         config.setPassword(password);
@@ -65,7 +65,7 @@ class EmbeddedChannelTestCase {
         int port = TestDice.rollPort();
         InetSocketAddress relay = new InetSocketAddress("192.168.1.1", port);
         ServerConfig config = new ServerConfig();
-        config.setPassword(TestDice.rollPassword(Protocols.shadowsocks, cipher));
+        config.setPassword(TestDice.rollPassword(Protocol.shadowsocks, cipher));
         config.setCipher(cipher);
         client.pipeline().addLast(new UdpRelayCodec(config, Mode.Client));
         server.pipeline().addLast(new UdpRelayCodec(config, Mode.Server));
@@ -89,7 +89,7 @@ class EmbeddedChannelTestCase {
         EmbeddedChannel client = new EmbeddedChannel();
         CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
         ServerConfig config = new ServerConfig();
-        config.setPassword(TestDice.rollPassword(Protocols.shadowsocks, kind));
+        config.setPassword(TestDice.rollPassword(Protocol.shadowsocks, kind));
         config.setCipher(kind);
         client.pipeline().addLast(new UdpRelayCodec(config, Mode.Client));
         server.pipeline().addLast(new UdpRelayCodec(config, Mode.Server));
@@ -112,7 +112,7 @@ class EmbeddedChannelTestCase {
         EmbeddedChannel client = new EmbeddedChannel();
         CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
         ServerConfig config = new ServerConfig();
-        config.setPassword(TestDice.rollPassword(Protocols.shadowsocks, kind));
+        config.setPassword(TestDice.rollPassword(Protocol.shadowsocks, kind));
         config.setCipher(kind);
         Context context = Context.checkReplay();
         server1.pipeline().addLast(new TcpRelayCodec(context, config, Mode.Server));

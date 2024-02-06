@@ -1,7 +1,7 @@
 package com.urbanspork.client;
 
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.network.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
 import com.urbanspork.common.util.LruCache;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;

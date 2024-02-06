@@ -8,7 +8,7 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
-import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.Protocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -81,7 +81,7 @@ public class Server {
 
     private static Instance startup(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config)
         throws InterruptedException {
-        if (Protocols.shadowsocks == config.getProtocol()) {
+        if (Protocol.shadowsocks == config.getProtocol()) {
             List<ServerUserConfig> user = config.getUser();
             if (user != null) {
                 user.stream().map(ServerUser::from).forEach(ServerUserManager.DEFAULT::addUser);
@@ -97,7 +97,7 @@ public class Server {
     }
 
     private static Optional<DatagramChannel> startupUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config) throws InterruptedException {
-        if (Protocols.shadowsocks == config.getProtocol() && config.udpEnabled()) {
+        if (Protocol.shadowsocks == config.getProtocol() && config.udpEnabled()) {
             Channel channel = new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
                 .option(ChannelOption.SO_BROADCAST, true)
                 .handler(new ChannelInitializer<>() {

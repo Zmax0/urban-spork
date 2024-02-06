@@ -7,7 +7,7 @@ import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
-import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.shadowsocks.Control;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
@@ -54,7 +54,7 @@ class AeadCipherCodecsTestCase {
     @DisplayName("All supported cipher iterate")
     @EnumSource(CipherKind.class)
     void parameterizedTest(CipherKind kind) throws Exception {
-        this.password = TestDice.rollPassword(Protocols.shadowsocks, kind);
+        this.password = TestDice.rollPassword(Protocol.shadowsocks, kind);
         this.kind = kind;
         int port = TestDice.rollPort();
         String host = TestDice.rollHost();

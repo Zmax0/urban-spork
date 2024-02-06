@@ -8,7 +8,6 @@ import com.urbanspork.common.codec.aead.PayloadEncoder;
 import com.urbanspork.common.codec.vmess.AEADBodyCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.lang.Go;
-import com.urbanspork.common.protocol.network.Network;
 import com.urbanspork.common.protocol.vmess.Address;
 import com.urbanspork.common.protocol.vmess.ID;
 import com.urbanspork.common.protocol.vmess.aead.AuthID;
@@ -19,6 +18,7 @@ import com.urbanspork.common.protocol.vmess.header.RequestCommand;
 import com.urbanspork.common.protocol.vmess.header.RequestHeader;
 import com.urbanspork.common.protocol.vmess.header.RequestOption;
 import com.urbanspork.common.protocol.vmess.header.SecurityType;
+import com.urbanspork.common.transport.Transport;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -30,7 +30,10 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.urbanspork.common.protocol.vmess.aead.Const.*;
+import static com.urbanspork.common.protocol.vmess.aead.Const.KDF_SALT_AEAD_RESP_HEADER_LEN_IV;
+import static com.urbanspork.common.protocol.vmess.aead.Const.KDF_SALT_AEAD_RESP_HEADER_LEN_KEY;
+import static com.urbanspork.common.protocol.vmess.aead.Const.KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV;
+import static com.urbanspork.common.protocol.vmess.aead.Const.KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY;
 import static com.urbanspork.common.protocol.vmess.aead.Encrypt.openVMessAEADHeader;
 
 public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
@@ -104,7 +107,7 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
             if (RequestCommand.TCP.equals(command) || RequestCommand.UDP.equals(command)) {
                 address = Address.readAddressPort(decrypted);
                 if (RequestCommand.UDP.equals(command)) {
-                    ctx.channel().attr(AttributeKeys.NETWORK).set(Network.UDP);
+                    ctx.channel().attr(AttributeKeys.TRANSPORT).set(Transport.UDP);
                 }
                 out.add(address);
             }

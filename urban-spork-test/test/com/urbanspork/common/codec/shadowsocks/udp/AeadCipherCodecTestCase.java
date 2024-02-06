@@ -4,7 +4,7 @@ import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
-import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.shadowsocks.Control;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
@@ -91,7 +91,7 @@ class AeadCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
     static AeadCipherCodec newAEADCipherCodec() {
         CipherKind kind = CipherKind.aead2022_blake3_aes_128_gcm;
         ServerConfig config = new ServerConfig();
-        config.setPassword(TestDice.rollPassword(Protocols.shadowsocks, kind));
+        config.setPassword(TestDice.rollPassword(Protocol.shadowsocks, kind));
         config.setCipher(kind);
         return AeadCipherCodecs.get(config);
     }

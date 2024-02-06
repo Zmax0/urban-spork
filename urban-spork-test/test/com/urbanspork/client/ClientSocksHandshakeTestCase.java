@@ -2,7 +2,7 @@ package com.urbanspork.client;
 
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ClientConfigTestCase;
-import com.urbanspork.common.protocol.Protocols;
+import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.socks.ClientHandshake;
 import com.urbanspork.test.TestDice;
 import io.netty.channel.EventLoopGroup;
@@ -26,7 +26,7 @@ class ClientSocksHandshakeTestCase {
     @Test
     void testUdpEnable() throws InterruptedException, ExecutionException {
         ClientConfig config = ClientConfigTestCase.testConfig(0, 0);
-        config.getServers().getFirst().setProtocol(Protocols.vmess);
+        config.getServers().getFirst().setProtocol(Protocol.vmess);
         Client.Instance client = ClientTestCase.asyncLaunchClient(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress1 = new InetSocketAddress(InetAddress.getLoopbackAddress(), TestDice.rollPort());
