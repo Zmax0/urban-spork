@@ -55,6 +55,8 @@ class EmbeddedChannelTestCase {
         client.writeInbound(msg);
         msg = client.readInbound();
         Assertions.assertEquals(message, msg.readCharSequence(msg.readableBytes(), StandardCharsets.UTF_8));
+        client.close();
+        server.close();
     }
 
     @Test
@@ -81,6 +83,8 @@ class EmbeddedChannelTestCase {
         Assertions.assertEquals(in.recipient(), dst);
         ByteBuf content = in.content();
         Assertions.assertEquals(message, content.readCharSequence(content.readableBytes(), StandardCharsets.UTF_8));
+        client.close();
+        server.close();
     }
 
     @Test
@@ -103,6 +107,8 @@ class EmbeddedChannelTestCase {
         Assertions.assertNotNull(server.readInbound());
         server.writeInbound(outbound);
         Assertions.assertNull(server.readInbound());
+        client.close();
+        server.close();
     }
 
     @Test
@@ -123,5 +129,8 @@ class EmbeddedChannelTestCase {
         ByteBuf msg = client.readOutbound();
         server1.writeInbound(msg.copy());
         Assertions.assertThrows(DecoderException.class, () -> server2.writeInbound(msg));
+        client.close();
+        server1.close();
+        server2.close();
     }
 }
