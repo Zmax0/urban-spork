@@ -2,8 +2,6 @@ package com.urbanspork.common.util;
 
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -13,7 +11,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class LruCache<K, V> {
-    private static final Logger logger = LoggerFactory.getLogger(LruCache.class);
     final long capacity;
     final Duration timeToLive;
     final HashedWheelTimer timer = new HashedWheelTimer(1, TimeUnit.SECONDS);
@@ -24,7 +21,6 @@ public class LruCache<K, V> {
             boolean flag = size() > capacity;
             if (flag) {
                 K key = eldest.getKey();
-                logger.trace("remove eldest {}", key);
                 Pair<V> pair = eldest.getValue();
                 afterExpired.accept(key, pair.value);
                 pair.timeout.cancel();
@@ -51,16 +47,14 @@ public class LruCache<K, V> {
     }
 
     public void insert(K key, V value) {
-        logger.trace("insert {}={}", key, value);
-        inner.put(key, new Pair<>(value, timer.newTimeout(timeout -> expire(key, value), TimeUnit.NANOSECONDS.convert(timeToLive), TimeUnit.NANOSECONDS)));
+        inner.put(key, new Pair<>(value, timer.newTimeout(timeout -> expire(key, value), timeToLive.toNanos(), TimeUnit.NANOSECONDS)));
     }
 
     public V get(K key) {
         Pair<V> pair = inner.get(key);
         if (pair != null) {
             pair.timeout.cancel();
-            pair.timeout = timer.newTimeout(timeout -> expire(key, pair.value), TimeUnit.NANOSECONDS.convert(timeToLive), TimeUnit.NANOSECONDS);
-            logger.trace("keep alive {}={}", key, pair.value);
+            pair.timeout = timer.newTimeout(timeout -> expire(key, pair.value), timeToLive.toNanos(), TimeUnit.NANOSECONDS);
             return pair.value;
         } else {
             return null;
@@ -68,7 +62,6 @@ public class LruCache<K, V> {
     }
 
     public V remove(K key) {
-        logger.trace("remove {}", key);
         Pair<V> pair = inner.remove(key);
         if (pair != null) {
             pair.timeout.cancel();
@@ -78,8 +71,7 @@ public class LruCache<K, V> {
         }
     }
 
-    public void clear() {
-        logger.trace("clear");
+    public void release() {
         for (Map.Entry<K, Pair<V>> entry : inner.entrySet()) {
             afterExpired.accept(entry.getKey(), entry.getValue().value);
         }
@@ -88,7 +80,6 @@ public class LruCache<K, V> {
     }
 
     private void expire(K key, V value) {
-        logger.trace("expire {}={}", key, value);
         afterExpired.accept(key, value);
         inner.remove(key);
     }

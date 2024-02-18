@@ -1,6 +1,5 @@
 package com.urbanspork.common.util;
 
-import com.urbanspork.test.template.TraceLevelLoggerTestTemplate;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.Assertions;
@@ -12,7 +11,7 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-class LruCacheTestCase extends TraceLevelLoggerTestTemplate {
+class LruCacheTestCase {
     @Test
     void test() {
         Duration timeToLive = Duration.ofSeconds(3);
@@ -33,12 +32,7 @@ class LruCacheTestCase extends TraceLevelLoggerTestTemplate {
         LockSupport.parkNanos(timeToLive.plusSeconds(2).toNanos());
         Assertions.assertNull(cache.get(a1));
         cache.insert(a1, new EmbeddedChannel());
-        cache.clear();
+        cache.release();
         Assertions.assertNull(cache.get(a1));
-    }
-
-    @Override
-    protected Class<?> loggerClass() {
-        return LruCache.class;
     }
 }

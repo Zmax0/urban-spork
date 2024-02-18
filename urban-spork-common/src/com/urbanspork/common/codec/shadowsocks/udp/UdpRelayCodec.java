@@ -69,7 +69,7 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Ternary
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) {
-        controlMap.clear();
+        controlMap.release();
     }
 
     private Control getControl(InetSocketAddress key) {
