@@ -1,10 +1,12 @@
 package com.urbanspork.client;
 
-import com.urbanspork.client.shadowsocks.ClientTCPChannelInitializer;
-import com.urbanspork.client.vmess.ClientChannelInitializer;
+import com.urbanspork.client.vmess.ClientAEADCodec;
 import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.channel.ChannelCloseUtils;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
+import com.urbanspork.common.codec.shadowsocks.Mode;
+import com.urbanspork.common.codec.shadowsocks.tcp.Context;
+import com.urbanspork.common.codec.shadowsocks.tcp.TcpRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.socks.Socks5;
@@ -13,6 +15,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse;
@@ -33,17 +36,11 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
         Channel inboundChannel = ctx.channel();
         ServerConfig config = inboundChannel.attr(AttributeKeys.SERVER_CONFIG).get();
         InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
-        ChannelHandler outboundHandler;
-        if (Protocol.vmess == config.getProtocol()) {
-            outboundHandler = new ClientChannelInitializer(request, config);
-        } else {
-            outboundHandler = new ClientTCPChannelInitializer(request, config);
-        }
         new Bootstrap()
             .group(inboundChannel.eventLoop())
             .channel(inboundChannel.getClass())
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
-            .handler(outboundHandler)
+            .handler(getOutboundChannelHandler(request, config))
             .connect(serverAddress).addListener((ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
                     Channel outbound = future.channel();
@@ -59,5 +56,23 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
                     ChannelCloseUtils.closeOnFlush(inbound);
                 }
             });
+    }
+
+    private static ChannelHandler getOutboundChannelHandler(Socks5CommandRequest request, ServerConfig config) {
+        if (Protocol.vmess == config.getProtocol()) {
+            return new ChannelInitializer<>() {
+                @Override
+                protected void initChannel(Channel channel) {
+                    channel.pipeline().addLast(new ClientAEADCodec(config.getCipher(), request, config.getPassword()));
+                }
+            };
+        } else {
+            return new ChannelInitializer<>() {
+                @Override
+                protected void initChannel(Channel channel) {
+                    channel.pipeline().addLast(new TcpRelayCodec(new Context(), config, request, Mode.Client));
+                }
+            };
+        }
     }
 }
