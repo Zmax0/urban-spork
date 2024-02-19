@@ -3,7 +3,7 @@ package com.urbanspork.test.template;
 import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
 import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.protocol.socks.ClientHandshake;
-import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.test.TestDice;
 import com.urbanspork.test.server.udp.DelayedEchoTestServer;
 import com.urbanspork.test.server.udp.SimpleEchoTestServer;
@@ -49,7 +49,7 @@ public abstract class UdpTestTemplate extends TestTemplate {
     private final List<InetSocketAddress> dstAddress = new ArrayList<>();
     private final EventLoopGroup group = new NioEventLoopGroup();
     private Channel channel;
-    private Consumer<TernaryDatagramPacket> consumer;
+    private Consumer<DatagramPacketWrapper> consumer;
     private DatagramSocket simpleEchoTestServer;
     private DatagramSocket delayedEchoTestServer;
 
@@ -103,9 +103,9 @@ public abstract class UdpTestTemplate extends TestTemplate {
                     ch.pipeline().addLast(
                         new DatagramPacketEncoder(),
                         new DatagramPacketDecoder(),
-                        new SimpleChannelInboundHandler<TernaryDatagramPacket>(false) {
+                        new SimpleChannelInboundHandler<DatagramPacketWrapper>(false) {
                             @Override
-                            protected void channelRead0(ChannelHandlerContext ctx, TernaryDatagramPacket msg) {
+                            protected void channelRead0(ChannelHandlerContext ctx, DatagramPacketWrapper msg) {
                                 logger.info("Receive msg {}", msg);
                                 consumer.accept(msg);
                             }
@@ -129,7 +129,7 @@ public abstract class UdpTestTemplate extends TestTemplate {
         Assertions.assertEquals(Socks5CommandStatus.SUCCESS, response.status());
         CompletableFuture<Void> promise = new CompletableFuture<>();
         consumer = msg -> {
-            if (dstAddress.equals(msg.third())) {
+            if (dstAddress.equals(msg.proxy())) {
                 promise.complete(null);
             } else {
                 promise.completeExceptionally(AssertionFailureBuilder.assertionFailure().message("Not equals").build());
@@ -137,7 +137,7 @@ public abstract class UdpTestTemplate extends TestTemplate {
         };
         String str = TestDice.rollString();
         DatagramPacket data = new DatagramPacket(Unpooled.copiedBuffer(str.getBytes()), dstAddress);
-        TernaryDatagramPacket msg = new TernaryDatagramPacket(data, proxyAddress);
+        DatagramPacketWrapper msg = new DatagramPacketWrapper(data, proxyAddress);
         logger.info("Send msg {}", msg);
         channel.writeAndFlush(msg);
         promise.get(DelayedEchoTestServer.MAX_DELAYED_SECOND + 3, TimeUnit.SECONDS);

@@ -1,7 +1,7 @@
 package com.urbanspork.server;
 
+import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.common.transport.udp.PacketEncoding;
-import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -103,7 +103,7 @@ public class ServerUDPRelayHandler extends SimpleChannelInboundHandler<DatagramP
             InetSocketAddress callback = callbackMap.get(sender);
             if (callback != null) {
                 logger.info("[udp][relay]{}←{}~{}←{}", callback, sender, inboundChannel.localAddress(), outboundChannel.localAddress());
-                inboundChannel.writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(msg.retain().content(), sender), callback));
+                inboundChannel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(msg.retain().content(), sender), callback));
             } else {
                 logger.error("None callback of sender => {}", msg.sender());
             }

@@ -2,7 +2,7 @@ package com.urbanspork.client;
 
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTestCase;
-import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -28,7 +28,7 @@ class AbstractClientUdpRelayHandlerTestCase {
         ServerConfig config = ServerConfigTestCase.testConfig(0);
         inbound.pipeline().addLast(new TestClientUdpRelayHandler(config, outbound));
         InetSocketAddress recipient = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        TernaryDatagramPacket msg = new TernaryDatagramPacket(new DatagramPacket(Unpooled.wrappedBuffer(TestDice.rollString(10).getBytes()), recipient), recipient);
+        DatagramPacketWrapper msg = new DatagramPacketWrapper(new DatagramPacket(Unpooled.wrappedBuffer(TestDice.rollString(10).getBytes()), recipient), recipient);
         Assertions.assertFalse(inbound.writeInbound(msg));
         LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(3));
         Assertions.assertFalse(inbound.writeInbound(msg));
@@ -45,12 +45,12 @@ class TestClientUdpRelayHandler extends AbstractClientUdpRelayHandler<String> {
     }
 
     @Override
-    protected Object convertToWrite(TernaryDatagramPacket msg) {
+    protected Object convertToWrite(DatagramPacketWrapper msg) {
         return msg;
     }
 
     @Override
-    protected String getKey(TernaryDatagramPacket msg) {
+    protected String getKey(DatagramPacketWrapper msg) {
         return msg.packet().content().toString(StandardCharsets.US_ASCII);
     }
 

@@ -5,7 +5,7 @@ import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.codec.shadowsocks.udp.UdpRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -33,12 +33,12 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
     }
 
     @Override
-    protected Object convertToWrite(TernaryDatagramPacket msg) {
-        return new TernaryDatagramPacket(new DatagramPacket(msg.packet().content(), msg.third()), relay);
+    protected Object convertToWrite(DatagramPacketWrapper msg) {
+        return new DatagramPacketWrapper(new DatagramPacket(msg.packet().content(), msg.proxy()), relay);
     }
 
     @Override
-    protected InetSocketAddress getKey(TernaryDatagramPacket msg) {
+    protected InetSocketAddress getKey(DatagramPacketWrapper msg) {
         return msg.packet().sender();
     }
 
@@ -72,7 +72,7 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
         @Override
         public void channelRead0(ChannelHandlerContext ctx, DatagramPacket packet) {
             logger.info("[udp][shadowsocks]{}←{}~{}←{}", sender, packet.recipient(), ctx.channel().localAddress(), packet.sender());
-            channel.writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(packet.content(), packet.recipient()), sender));
+            channel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(packet.content(), packet.recipient()), sender));
         }
     }
 }

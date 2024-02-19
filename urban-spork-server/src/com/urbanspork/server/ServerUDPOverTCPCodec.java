@@ -1,6 +1,6 @@
 package com.urbanspork.server;
 
-import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
@@ -10,7 +10,7 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import java.net.InetSocketAddress;
 import java.util.List;
 
-class ServerUDPOverTCPCodec extends MessageToMessageCodec<ByteBuf, TernaryDatagramPacket> {
+class ServerUDPOverTCPCodec extends MessageToMessageCodec<ByteBuf, DatagramPacketWrapper> {
 
     private final Socks5CommandRequest request;
 
@@ -19,7 +19,7 @@ class ServerUDPOverTCPCodec extends MessageToMessageCodec<ByteBuf, TernaryDatagr
     }
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, TernaryDatagramPacket msg, List<Object> out) {
+    protected void encode(ChannelHandlerContext ctx, DatagramPacketWrapper msg, List<Object> out) {
         out.add(msg.packet().content());
     }
 
