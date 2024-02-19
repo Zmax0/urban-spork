@@ -4,7 +4,7 @@ import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.shadowsocks.Control;
-import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.common.util.LruCache;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -20,7 +20,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, TernaryDatagramPacket> {
+public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, DatagramPacketWrapper> {
     private static final Logger logger = LoggerFactory.getLogger(UdpRelayCodec.class);
     private final ServerConfig config;
     private final AeadCipherCodec cipher;
@@ -39,8 +39,8 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Ternary
     }
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, TernaryDatagramPacket msg, List<Object> out) throws Exception {
-        InetSocketAddress proxy = msg.third();
+    protected void encode(ChannelHandlerContext ctx, DatagramPacketWrapper msg, List<Object> out) throws Exception {
+        InetSocketAddress proxy = msg.proxy();
         if (proxy == null) {
             throw new EncoderException("Relay address is null");
         }

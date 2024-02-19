@@ -5,7 +5,7 @@ import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.socks.Socks5;
 import com.urbanspork.common.protocol.vmess.header.RequestCommand;
-import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -36,13 +36,13 @@ public class ClientUdpOverTCPHandler extends AbstractClientUdpRelayHandler<Clien
     }
 
     @Override
-    protected Object convertToWrite(TernaryDatagramPacket msg) {
+    protected Object convertToWrite(DatagramPacketWrapper msg) {
         return msg.packet().content();
     }
 
     @Override
-    protected Key getKey(TernaryDatagramPacket msg) {
-        return new Key(msg.packet().sender(), msg.third() /* recipient */);
+    protected Key getKey(DatagramPacketWrapper msg) {
+        return new Key(msg.packet().sender(), msg.proxy() /* recipient */);
     }
 
     @Override
@@ -94,7 +94,7 @@ public class ClientUdpOverTCPHandler extends AbstractClientUdpRelayHandler<Clien
         public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
             Channel inboundChannel = ctx.channel();
             logger.info("[udp][vmess]{} ← {} ~ {} ← {}", sender, inboundChannel.localAddress(), inboundChannel.remoteAddress(), recipient);
-            channel.writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(msg, recipient), sender));
+            channel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(msg, recipient), sender));
         }
     }
 }
