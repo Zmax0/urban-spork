@@ -2,7 +2,7 @@ package com.urbanspork.common.protocol.socks;
 
 import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
 import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
-import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -30,7 +30,7 @@ class DatagramPacketTestCase {
         int socksPort = TestDice.rollPort();
         InetSocketAddress dstAddress = new InetSocketAddress(dstPort);
         InetSocketAddress socksAddress = new InetSocketAddress(socksPort);
-        channel.writeOutbound(new TernaryDatagramPacket(new DatagramPacket(Unpooled.wrappedBuffer(str.getBytes()), dstAddress), socksAddress));
+        channel.writeOutbound(new DatagramPacketWrapper(new DatagramPacket(Unpooled.wrappedBuffer(str.getBytes()), dstAddress), socksAddress));
         DatagramPacket outbound = channel.readOutbound();
         Assertions.assertEquals(socksAddress, outbound.recipient());
         DatagramPacket outbound2 = outbound.replace(outbound.content().copy(0, 4));
@@ -38,8 +38,8 @@ class DatagramPacketTestCase {
         DatagramPacket outbound3 = outbound.replace(outbound.content().copy().setByte(2, 1));
         Assertions.assertThrows(DecoderException.class, () -> channel.writeInbound(outbound3));
         channel.writeInbound(outbound);
-        TernaryDatagramPacket inbound = channel.readInbound();
-        Assertions.assertEquals(dstAddress, inbound.third());
+        DatagramPacketWrapper inbound = channel.readInbound();
+        Assertions.assertEquals(dstAddress, inbound.proxy());
         Assertions.assertEquals(socksAddress, inbound.packet().recipient());
         ByteBuf content = inbound.packet().content();
         Assertions.assertEquals(str, content.readCharSequence(content.readableBytes(), StandardCharsets.UTF_8));

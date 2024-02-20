@@ -1,7 +1,7 @@
 package com.urbanspork.common.codec.socks;
 
 import com.urbanspork.common.protocol.socks.Address;
-import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
@@ -23,6 +23,6 @@ public class DatagramPacketDecoder extends MessageToMessageDecoder<DatagramPacke
         }
         content.skipBytes(3);
         InetSocketAddress address = Address.decode(content);
-        out.add(new TernaryDatagramPacket(msg.replace(content.copy()), address));
+        out.add(new DatagramPacketWrapper(msg.replace(content.copy()), address));
     }
 }

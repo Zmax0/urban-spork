@@ -16,20 +16,17 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderException;
-import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
-import io.netty.handler.codec.socksx.v5.Socks5AddressType;
-import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
-import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.net.InetSocketAddress;
 
 @DisplayName("VMess - Server AEAD Codec")
 class ServerAEADCodecTestCase {
 
     private static final String UUID = java.util.UUID.randomUUID().toString();
-    private static final Socks5CommandRequest ADDRESS = new DefaultSocks5CommandRequest(
-        Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "www.urban-spork.com", TestDice.rollPort());
+    private static final InetSocketAddress ADDRESS = InetSocketAddress.createUnresolved("www.urban-spork.com", TestDice.rollPort());
 
     @Test
     void testDecodeEmptyHeader() {

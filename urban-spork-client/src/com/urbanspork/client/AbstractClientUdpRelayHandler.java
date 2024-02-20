@@ -1,7 +1,7 @@
 package com.urbanspork.client;
 
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.common.util.LruCache;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
-public abstract class AbstractClientUdpRelayHandler<K> extends SimpleChannelInboundHandler<TernaryDatagramPacket> {
+public abstract class AbstractClientUdpRelayHandler<K> extends SimpleChannelInboundHandler<DatagramPacketWrapper> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractClientUdpRelayHandler.class);
     protected final ServerConfig config;
@@ -26,25 +26,25 @@ public abstract class AbstractClientUdpRelayHandler<K> extends SimpleChannelInbo
         });
     }
 
-    protected abstract Object convertToWrite(TernaryDatagramPacket msg);
+    protected abstract Object convertToWrite(DatagramPacketWrapper msg);
 
-    protected abstract K getKey(TernaryDatagramPacket msg);
+    protected abstract K getKey(DatagramPacketWrapper msg);
 
     protected abstract Channel newBindingChannel(Channel inboundChannel, K k);
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, TernaryDatagramPacket msg) {
+    public void channelRead0(ChannelHandlerContext ctx, DatagramPacketWrapper msg) {
         DatagramPacket packet = msg.packet();
         Channel inbound = ctx.channel();
         Channel outbound = getBindingChannel(inbound, getKey(msg));
-        logger.info("[udp][{}]{}→{}~{}→{}", config.getProtocol(), packet.sender(), inbound.localAddress(), outbound.localAddress(), msg.third());
+        logger.info("[udp][{}]{}→{}~{}→{}", config.getProtocol(), packet.sender(), inbound.localAddress(), outbound.localAddress(), msg.proxy());
         outbound.writeAndFlush(convertToWrite(msg));
     }
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) {
         logger.info("Stop timer and clear binding");
-        binding.clear();
+        binding.release();
     }
 
     private Channel getBindingChannel(Channel inboundChannel, K key) {

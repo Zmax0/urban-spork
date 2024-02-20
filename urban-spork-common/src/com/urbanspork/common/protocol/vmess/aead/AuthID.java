@@ -20,14 +20,14 @@ public class AuthID {
         buf.writeBytes(Go.nextUnsignedInt());
         long crc32 = VMess.crc32(ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.writerIndex(), false));
         buf.writeInt((int) crc32);
-        return AES.INSTANCE.encrypt(KDF.kdf16(key, KDF_SALT_AUTH_ID_ENCRYPTION_KEY), authID);
+        return AES.encrypt(KDF.kdf16(key, KDF_SALT_AUTH_ID_ENCRYPTION_KEY), authID);
     }
 
     public static byte[] match(byte[] authID, byte[][] keys) {
         for (byte[] key : keys) {
             byte[] bytes;
             try {
-                bytes = AES.INSTANCE.decrypt(KDF.kdf16(key, KDF_SALT_AUTH_ID_ENCRYPTION_KEY), authID);
+                bytes = AES.decrypt(KDF.kdf16(key, KDF_SALT_AUTH_ID_ENCRYPTION_KEY), authID);
             } catch (Exception ignore) {
                 continue;
             }

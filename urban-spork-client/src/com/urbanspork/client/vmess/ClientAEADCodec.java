@@ -22,14 +22,17 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import io.netty.handler.codec.DecoderException;
-import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static com.urbanspork.common.protocol.vmess.aead.Const.*;
+import static com.urbanspork.common.protocol.vmess.aead.Const.KDF_SALT_AEAD_RESP_HEADER_LEN_IV;
+import static com.urbanspork.common.protocol.vmess.aead.Const.KDF_SALT_AEAD_RESP_HEADER_LEN_KEY;
+import static com.urbanspork.common.protocol.vmess.aead.Const.KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV;
+import static com.urbanspork.common.protocol.vmess.aead.Const.KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY;
 import static com.urbanspork.common.protocol.vmess.aead.Encrypt.sealVMessAEADHeader;
 
 public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
@@ -40,11 +43,11 @@ public class ClientAEADCodec extends ByteToMessageCodec<ByteBuf> {
     private PayloadEncoder bodyEncoder;
     private PayloadDecoder bodyDecoder;
 
-    public ClientAEADCodec(CipherKind cipher, Socks5CommandRequest address, String uuid) {
+    public ClientAEADCodec(CipherKind cipher, InetSocketAddress address, String uuid) {
         this(cipher, RequestCommand.TCP, address, uuid);
     }
 
-    ClientAEADCodec(CipherKind cipher, RequestCommand command, Socks5CommandRequest address, String uuid) {
+    ClientAEADCodec(CipherKind cipher, RequestCommand command, InetSocketAddress address, String uuid) {
         this(RequestHeader.defaultHeader(SecurityType.valueOf(cipher), command, address, uuid), new ClientSession());
     }
 
