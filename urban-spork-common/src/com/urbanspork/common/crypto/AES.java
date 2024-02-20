@@ -4,36 +4,33 @@ import org.bouncycastle.crypto.MultiBlockCipher;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
 
-public enum AES {
+public class AES {
+    private AES() {}
 
-    INSTANCE(AESEngine.newInstance());
-
-    private final MultiBlockCipher cipher;
-
-    AES(MultiBlockCipher cipher) {
-        this.cipher = cipher;
-    }
-
-    public byte[] encrypt(byte[] key, byte[] in) {
+    public static byte[] encrypt(byte[] key, byte[] in) {
+        MultiBlockCipher cipher = AESEngine.newInstance();
         byte[] out = new byte[cipher.getBlockSize()];
         cipher.init(true, new KeyParameter(key));
         cipher.processBlock(in, 0, out, 0);
         return out;
     }
 
-    public void encrypt(byte[] key, byte[] in, byte[] out) {
+    public static void encrypt(byte[] key, byte[] in, byte[] out) {
+        MultiBlockCipher cipher = AESEngine.newInstance();
         cipher.init(true, new KeyParameter(key));
         cipher.processBlock(in, 0, out, 0);
     }
 
-    public byte[] decrypt(byte[] key, byte[] in) {
+    public static byte[] decrypt(byte[] key, byte[] in) {
+        MultiBlockCipher cipher = AESEngine.newInstance();
         byte[] out = new byte[cipher.getBlockSize()];
         cipher.init(false, new KeyParameter(key));
         cipher.processBlock(in, 0, out, 0);
         return out;
     }
 
-    public void decrypt(byte[] key, byte[] in, byte[] out) {
+    public static void decrypt(byte[] key, byte[] in, byte[] out) {
+        MultiBlockCipher cipher = AESEngine.newInstance();
         cipher.init(false, new KeyParameter(key));
         cipher.processBlock(in, 0, out, 0);
     }
