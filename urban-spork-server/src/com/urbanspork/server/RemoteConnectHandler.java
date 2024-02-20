@@ -11,7 +11,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
@@ -39,9 +38,9 @@ class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void udp(ChannelHandlerContext ctx, Object msg) {
-        if (msg instanceof Socks5CommandRequest request) {
+        if (msg instanceof InetSocketAddress address) {
             ctx.pipeline().addLast(
-                new ServerUDPOverTCPCodec(request),
+                new ServerUDPOverTCPCodec(address),
                 new ServerUDPRelayHandler(config.getPacketEncoding(), ctx.channel().eventLoop().parent().next())
             );
         } else {
@@ -52,35 +51,37 @@ class RemoteConnectHandler extends ChannelInboundHandlerAdapter {
     private void tcp(ChannelHandlerContext ctx, Object msg) {
         Channel localChannel = ctx.channel();
         if (msg instanceof InetSocketAddress address) {
-            connect(ctx, localChannel, new InetSocketAddress(address.getHostString(), address.getPort()));
-        } else if (msg instanceof Socks5CommandRequest request) {
-            connect(ctx, localChannel, new InetSocketAddress(request.dstAddr(), request.dstPort()));
+            p = ctx.executor().newPromise();
+            connect(localChannel, address, p);
         } else {
             p.addListener((FutureListener<Channel>) future -> {
-                    Channel outboundChannel = future.get();
-                    localChannel.pipeline().addLast(new DefaultChannelInboundHandler(outboundChannel));
+                if (future.isSuccess()) {
+                    Channel remoteChannel = future.get();
+                    localChannel.pipeline().addLast(new DefaultChannelInboundHandler(remoteChannel));
                     if (!ctx.isRemoved()) {
                         localChannel.pipeline().remove(RemoteConnectHandler.this);
                     }
-                    outboundChannel.writeAndFlush(msg);
+                    remoteChannel.writeAndFlush(msg);
+                } else {
+                    ctx.close();
                 }
-            );
+            });
         }
     }
 
-    private void connect(ChannelHandlerContext ctx, Channel localChannel, InetSocketAddress remoteAddress) {
-        p = ctx.executor().newPromise();
+    private void connect(Channel localChannel, InetSocketAddress remoteAddress, Promise<Channel> promise) {
         new Bootstrap().group(localChannel.eventLoop())
             .channel(NioSocketChannel.class)
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
             .handler(new DefaultChannelInboundHandler(localChannel))
             .connect(remoteAddress).addListener((ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
-                    logger.info("[tcp][{}][{}→{}]", config.getProtocol(), localChannel.localAddress(), remoteAddress);
-                    p.setSuccess(future.channel());
+                    Channel remoteChannel = future.channel();
+                    logger.info("[tcp][{}][{}→{}]", config.getProtocol(), localChannel.localAddress(), remoteChannel.remoteAddress());
+                    promise.setSuccess(remoteChannel);
                 } else {
                     logger.error("[tcp][{}][{}→{}]", config.getProtocol(), localChannel.localAddress(), remoteAddress);
-                    ctx.close();
+                    promise.setFailure(future.cause());
                 }
             });
     }

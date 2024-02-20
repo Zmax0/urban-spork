@@ -3,62 +3,58 @@ package com.urbanspork.common.protocol.vmess;
 import com.urbanspork.common.protocol.vmess.header.AddressType;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.EncoderException;
-import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
-import io.netty.handler.codec.socksx.v5.Socks5AddressType;
-import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
-import io.netty.handler.codec.socksx.v5.Socks5CommandType;
-import io.netty.util.NetUtil;
 
-import java.nio.charset.Charset;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 
 public interface Address {
 
-    static void writeAddressPort(ByteBuf buf, Socks5CommandRequest address) {
-        String dstAddr = address.dstAddr();
-        if (dstAddr.isEmpty()) {
+    static void writeAddressPort(ByteBuf buf, InetSocketAddress address) {
+        if (address == null) {
             throw new EncoderException("Empty destination address");
         }
-        buf.writeShort(address.dstPort());
-        Socks5AddressType addressType = address.dstAddrType();
-        if (Socks5AddressType.IPv4.equals(addressType)) {
+        buf.writeShort(address.getPort());
+        InetAddress ip = address.getAddress();
+        if (ip instanceof Inet4Address ipv4) {
             buf.writeByte(AddressType.IPV4.getValue());
-            buf.writeBytes(NetUtil.createByteArrayFromIpAddressString(dstAddr));
-        } else if (Socks5AddressType.IPv6.equals(addressType)) {
+            buf.writeBytes(ipv4.getAddress());
+        } else if (ip instanceof Inet6Address ipv6) {
             buf.writeByte(AddressType.IPV6.getValue());
-            buf.writeBytes(NetUtil.createByteArrayFromIpAddressString(dstAddr));
-        } else if (Socks5AddressType.DOMAIN.equals(addressType)) { // port[2] + type[1] + domain_len[1] + domain_bytes[n]
-            byte[] domain = dstAddr.getBytes();
+            buf.writeBytes(ipv6.getAddress());
+        } else { // port[2] + type[1] + domain_len[1] + domain_bytes[n]
+            byte[] domain = address.getHostString().getBytes();
             buf.writeByte(AddressType.DOMAIN.getValue());
             buf.writeByte(domain.length);
             buf.writeBytes(domain);
-        } else {
-            throw new EncoderException("Unsupported addressType: " + (addressType.byteValue() & 0xFF));
         }
     }
 
-    static Socks5CommandRequest readAddressPort(ByteBuf buf) {
+    static InetSocketAddress readAddressPort(ByteBuf buf) {
         int port = buf.readUnsignedShort();
-        String hostname;
-        Socks5AddressType type;
-        switch (AddressType.valueOf(buf.readByte())) {
-            case IPV4 -> {
-                type = Socks5AddressType.IPv4;
-                byte[] bytes = new byte[4];
-                buf.readBytes(bytes);
-                hostname = NetUtil.bytesToIpAddress(bytes);
+        AddressType addressType = AddressType.valueOf(buf.readByte());
+        if (AddressType.IPV4 == addressType) {
+            byte[] bytes = new byte[4];
+            buf.readBytes(bytes);
+            try {
+                return new InetSocketAddress(InetAddress.getByAddress(bytes), port);
+            } catch (UnknownHostException ignore) {
+                // should never be caught
             }
-            case IPV6 -> {
-                type = Socks5AddressType.IPv6;
-                byte[] bytes = new byte[16];
-                buf.readBytes(bytes);
-                hostname = NetUtil.bytesToIpAddress(bytes);
-            }
-            default -> {
-                type = Socks5AddressType.DOMAIN;
-                int length = buf.readByte();
-                hostname = buf.readCharSequence(length, Charset.defaultCharset()).toString();
+        } else if (AddressType.IPV6 == addressType) {
+            byte[] bytes = new byte[16];
+            buf.readBytes(bytes);
+            try {
+                return new InetSocketAddress(InetAddress.getByAddress(bytes), port);
+            } catch (UnknownHostException ignore) {
+                // should never be caught
             }
         }
-        return new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, type, hostname, port);
+        int length = buf.readByte();
+        String hostname = buf.readCharSequence(length, StandardCharsets.US_ASCII).toString();
+        return InetSocketAddress.createUnresolved(hostname, port);
     }
 }

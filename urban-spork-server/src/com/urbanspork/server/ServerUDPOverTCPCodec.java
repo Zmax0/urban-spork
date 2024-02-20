@@ -5,17 +5,16 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.MessageToMessageCodec;
-import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 
 import java.net.InetSocketAddress;
 import java.util.List;
 
 class ServerUDPOverTCPCodec extends MessageToMessageCodec<ByteBuf, DatagramPacketWrapper> {
 
-    private final Socks5CommandRequest request;
+    private final InetSocketAddress address;
 
-    ServerUDPOverTCPCodec(Socks5CommandRequest request) {
-        this.request = request;
+    ServerUDPOverTCPCodec(InetSocketAddress address) {
+        this.address = address;
     }
 
     @Override
@@ -26,6 +25,6 @@ class ServerUDPOverTCPCodec extends MessageToMessageCodec<ByteBuf, DatagramPacke
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
         InetSocketAddress sender = (InetSocketAddress) ctx.channel().remoteAddress();
-        out.add(new DatagramPacket(msg.retainedDuplicate(), new InetSocketAddress(request.dstAddr(), request.dstPort()), sender));
+        out.add(new DatagramPacket(msg.retainedDuplicate(), address, sender));
     }
 }
