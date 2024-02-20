@@ -63,7 +63,7 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
             return new ChannelInitializer<>() {
                 @Override
                 protected void initChannel(Channel channel) {
-                    channel.pipeline().addLast(new ClientAEADCodec(config.getCipher(), request, config.getPassword()));
+                    channel.pipeline().addLast(new ClientAEADCodec(config.getCipher(), InetSocketAddress.createUnresolved(request.dstAddr(), request.dstPort()), config.getPassword()));
                 }
             };
         } else {

@@ -24,9 +24,9 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import io.netty.handler.codec.DecoderException;
-import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.List;
 
@@ -103,7 +103,7 @@ public class ServerAEADCodec extends ByteToMessageCodec<ByteBuf> {
             SecurityType security = SecurityType.valueOf((byte) (b35 & 0x0F));
             decrypted.skipBytes(1); // fixed 0
             RequestCommand command = new RequestCommand(decrypted.readByte()); // command
-            Socks5CommandRequest address = null;
+            InetSocketAddress address = null;
             if (RequestCommand.TCP.equals(command) || RequestCommand.UDP.equals(command)) {
                 address = Address.readAddressPort(decrypted);
                 if (RequestCommand.UDP.equals(command)) {

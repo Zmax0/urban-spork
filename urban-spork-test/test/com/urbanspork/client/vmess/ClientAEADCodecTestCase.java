@@ -13,14 +13,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderException;
-import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
-import io.netty.handler.codec.socksx.v5.Socks5AddressType;
-import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
-import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -31,7 +28,7 @@ public class ClientAEADCodecTestCase {
     @Test
     void testDecodeDifferentSession() throws Exception {
         String uuid = java.util.UUID.randomUUID().toString();
-        Socks5CommandRequest address = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "www.urban-spork.com", TestDice.rollPort());
+        InetSocketAddress address = InetSocketAddress.createUnresolved("www.urban-spork.com", TestDice.rollPort());
         RequestHeader header = RequestHeader.defaultHeader(SecurityType.AES128_GCM, RequestCommand.TCP, address, uuid);
         ClientSession session1 = new ClientSession();
         ClientSession session2 = SessionTestCase.another(session1);
