@@ -3,9 +3,8 @@ package com.urbanspork.client.vmess;
 import com.urbanspork.client.AbstractClientUdpRelayHandler;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.socks.Socks5;
 import com.urbanspork.common.protocol.vmess.header.RequestCommand;
-import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -17,8 +16,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
-import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,13 +33,13 @@ public class ClientUdpOverTCPHandler extends AbstractClientUdpRelayHandler<Clien
     }
 
     @Override
-    protected Object convertToWrite(TernaryDatagramPacket msg) {
+    protected Object convertToWrite(DatagramPacketWrapper msg) {
         return msg.packet().content();
     }
 
     @Override
-    protected Key getKey(TernaryDatagramPacket msg) {
-        return new Key(msg.packet().sender(), msg.third() /* recipient */);
+    protected Key getKey(DatagramPacketWrapper msg) {
+        return new Key(msg.packet().sender(), msg.proxy() /* recipient */);
     }
 
     @Override
@@ -55,8 +52,7 @@ public class ClientUdpOverTCPHandler extends AbstractClientUdpRelayHandler<Clien
             .handler(new ChannelInitializer<>() {
                 @Override
                 protected void initChannel(Channel ch) {
-                    Socks5CommandRequest request = Socks5.toCommandRequest(Socks5CommandType.CONNECT, key.recipient);
-                    ch.pipeline().addLast(new ClientAEADCodec(config.getCipher(), RequestCommand.UDP, request, config.getPassword()));
+                    ch.pipeline().addLast(new ClientAEADCodec(config.getCipher(), RequestCommand.UDP, key.recipient, config.getPassword()));
                 }
             })
             .connect(serverAddress).addListener((ChannelFutureListener) future -> {
@@ -94,7 +90,7 @@ public class ClientUdpOverTCPHandler extends AbstractClientUdpRelayHandler<Clien
         public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
             Channel inboundChannel = ctx.channel();
             logger.info("[udp][vmess]{} ← {} ~ {} ← {}", sender, inboundChannel.localAddress(), inboundChannel.remoteAddress(), recipient);
-            channel.writeAndFlush(new TernaryDatagramPacket(new DatagramPacket(msg, recipient), sender));
+            channel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(msg, recipient), sender));
         }
     }
 }

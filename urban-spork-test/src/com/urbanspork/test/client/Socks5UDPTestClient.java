@@ -5,7 +5,7 @@ import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.protocol.socks.ClientHandshake;
-import com.urbanspork.common.transport.udp.TernaryDatagramPacket;
+import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.test.server.udp.DelayedEchoTestServer;
 import com.urbanspork.test.server.udp.SimpleEchoTestServer;
 import io.netty.bootstrap.Bootstrap;
@@ -63,11 +63,11 @@ public class Socks5UDPTestClient {
                     ch.pipeline().addLast(
                         new DatagramPacketEncoder(),
                         new DatagramPacketDecoder(),
-                        new SimpleChannelInboundHandler<TernaryDatagramPacket>(false) {
+                        new SimpleChannelInboundHandler<DatagramPacketWrapper>(false) {
                             @Override
-                            protected void channelRead0(ChannelHandlerContext ctx, TernaryDatagramPacket msg) {
+                            protected void channelRead0(ChannelHandlerContext ctx, DatagramPacketWrapper msg) {
                                 ByteBuf content = msg.packet().content();
-                                InetSocketAddress dst = msg.third();
+                                InetSocketAddress dst = msg.proxy();
                                 logger.info("Receive msg {} - {}", dst, content.readCharSequence(content.readableBytes(), StandardCharsets.UTF_8));
                                 if (!dstAddress1.equals(dst) && !dstAddress2.equals(dst)) {
                                     logger.error("Destination address is unexpected.");
@@ -97,7 +97,7 @@ public class Socks5UDPTestClient {
 
     private static void sendMsg(Channel channel, InetSocketAddress dstAddress, InetSocketAddress socksAddress, byte[] bytes) {
         DatagramPacket data = new DatagramPacket(Unpooled.copiedBuffer(bytes), dstAddress);
-        TernaryDatagramPacket msg = new TernaryDatagramPacket(data, socksAddress);
+        DatagramPacketWrapper msg = new DatagramPacketWrapper(data, socksAddress);
         logger.info("Send msg {}", msg);
         channel.writeAndFlush(msg);
     }
