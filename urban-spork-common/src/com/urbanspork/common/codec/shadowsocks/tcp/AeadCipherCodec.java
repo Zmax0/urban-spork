@@ -138,7 +138,9 @@ class AeadCipherCodec {
             throw new DecoderException(msg);
         }
         session.identity().setRequestSalt(salt);
-        ByteBuf sealedHeaderBuf = in.readBytes(eihLength + 1 + 8 + requestSaltLength + 2 + tagSize);
+        ByteBuf sealedHeaderBuf = Unpooled.buffer();
+        int sealedHeaderLength = eihLength + 1 + 8 + requestSaltLength + 2 + tagSize;
+        in.getBytes(in.readerIndex(), sealedHeaderBuf, sealedHeaderLength);
         PayloadDecoder newPayloadDecoder;
         if (requireEih) {
             byte[] eih = new byte[16];
@@ -150,7 +152,6 @@ class AeadCipherCodec {
         Authenticator auth = newPayloadDecoder.auth();
         byte[] sealedHeaderBytes = new byte[sealedHeaderBuf.readableBytes()];
         sealedHeaderBuf.readBytes(sealedHeaderBytes);
-        sealedHeaderBuf.release();
         ByteBuf headerBuf = Unpooled.wrappedBuffer(auth.open(sealedHeaderBytes));
         byte streamTypeByte = headerBuf.readByte();
         Mode expectedMode = switch (session.mode()) {
@@ -168,6 +169,7 @@ class AeadCipherCodec {
             headerBuf.readBytes(requestSalt);
             session.identity().setRequestSalt(requestSalt);
         }
+        in.skipBytes(sealedHeaderLength);
         int length = headerBuf.readUnsignedShort();
         if (in.readableBytes() < length + tagSize) {
             in.resetReaderIndex();
