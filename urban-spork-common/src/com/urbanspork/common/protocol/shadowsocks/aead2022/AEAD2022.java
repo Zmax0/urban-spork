@@ -143,7 +143,7 @@ public interface AEAD2022 {
 
         static PayloadDecoder newPayloadDecoder(CipherMethod cipherMethod, Identity identity, ServerUserManager userManager, byte[] key, byte[] salt, byte[] eih) {
             byte[] identitySubKey = deriveKey("shadowsocks 2022 identity subkey".getBytes(), concat(key, salt));
-            byte[] userHash = AES.INSTANCE.decrypt(identitySubKey, eih);
+            byte[] userHash = AES.decrypt(identitySubKey, eih);
             if (logger.isTraceEnabled()) {
                 logger.trace("server EIH {}, hash: {}", ByteString.valueOf(eih), ByteString.valueOf(userHash));
             }
@@ -180,7 +180,7 @@ public interface AEAD2022 {
         private static void withEih(byte[] subKey, byte[] iPSK, ByteBuf out) {
             byte[] iPSKHash = Digests.blake3.hash(iPSK);
             byte[] iPSKPlainText = Arrays.copyOf(iPSKHash, 16);
-            byte[] iPSKPEncryptText = AES.INSTANCE.encrypt(subKey, iPSKPlainText);
+            byte[] iPSKPEncryptText = AES.encrypt(subKey, iPSKPlainText);
             if (logger.isTraceEnabled()) {
                 logger.trace("client EIH:{}, hash:{}", ByteString.valueOf(iPSKPEncryptText), ByteString.valueOf(iPSKPlainText));
             }
@@ -239,7 +239,7 @@ public interface AEAD2022 {
             byte[] header = new byte[16];
             in.readBytes(header);
             byte[] nonce = Arrays.copyOfRange(header, 4, 16);
-            AES.INSTANCE.encrypt(iPSK, header, header);
+            AES.encrypt(iPSK, header, header);
             out.writeBytes(header);
             if (eihLength > 0) {
                 in.readBytes(out, eihLength);
@@ -252,7 +252,7 @@ public interface AEAD2022 {
         static ByteBuf decodePacket(CipherKind kind, CipherMethod method, Control control, ServerUserManager userManager, byte[] key, ByteBuf in) throws InvalidCipherTextException {
             byte[] header = new byte[16];
             in.readBytes(header);
-            AES.INSTANCE.decrypt(key, header, header);
+            AES.decrypt(key, header, header);
             ByteBuf headerBuffer = Unpooled.wrappedBuffer(header);
             long sessionId = headerBuffer.getLong(0);
             UdpCipher cipher;
@@ -263,7 +263,7 @@ public interface AEAD2022 {
                 if (logger.isTraceEnabled()) {
                     logger.trace("server EIH {}, session_id_packet_id: {},{}", ByteString.valueOf(eih), sessionId, headerBuffer.getLong(Long.BYTES));
                 }
-                AES.INSTANCE.decrypt(key, eih, eih);
+                AES.decrypt(key, eih, eih);
                 for (int i = 0; i < eih.length; i++) {
                     eih[i] ^= header[i];
                 }
@@ -312,7 +312,7 @@ public interface AEAD2022 {
             for (int i = 0; i < 16; i++) {
                 identityHeader[i] ^= sessionIdPacketId[i];
             }
-            AES.INSTANCE.encrypt(iPSK, identityHeader, identityHeader);
+            AES.encrypt(iPSK, identityHeader, identityHeader);
             if (logger.isTraceEnabled()) {
                 logger.trace("client EIH:{}, hash:{}", ByteString.valueOf(identityHeader), ByteString.valueOf(iPSKnHashPlainText));
             }
