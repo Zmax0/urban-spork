@@ -18,11 +18,12 @@ class AddressTestCase {
     @ParameterizedTest
     @ArgumentsSource(InetSocketAddressProvider.class)
     void testAddressing(InetSocketAddress in) {
-        ByteBuf buffer = Unpooled.directBuffer();
+        ByteBuf buffer = Unpooled.buffer();
         Address.writeAddressPort(buffer, in);
         InetSocketAddress out = Address.readAddressPort(buffer);
         Assertions.assertEquals(in.getHostString(), out.getHostString());
         Assertions.assertEquals(in.getPort(), out.getPort());
+        buffer.release();
     }
 
     @Test
