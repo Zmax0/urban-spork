@@ -31,6 +31,10 @@ public record Context(LruCache<Key, Object> saltCache) {
         }
     }
 
+    public void release() {
+        saltCache.release();
+    }
+
     record Key(byte[] nonce) {
         @Override
         public boolean equals(Object o) {

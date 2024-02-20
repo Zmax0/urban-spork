@@ -14,10 +14,11 @@ import io.netty.channel.ChannelPipeline;
 public class ServerInitializer extends ChannelInitializer<Channel> {
 
     private final ServerConfig config;
-    private final Context context = Context.checkReplay();
+    private final Context context;
 
-    public ServerInitializer(ServerConfig config) {
+    public ServerInitializer(ServerConfig config, Context context) {
         this.config = config;
+        this.context = context;
     }
 
     @Override

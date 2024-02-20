@@ -2,6 +2,7 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
+import com.urbanspork.common.codec.shadowsocks.tcp.Context;
 import com.urbanspork.common.codec.shadowsocks.udp.UdpRelayCodec;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
@@ -87,10 +88,18 @@ public class Server {
                 user.stream().map(ServerUser::from).forEach(ServerUserManager.DEFAULT::addUser);
             }
         }
-        ServerSocketChannel tcp = (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
-            .channel(NioServerSocketChannel.class)
-            .childHandler(new ServerInitializer(config))
-            .bind(config.getPort()).sync().addListener(future -> logger.info("Startup tcp server => {}", config)).channel();
+        Context context = Context.checkReplay();
+        ServerSocketChannel tcp;
+        try {
+            tcp = (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new ServerInitializer(config, context))
+                .bind(config.getPort()).sync().addListener(future -> logger.info("Startup tcp server => {}", config)).channel()
+                .closeFuture().addListener(future -> context.release()).channel();
+        } catch (Exception e) {
+            context.release();
+            throw e;
+        }
         config.setPort(tcp.localAddress().getPort());
         Optional<DatagramChannel> udp = startupUdp(bossGroup, workerGroup, config);
         return new Instance(tcp, udp);
