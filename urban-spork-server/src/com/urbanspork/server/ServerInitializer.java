@@ -29,6 +29,6 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
         } else {
             pipeline.addLast(new TcpRelayCodec(context, config, Mode.Server));
         }
-        pipeline.addLast(new RemoteConnectHandler(config), new ExceptionHandler(config, Mode.Server));
+        pipeline.addLast(new RemoteConnectHandler(config), new ExceptionHandler(config));
     }
 }

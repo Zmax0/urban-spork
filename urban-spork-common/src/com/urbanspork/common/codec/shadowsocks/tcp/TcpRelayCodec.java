@@ -1,17 +1,22 @@
 package com.urbanspork.common.codec.shadowsocks.tcp;
 
+import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.shadowsocks.Identity;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.ByteToMessageCodec;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class TcpRelayCodec extends ByteToMessageCodec<ByteBuf> {
+    private static final Logger logger = LoggerFactory.getLogger(TcpRelayCodec.class);
     private final Session session;
     private final AeadCipherCodec cipher;
 
@@ -34,5 +39,18 @@ public class TcpRelayCodec extends ByteToMessageCodec<ByteBuf> {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         cipher.decode(session, in, out);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        if (Mode.Server == session.mode() && ctx.channel() instanceof SocketChannel socketChannel) {
+            String transLog = ExceptionHandler.transLog(ctx.channel());
+            logger.error("[tcp][{}] {}", transLog, cause.getMessage());
+            ctx.deregister();
+            socketChannel.config().setSoLinger(0);
+            socketChannel.shutdownOutput().addListener(future -> socketChannel.unsafe().beginRead());
+        } else {
+            ctx.fireExceptionCaught(cause);
+        }
     }
 }
