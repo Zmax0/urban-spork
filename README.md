@@ -4,8 +4,6 @@
 
 A sock5 proxy
 
-**WARNING**: Be aware of the risk when using this software because neither **Detection Prevention** nor **Replay Protection** is implemented currently
-
 ## Quick start
 
 put *config.json* file into the unpacked folder before running

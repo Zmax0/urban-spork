@@ -94,6 +94,7 @@ public class Server {
             tcp = (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new ServerInitializer(config, context))
+                .childOption(ChannelOption.ALLOW_HALF_CLOSURE, true)
                 .bind(config.getPort()).sync().addListener(future -> logger.info("Startup tcp server => {}", config)).channel()
                 .closeFuture().addListener(future -> context.release()).channel();
         } catch (Exception e) {
@@ -115,7 +116,7 @@ public class Server {
                         ch.pipeline().addLast(
                             new UdpRelayCodec(config, Mode.Server),
                             new ServerUDPRelayHandler(config.getPacketEncoding(), workerGroup),
-                            new ExceptionHandler(config, Mode.Server)
+                            new ExceptionHandler(config)
                         );
                     }
                 })

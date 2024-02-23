@@ -126,9 +126,14 @@ class EmbeddedChannelTestCase {
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "localhost", 16800);
         client.pipeline().addLast(new TcpRelayCodec(context, config, request, Mode.Client));
         client.writeOutbound(Unpooled.wrappedBuffer(Dice.rollBytes(10)));
-        ByteBuf msg = client.readOutbound();
-        server1.writeInbound(msg.copy());
-        Assertions.assertThrows(DecoderException.class, () -> server2.writeInbound(msg));
+        ByteBuf msg1 = client.readOutbound();
+        ByteBuf msg2 = msg1.copy();
+        Assertions.assertTrue(msg1.isReadable());
+        Assertions.assertTrue(msg2.isReadable());
+        server1.writeInbound(msg1);
+        ByteBuf tooShortMsg = Unpooled.wrappedBuffer(Dice.rollBytes(33));
+        Assertions.assertThrows(DecoderException.class, () -> server2.writeInbound(tooShortMsg));
+        Assertions.assertThrows(DecoderException.class, () -> server2.writeInbound(msg2));
         client.close();
         server1.close();
         server2.close();
