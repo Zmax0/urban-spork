@@ -21,14 +21,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ServerUDPRelayHandler extends SimpleChannelInboundHandler<DatagramPacket> {
+public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramPacket> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ServerUDPRelayHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ServerUdpRelayHandler.class);
     private final Map<InetSocketAddress, Channel> workerChannels = new ConcurrentHashMap<>();
     private final EventLoopGroup workerGroup;
     private final PacketEncoding packetEncoding;
 
-    public ServerUDPRelayHandler(PacketEncoding packetEncoding, EventLoopGroup workerGroup) {
+    public ServerUdpRelayHandler(PacketEncoding packetEncoding, EventLoopGroup workerGroup) {
         super(false);
         this.packetEncoding = packetEncoding;
         this.workerGroup = workerGroup;
@@ -73,9 +73,7 @@ public class ServerUDPRelayHandler extends SimpleChannelInboundHandler<DatagramP
             .channel();
         workerChannel.closeFuture().addListener(future -> {
             Channel removed = workerChannels.remove(callback);
-            if (removed != null) {
-                logger.info("[udp][binding]{} != {}", callback, removed);
-            }
+            logger.info("[udp][binding]{} != {}", callback, removed);
         });
         logger.info("[udp][binding]{} == {}", callback, workerChannel);
         return workerChannel;

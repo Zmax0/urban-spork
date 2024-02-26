@@ -7,7 +7,7 @@ import com.urbanspork.common.protocol.vmess.header.RequestCommand;
 import com.urbanspork.common.protocol.vmess.header.RequestHeader;
 import com.urbanspork.common.protocol.vmess.header.SecurityType;
 import com.urbanspork.common.util.Dice;
-import com.urbanspork.server.vmess.ServerAEADCodec;
+import com.urbanspork.server.vmess.ServerAeadCodec;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -36,7 +36,7 @@ public class ClientAEADCodecTestCase {
         ClientAEADCodec clientCodec2 = new ClientAEADCodec(header, session2);
         ServerConfig config = new ServerConfig();
         config.setPassword(uuid);
-        ServerAEADCodec serverCodec = new ServerAEADCodec(config);
+        ServerAeadCodec serverCodec = new ServerAeadCodec(config);
         ByteBuf msg = Unpooled.wrappedBuffer(Dice.rollBytes(1024));
         clientCodec1.encode(null, msg, Unpooled.buffer());
         ByteBuf buf = Unpooled.buffer();

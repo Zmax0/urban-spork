@@ -11,6 +11,7 @@ import com.urbanspork.common.manage.shadowsocks.ServerUser;
 import com.urbanspork.common.protocol.shadowsocks.aead.AEAD;
 import com.urbanspork.common.protocol.shadowsocks.aead2022.AEAD2022;
 import com.urbanspork.common.protocol.socks.Address;
+import com.urbanspork.common.transport.tcp.RelayingPayload;
 import com.urbanspork.common.util.ByteString;
 import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
@@ -20,6 +21,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -179,10 +181,10 @@ class AeadCipherCodec {
         in.readBytes(encryptedPayloadBytes);
         ByteBuf first = Unpooled.wrappedBuffer(auth.open(encryptedPayloadBytes));
         if (Mode.Server == session.mode()) {
-            Address.decode(first, out);
+            InetSocketAddress address = Address.decode(first);
             int paddingLength = first.readUnsignedShort();
             first.skipBytes(paddingLength);
-            out.add(first);
+            out.add(new RelayingPayload<>(address, first));
         } else {
             out.add(first);
         }
@@ -193,14 +195,16 @@ class AeadCipherCodec {
         byte[] salt = session.identity().salt();
         in.readBytes(salt);
         PayloadDecoder newPayloadDecoder = AEAD.TCP.newPayloadDecoder(cipherMethod, keys.encKey(), salt);
-        List<Object> list = new ArrayList<>(1);
+        List<Object> list = new ArrayList<>();
         newPayloadDecoder.decodePayload(in, list);
         if (list.isEmpty()) {
             in.resetReaderIndex();
             return;
         }
         if (Mode.Server == session.mode()) {
-            Address.decode((ByteBuf) list.getFirst(), out);
+            ByteBuf first = (ByteBuf) list.getFirst();
+            InetSocketAddress address = Address.decode(first);
+            list.set(0, new RelayingPayload<>(address, first));
         }
         out.addAll(list);
         this.payloadDecoder = newPayloadDecoder;

@@ -42,7 +42,7 @@ class ServerAEADCodecTestCase {
         ByteBuf buf = readOutbound(clientCodec);
         ServerConfig config = new ServerConfig();
         config.setPassword(java.util.UUID.randomUUID().toString());
-        ServerAEADCodec serverCodec = new ServerAEADCodec(config);
+        ServerAeadCodec serverCodec = new ServerAeadCodec(config);
         EmbeddedChannel serverChannel = new EmbeddedChannel();
         serverChannel.pipeline().addLast(serverCodec);
         Assertions.assertThrows(DecoderException.class, () -> serverChannel.writeInbound(buf));
@@ -55,7 +55,7 @@ class ServerAEADCodecTestCase {
         ByteBuf buf = readOutbound(clientCodec);
         ServerConfig config = new ServerConfig();
         config.setPassword(UUID);
-        ServerAEADCodec serverCodec = new ServerAEADCodec(config);
+        ServerAeadCodec serverCodec = new ServerAeadCodec(config);
         EmbeddedChannel serverChannel = new EmbeddedChannel();
         serverChannel.pipeline().addLast(serverCodec);
         Assertions.assertThrows(DecoderException.class, () -> serverChannel.writeInbound(buf));
@@ -71,6 +71,6 @@ class ServerAEADCodecTestCase {
     private static EmbeddedChannel serverChannel() {
         ServerConfig config = new ServerConfig();
         config.setPassword(UUID);
-        return (EmbeddedChannel) new EmbeddedChannel().pipeline().addLast(new ServerAEADCodec(config)).channel();
+        return (EmbeddedChannel) new EmbeddedChannel().pipeline().addLast(new ServerAeadCodec(config)).channel();
     }
 }

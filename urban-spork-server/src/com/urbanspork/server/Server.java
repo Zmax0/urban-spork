@@ -115,7 +115,7 @@ public class Server {
                     protected void initChannel(Channel ch) {
                         ch.pipeline().addLast(
                             new UdpRelayCodec(config, Mode.Server),
-                            new ServerUDPRelayHandler(config.getPacketEncoding(), workerGroup),
+                            new ServerUdpRelayHandler(config.getPacketEncoding(), workerGroup),
                             new ExceptionHandler(config)
                         );
                     }

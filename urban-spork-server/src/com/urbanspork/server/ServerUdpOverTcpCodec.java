@@ -9,11 +9,11 @@ import io.netty.handler.codec.MessageToMessageCodec;
 import java.net.InetSocketAddress;
 import java.util.List;
 
-class ServerUDPOverTCPCodec extends MessageToMessageCodec<ByteBuf, DatagramPacketWrapper> {
+class ServerUdpOverTcpCodec extends MessageToMessageCodec<ByteBuf, DatagramPacketWrapper> {
 
     private final InetSocketAddress address;
 
-    ServerUDPOverTCPCodec(InetSocketAddress address) {
+    ServerUdpOverTcpCodec(InetSocketAddress address) {
         this.address = address;
     }
 
