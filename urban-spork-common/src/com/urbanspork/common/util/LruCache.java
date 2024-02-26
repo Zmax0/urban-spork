@@ -85,7 +85,7 @@ public class LruCache<K, V> {
     }
 
     static class Pair<V> {
-        V value;
+        final V value;
         Timeout timeout;
 
         public Pair(V value, Timeout timeout) {

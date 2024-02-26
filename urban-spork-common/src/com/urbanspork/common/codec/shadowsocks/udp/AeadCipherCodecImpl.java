@@ -4,12 +4,12 @@ import com.urbanspork.common.codec.aead.CipherMethod;
 import com.urbanspork.common.codec.shadowsocks.Keys;
 import com.urbanspork.common.protocol.shadowsocks.aead.AEAD;
 import com.urbanspork.common.protocol.socks.Address;
+import com.urbanspork.common.transport.udp.RelayingPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 
 /**
  * AEAD Cipher Codec
@@ -39,11 +39,11 @@ class AeadCipherCodecImpl implements AeadCipherCodec {
     }
 
     @Override
-    public void decode(Context context, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+    public RelayingPacket<ByteBuf> decode(Context context, ByteBuf in) throws InvalidCipherTextException {
         byte[] salt = context.control().salt();
         in.readBytes(salt);
         ByteBuf packet = AEAD.UDP.newPayloadDecoder(cipherMethod, keys.encKey(), salt).decodePacket(in);
-        Address.decode(packet, out);
-        out.add(packet.slice());
+        InetSocketAddress address = Address.decode(packet);
+        return new RelayingPacket<>(address, packet);
     }
 }

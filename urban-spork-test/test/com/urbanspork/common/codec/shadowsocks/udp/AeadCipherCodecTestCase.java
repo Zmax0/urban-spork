@@ -6,6 +6,7 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.shadowsocks.Control;
+import com.urbanspork.common.transport.udp.RelayingPacket;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import com.urbanspork.test.template.TraceLevelLoggerTestTemplate;
@@ -18,9 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.List;
 
 @DisplayName("Shadowsocks - AEAD Cipher UDP Codec")
 class AeadCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
@@ -37,35 +36,32 @@ class AeadCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
     @Test
     void testTooShortHeader() {
         AeadCipherCodec codec = newAEADCipherCodec();
-        List<Object> out = new ArrayList<>();
         ByteBuf in = Unpooled.wrappedBuffer(Dice.rollBytes(3));
         Context context = new Context(Mode.Client, new Control(TestDice.rollCipher()), null, ServerUserManager.EMPTY);
-        Assertions.assertThrows(DecoderException.class, () -> codec.decode(context, in, out));
+        Assertions.assertThrows(DecoderException.class, () -> codec.decode(context, in));
     }
 
     @Test
     void testEmptyMsg() throws InvalidCipherTextException {
         AeadCipherCodec codec = newAEADCipherCodec();
         InetSocketAddress address = InetSocketAddress.createUnresolved(TestDice.rollHost(), TestDice.rollPort());
-        List<Object> out = new ArrayList<>();
         ByteBuf in = Unpooled.buffer();
         CipherKind kind = TestDice.rollCipher();
         codec.encode(new Context(Mode.Client, new Control(kind), address, ServerUserManager.EMPTY), Unpooled.EMPTY_BUFFER, in);
         Assertions.assertTrue(in.isReadable());
-        codec.decode(new Context(Mode.Server, new Control(kind), address, ServerUserManager.EMPTY), in, out);
+        RelayingPacket<ByteBuf> pocket = codec.decode(new Context(Mode.Server, new Control(kind), address, ServerUserManager.EMPTY), in);
         Assertions.assertFalse(in.isReadable());
-        Assertions.assertFalse(out.isEmpty());
+        Assertions.assertNotNull(pocket);
     }
 
     @Test
     void testTooShortPacket() {
         AeadCipherCodec codec = newAEADCipherCodec();
         ByteBuf in = Unpooled.buffer();
-        List<Object> out = new ArrayList<>();
         Context c1 = new Context(Mode.Client, new Control(CipherKind.aead2022_blake3_aes_128_gcm), null, ServerUserManager.EMPTY);
-        Assertions.assertThrows(DecoderException.class, () -> codec.decode(c1, in, out));
+        Assertions.assertThrows(DecoderException.class, () -> codec.decode(c1, in));
         Context c2 = new Context(Mode.Server, new Control(CipherKind.aead2022_blake3_aes_128_gcm), null, ServerUserManager.EMPTY);
-        Assertions.assertThrows(DecoderException.class, () -> codec.decode(c2, in, out));
+        Assertions.assertThrows(DecoderException.class, () -> codec.decode(c2, in));
     }
 
     @Test
@@ -84,8 +80,7 @@ class AeadCipherCodecTestCase extends TraceLevelLoggerTestTemplate {
         in.writeBytes(msg);
         ByteBuf out = Unpooled.buffer();
         codec.encode(c, in, out);
-        ArrayList<Object> list = new ArrayList<>();
-        Assertions.assertThrows(DecoderException.class, () -> codec.decode(c, out, list));
+        Assertions.assertThrows(DecoderException.class, () -> codec.decode(c, out));
     }
 
     static AeadCipherCodec newAEADCipherCodec() {

@@ -18,16 +18,16 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import java.net.InetSocketAddress;
 
-@DisplayName("Shadowsocks - Server UDP Relay Handler")
+@DisplayName("Server - Server UDP Relay Handler")
 class ServerUDPRelayHandlerTestCase {
     @ParameterizedTest
     @EnumSource(PacketEncoding.class)
     void testWorkAndIdle(PacketEncoding packetEncoding) throws Exception {
         NioEventLoopGroup group = new NioEventLoopGroup();
-        ServerUDPRelayHandler handler = new ServerUDPRelayHandler(packetEncoding, group);
+        ServerUdpRelayHandler handler = new ServerUdpRelayHandler(packetEncoding, group);
         handler.workerChannel(new InetSocketAddress(TestDice.rollPort()), new EmbeddedChannel(handler));
         InetSocketAddress recipient = new InetSocketAddress(TestDice.rollPort());
-        Channel outboundChannel = handler.workerChannel(recipient, new EmbeddedChannel(new ServerUDPRelayHandler(packetEncoding, group)));
+        Channel outboundChannel = handler.workerChannel(recipient, new EmbeddedChannel(new ServerUdpRelayHandler(packetEncoding, group)));
         Assertions.assertNotNull(outboundChannel);
         ChannelPipeline workerPipeline = outboundChannel.pipeline();
         ChannelInboundHandlerAdapter last = (ChannelInboundHandlerAdapter) workerPipeline.last();

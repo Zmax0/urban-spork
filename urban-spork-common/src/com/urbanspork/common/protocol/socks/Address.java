@@ -12,7 +12,6 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.List;
 
 public interface Address {
 
@@ -43,10 +42,6 @@ public interface Address {
             throw new EncoderException(e);
         }
         out.writeShort(request.dstPort());
-    }
-
-    static void decode(ByteBuf in, List<Object> out) {
-        out.add(decode(in));
     }
 
     static InetSocketAddress decode(ByteBuf in) {
