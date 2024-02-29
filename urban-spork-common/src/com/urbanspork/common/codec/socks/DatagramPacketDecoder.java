@@ -23,6 +23,6 @@ public class DatagramPacketDecoder extends MessageToMessageDecoder<DatagramPacke
         }
         content.skipBytes(3);
         InetSocketAddress address = Address.decode(content);
-        out.add(new DatagramPacketWrapper(msg.replace(content.copy()), address));
+        out.add(new DatagramPacketWrapper(msg.replace(content).retain(), address));
     }
 }

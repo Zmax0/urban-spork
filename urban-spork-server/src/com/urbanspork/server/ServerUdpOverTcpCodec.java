@@ -19,12 +19,13 @@ class ServerUdpOverTcpCodec extends MessageToMessageCodec<ByteBuf, DatagramPacke
 
     @Override
     protected void encode(ChannelHandlerContext ctx, DatagramPacketWrapper msg, List<Object> out) {
+        msg.retain();
         out.add(msg.packet().content());
     }
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
         InetSocketAddress sender = (InetSocketAddress) ctx.channel().remoteAddress();
-        out.add(new DatagramPacket(msg.retainedDuplicate(), address, sender));
+        out.add(new DatagramPacket(msg.retain(), address, sender));
     }
 }
