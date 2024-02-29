@@ -19,6 +19,7 @@ public abstract class AbstractClientUdpRelayHandler<K> extends SimpleChannelInbo
     private final LruCache<K, Channel> binding;
 
     protected AbstractClientUdpRelayHandler(ServerConfig config, Duration keepAlive) {
+        super(false);
         this.config = config;
         this.binding = new LruCache<>(1024, keepAlive, (k, channel) -> {
             logger.info("[udp][binding][expire]{} != {}", k, channel.localAddress());
