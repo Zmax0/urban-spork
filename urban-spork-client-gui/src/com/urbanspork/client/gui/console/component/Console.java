@@ -7,12 +7,25 @@ import com.jfoenix.controls.JFXTabPane;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.validation.RequiredFieldValidator;
 import com.urbanspork.client.gui.Resource;
-import com.urbanspork.client.gui.console.widget.*;
+import com.urbanspork.client.gui.console.widget.ConsoleButton;
+import com.urbanspork.client.gui.console.widget.ConsoleColumnConstraints;
+import com.urbanspork.client.gui.console.widget.ConsoleLabel;
+import com.urbanspork.client.gui.console.widget.ConsoleLiteButton;
+import com.urbanspork.client.gui.console.widget.ConsoleLogTextArea;
+import com.urbanspork.client.gui.console.widget.ConsolePasswordTextField;
+import com.urbanspork.client.gui.console.widget.ConsoleRowConstraints;
+import com.urbanspork.client.gui.console.widget.ConsoleTextField;
+import com.urbanspork.client.gui.console.widget.CurrentConfigCipherChoiceBox;
+import com.urbanspork.client.gui.console.widget.CurrentConfigPasswordToggleButton;
+import com.urbanspork.client.gui.console.widget.CurrentConfigProtocolChoiceBox;
+import com.urbanspork.client.gui.console.widget.NumericTextField;
+import com.urbanspork.client.gui.console.widget.ServerConfigListView;
 import com.urbanspork.client.gui.i18n.I18n;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.config.shadowsocks.ShareableServerConfig;
 import com.urbanspork.common.protocol.Protocol;
 import javafx.application.Platform;
 import javafx.application.Preloader;
@@ -20,18 +33,24 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.image.Image;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
 import javafx.stage.Stage;
@@ -39,6 +58,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 
@@ -60,11 +80,15 @@ public class Console extends Preloader {
 
     private ObservableList<ServerConfig> serverConfigObservableList;
 
-    private Button addServerConfigButton;
+    private Button newServerConfigButton;
 
     private Button delServerConfigButton;
 
     private Button copyServerConfigButton;
+
+    private Button importServerConfigButton;
+
+    private Button shareServerConfigButton;
 
     private Button moveUpServerConfigButton;
 
@@ -122,6 +146,7 @@ public class Console extends Preloader {
             primaryStage.hide();
         });
         primaryStage.hide();
+        afterStart();
     }
 
     public void hide() {
@@ -151,7 +176,7 @@ public class Console extends Preloader {
         return serverConfigJFXListView;
     }
 
-    public void addServerConfig() {
+    public void newServerConfig() {
         if (validate()) {
             ServerConfig newValue = new ServerConfig();
             newValue.setCipher(CipherKind.aes_256_gcm);
@@ -255,11 +280,13 @@ public class Console extends Preloader {
     private void initElement() {
         serverConfigJFXListView = new ServerConfigListView();
         logTextarea = new ConsoleLogTextArea();
-        addServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_ADD, event -> addServerConfig());
+        newServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_NEW, event -> newServerConfig());
         delServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_DEL, event -> deleteServerConfig());
         copyServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_COPY, event -> copyServerConfig());
-        moveUpServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_UP, event -> moveUpServerConfig());
-        moveDownServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_DOWN, event -> moveDownServerConfig());
+        importServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_IMPORT);
+        shareServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_SHARE);
+        moveUpServerConfigButton = new ConsoleLiteButton(I18n.CONSOLE_BUTTON_UP, event -> moveUpServerConfig());
+        moveDownServerConfigButton = new ConsoleLiteButton(I18n.CONSOLE_BUTTON_DOWN, event -> moveDownServerConfig());
         confirmServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_CONFIRM, event -> confirmServerConfig());
         cancelServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_CANCEL, event -> cancelServerConfig());
         currentConfigHostTextField = new ConsoleTextField();
@@ -301,7 +328,7 @@ public class Console extends Preloader {
         RowConstraints rGap1 = new ConsoleRowConstraints(10);
         // container grid
         RowConstraints rContainer0 = new ConsoleRowConstraints(35);
-        RowConstraints rContainer1 = new RowConstraints();
+        RowConstraints rContainer1 = new ConsoleRowConstraints(30);
         RowConstraints rContainer2 = new RowConstraints();
         rContainer2.setVgrow(Priority.ALWAYS);
         ObservableList<RowConstraints> rConstraints0 = gridPane0.getRowConstraints();
@@ -311,7 +338,6 @@ public class Console extends Preloader {
             rConstraints0.add(rGap0);
         }
         rConstraints0.add(rContainer0);
-        rConstraints0.add(rGap1);
         for (int i = 0; i < 2; i++) {
             rConstraints0.add(rGap1);
             rConstraints0.add(rContainer1);
@@ -356,13 +382,15 @@ public class Console extends Preloader {
 
     private void addGridPane0Children(GridPane gridPane0) {
         // ---------- Grid Children ----------
-        gridPane0.add(addServerConfigButton, 1, 13);
-        gridPane0.add(copyServerConfigButton, 3, 13);
-        gridPane0.add(moveUpServerConfigButton, 1, 15);
-        gridPane0.add(moveDownServerConfigButton, 5, 15);
-        gridPane0.add(delServerConfigButton, 5, 13);
-        gridPane0.add(confirmServerConfigButton, 9, 15);
-        gridPane0.add(cancelServerConfigButton, 11, 15);
+        gridPane0.add(wrap(moveUpServerConfigButton), 1, 13);
+        gridPane0.add(wrap(moveDownServerConfigButton), 5, 13);
+        gridPane0.add(newServerConfigButton, 1, 15);
+        gridPane0.add(copyServerConfigButton, 3, 15);
+        gridPane0.add(delServerConfigButton, 5, 15);
+        gridPane0.add(importServerConfigButton, 1, 17);
+        gridPane0.add(shareServerConfigButton, 3, 17);
+        gridPane0.add(confirmServerConfigButton, 9, 17);
+        gridPane0.add(cancelServerConfigButton, 11, 17);
         gridPane0.add(serverConfigJFXListView, 1, 1, 5, 11);
         gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_HOST), 7, 1);
         gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_PORT), 7, 3);
@@ -380,6 +408,13 @@ public class Console extends Preloader {
         gridPane0.add(currentConfigProtocolChoiceBox, 9, 9, 3, 1);
         gridPane0.add(currentConfigRemarkTextField, 9, 11, 3, 1);
         gridPane0.add(clientConfigPortTextField, 9, 13, 3, 1);
+    }
+
+    private static HBox wrap(Node node) {
+        HBox hbox = new HBox();
+        hbox.setAlignment(Pos.BOTTOM_CENTER);
+        hbox.getChildren().add(node);
+        return hbox;
     }
 
     private void initModule() {
@@ -400,37 +435,34 @@ public class Console extends Preloader {
 
     private void initClientConfigPortTextField() {
         clientConfigPortTextField.getValidators().add(requiredFieldValidator);
-        clientConfigPortTextField.textProperty().addListener(
-            (o, oldValue, newValue) -> {
-                clientConfigPortTextField.validate();
-                int port = clientConfigPortTextField.getIntValue();
-                if (clientConfig.getPort() != port) {
-                    clientConfig.setPort(port);
-                    Proxy.launch();
-                    saveConfig();
-                }
-            });
+        clientConfigPortTextField.textProperty().addListener((o, oldValue, newValue) -> {
+            clientConfigPortTextField.validate();
+            int port = clientConfigPortTextField.getIntValue();
+            if (clientConfig.getPort() != port) {
+                clientConfig.setPort(port);
+                Proxy.launch();
+                saveConfig();
+            }
+        });
     }
 
     private void initCurrentConfigPasswordPasswordField() {
         currentConfigPasswordPasswordField.getValidators().add(requiredFieldValidator);
-        currentConfigPasswordPasswordField.focusedProperty().addListener(
-            (o, oldValue, newValue) -> {
-                if (Boolean.TRUE.equals(oldValue) && Boolean.FALSE.equals(newValue)) {
-                    currentConfigPasswordPasswordField.validate();
-                }
-            });
+        currentConfigPasswordPasswordField.focusedProperty().addListener((o, oldValue, newValue) -> {
+            if (Boolean.TRUE.equals(oldValue) && Boolean.FALSE.equals(newValue)) {
+                currentConfigPasswordPasswordField.validate();
+            }
+        });
         initCurrentConfigPasswordCommonEvent(currentConfigPasswordPasswordField);
     }
 
     private void initCurrentConfigPasswordTextField() {
         currentConfigPasswordTextField.getValidators().add(requiredFieldValidator);
-        currentConfigPasswordTextField.focusedProperty().addListener(
-            (o, oldValue, newValue) -> {
-                if (Boolean.TRUE.equals(oldValue) && Boolean.FALSE.equals(newValue)) {
-                    currentConfigPasswordTextField.validate();
-                }
-            });
+        currentConfigPasswordTextField.focusedProperty().addListener((o, oldValue, newValue) -> {
+            if (Boolean.TRUE.equals(oldValue) && Boolean.FALSE.equals(newValue)) {
+                currentConfigPasswordTextField.validate();
+            }
+        });
         initCurrentConfigPasswordCommonEvent(currentConfigPasswordTextField);
     }
 
@@ -450,8 +482,7 @@ public class Console extends Preloader {
 
     private void initCurrentConfigPortTextField() {
         currentConfigPortTextField.getValidators().add(requiredFieldValidator);
-        currentConfigPortTextField.textProperty().addListener(
-            (o, oldValue, newValue) -> currentConfigPortTextField.validate());
+        currentConfigPortTextField.textProperty().addListener((o, oldValue, newValue) -> currentConfigPortTextField.validate());
     }
 
     private void initCurrentConfigCipherChoiceBox() {
@@ -460,8 +491,7 @@ public class Console extends Preloader {
         currentConfigCipherChoiceBox.setValue(CipherKind.aes_128_gcm);
         // currentConfigHostTextField
         currentConfigHostTextField.getValidators().add(requiredFieldValidator);
-        currentConfigHostTextField.textProperty().addListener(
-            (o, oldValue, newValue) -> currentConfigHostTextField.validate());
+        currentConfigHostTextField.textProperty().addListener((o, oldValue, newValue) -> currentConfigHostTextField.validate());
     }
 
     private void initCurrentConfigProtocolChoiceBox() {
@@ -476,32 +506,56 @@ public class Console extends Preloader {
         serverConfigJFXListView.setItems(serverConfigObservableList);
         MultipleSelectionModel<ServerConfig> selectionModel = serverConfigJFXListView.getSelectionModel();
         selectionModel.select(clientConfig.getIndex());
-        selectionModel.selectedItemProperty().addListener(
-            new ChangeListener<>() {
+        selectionModel.selectedItemProperty().addListener(new ChangeListener<>() {
 
-                private boolean changing = false;
+            private boolean changing = false;
 
-                @Override
-                public void changed(ObservableValue<? extends ServerConfig> observable, ServerConfig oldValue, ServerConfig newValue) {
-                    if (serverConfigObservableList.contains(oldValue)) {
-                        if (validate()) {
-                            resetValidation();
-                            pack(oldValue);
-                            serverConfigJFXListView.refresh();
-                            display(newValue);
-                        } else if (!changing) {
-                            changing = true;
-                            Platform.runLater(() -> {
-                                selectionModel.select(oldValue);
-                                changing = false;
-                            });
-                        }
-                    } else {
+            @Override
+            public void changed(ObservableValue<? extends ServerConfig> observable, ServerConfig oldValue, ServerConfig newValue) {
+                if (serverConfigObservableList.contains(oldValue)) {
+                    if (validate()) {
                         resetValidation();
+                        pack(oldValue);
+                        serverConfigJFXListView.refresh();
                         display(newValue);
+                    } else if (!changing) {
+                        changing = true;
+                        Platform.runLater(() -> {
+                            selectionModel.select(oldValue);
+                            changing = false;
+                        });
                     }
+                } else {
+                    resetValidation();
+                    display(newValue);
                 }
-            });
+            }
+        });
+    }
+
+    private void afterStart() {
+        importServerConfigButton.setOnAction(actionEvent -> {
+            TextInputDialog dialog = new TextInputDialog();
+            dialog.setGraphic(null);
+            dialog.setTitle(I18n.CONSOLE_BUTTON_IMPORT);
+            dialog.setHeaderText(null);
+            dialog.showAndWait().map(URI::create).flatMap(ShareableServerConfig::fromUri).ifPresent(serverConfigObservableList::add);
+        });
+        shareServerConfigButton.setOnAction(actionEvent -> ShareableServerConfig.produceUri(serverConfigJFXListView.getSelectionModel().getSelectedItem()).ifPresent(uri -> {
+            String string = uri.toString();
+            TextInputDialog dialog = new TextInputDialog();
+            dialog.setGraphic(null);
+            dialog.setTitle(I18n.CONSOLE_BUTTON_SHARE);
+            dialog.setHeaderText(null);
+            DialogPane dialogPane = dialog.getDialogPane();
+            dialogPane.lookupButton(ButtonType.OK).setVisible(false);
+            dialogPane.lookupButton(ButtonType.CANCEL).setVisible(false);
+            dialogPane.setPrefWidth((string.length() * 8));
+            TextField editor = dialog.getEditor();
+            editor.setText(string);
+            editor.setEditable(false);
+            dialog.show();
+        }));
     }
 
     private boolean validate() {
