@@ -4,12 +4,10 @@ import com.jfoenix.controls.JFXButton;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 
-public class ConsoleButton extends JFXButton {
-    public ConsoleButton(String text) {
-        setText(text);
-    }
 
-    public ConsoleButton(String text, EventHandler<ActionEvent> handler) {
+public class ConsoleLiteButton extends JFXButton {
+    public ConsoleLiteButton(String text, EventHandler<ActionEvent> handler) {
+        getStyleClass().add("lite-button");
         setText(text);
         setOnAction(handler);
     }

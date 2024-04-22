@@ -2,6 +2,9 @@ package com.urbanspork.common.codec;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import java.util.Arrays;
+import java.util.Optional;
+
 public enum CipherKind {
 
     aes_128_gcm(16),
@@ -9,7 +12,6 @@ public enum CipherKind {
     chacha20_poly1305(32),
     aead2022_blake3_aes_128_gcm("2022-blake3-aes-128-gcm", 16),
     aead2022_blake3_aes_256_gcm("2022-blake3-aes-256-gcm", 32),
-//    aead2022_blake3_chacha20_poly1305("2022-blake3-chacha20-poly1305", true),
     ;
 
     private final String value;
@@ -35,6 +37,10 @@ public enum CipherKind {
     @Override
     public String toString() {
         return value;
+    }
+
+    public static Optional<CipherKind> from(String method) {
+        return Arrays.stream(CipherKind.values()).filter(kind -> kind.toString().equals(method)).findAny();
     }
 
     public int keySize() {

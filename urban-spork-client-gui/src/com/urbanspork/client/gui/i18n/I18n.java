@@ -19,7 +19,9 @@ public final class I18n {
     public static final String TRAY_MENU_SERVERS = BUNDLE.getString("tray.menu.servers");
     public static final String CONSOLE_TAB0_TEXT = BUNDLE.getString("console.tab0.text");
     public static final String CONSOLE_TAB1_TEXT = BUNDLE.getString("console.tab1.text");
-    public static final String CONSOLE_BUTTON_ADD = BUNDLE.getString("console.button.add");
+    public static final String CONSOLE_BUTTON_NEW = BUNDLE.getString("console.button.new");
+    public static final String CONSOLE_BUTTON_IMPORT = BUNDLE.getString("console.button.import");
+    public static final String CONSOLE_BUTTON_SHARE = BUNDLE.getString("console.button.share");
     public static final String CONSOLE_BUTTON_DEL = BUNDLE.getString("console.button.del");
     public static final String CONSOLE_BUTTON_COPY = BUNDLE.getString("console.button.copy");
     public static final String CONSOLE_BUTTON_UP = BUNDLE.getString("console.button.up");

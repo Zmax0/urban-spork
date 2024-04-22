@@ -11,7 +11,7 @@
 }
 
 .jfx-tab-pane {
-  -fx-pref-height: 500;
+  -fx-pref-height: 525;
   /* -fx-padding: 1px; */
   /* -fx-background-color: -fx-secondary-color, -fx-primary-color; */
   /* -fx-background-insets: 0, 1; */
@@ -45,7 +45,7 @@ GridPane {
   -fx-min-width: 65;
 }
 
-.jfx-button {
+.jfx-button, .lite-button {
   -fx-background-color: -fx-secondary-color;
   -fx-background-radius: 5px;
   -fx-border-radius: 5px;
@@ -57,6 +57,10 @@ GridPane {
   /* -fx-border-color: -fx-secondary-color; */
   -fx-text-alignment: center;
   -fx-text-fill: -fx-primary-text;
+}
+
+.lite-button {
+  -fx-background-color: -fx-primary-color;
 }
 
 .hide-show.toggle-button {
