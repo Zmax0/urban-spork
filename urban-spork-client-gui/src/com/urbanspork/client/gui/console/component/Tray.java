@@ -1,7 +1,7 @@
 package com.urbanspork.client.gui.console.component;
 
 import com.urbanspork.client.gui.Resource;
-import com.urbanspork.client.gui.i18n.I18n;
+import com.urbanspork.client.gui.i18n.I18N;
 import com.urbanspork.client.gui.tray.menu.item.ConsoleMenuItem;
 import com.urbanspork.client.gui.tray.menu.item.ExitMenuItem;
 import com.urbanspork.client.gui.tray.menu.item.LanguageMenuItem;
@@ -19,7 +19,7 @@ public class Tray {
 
     private static final ImageIcon icon = new ImageIcon(Resource.TRAY_ICON);
 
-    private static final TrayIcon trayIcon = IS_SUPPORTED ? new TrayIcon(icon.getImage(), I18n.PROGRAM_TITLE, menu) : null;
+    private static final TrayIcon trayIcon = IS_SUPPORTED ? new TrayIcon(icon.getImage(), I18N.getString(I18N.PROGRAM_TITLE), menu) : null;
 
     private static Console console;
 
@@ -38,7 +38,7 @@ public class Tray {
 
     public static void setToolTip(String tooltip) {
         if (IS_SUPPORTED) {
-            trayIcon.setToolTip(I18n.TRAY_TOOLTIP + System.lineSeparator() + tooltip);
+            trayIcon.setToolTip(I18N.getString(I18N.TRAY_TOOLTIP) + System.lineSeparator() + tooltip);
         }
     }
 

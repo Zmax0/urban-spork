@@ -24,15 +24,10 @@
   <build>
     <resources>
       <resource>
-        <directory>src</directory>
-        <includes>
-          <include>**/*.properties</include><!-- i18n -->
-        </includes>
-      </resource>
-      <resource>
         <directory>resource</directory>
         <includes>
           <include>**/*.xml</include>
+          <include>**/*.properties</include><!-- i18n -->
         </includes>
       </resource>
       <resource>

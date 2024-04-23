@@ -35,7 +35,7 @@ public class Resource {
         }
         String language = config.getLanguage();
         ResourceBundle bundle;
-        String baseName = "com.urbanspork.client.gui.i18n.language";
+        String baseName = "language";
         try {
             if (language == null) {
                 Locale locale = Locale.getDefault();

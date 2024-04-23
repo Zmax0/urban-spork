@@ -4,7 +4,7 @@ import com.urbanspork.client.gui.Resource;
 import com.urbanspork.client.gui.console.component.Console;
 import com.urbanspork.client.gui.console.component.Proxy;
 import com.urbanspork.client.gui.console.component.Tray;
-import com.urbanspork.client.gui.i18n.I18n;
+import com.urbanspork.client.gui.i18n.I18N;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
@@ -76,7 +76,7 @@ public class ServersMenuItem implements TrayMenuItemBuilder {
 
     @Override
     public String getLabel() {
-        return I18n.TRAY_MENU_SERVERS;
+        return I18N.getString(I18N.TRAY_MENU_SERVERS);
     }
 
     private String getLabel(ServerConfig config) {
