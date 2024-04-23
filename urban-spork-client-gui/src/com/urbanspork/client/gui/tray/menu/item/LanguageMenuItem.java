@@ -2,7 +2,7 @@ package com.urbanspork.client.gui.tray.menu.item;
 
 import com.urbanspork.client.gui.Resource;
 import com.urbanspork.client.gui.console.component.Tray;
-import com.urbanspork.client.gui.i18n.I18n;
+import com.urbanspork.client.gui.i18n.I18N;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 
@@ -21,8 +21,9 @@ public class LanguageMenuItem implements TrayMenuItemBuilder {
         ClientConfig config = Resource.config();
         String language = config.getLanguage();
         final Locale configLanguage = Locale.of(language);
-        List<CheckboxMenuItem> items = new ArrayList<>(I18n.languages().length);
-        for (Locale locale : I18n.languages()) {
+        Locale[] languages = I18N.languages();
+        List<CheckboxMenuItem> items = new ArrayList<>(languages.length);
+        for (Locale locale : languages) {
             CheckboxMenuItem item = new CheckboxMenuItem();
             item.setName(locale.getLanguage());
             item.setLabel(locale.getDisplayLanguage(configLanguage));
@@ -58,7 +59,7 @@ public class LanguageMenuItem implements TrayMenuItemBuilder {
 
     @Override
     public String getLabel() {
-        return I18n.TRAY_MENU_LANGUAGE;
+        return I18N.getString(I18N.TRAY_MENU_LANGUAGE);
     }
 
     @Override

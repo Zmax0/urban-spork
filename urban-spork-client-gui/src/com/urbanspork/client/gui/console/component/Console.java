@@ -20,7 +20,7 @@ import com.urbanspork.client.gui.console.widget.CurrentConfigPasswordToggleButto
 import com.urbanspork.client.gui.console.widget.CurrentConfigProtocolChoiceBox;
 import com.urbanspork.client.gui.console.widget.NumericTextField;
 import com.urbanspork.client.gui.console.widget.ServerConfigListView;
-import com.urbanspork.client.gui.i18n.I18n;
+import com.urbanspork.client.gui.i18n.I18N;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
@@ -68,7 +68,7 @@ public class Console extends Preloader {
 
     private final ClientConfig clientConfig = Resource.config();
 
-    private final RequiredFieldValidator requiredFieldValidator = new RequiredFieldValidator(I18n.CONSOLE_VALIDATOR_REQUIRED_FIELD_MESSAGE);
+    private final RequiredFieldValidator requiredFieldValidator = new RequiredFieldValidator(I18N.getString(I18N.CONSOLE_VALIDATOR_REQUIRED_FIELD_MESSAGE));
 
     private Stage primaryStage;
 
@@ -140,7 +140,7 @@ public class Console extends Preloader {
         primaryStage.setScene(scene);
         primaryStage.setResizable(false);
         primaryStage.getIcons().add(new Image(Resource.PROGRAM_ICON.toString()));
-        primaryStage.setTitle(I18n.PROGRAM_TITLE);
+        primaryStage.setTitle(I18N.getString(I18N.PROGRAM_TITLE));
         primaryStage.setOnCloseRequest(event -> {
             event.consume();
             primaryStage.hide();
@@ -280,15 +280,15 @@ public class Console extends Preloader {
     private void initElement() {
         serverConfigJFXListView = new ServerConfigListView();
         logTextarea = new ConsoleLogTextArea();
-        newServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_NEW, event -> newServerConfig());
-        delServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_DEL, event -> deleteServerConfig());
-        copyServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_COPY, event -> copyServerConfig());
-        importServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_IMPORT);
-        shareServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_SHARE);
-        moveUpServerConfigButton = new ConsoleLiteButton(I18n.CONSOLE_BUTTON_UP, event -> moveUpServerConfig());
-        moveDownServerConfigButton = new ConsoleLiteButton(I18n.CONSOLE_BUTTON_DOWN, event -> moveDownServerConfig());
-        confirmServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_CONFIRM, event -> confirmServerConfig());
-        cancelServerConfigButton = new ConsoleButton(I18n.CONSOLE_BUTTON_CANCEL, event -> cancelServerConfig());
+        newServerConfigButton = new ConsoleButton(I18N.getString(I18N.CONSOLE_BUTTON_NEW), event -> newServerConfig());
+        delServerConfigButton = new ConsoleButton(I18N.getString(I18N.CONSOLE_BUTTON_DEL), event -> deleteServerConfig());
+        copyServerConfigButton = new ConsoleButton(I18N.getString(I18N.CONSOLE_BUTTON_COPY), event -> copyServerConfig());
+        importServerConfigButton = new ConsoleButton(I18N.getString(I18N.CONSOLE_BUTTON_IMPORT));
+        shareServerConfigButton = new ConsoleButton(I18N.getString(I18N.CONSOLE_BUTTON_SHARE));
+        moveUpServerConfigButton = new ConsoleLiteButton(I18N.getString(I18N.CONSOLE_BUTTON_UP), event -> moveUpServerConfig());
+        moveDownServerConfigButton = new ConsoleLiteButton(I18N.getString(I18N.CONSOLE_BUTTON_DOWN), event -> moveDownServerConfig());
+        confirmServerConfigButton = new ConsoleButton(I18N.getString(I18N.CONSOLE_BUTTON_CONFIRM), event -> confirmServerConfig());
+        cancelServerConfigButton = new ConsoleButton(I18N.getString(I18N.CONSOLE_BUTTON_CANCEL), event -> cancelServerConfig());
         currentConfigHostTextField = new ConsoleTextField();
         currentConfigPortTextField = new NumericTextField();
         currentConfigPasswordPasswordField = new JFXPasswordField();
@@ -346,7 +346,7 @@ public class Console extends Preloader {
         // grid children
         addGridPane0Children(gridPane0);
         // tab0
-        Tab tab0 = new Tab(I18n.CONSOLE_TAB0_TEXT);
+        Tab tab0 = new Tab(I18N.getString(I18N.CONSOLE_TAB0_TEXT));
         tab0.setContent(gridPane0);
         tab0.setClosable(false);
         // ====================
@@ -368,7 +368,7 @@ public class Console extends Preloader {
         // grid children
         gridPane1.add(logTextarea, 1, 1);
         // tab1
-        Tab tab1 = new Tab(I18n.CONSOLE_TAB1_TEXT);
+        Tab tab1 = new Tab(I18N.getString(I18N.CONSOLE_TAB1_TEXT));
         tab1.setContent(gridPane1);
         tab1.setClosable(false);
         // ====================
@@ -392,13 +392,13 @@ public class Console extends Preloader {
         gridPane0.add(confirmServerConfigButton, 9, 17);
         gridPane0.add(cancelServerConfigButton, 11, 17);
         gridPane0.add(serverConfigJFXListView, 1, 1, 5, 11);
-        gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_HOST), 7, 1);
-        gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_PORT), 7, 3);
-        gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_PASSWORD), 7, 5);
-        gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_CIPHER), 7, 7);
-        gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_PROTOCOL), 7, 9);
-        gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_REMARK), 7, 11);
-        gridPane0.add(new ConsoleLabel(I18n.CONSOLE_LABEL_PROXY_PORT), 7, 13);
+        gridPane0.add(new ConsoleLabel(I18N.getString(I18N.CONSOLE_LABEL_HOST)), 7, 1);
+        gridPane0.add(new ConsoleLabel(I18N.getString(I18N.CONSOLE_LABEL_PORT)), 7, 3);
+        gridPane0.add(new ConsoleLabel(I18N.getString(I18N.CONSOLE_LABEL_PASSWORD)), 7, 5);
+        gridPane0.add(new ConsoleLabel(I18N.getString(I18N.CONSOLE_LABEL_CIPHER)), 7, 7);
+        gridPane0.add(new ConsoleLabel(I18N.getString(I18N.CONSOLE_LABEL_PROTOCOL)), 7, 9);
+        gridPane0.add(new ConsoleLabel(I18N.getString(I18N.CONSOLE_LABEL_REMARK)), 7, 11);
+        gridPane0.add(new ConsoleLabel(I18N.getString(I18N.CONSOLE_LABEL_PROXY_PORT)), 7, 13);
         gridPane0.add(currentConfigHostTextField, 9, 1, 3, 1);
         gridPane0.add(currentConfigPortTextField, 9, 3, 3, 1);
         gridPane0.add(currentConfigPasswordTextField, 9, 5, 3, 1);
@@ -537,7 +537,7 @@ public class Console extends Preloader {
         importServerConfigButton.setOnAction(actionEvent -> {
             TextInputDialog dialog = new TextInputDialog();
             dialog.setGraphic(null);
-            dialog.setTitle(I18n.CONSOLE_BUTTON_IMPORT);
+            dialog.setTitle(I18N.getString(I18N.CONSOLE_BUTTON_IMPORT));
             dialog.setHeaderText(null);
             dialog.showAndWait().map(URI::create).flatMap(ShareableServerConfig::fromUri).ifPresent(serverConfigObservableList::add);
         });
@@ -545,7 +545,7 @@ public class Console extends Preloader {
             String string = uri.toString();
             TextInputDialog dialog = new TextInputDialog();
             dialog.setGraphic(null);
-            dialog.setTitle(I18n.CONSOLE_BUTTON_SHARE);
+            dialog.setTitle(I18N.getString(I18N.CONSOLE_BUTTON_SHARE));
             dialog.setHeaderText(null);
             DialogPane dialogPane = dialog.getDialogPane();
             dialogPane.lookupButton(ButtonType.OK).setVisible(false);
