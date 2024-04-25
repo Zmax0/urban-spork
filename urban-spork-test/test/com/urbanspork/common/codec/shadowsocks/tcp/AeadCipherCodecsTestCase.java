@@ -9,6 +9,7 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.shadowsocks.Identity;
+import com.urbanspork.common.transport.tcp.RelayingPayload;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
@@ -76,6 +77,13 @@ class AeadCipherCodecsTestCase {
                 outBuf.release();
                 len += readableBytes;
             }
+            if (obj instanceof RelayingPayload<?> payload) {
+                ByteBuf outBuf = (ByteBuf) payload.content();
+                int readableBytes = outBuf.readableBytes();
+                outBuf.readBytes(out, len, readableBytes);
+                outBuf.release();
+                len += readableBytes;
+            }
         }
         Assertions.assertEquals(in.length, len);
         Assertions.assertArrayEquals(in, out);
@@ -126,5 +134,4 @@ class AeadCipherCodecsTestCase {
     Session newContext(Mode mode, CipherKind kind, Socks5CommandRequest request) {
         return new Session(mode, new Identity(kind), request, ServerUserManager.EMPTY, new Context());
     }
-
 }

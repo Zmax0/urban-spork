@@ -9,6 +9,7 @@ import com.urbanspork.common.protocol.shadowsocks.Control;
 import com.urbanspork.common.protocol.shadowsocks.aead2022.AEAD2022;
 import com.urbanspork.common.protocol.shadowsocks.aead2022.UdpCipher;
 import com.urbanspork.common.protocol.socks.Address;
+import com.urbanspork.common.transport.udp.RelayingPacket;
 import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -18,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 
 class Aead2022CipherCodecImpl implements AeadCipherCodec {
     private static final Logger logger = LoggerFactory.getLogger(Aead2022CipherCodecImpl.class);
@@ -101,16 +101,16 @@ class Aead2022CipherCodecImpl implements AeadCipherCodec {
     }
 
     @Override
-    public void decode(Context context, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+    public RelayingPacket<ByteBuf> decode(Context context, ByteBuf in) throws InvalidCipherTextException {
         if (Mode.Client == context.mode()) {
-            decodeServerPocketAead2022(context, in, out);
+            return decodeServerPocketAead2022(context, in);
         } else {
-            decodeClientPocketAead2022(context, in, out);
+            return decodeClientPocketAead2022(context, in);
         }
     }
 
     // Client -> Server
-    private void decodeClientPocketAead2022(Context context, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+    private RelayingPacket<ByteBuf> decodeClientPocketAead2022(Context context, ByteBuf in) throws InvalidCipherTextException {
         int nonceLength = AEAD2022.UDP.getNonceLength(cipherKind);
         int tagSize = cipherMethod.tagSize();
         boolean requireEih = cipherKind.supportEih() && context.userManager().userCount() > 0;
@@ -140,12 +140,12 @@ class Aead2022CipherCodecImpl implements AeadCipherCodec {
         control.setClientSessionId(clientSessionId);
         control.setServerSessionId(0);
         control.setPacketId(packetId);
-        Address.decode(packet, out);
-        out.add(packet.slice());
+        InetSocketAddress address = Address.decode(packet);
+        return new RelayingPacket<>(address, packet);
     }
 
     // Server -> Client
-    private void decodeServerPocketAead2022(Context context, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+    private RelayingPacket<ByteBuf> decodeServerPocketAead2022(Context context, ByteBuf in) throws InvalidCipherTextException {
         int nonceLength = AEAD2022.UDP.getNonceLength(cipherKind);
         int tagSize = cipherMethod.tagSize();
         int headerLength = nonceLength + tagSize + 8 + 8 + 1 + 8 + 2;
@@ -171,7 +171,7 @@ class Aead2022CipherCodecImpl implements AeadCipherCodec {
         control.setClientSessionId(clientSessionId);
         control.setServerSessionId(serverSessionId);
         control.setPacketId(packetId);
-        Address.decode(packet, out);
-        out.add(packet.slice());
+        InetSocketAddress address = Address.decode(packet);
+        return new RelayingPacket<>(address, packet);
     }
 }
