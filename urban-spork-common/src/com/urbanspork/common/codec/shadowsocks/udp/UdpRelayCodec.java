@@ -5,6 +5,7 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.shadowsocks.Control;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
+import com.urbanspork.common.transport.udp.RelayingPacket;
 import com.urbanspork.common.util.LruCache;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -17,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 
 public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, DatagramPacketWrapper> {
@@ -55,16 +55,15 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Datagra
 
     @Override
     protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List<Object> out) throws Exception {
-        List<Object> list = new ArrayList<>(2);
         Control control = getControl(msg.sender());
         Context context = new Context(mode, control, null, userManager);
-        cipher.decode(context, msg.content(), list);
+        RelayingPacket<ByteBuf> packet = cipher.decode(context, msg.content());
         logger.trace("[udp][{}][decode]{}|{}", mode, msg.sender(), control);
         if (cipher instanceof Aead2022CipherCodecImpl && !control.validatePacketId()) {
             logger.error("[udp][{}→]{} packet_id {} out of window", mode, msg.sender(), control.getPacketId());
             return;
         }
-        out.add(new DatagramPacket((ByteBuf) list.get(1), (InetSocketAddress) list.get(0), msg.sender()));
+        out.add(new DatagramPacket(packet.content(), packet.address(), msg.sender()));
     }
 
     @Override

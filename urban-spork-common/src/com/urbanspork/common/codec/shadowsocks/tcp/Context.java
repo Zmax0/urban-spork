@@ -38,10 +38,11 @@ public record Context(LruCache<Key, Object> saltCache) {
     record Key(byte[] nonce) {
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Key nonce1 = (Key) o;
-            return Arrays.equals(nonce, nonce1.nonce);
+            if (o instanceof Key other) {
+                return Arrays.equals(nonce, other.nonce);
+            } else {
+                return false;
+            }
         }
 
         @Override

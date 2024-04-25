@@ -9,6 +9,7 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.shadowsocks.Control;
+import com.urbanspork.common.transport.udp.RelayingPacket;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
@@ -63,22 +64,21 @@ class AeadCipherCodecsTestCase {
     }
 
     private void cipherTest(Context request, Context response) throws Exception {
-        List<Object> list = cipherTest(request, response, Unpooled.copiedBuffer(in));
+        List<RelayingPacket<ByteBuf>> list = cipherTest(request, response, Unpooled.copiedBuffer(in));
         byte[] out = new byte[in.length];
         int len = 0;
-        for (Object obj : list) {
-            if (obj instanceof ByteBuf outBuf) {
-                int readableBytes = outBuf.readableBytes();
-                outBuf.readBytes(out, len, readableBytes);
-                outBuf.release();
-                len += readableBytes;
-            }
+        for (RelayingPacket<ByteBuf> packet : list) {
+            ByteBuf msg = packet.content();
+            int readableBytes = msg.readableBytes();
+            msg.readBytes(out, len, readableBytes);
+            msg.release();
+            len += readableBytes;
         }
         Assertions.assertEquals(in.length, len);
         Assertions.assertArrayEquals(in, out);
     }
 
-    private List<Object> cipherTest(Context request, Context response, ByteBuf in)
+    private List<RelayingPacket<ByteBuf>> cipherTest(Context request, Context response, ByteBuf in)
         throws Exception {
         ServerConfig config = new ServerConfig();
         config.setCipher(kind);
@@ -91,9 +91,9 @@ class AeadCipherCodecsTestCase {
             client.encode(request, slice, buf);
             encodeSlices.add(buf);
         }
-        List<Object> out = new ArrayList<>();
+        List<RelayingPacket<ByteBuf>> out = new ArrayList<>();
         for (ByteBuf buf : encodeSlices) {
-            server.decode(response, buf, out);
+            out.add(server.decode(response, buf));
         }
         return out;
     }

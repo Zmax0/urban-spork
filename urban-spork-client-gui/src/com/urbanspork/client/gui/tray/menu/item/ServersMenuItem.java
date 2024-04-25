@@ -4,18 +4,17 @@ import com.urbanspork.client.gui.Resource;
 import com.urbanspork.client.gui.console.component.Console;
 import com.urbanspork.client.gui.console.component.Proxy;
 import com.urbanspork.client.gui.console.component.Tray;
-import com.urbanspork.client.gui.i18n.I18n;
+import com.urbanspork.client.gui.i18n.I18N;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 
-import java.awt.*;
+import javax.swing.*;
 import java.awt.TrayIcon.MessageType;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
+import java.awt.event.ItemListener;
 import java.util.List;
 
-public class ServersMenuItem implements TrayMenuItemBuilder {
+public class ServersMenuItem {
 
     private final Console console;
 
@@ -23,60 +22,45 @@ public class ServersMenuItem implements TrayMenuItemBuilder {
         this.console = console;
     }
 
-    @Override
-    public MenuItem getMenuItem() {
-        Menu menu = new Menu(getLabel());
+    public JMenuItem build() {
+        JMenu menu = new JMenu(getLabel());
         ClientConfig config = Resource.config();
         List<ServerConfig> servers = config.getServers();
+        ButtonGroup group = new ButtonGroup();
         if (servers != null && !servers.isEmpty()) {
-            final List<CheckboxMenuItem> items = new ArrayList<>();
-            for (int j = 0; j < servers.size(); j++) {
-                ServerConfig server = servers.get(j);
-                CheckboxMenuItem item = new CheckboxMenuItem();
-                item.setLabel(getLabel(server));
-                if (config.getIndex() == j) {
-                    item.setState(true);
+            for (int i = 0; i < servers.size(); i++) {
+                ServerConfig server = servers.get(i);
+                JRadioButtonMenuItem item = new JRadioButtonMenuItem();
+                item.setText(getLabel(server));
+                if (config.getIndex() == i) {
+                    item.setSelected(true);
                 }
-                item.addItemListener(listener -> itemStateChanged(config, items, item));
-                items.add(item);
+                item.addItemListener(createItemListener(item, config, i));
+                group.add(item);
                 menu.add(item);
             }
         }
         return menu;
     }
 
-    private void itemStateChanged(ClientConfig config, List<CheckboxMenuItem> items, CheckboxMenuItem item) {
-        if (item.getState()) {
-            for (int k = 0; k < items.size(); k++) {
-                CheckboxMenuItem i = items.get(k);
-                if (i.equals(item)) {
-                    config.setIndex(k);
-                    console.getServerConfigJFXListView().getSelectionModel().select(k);
+    private ItemListener createItemListener(JRadioButtonMenuItem item, ClientConfig config, int index) {
+        return event -> {
+            if (item.isSelected()) {
+                config.setIndex(index);
+                console.getServerConfigJFXListView().getSelectionModel().select(index);
+                try {
+                    ConfigHandler.DEFAULT.save(config);
+                } catch (Exception e) {
+                    Tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
+                    return;
                 }
-                if (!i.equals(item) && i.getState()) {
-                    i.setState(false);
-                }
+                Proxy.launch();
             }
-            try {
-                ConfigHandler.DEFAULT.save(config);
-            } catch (Exception e) {
-                Tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
-                return;
-            }
-            Proxy.launch();
-        } else {
-            item.setState(true);
-        }
+        };
     }
 
-    @Override
-    public ActionListener getActionListener() {
-        return null;
-    }
-
-    @Override
-    public String getLabel() {
-        return I18n.TRAY_MENU_SERVERS;
+    private String getLabel() {
+        return I18N.getString(I18N.TRAY_MENU_SERVERS);
     }
 
     private String getLabel(ServerConfig config) {
@@ -87,5 +71,4 @@ public class ServersMenuItem implements TrayMenuItemBuilder {
         }
         return builder.toString();
     }
-
 }

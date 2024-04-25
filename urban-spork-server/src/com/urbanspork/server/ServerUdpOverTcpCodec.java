@@ -9,22 +9,23 @@ import io.netty.handler.codec.MessageToMessageCodec;
 import java.net.InetSocketAddress;
 import java.util.List;
 
-class ServerUDPOverTCPCodec extends MessageToMessageCodec<ByteBuf, DatagramPacketWrapper> {
+class ServerUdpOverTcpCodec extends MessageToMessageCodec<ByteBuf, DatagramPacketWrapper> {
 
     private final InetSocketAddress address;
 
-    ServerUDPOverTCPCodec(InetSocketAddress address) {
+    ServerUdpOverTcpCodec(InetSocketAddress address) {
         this.address = address;
     }
 
     @Override
     protected void encode(ChannelHandlerContext ctx, DatagramPacketWrapper msg, List<Object> out) {
+        msg.retain();
         out.add(msg.packet().content());
     }
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
         InetSocketAddress sender = (InetSocketAddress) ctx.channel().remoteAddress();
-        out.add(new DatagramPacket(msg.retainedDuplicate(), address, sender));
+        out.add(new DatagramPacket(msg.retain(), address, sender));
     }
 }

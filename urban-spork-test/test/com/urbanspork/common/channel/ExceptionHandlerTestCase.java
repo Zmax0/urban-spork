@@ -1,6 +1,5 @@
 package com.urbanspork.common.channel;
 
-import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTestCase;
 import com.urbanspork.test.TestDice;
@@ -22,7 +21,7 @@ class ExceptionHandlerTestCase {
             public void channelRead(ChannelHandlerContext ctx, Object msg) {
                 throw new UnsupportedOperationException(msg.toString());
             }
-        }, new ExceptionHandler(config, Mode.Client));
+        }, new ExceptionHandler(config));
         Assertions.assertTrue(channel.isActive());
         channel.writeInbound("Testcase");
         Assertions.assertFalse(channel.isActive());
