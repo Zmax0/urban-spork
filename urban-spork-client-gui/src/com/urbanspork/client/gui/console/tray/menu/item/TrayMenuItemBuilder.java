@@ -1,4 +1,4 @@
-package com.urbanspork.client.gui.tray.menu.item;
+package com.urbanspork.client.gui.console.tray.menu.item;
 
 import javax.swing.*;
 import java.awt.event.ActionListener;

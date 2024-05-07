@@ -1,7 +1,8 @@
-package com.urbanspork.client.gui.console.component;
+package com.urbanspork.client.gui.console;
 
 import com.urbanspork.client.Client;
 import com.urbanspork.client.gui.Resource;
+import com.urbanspork.client.gui.tray.Tray;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ServerConfig;
 
@@ -14,17 +15,18 @@ import java.util.concurrent.Executors;
 public class Proxy {
 
     private static final ClientConfig config = Resource.config();
-
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final Tray tray;
+    private Client.Instance client;
 
-    private static Client.Instance client;
+    public Proxy(Tray tray) {
+        this.tray = tray;
+    }
 
-    private Proxy() {}
-
-    public static void launch() {
+    public void launch() {
         ServerConfig current = config.getCurrent();
         if (current == null) {
-            Tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
+            tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
             return;
         }
         if (client != null) {
@@ -35,18 +37,18 @@ public class Proxy {
         try {
             client = promise.get();
             String message = current.toString();
-            Tray.displayMessage("Proxy is running", message, MessageType.INFO);
-            Tray.setToolTip(message);
+            tray.displayMessage("Proxy is running", message, MessageType.INFO);
+            tray.setToolTip(message);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (ExecutionException e) {
             String message = e.getMessage();
-            Tray.displayMessage("Error", message, MessageType.ERROR);
-            Tray.setToolTip(message);
+            tray.displayMessage("Error", message, MessageType.ERROR);
+            tray.setToolTip(message);
         }
     }
 
-    public static void exit() {
+    public void exit() {
         client.close();
         executor.shutdown();
     }

@@ -36,6 +36,6 @@ public interface I18N {
     }
 
     static String getString(String key) {
-        return Resource.bundle().getString(key);
+        return Resource.language().getString(key);
     }
 }
