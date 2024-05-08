@@ -19,7 +19,9 @@ class ExceptionHandlerTestCase {
         channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
             @Override
             public void channelRead(ChannelHandlerContext ctx, Object msg) {
-                throw new UnsupportedOperationException(msg.toString());
+                ExceptionHandler handler = ctx.pipeline().get(ExceptionHandler.class);
+                ctx.close();
+                handler.exceptionCaught(ctx, new UnsupportedOperationException(msg.toString()));
             }
         }, new ExceptionHandler(config));
         Assertions.assertTrue(channel.isActive());
