@@ -5,21 +5,21 @@ import java.awt.TrayIcon;
 public final class Unsupported implements Tray {
     @Override
     public void displayMessage(String caption, String text, TrayIcon.MessageType messageType) {
-        throw new UnsupportedOperationException();
+        // do nothing
     }
 
     @Override
     public void setToolTip(String tooltip) {
-        throw new UnsupportedOperationException();
+        // do nothing
     }
 
     @Override
     public void refresh() {
-        throw new UnsupportedOperationException();
+        // do nothing
     }
 
     @Override
     public void exit() {
-        throw new UnsupportedOperationException();
+        // do nothing
     }
 }
