@@ -88,7 +88,7 @@ public class Server {
                 user.stream().map(ServerUser::from).forEach(ServerUserManager.DEFAULT::addUser);
             }
         }
-        Context context = Context.checkReplay();
+        Context context = Context.newCheckReplayInstance();
         ServerSocketChannel tcp;
         try {
             tcp = (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)

@@ -1,10 +1,9 @@
-package com.urbanspork.client.gui.tray.menu.item;
+package com.urbanspork.client.gui.console.tray.menu.item;
 
 import com.urbanspork.client.gui.Resource;
-import com.urbanspork.client.gui.console.component.Console;
-import com.urbanspork.client.gui.console.component.Proxy;
-import com.urbanspork.client.gui.console.component.Tray;
+import com.urbanspork.client.gui.console.Console;
 import com.urbanspork.client.gui.i18n.I18N;
+import com.urbanspork.client.gui.tray.Tray;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
@@ -15,11 +14,12 @@ import java.awt.event.ItemListener;
 import java.util.List;
 
 public class ServersMenuItem {
-
     private final Console console;
+    private final Tray tray;
 
-    public ServersMenuItem(Console console) {
+    public ServersMenuItem(Console console, Tray tray) {
         this.console = console;
+        this.tray = tray;
     }
 
     public JMenuItem build() {
@@ -51,10 +51,10 @@ public class ServersMenuItem {
                 try {
                     ConfigHandler.DEFAULT.save(config);
                 } catch (Exception e) {
-                    Tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
+                    tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
                     return;
                 }
-                Proxy.launch();
+                console.launchProxy();
             }
         };
     }
