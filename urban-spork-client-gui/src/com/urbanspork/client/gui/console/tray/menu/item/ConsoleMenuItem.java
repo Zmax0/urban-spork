@@ -1,6 +1,6 @@
-package com.urbanspork.client.gui.tray.menu.item;
+package com.urbanspork.client.gui.console.tray.menu.item;
 
-import com.urbanspork.client.gui.console.component.Console;
+import com.urbanspork.client.gui.console.Console;
 import com.urbanspork.client.gui.i18n.I18N;
 import javafx.application.Platform;
 
