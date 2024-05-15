@@ -63,7 +63,7 @@ public class TrayIcon extends java.awt.TrayIcon {
         GraphicsDevice screenDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()[0];
         Rectangle bounds = screenDevice.getDefaultConfiguration().getBounds();
         if (bounds.contains(p)) {
-            return p;
+            return new Point((int) p.getX(), (int) (p.getY() - menuHeight));
         } else {
             double scale = screenDevice.getDisplayMode().getWidth() / bounds.getWidth();
             int x = (int) (p.getX() / scale);

@@ -121,7 +121,7 @@ class EmbeddedChannelTestCase {
         ServerConfig config = new ServerConfig();
         config.setPassword(TestDice.rollPassword(Protocol.shadowsocks, kind));
         config.setCipher(kind);
-        Context context = Context.checkReplay();
+        Context context = Context.newCheckReplayInstance();
         server1.pipeline().addLast(new TcpRelayCodec(context, config, Mode.Server));
         server2.pipeline().addLast(new TcpRelayCodec(context, config, Mode.Server));
         DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "localhost", 16800);

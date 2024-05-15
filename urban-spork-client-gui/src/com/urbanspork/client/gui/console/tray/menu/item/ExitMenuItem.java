@@ -1,7 +1,5 @@
-package com.urbanspork.client.gui.tray.menu.item;
+package com.urbanspork.client.gui.console.tray.menu.item;
 
-import com.urbanspork.client.gui.console.component.Proxy;
-import com.urbanspork.client.gui.console.component.Tray;
 import com.urbanspork.client.gui.i18n.I18N;
 import javafx.application.Platform;
 
@@ -15,10 +13,6 @@ public class ExitMenuItem implements TrayMenuItemBuilder {
 
     @Override
     public ActionListener getActionListener() {
-        return e -> {
-            Platform.exit();
-            Tray.exit();
-            Proxy.exit();
-        };
+        return e -> Platform.exit();
     }
 }

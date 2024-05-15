@@ -1,8 +1,8 @@
-package com.urbanspork.client.gui.tray.menu.item;
+package com.urbanspork.client.gui.console.tray.menu.item;
 
 import com.urbanspork.client.gui.Resource;
-import com.urbanspork.client.gui.console.component.Tray;
 import com.urbanspork.client.gui.i18n.I18N;
+import com.urbanspork.client.gui.tray.Tray;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 
@@ -11,6 +11,12 @@ import java.awt.TrayIcon.MessageType;
 import java.util.Locale;
 
 public class LanguageMenuItem {
+    private final Tray tray;
+
+    public LanguageMenuItem(Tray tray) {
+        this.tray = tray;
+    }
+
     public JMenuItem build() {
         JMenu menu = new JMenu(getLabel());
         ClientConfig config = Resource.config();
@@ -31,10 +37,10 @@ public class LanguageMenuItem {
                     try {
                         ConfigHandler.DEFAULT.save(config);
                     } catch (Exception e) {
-                        Tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
+                        tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
                         return;
                     }
-                    Tray.displayMessage("Config is saved", "Take effect after restart", MessageType.INFO);
+                    tray.displayMessage("Config is saved", "Take effect after restart", MessageType.INFO);
                 }
             });
             group.add(item);

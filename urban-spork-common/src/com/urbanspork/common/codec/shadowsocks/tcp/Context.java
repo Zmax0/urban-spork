@@ -13,7 +13,7 @@ public record Context(LruCache<Key, Object> saltCache) {
         this(null);
     }
 
-    public static Context checkReplay() {
+    public static Context newCheckReplayInstance() {
         return new Context(new LruCache<>(Long.MAX_VALUE, Duration.ofSeconds(AEAD2022.SERVER_STREAM_TIMESTAMP_MAX_DIFF * 2), (k, v) -> {}));
     }
 
@@ -38,8 +38,8 @@ public record Context(LruCache<Key, Object> saltCache) {
     record Key(byte[] nonce) {
         @Override
         public boolean equals(Object o) {
-            if (o instanceof Key other) {
-                return Arrays.equals(nonce, other.nonce);
+            if (o instanceof Key(byte[] other)) {
+                return Arrays.equals(nonce, other);
             } else {
                 return false;
             }
@@ -48,6 +48,11 @@ public record Context(LruCache<Key, Object> saltCache) {
         @Override
         public int hashCode() {
             return Arrays.hashCode(nonce);
+        }
+
+        @Override
+        public String toString() {
+            return Arrays.toString(nonce);
         }
     }
 }
