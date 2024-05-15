@@ -5,10 +5,6 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 
 public class ConsoleButton extends JFXButton {
-    public ConsoleButton(String text) {
-        setText(text);
-    }
-
     public ConsoleButton(String text, EventHandler<ActionEvent> handler) {
         setText(text);
         setOnAction(handler);

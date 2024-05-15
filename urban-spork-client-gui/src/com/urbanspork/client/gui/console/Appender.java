@@ -1,4 +1,4 @@
-package com.urbanspork.client.gui.console.component;
+package com.urbanspork.client.gui.console;
 
 import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -7,7 +7,7 @@ import javafx.scene.control.TextArea;
 
 public class Appender extends AppenderBase<ILoggingEvent> {
 
-    private static Console console;
+    private Console console;
     private PatternLayout patternLayout;
 
     @Override
@@ -31,8 +31,7 @@ public class Appender extends AppenderBase<ILoggingEvent> {
         logTextArea.appendText(msg);
     }
 
-    public static void setConsole(Console console) {
-        Appender.console = console;
+    public void setConsole(Console console) {
+        this.console = console;
     }
-
 }

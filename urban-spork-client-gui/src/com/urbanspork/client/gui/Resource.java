@@ -16,7 +16,7 @@ public class Resource {
     private static final String PROGRAM_ICON_NAME = "picon.png";
     private static final String CONSOLE_CSS_NAME = "console.css";
     private static final ClientConfig CONFIG;
-    private static final ResourceBundle BUNDLE;
+    private static final ResourceBundle LANGUAGE;
 
     public static final URL PROGRAM_ICON;
     public static final URL TRAY_ICON;
@@ -48,7 +48,7 @@ public class Resource {
             bundle = ResourceBundle.getBundle(baseName, Locale.ENGLISH);
         }
         CONFIG = config;
-        BUNDLE = bundle;
+        LANGUAGE = bundle;
     }
 
     private Resource() {}
@@ -57,8 +57,11 @@ public class Resource {
         return CONFIG;
     }
 
-    public static ResourceBundle bundle() {
-        return BUNDLE;
+    public static ResourceBundle language() {
+        return LANGUAGE;
     }
 
+    public static ResourceBundle application() {
+        return ResourceBundle.getBundle("application");
+    }
 }
