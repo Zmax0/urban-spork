@@ -150,3 +150,39 @@ GridPane {
 .text-area .content {
   -fx-background-color: #000;
 }
+
+.chart-series-line {
+  -fx-stroke-width: 2;
+}
+
+.chart-legend {
+  -fx-background-color: transparent;
+}
+
+.chart-legend-item-symbol {
+  -fx-background-radius: 0;
+}
+
+.chart-plot-background {
+  -fx-background-color: transparent;
+}
+
+.default-color0.chart-series-line {
+  -fx-stroke: #0a84ff;
+}
+
+.default-color1.chart-series-line {
+  -fx-stroke: #ff9f0a;
+}
+
+.default-color0.chart-line-symbol {
+  -fx-background-color: #0a84ff;
+  -fx-shape: "M440-800v487L216-537l-56 57 320 320 320-320-56-57-224 224v-487h-80Z";
+  -fx-padding: 8;
+}
+
+.default-color1.chart-line-symbol {
+  -fx-background-color: #ff9f0a;
+  -fx-shape: "M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z";
+  -fx-padding: 8;
+}

@@ -6,9 +6,8 @@ import com.jfoenix.controls.JFXPasswordField;
 import com.jfoenix.controls.JFXTabPane;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.validation.RequiredFieldValidator;
+import com.urbanspork.client.Client;
 import com.urbanspork.client.gui.Resource;
-import com.urbanspork.client.gui.console.tray.ConsoleTray;
-import com.urbanspork.client.gui.tray.Tray;
 import com.urbanspork.client.gui.console.widget.ConsoleButton;
 import com.urbanspork.client.gui.console.widget.ConsoleColumnConstraints;
 import com.urbanspork.client.gui.console.widget.ConsoleLabel;
@@ -23,22 +22,24 @@ import com.urbanspork.client.gui.console.widget.CurrentConfigProtocolChoiceBox;
 import com.urbanspork.client.gui.console.widget.NumericTextField;
 import com.urbanspork.client.gui.console.widget.ServerConfigListView;
 import com.urbanspork.client.gui.i18n.I18N;
-import com.urbanspork.client.gui.tray.Unsupported;
+import com.urbanspork.client.gui.traffic.TrafficCounterLineChart;
+import com.urbanspork.client.gui.tray.Tray;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.shadowsocks.ShareableServerConfig;
 import com.urbanspork.common.protocol.Protocol;
+import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.application.Preloader;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -60,22 +61,22 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 
-public class Console extends Preloader {
+public class Console extends Application {
     private static final Logger logger = LoggerFactory.getLogger(Console.class);
     private static final ClientConfig CLIENT_CONFIG = Resource.config();
     private static final RequiredFieldValidator REQUIRED_FIELD_VALIDATOR = new RequiredFieldValidator(I18N.getString(I18N.CONSOLE_VALIDATOR_REQUIRED_FIELD_MESSAGE));
 
-    private Tray tray;
-    private Proxy proxy;
+    Tray tray;
+    Proxy proxy;
+    ObjectProperty<Client.Instance> instance = new SimpleObjectProperty<>();
 
     private Stage primaryStage;
-    private Parent root;
+    private JFXTabPane root;
     private TextArea logTextarea;
     private JFXListView<ServerConfig> serverConfigJFXListView;
     private Button newServerConfigButton;
@@ -97,16 +98,6 @@ public class Console extends Preloader {
     private ChoiceBox<Protocol> currentConfigProtocolChoiceBox;
     private NumericTextField clientConfigPortTextField;
     private ObservableList<ServerConfig> serverConfigObservableList;
-
-    @Override
-    public void handleStateChangeNotification(StateChangeNotification info) {
-        if (info.getType().equals(StateChangeNotification.Type.BEFORE_INIT)
-            && info.getApplication() instanceof Console console) {
-            console.tray = SystemTray.isSupported() ? new ConsoleTray(console) : new Unsupported();
-            console.proxy = new Proxy(console.tray);
-            console.proxy.launch();
-        }
-    }
 
     @Override
     public void init() {
@@ -245,7 +236,7 @@ public class Console extends Preloader {
             CLIENT_CONFIG.setPort(clientConfigPortTextField.getIntValue());
             CLIENT_CONFIG.setIndex(selectionModel.getSelectedIndex());
             saveConfig();
-            proxy.launch();
+            launchProxy();
         }
     }
 
@@ -333,35 +324,49 @@ public class Console extends Preloader {
         Tab tab0 = new Tab(I18N.getString(I18N.CONSOLE_TAB0_TEXT));
         tab0.setContent(gridPane0);
         tab0.setClosable(false);
-        // ====================
-        // tab1 gridPane1
-        // ====================
-        GridPane gridPane1 = new GridPane();
-        // ----------- ColumnConstraints -----------
-        ObservableList<ColumnConstraints> cConstraints1 = gridPane1.getColumnConstraints();
-        ColumnConstraints cContainer2 = new ColumnConstraints();
-        cContainer2.setHgrow(Priority.ALWAYS);
-        cConstraints1.add(cGap1);
-        cConstraints1.add(cContainer2);
-        cConstraints1.add(cGap1);
-        // ----------- RowConstraints -----------
-        ObservableList<RowConstraints> rConstraints1 = gridPane1.getRowConstraints();
-        rConstraints1.add(rGap1);
-        rConstraints1.add(rContainer2);
-        rConstraints1.add(rGap1);
-        // grid children
-        gridPane1.add(logTextarea, 1, 1);
         // tab1
-        Tab tab1 = new Tab(I18N.getString(I18N.CONSOLE_TAB1_TEXT));
-        tab1.setContent(gridPane1);
-        tab1.setClosable(false);
+        Tab tab1 = newSingleNodeTab(logTextarea, I18N.getString(I18N.CONSOLE_TAB1_TEXT));
+        //
+        Tab tab2 = newSingleNodeTab(new TrafficCounterLineChart(instance).init(), I18N.getString(I18N.CONSOLE_TAB2_TEXT));
         // ====================
         // main tab pane
         // ====================
         JFXTabPane tabPane = new JFXTabPane();
-        tabPane.getTabs().addAll(tab0, tab1);
+        tabPane.getTabs().addAll(tab0, tab1, tab2);
         tabPane.getStylesheets().add(Resource.CONSOLE_CSS.toExternalForm());
         return tabPane;
+    }
+
+    private Tab newSingleNodeTab(Node node, String tabTitle) {
+        // ====================
+        // tab gridPane
+        // ====================
+        GridPane gridPane = new GridPane();
+        // ----------- GapConstraints -----------
+        ColumnConstraints cGap = new ColumnConstraints(10);
+        RowConstraints rGap = new RowConstraints(10);
+        // ----------- NodeConstraints -----------
+        ColumnConstraints cAlways = new ColumnConstraints();
+        cAlways.setHgrow(Priority.ALWAYS);
+        RowConstraints rAlways = new RowConstraints();
+        rAlways.setVgrow(Priority.ALWAYS);
+        // ----------- ColumnConstraints -----------
+        ObservableList<ColumnConstraints> columnConstraints = gridPane.getColumnConstraints();
+        columnConstraints.add(cGap);
+        columnConstraints.add(cAlways);
+        columnConstraints.add(cGap);
+        // ----------- RowConstraints -----------
+        ObservableList<RowConstraints> rowConstraints = gridPane.getRowConstraints();
+        rowConstraints.add(rGap);
+        rowConstraints.add(rAlways);
+        rowConstraints.add(rGap);
+        // grid children
+        gridPane.add(node, 1, 1);
+        // tab
+        Tab tab = new Tab(tabTitle);
+        tab.setContent(gridPane);
+        tab.setClosable(false);
+        return tab;
     }
 
     private void addGridPane0Children(GridPane gridPane0) {
@@ -424,7 +429,7 @@ public class Console extends Preloader {
             int port = clientConfigPortTextField.getIntValue();
             if (CLIENT_CONFIG.getPort() != port) {
                 CLIENT_CONFIG.setPort(port);
-                proxy.launch();
+                launchProxy();
                 saveConfig();
             }
         });
@@ -596,6 +601,6 @@ public class Console extends Preloader {
     }
 
     public void launchProxy() {
-        proxy.launch();
+        proxy.launch().ifPresent(instance::set);
     }
 }

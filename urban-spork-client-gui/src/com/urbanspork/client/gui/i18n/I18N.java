@@ -13,6 +13,7 @@ public interface I18N {
     String TRAY_MENU_SERVERS = "tray.menu.servers";
     String CONSOLE_TAB0_TEXT = "console.tab0.text";
     String CONSOLE_TAB1_TEXT = "console.tab1.text";
+    String CONSOLE_TAB2_TEXT = "console.tab2.text";
     String CONSOLE_BUTTON_NEW = "console.button.new";
     String CONSOLE_BUTTON_IMPORT = "console.button.import";
     String CONSOLE_BUTTON_SHARE = "console.button.share";
