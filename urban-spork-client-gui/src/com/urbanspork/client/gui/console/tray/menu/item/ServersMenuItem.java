@@ -7,6 +7,7 @@ import com.urbanspork.client.gui.tray.Tray;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
+import javafx.application.Platform;
 
 import javax.swing.*;
 import java.awt.TrayIcon.MessageType;
@@ -47,7 +48,11 @@ public class ServersMenuItem {
         return event -> {
             if (item.isSelected()) {
                 config.setIndex(index);
-                console.getServerConfigJFXListView().getSelectionModel().select(index);
+                if (Platform.isFxApplicationThread()) {
+                    console.getServerConfigJFXListView().getSelectionModel().select(index);
+                } else {
+                    Platform.runLater(() -> console.getServerConfigJFXListView().getSelectionModel().select(index));
+                }
                 try {
                     ConfigHandler.DEFAULT.save(config);
                 } catch (Exception e) {

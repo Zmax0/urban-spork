@@ -7,6 +7,7 @@ import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ServerConfig;
 
 import java.awt.TrayIcon.MessageType;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -23,11 +24,11 @@ public class Proxy {
         this.tray = tray;
     }
 
-    public void launch() {
+    public Optional<Client.Instance> launch() {
         ServerConfig current = config.getCurrent();
         if (current == null) {
             tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
-            return;
+            return Optional.empty();
         }
         if (client != null) {
             client.close();
@@ -46,6 +47,7 @@ public class Proxy {
             tray.displayMessage("Error", message, MessageType.ERROR);
             tray.setToolTip(message);
         }
+        return client == null ? Optional.empty() : Optional.of(client);
     }
 
     public void exit() {
