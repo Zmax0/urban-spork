@@ -1,9 +1,11 @@
 package com.urbanspork.common.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.transport.Transport;
 import com.urbanspork.common.transport.udp.PacketEncoding;
+import io.netty.handler.traffic.AbstractTrafficShapingHandler;
 
 import java.util.Arrays;
 import java.util.List;
@@ -27,6 +29,9 @@ public class ServerConfig {
     private PacketEncoding packetEncoding;
 
     private List<ServerUserConfig> user;
+
+    @JsonIgnore
+    private AbstractTrafficShapingHandler trafficShapingHandler;
 
     public String getHost() {
         return host;
@@ -98,6 +103,14 @@ public class ServerConfig {
 
     public void setUser(List<ServerUserConfig> serverUserConfig) {
         this.user = serverUserConfig;
+    }
+
+    public AbstractTrafficShapingHandler getTrafficShapingHandler() {
+        return trafficShapingHandler;
+    }
+
+    public void setTrafficShapingHandler(AbstractTrafficShapingHandler trafficShapingHandler) {
+        this.trafficShapingHandler = trafficShapingHandler;
     }
 
     public boolean check() {

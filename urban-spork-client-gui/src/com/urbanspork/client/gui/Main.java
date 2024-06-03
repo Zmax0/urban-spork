@@ -5,7 +5,7 @@ import javafx.application.Application;
 
 public final class Main {
     public static void main(String[] args) {
-        System.setProperty("javafx.preloader", "com.urbanspork.client.gui.console.Console");
+        System.setProperty("javafx.preloader", "com.urbanspork.client.gui.console.ConsolePreloader");
         Application.launch(Console.class, args);
     }
 }
