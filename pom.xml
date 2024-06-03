@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>urban-spork</groupId>
   <artifactId>urban-spork</artifactId>
-  <version>2.4.3</version>
+  <version>2.4.4</version>
   <packaging>pom</packaging>
   <modules>
     <module>urban-spork-common</module>
@@ -14,7 +14,7 @@
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <urban-spork.version>2.4.3</urban-spork.version>
+    <urban-spork.version>2.4.4</urban-spork.version>
     <maven-surefire-plugin.versioin>3.2.3</maven-surefire-plugin.versioin>
     <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
     <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
@@ -24,7 +24,7 @@
     <jackson.version>2.16.1</jackson.version>
     <logback.version>1.4.14</logback.version>
     <netty.version>4.1.104.Final</netty.version>
-    <bouncycastle.version>1.78</bouncycastle.version>
+    <bouncycastle.version>2.73.6</bouncycastle.version>
     <javafx.version>21.0.1</javafx.version>
     <jfoenix.version>9.0.10</jfoenix.version>
   </properties>
@@ -78,7 +78,7 @@
       </dependency>
       <dependency>
         <groupId>org.bouncycastle</groupId>
-        <artifactId>bcprov-jdk18on</artifactId>
+        <artifactId>bcprov-lts8on</artifactId>
         <version>${bouncycastle.version}</version>
       </dependency>
       <dependency>

@@ -19,6 +19,7 @@ public class ClientSocksInitializer extends ChannelInitializer<NioSocketChannel>
         channel.attr(AttributeKeys.SERVER_CONFIG).set(config);
         channel.pipeline()
             .addLast(new SocksPortUnificationServerHandler())
-            .addLast(ClientSocksMessageHandler.INSTANCE);
+            .addLast(ClientSocksMessageHandler.INSTANCE)
+            .addLast(config.getTrafficShapingHandler());
     }
 }
