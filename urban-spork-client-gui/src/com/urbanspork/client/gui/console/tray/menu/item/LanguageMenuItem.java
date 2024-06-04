@@ -27,7 +27,7 @@ public class LanguageMenuItem {
         for (Locale locale : languages) {
             JRadioButtonMenuItem item = new JRadioButtonMenuItem();
             item.setName(locale.getLanguage());
-            item.setText(locale.getDisplayLanguage(configLanguage));
+            item.setText(locale.getDisplayLanguage(locale));
             if (locale.equals(configLanguage)) {
                 item.setSelected(true);
             }
