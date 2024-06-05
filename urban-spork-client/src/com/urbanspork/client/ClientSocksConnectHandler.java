@@ -44,11 +44,11 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
             .connect(serverAddress).addListener((ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
                     Channel outbound = future.channel();
-                    outbound.pipeline().addLast(new DefaultChannelInboundHandler(ctx.channel())); // R → L
+                    outbound.pipeline().addLast(new DefaultChannelInboundHandler(inboundChannel)); // R → L
                     inboundChannel.pipeline().remove(ClientSocksConnectHandler.class);
                     Socks5CommandRequest bndRequest = Socks5.toCommandRequest(Socks5CommandType.CONNECT, (InetSocketAddress) inboundChannel.localAddress());
                     inboundChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, bndRequest.dstAddrType(), bndRequest.dstAddr(), bndRequest.dstPort()))
-                        .addListener((ChannelFutureListener) channelFuture -> ctx.pipeline().addLast(new DefaultChannelInboundHandler(outbound))); // L → R
+                        .addListener((ChannelFutureListener) channelFuture -> inboundChannel.pipeline().addLast(new DefaultChannelInboundHandler(outbound))); // L → R
                 } else {
                     logger.error("Connect proxy server {} failed", serverAddress);
                     inboundChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()));
