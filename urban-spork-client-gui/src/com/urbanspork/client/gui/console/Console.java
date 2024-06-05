@@ -12,7 +12,6 @@ import com.urbanspork.client.gui.console.widget.ConsoleButton;
 import com.urbanspork.client.gui.console.widget.ConsoleColumnConstraints;
 import com.urbanspork.client.gui.console.widget.ConsoleLabel;
 import com.urbanspork.client.gui.console.widget.ConsoleLiteButton;
-import com.urbanspork.client.gui.console.widget.ConsoleLogTextArea;
 import com.urbanspork.client.gui.console.widget.ConsolePasswordTextField;
 import com.urbanspork.client.gui.console.widget.ConsoleRowConstraints;
 import com.urbanspork.client.gui.console.widget.ConsoleTextField;
@@ -77,7 +76,7 @@ public class Console extends Application {
 
     private Stage primaryStage;
     private JFXTabPane root;
-    private TextArea logTextarea;
+    private TextArea logTextArea;
     private JFXListView<ServerConfig> serverConfigJFXListView;
     private Button newServerConfigButton;
     private Button delServerConfigButton;
@@ -141,10 +140,6 @@ public class Console extends Application {
                 primaryStage.toFront();
             }
         }
-    }
-
-    public TextArea getLogTextArea() {
-        return logTextarea;
     }
 
     public JFXListView<ServerConfig> getServerConfigJFXListView() {
@@ -254,7 +249,7 @@ public class Console extends Application {
 
     private void initWidget() {
         serverConfigJFXListView = new ServerConfigListView();
-        logTextarea = new ConsoleLogTextArea(this);
+        logTextArea = initLogTextArea();
         newServerConfigButton = new ConsoleButton(I18N.getString(I18N.CONSOLE_BUTTON_NEW), event -> newServerConfig());
         delServerConfigButton = new ConsoleButton(I18N.getString(I18N.CONSOLE_BUTTON_DEL), event -> deleteServerConfig());
         copyServerConfigButton = new ConsoleButton(I18N.getString(I18N.CONSOLE_BUTTON_COPY), event -> copyServerConfig());
@@ -273,6 +268,17 @@ public class Console extends Application {
         currentConfigCipherChoiceBox = new CurrentConfigCipherChoiceBox();
         currentConfigProtocolChoiceBox = new CurrentConfigProtocolChoiceBox();
         clientConfigPortTextField = new NumericTextField();
+    }
+
+    private TextArea initLogTextArea() {
+        if (LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) instanceof ch.qos.logback.classic.Logger log
+            && log.getAppender(Resource.application().getString("console.log.appender.name")) instanceof Appender appender) {
+            return appender.getTextArea();
+        }
+        logger.warn("Log text area is missing");
+        TextArea textArea = new TextArea();
+        textArea.setEditable(false);
+        return textArea;
     }
 
     private JFXTabPane initTabPane() {
@@ -325,7 +331,7 @@ public class Console extends Application {
         tab0.setContent(gridPane0);
         tab0.setClosable(false);
         // tab1
-        Tab tab1 = newSingleNodeTab(logTextarea, I18N.getString(I18N.CONSOLE_TAB1_TEXT));
+        Tab tab1 = newSingleNodeTab(logTextArea, I18N.getString(I18N.CONSOLE_TAB1_TEXT));
         //
         Tab tab2 = newSingleNodeTab(new TrafficCounterLineChart(instance).init(), I18N.getString(I18N.CONSOLE_TAB2_TEXT));
         // ====================

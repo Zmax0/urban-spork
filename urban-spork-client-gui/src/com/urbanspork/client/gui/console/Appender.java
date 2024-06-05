@@ -7,11 +7,13 @@ import javafx.scene.control.TextArea;
 
 public class Appender extends AppenderBase<ILoggingEvent> {
 
-    private Console console;
+    private TextArea textArea;
     private PatternLayout patternLayout;
 
     @Override
     public void start() {
+        textArea = new TextArea();
+        textArea.setEditable(false);
         patternLayout = new PatternLayout();
         patternLayout.setContext(getContext());
         patternLayout.setPattern("%d{HH:mm:ss} %msg%n");
@@ -22,16 +24,15 @@ public class Appender extends AppenderBase<ILoggingEvent> {
     @Override
     protected void append(ILoggingEvent eventObject) {
         String msg = patternLayout.doLayout(eventObject);
-        TextArea logTextArea = console.getLogTextArea();
-        String log = logTextArea.textProperty().get();
+        String log = textArea.textProperty().get();
         if (log.length() > 10000) {
-            logTextArea.appendText("Clear for log length is " + log.length());
-            logTextArea.textProperty().set("");
+            textArea.appendText("Clear for log length is " + log.length());
+            textArea.textProperty().set("");
         }
-        logTextArea.appendText(msg);
+        textArea.appendText(msg);
     }
 
-    public void setConsole(Console console) {
-        this.console = console;
+    public TextArea getTextArea() {
+        return textArea;
     }
 }
