@@ -10,6 +10,11 @@ import java.util.Collections;
 
 @DisplayName("Common - Client Config")
 public class ClientConfigTestCase {
+    @Test
+    void testToString() {
+        ClientConfig config = testConfig(TestDice.rollPort(), TestDice.rollPort());
+        Assertions.assertFalse(config.toString().isEmpty());
+    }
 
     @Test
     void testGetCurrent() {
