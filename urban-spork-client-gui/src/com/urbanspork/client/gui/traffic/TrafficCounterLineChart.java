@@ -32,6 +32,9 @@ public class TrafficCounterLineChart {
     public LineChart<Number, Number> init() {
         NumberAxis xAxis = new NumberAxis(0, WINDOW, WINDOW);
         NumberAxis yAxis = new NumberAxis();
+        yAxis.setTickLabelsVisible(false);
+        yAxis.setTickMarkVisible(false);
+        yAxis.lookup(".axis-minor-tick-mark").setVisible(false);
         LineChart<Number, Number> lineChart = new LineChart<>(xAxis, yAxis) {
             @Override
             protected void layoutPlotChildren() {
