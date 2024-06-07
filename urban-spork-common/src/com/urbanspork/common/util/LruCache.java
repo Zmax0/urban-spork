@@ -4,7 +4,6 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -16,7 +15,7 @@ public class LruCache<K, V> {
     final Duration timeToLive;
     final HashedWheelTimer timer = new HashedWheelTimer(1, TimeUnit.SECONDS);
     final BiConsumer<K, V> afterExpired;
-    final Map<K, Pair<V>> inner = Collections.synchronizedMap(new LinkedHashMap<>() {
+    final Map<K, Pair<V>> inner = new LinkedHashMap<>() {
         @Override
         protected boolean removeEldestEntry(Map.Entry<K, Pair<V>> eldest) {
             boolean flag = size() > capacity;
@@ -28,7 +27,7 @@ public class LruCache<K, V> {
             }
             return flag;
         }
-    });
+    };
 
     public LruCache(long capacity, Duration timeToLive, BiConsumer<K, V> afterExpired) {
         this.capacity = capacity;
@@ -73,7 +72,7 @@ public class LruCache<K, V> {
     }
 
     public void release() {
-        for (Map.Entry<K, Pair<V>> entry : inner.entrySet()) {
+        for (Map.Entry<K, Pair<V>> entry : Map.copyOf(inner).entrySet()) {
             afterExpired.accept(entry.getKey(), entry.getValue().value);
         }
         timer.stop();
