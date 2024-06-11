@@ -56,6 +56,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -332,8 +333,8 @@ public class Console extends Application {
         tab0.setClosable(false);
         // tab1
         Tab tab1 = newSingleNodeTab(logTextArea, I18N.getString(I18N.CONSOLE_TAB1_TEXT));
-        //
-        Tab tab2 = newSingleNodeTab(new TrafficCounterLineChart(instance).init(), I18N.getString(I18N.CONSOLE_TAB2_TEXT));
+        // tab2
+        Tab tab2 = initTrafficTab();
         // ====================
         // main tab pane
         // ====================
@@ -371,6 +372,16 @@ public class Console extends Application {
         // tab
         Tab tab = new Tab(tabTitle);
         tab.setContent(gridPane);
+        tab.setClosable(false);
+        return tab;
+    }
+
+    private Tab initTrafficTab() {
+        StackPane stackPane = new StackPane();
+        stackPane.setAlignment(Pos.TOP_CENTER);
+        stackPane.getChildren().add(new TrafficCounterLineChart(instance).init());
+        Tab tab = new Tab(I18N.getString(I18N.CONSOLE_TAB2_TEXT));
+        tab.setContent(stackPane);
         tab.setClosable(false);
         return tab;
     }
