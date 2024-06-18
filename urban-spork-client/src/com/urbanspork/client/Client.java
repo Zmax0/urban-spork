@@ -1,7 +1,7 @@
 package com.urbanspork.client;
 
 import com.urbanspork.client.shadowsocks.ClientUdpRelayHandler;
-import com.urbanspork.client.vmess.ClientUdpOverTCPHandler;
+import com.urbanspork.client.vmess.ClientUdpOverTcpHandler;
 import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
 import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.config.ClientConfig;
@@ -81,7 +81,9 @@ public class Client {
         ServerConfig current = config.getCurrent();
         ChannelHandler udpTransportHandler;
         if (Protocol.vmess == current.getProtocol()) {
-            udpTransportHandler = new ClientUdpOverTCPHandler(current, workerGroup);
+            udpTransportHandler = new ClientUdpOverTcpHandler(current, workerGroup);
+        } else if (Protocol.trojan == current.getProtocol()) {
+            udpTransportHandler = new com.urbanspork.client.trojan.ClientUdpOverTcpHandler(current, workerGroup);
         } else {
             udpTransportHandler = new ClientUdpRelayHandler(current, workerGroup);
         }
@@ -90,10 +92,10 @@ public class Client {
                 @Override
                 protected void initChannel(Channel ch) {
                     ch.pipeline().addLast(
+                        current.getTrafficShapingHandler(),
                         new DatagramPacketEncoder(),
                         new DatagramPacketDecoder(),
-                        udpTransportHandler,
-                        current.getTrafficShapingHandler()
+                        udpTransportHandler
                     );
                 }
             })

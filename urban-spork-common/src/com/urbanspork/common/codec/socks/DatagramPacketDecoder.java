@@ -16,13 +16,13 @@ public class DatagramPacketDecoder extends MessageToMessageDecoder<DatagramPacke
     protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List<Object> out) {
         ByteBuf content = msg.content();
         if (content.readableBytes() < 5) {
-            throw new DecoderException("Insufficient length of packet");
+            throw new DecoderException("insufficient length of packet");
         }
         if (content.getByte(2) != 0) {
-            throw new DecoderException("Discarding fragmented payload");
+            throw new DecoderException("discarding fragmented payload");
         }
         content.skipBytes(3);
-        InetSocketAddress address = Address.decode(content);
-        out.add(new DatagramPacketWrapper(msg.replace(content).retain(), address));
+        InetSocketAddress proxy = Address.decode(content);
+        out.add(new DatagramPacketWrapper(msg.replace(content).retain(), proxy));
     }
 }
