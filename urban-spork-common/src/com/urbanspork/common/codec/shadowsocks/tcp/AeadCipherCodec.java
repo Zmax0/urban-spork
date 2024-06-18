@@ -204,7 +204,7 @@ class AeadCipherCodec {
         if (Mode.Server == session.mode()) {
             ByteBuf first = (ByteBuf) list.getFirst();
             InetSocketAddress address = Address.decode(first);
-            list.set(0, new RelayingPayload<>(address, first));
+            out.add(new RelayingPayload<>(address, Unpooled.EMPTY_BUFFER));
         }
         out.addAll(list);
         this.payloadDecoder = newPayloadDecoder;

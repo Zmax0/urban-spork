@@ -4,12 +4,14 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.Blake3Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA224Digest;
 
 import java.util.function.Supplier;
 
 public enum Digests {
 
     md5(MD5Digest::new),
+    sha224(SHA224Digest::new),
     sha256(SHA256Digest::new),
     blake3(Blake3Digest::new),
     ;
@@ -32,5 +34,9 @@ public enum Digests {
         Digest digest = provider.get();
         digest.update(in, 0, in.length);
         digest.doFinal(out, outOff);
+    }
+
+    public int size() {
+        return provider.get().getDigestSize();
     }
 }

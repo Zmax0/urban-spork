@@ -30,6 +30,8 @@ public class ServerConfig {
 
     private List<ServerUserConfig> user;
 
+    private SslSetting ssl;
+
     @JsonIgnore
     private AbstractTrafficShapingHandler trafficShapingHandler;
 
@@ -81,10 +83,6 @@ public class ServerConfig {
         this.remark = remark;
     }
 
-    public Transport[] getTransport() {
-        return transport;
-    }
-
     public void setTransport(Transport[] transports) {
         this.transport = transports;
     }
@@ -105,16 +103,20 @@ public class ServerConfig {
         this.user = serverUserConfig;
     }
 
+    public SslSetting getSsl() {
+        return ssl;
+    }
+
+    public void setSsl(SslSetting ssl) {
+        this.ssl = ssl;
+    }
+
     public AbstractTrafficShapingHandler getTrafficShapingHandler() {
         return trafficShapingHandler;
     }
 
     public void setTrafficShapingHandler(AbstractTrafficShapingHandler trafficShapingHandler) {
         this.trafficShapingHandler = trafficShapingHandler;
-    }
-
-    public boolean check() {
-        return isEmpty(host) && isEmpty(password) && cipher != null;
     }
 
     @Override
@@ -125,14 +127,14 @@ public class ServerConfig {
             if (Protocol.vmess == protocol) {
                 builder.append('|').append("negotiated");
             } else {
-                builder.append('|').append(cipher.toString());
+                builder.append('|').append(cipher);
             }
         }
         return builder.toString();
     }
 
     public String clientText() {
-        return listItemText() + '|' + protocol + '|' + cipher.toString();
+        return listItemText() + '|' + protocol + '|' + cipher;
     }
 
     public String listItemText() {
@@ -142,9 +144,4 @@ public class ServerConfig {
     public boolean udpEnabled() {
         return transport != null && Arrays.stream(transport).anyMatch(n -> n == Transport.UDP);
     }
-
-    private boolean isEmpty(String s) {
-        return s != null && !s.isEmpty();
-    }
-
 }

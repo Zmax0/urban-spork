@@ -1,6 +1,7 @@
 package com.urbanspork.client;
 
-import com.urbanspork.client.vmess.ClientAEADCodec;
+import com.urbanspork.client.trojan.ClientHeaderEncoder;
+import com.urbanspork.client.vmess.ClientAeadCodec;
 import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.channel.ChannelCloseUtils;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
@@ -8,7 +9,6 @@ import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.codec.shadowsocks.tcp.Context;
 import com.urbanspork.common.codec.shadowsocks.tcp.TcpRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.socks.Socks5;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -18,6 +18,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.socks.SocksCmdType;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
@@ -25,6 +26,7 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
 
 public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks5CommandRequest> {
@@ -58,20 +60,30 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
     }
 
     private static ChannelHandler getOutboundChannelHandler(Socks5CommandRequest request, ServerConfig config) {
-        if (Protocol.vmess == config.getProtocol()) {
-            return new ChannelInitializer<>() {
+        return switch (config.getProtocol()) {
+            case vmess -> new ChannelInitializer<>() {
                 @Override
                 protected void initChannel(Channel channel) {
-                    channel.pipeline().addLast(new ClientAEADCodec(config.getCipher(), InetSocketAddress.createUnresolved(request.dstAddr(), request.dstPort()), config.getPassword()));
+                    InetSocketAddress address = InetSocketAddress.createUnresolved(request.dstAddr(), request.dstPort());
+                    channel.pipeline().addLast(new ClientAeadCodec(config.getCipher(), address, config.getPassword()));
                 }
             };
-        } else {
-            return new ChannelInitializer<>() {
+            case trojan -> new ChannelInitializer<>() {
+                @Override
+                protected void initChannel(Channel channel) throws SSLException {
+                    InetSocketAddress address = InetSocketAddress.createUnresolved(request.dstAddr(), request.dstPort());
+                    channel.pipeline().addLast(
+                        ClientSocksInitializer.buildSslHandler(channel, config),
+                        new ClientHeaderEncoder(config.getPassword(), address, SocksCmdType.CONNECT.byteValue())
+                    );
+                }
+            };
+            default -> new ChannelInitializer<>() {
                 @Override
                 protected void initChannel(Channel channel) {
                     channel.pipeline().addLast(new TcpRelayCodec(new Context(), config, request, Mode.Client));
                 }
             };
-        }
+        };
     }
 }

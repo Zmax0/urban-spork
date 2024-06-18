@@ -11,7 +11,7 @@ public record DatagramPacketWrapper(DatagramPacket packet, InetSocketAddress pro
         if (packet.sender() != null) {
             return String.format("%s → %s ~ %s", packet.sender(), packet.recipient(), proxy);
         } else {
-            return String.format("→ %s ~ %s", packet.recipient(), proxy);
+            return String.format("/unknown → %s ~ %s", packet.recipient(), proxy);
         }
     }
 
