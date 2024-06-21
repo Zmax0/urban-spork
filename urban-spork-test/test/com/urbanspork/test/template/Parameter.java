@@ -22,13 +22,16 @@ public record Parameter(Protocol protocol, CipherKind cipher, String clientPassw
         public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
             List<Parameter> parameters = new ArrayList<>();
             for (Protocol protocol : Protocol.values()) {
-                for (CipherKind cipher : CipherKind.values()) {
-                    if (Protocol.vmess == protocol && cipher.isAead2022()) {
-                        continue;
+                if (protocol != Protocol.trojan) {
+                    for (CipherKind cipher : CipherKind.values()) {
+                        if (Protocol.vmess == protocol && cipher.isAead2022()) {
+                            continue;
+                        }
+                        parameters.add(new Parameter(protocol, cipher, TestDice.rollPassword(protocol, cipher), TestDice.rollPassword(protocol, cipher)));
                     }
-                    parameters.add(new Parameter(protocol, cipher, TestDice.rollPassword(protocol, cipher), TestDice.rollPassword(protocol, cipher)));
                 }
             }
+            parameters.add(new Parameter(Protocol.trojan, null, TestDice.rollString(), TestDice.rollString()));
             return parameters.stream().map(Arguments::of);
         }
     }

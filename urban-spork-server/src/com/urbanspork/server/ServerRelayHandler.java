@@ -6,23 +6,22 @@ import com.urbanspork.common.transport.tcp.RelayingPayload;
 import com.urbanspork.common.transport.udp.RelayingPacket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.concurrent.FutureListener;
-import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
+import java.util.Objects;
 
-class ServerRelayHandler extends ChannelInboundHandlerAdapter {
+public class ServerRelayHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerRelayHandler.class);
     private final ServerConfig config;
-    private Promise<Channel> p;
+    private ChannelFuture future;
 
     public ServerRelayHandler(ServerConfig config) {
         this.config = config;
@@ -30,51 +29,41 @@ class ServerRelayHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        if (msg instanceof RelayingPayload<?> payload) {
-            relayTcp(ctx, payload);
-        } else if (msg instanceof RelayingPacket<?> pocket) {
-            relayUdp(ctx, pocket);
-        } else { // should always relay tcp
-            p.addListener(future -> ctx.fireChannelRead(msg));
+        switch (msg) {
+            case RelayingPacket<?> packet -> relayUdp(ctx, packet);
+            case RelayingPayload<?> payload -> relayTcp(ctx, payload);
+            default -> Objects.requireNonNull(future, "expect a RelayingPayload for the first reading")
+                .addListener((ChannelFutureListener) f -> f.channel().writeAndFlush(msg)); // should always relay tcp
         }
     }
 
-    private void relayUdp(ChannelHandlerContext ctx, RelayingPacket<?> relayingPayload) {
-        ctx.pipeline().remove(this).addLast(
-            new ServerUdpOverTcpCodec(relayingPayload.address()),
+    private void relayUdp(ChannelHandlerContext ctx, RelayingPacket<?> relayingPacket) {
+        ctx.pipeline().addLast(
+            new ServerUdpOverTcpCodec(relayingPacket.address()),
             new ServerUdpRelayHandler(config.getPacketEncoding(), ctx.channel().eventLoop().parent().next())
-        );
-        ctx.fireChannelRead(relayingPayload.content());
+        ).remove(this);
+        ctx.fireChannelRead(relayingPacket.content());
     }
 
     private void relayTcp(ChannelHandlerContext ctx, RelayingPayload<?> relayingPayload) {
-        Channel localChannel = ctx.channel();
-        p = ctx.executor().newPromise();
-        connect(localChannel, relayingPayload.address(), p);
-        p.addListener((FutureListener<Channel>) future -> {
-            if (future.isSuccess()) {
-                Channel remoteChannel = future.get();
-                localChannel.pipeline().remove(this).addLast(new DefaultChannelInboundHandler(remoteChannel));
-                remoteChannel.writeAndFlush(relayingPayload.content());
-            } else {
-                ctx.close();
-            }
-        });
+        future = connect(ctx.channel(), relayingPayload);
     }
 
-    private void connect(Channel localChannel, InetSocketAddress remoteAddress, Promise<Channel> promise) {
-        new Bootstrap().group(localChannel.eventLoop())
+    private ChannelFuture connect(Channel localChannel, RelayingPayload<?> relayingPayload) {
+        return new Bootstrap().group(localChannel.eventLoop())
             .channel(NioSocketChannel.class)
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
             .handler(new DefaultChannelInboundHandler(localChannel))
-            .connect(remoteAddress).addListener((ChannelFutureListener) future -> {
-                if (future.isSuccess()) {
-                    Channel remoteChannel = future.channel();
+            .connect(relayingPayload.address())
+            .addListener((ChannelFutureListener) f -> {
+                if (f.isSuccess()) {
+                    Channel remoteChannel = f.channel();
+                    localChannel.pipeline().addLast(new DefaultChannelInboundHandler(remoteChannel)).remove(ServerRelayHandler.class);
                     logger.info("[tcp][{}][{}→{}]", config.getProtocol(), localChannel.localAddress(), remoteChannel.remoteAddress());
-                    promise.setSuccess(remoteChannel);
+                    remoteChannel.writeAndFlush(relayingPayload.content());
                 } else {
-                    logger.error("[tcp][{}][{}→{}]", config.getProtocol(), localChannel.localAddress(), remoteAddress);
-                    promise.setFailure(future.cause());
+                    logger.error("[tcp][{}][{}→{}]", config.getProtocol(), localChannel.localAddress(), relayingPayload.address());
+                    localChannel.close();
                 }
             });
     }

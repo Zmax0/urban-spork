@@ -27,7 +27,6 @@ import io.netty.handler.codec.DecoderException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -38,7 +37,6 @@ import static com.urbanspork.common.protocol.vmess.aead.Const.KDF_SALT_AEAD_RESP
 import static com.urbanspork.common.protocol.vmess.aead.Encrypt.openVMessAEADHeader;
 
 public class ServerAeadCodec extends ByteToMessageCodec<ByteBuf> {
-
     private final byte[][] keys;
     private RequestHeader header;
     private Session session;
@@ -85,7 +83,7 @@ public class ServerAeadCodec extends ByteToMessageCodec<ByteBuf> {
             in.getBytes(0, authID);
             byte[] key = AuthID.match(authID, keys);
             if (key.length == 0) {
-                throw new DecoderException("No matched authID");
+                throw new DecoderException("no matched authID");
             }
             ByteBuf decrypted = openVMessAEADHeader(key, in);
             if (!decrypted.isReadable()) {
@@ -112,7 +110,7 @@ public class ServerAeadCodec extends ByteToMessageCodec<ByteBuf> {
             byte[] actual = new byte[Integer.BYTES];
             decrypted.readBytes(actual);
             if (!Arrays.equals(Go.fnv1a32(data), actual)) {
-                throw new DecoderException("Invalid auth, but this is a AEAD request");
+                throw new DecoderException("invalid auth, but this is a AEAD request");
             }
             header = new RequestHeader(version, command, RequestOption.fromMask(option), security, address, key);
             session = new ServerSession(requestBodyIV, requestBodyKey, responseHeader);
@@ -122,23 +120,18 @@ public class ServerAeadCodec extends ByteToMessageCodec<ByteBuf> {
     }
 
     private void decode(InetSocketAddress address, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
-        List<Object> list = new ArrayList<>();
         boolean isUdp = RequestCommand.UDP.equals(header.command());
-        if (isUdp) {
-            payloadDecoder.decodePacket(in, list);
-        } else {
-            payloadDecoder.decodePayload(in, list);
-        }
-        if (list.isEmpty()) {
-            return;
-        }
         if (address != null) {
             if (isUdp) {
-                list.set(0, new RelayingPacket<>(address, list.getFirst()));
+                out.add(new RelayingPacket<>(address, Unpooled.EMPTY_BUFFER));
             } else {
-                list.set(0, new RelayingPayload<>(address, list.getFirst()));
+                out.add(new RelayingPayload<>(address, Unpooled.EMPTY_BUFFER));
             }
         }
-        out.addAll(list);
+        if (isUdp) {
+            payloadDecoder.decodePacket(in, out);
+        } else {
+            payloadDecoder.decodePayload(in, out);
+        }
     }
 }

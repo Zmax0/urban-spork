@@ -103,4 +103,17 @@ public interface Address {
             }
         }
     }
+
+    static int requireLength(ByteBuf in, int index) {
+        Socks5AddressType addressType = Socks5AddressType.valueOf(in.getByte(index));
+        if (Socks5AddressType.IPv4.equals(addressType)) {
+            return 1 + 4 + 2;
+        } else if (Socks5AddressType.IPv6.equals(addressType)) {
+            return 1 + 8 * 2 + 2;
+        } else if (Socks5AddressType.DOMAIN.equals(addressType)) {
+            return 1 + 1 + in.getUnsignedByte(index + 1) + 2;
+        } else {
+            throw new DecoderException("unsupported address type: " + (addressType.byteValue() & 0xFF));
+        }
+    }
 }

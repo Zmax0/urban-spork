@@ -3,10 +3,8 @@ package com.urbanspork.common.protocol.shadowsocks.aead2022;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.test.TestUtil;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Shadowsocks - UDP Cipher Cache")
 class UDPCipherCacheTest {
     @Test
     void testKey() {

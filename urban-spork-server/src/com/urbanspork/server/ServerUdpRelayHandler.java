@@ -37,9 +37,10 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
     @Override
     public void channelRead0(ChannelHandlerContext ctx, DatagramPacket msg) {
         Channel channel = ctx.channel();
-        InetSocketAddress callback = msg.recipient();
-        Channel workerChannel = workerChannel(msg.sender(), channel);
-        logger.info("[udp][relay]{}→{}~{}→{}", msg.sender(), callback, channel.localAddress(), workerChannel.localAddress());
+        InetSocketAddress sender = msg.sender();
+        InetSocketAddress recipient = msg.recipient();
+        Channel workerChannel = workerChannel(sender, channel);
+        logger.info("[udp][relay]{}→{}~{}→{}", sender, recipient, channel.localAddress(), workerChannel.localAddress());
         workerChannel.writeAndFlush(msg);
     }
 
@@ -50,14 +51,14 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
         }
     }
 
-    Channel workerChannel(InetSocketAddress callback, Channel inboundChannel) {
+    Channel workerChannel(InetSocketAddress key, Channel inboundChannel) {
         if (PacketEncoding.Packet == packetEncoding) {
-            callback = PacketEncoding.Packet.seqPacketMagicAddress();
+            key = PacketEncoding.Packet.seqPacketMagicAddress();
         }
-        return workerChannels.computeIfAbsent(callback, key -> newWorkerChannel(key, inboundChannel));
+        return workerChannels.computeIfAbsent(key, k -> newWorkerChannel(k, inboundChannel));
     }
 
-    private Channel newWorkerChannel(InetSocketAddress callback, Channel channel) {
+    private Channel newWorkerChannel(InetSocketAddress key, Channel channel) {
         Channel workerChannel = new Bootstrap().group(workerGroup).channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {
                 @Override
@@ -72,15 +73,14 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
             .syncUninterruptibly()
             .channel();
         workerChannel.closeFuture().addListener(future -> {
-            Channel removed = workerChannels.remove(callback);
-            logger.info("[udp][binding]{} != {}", callback, removed);
+            Channel removed = workerChannels.remove(key);
+            logger.info("[udp][binding]{} != {}", key, removed);
         });
-        logger.info("[udp][binding]{} == {}", callback, workerChannel);
+        logger.info("[udp][binding]{} == {}", key, workerChannel);
         return workerChannel;
     }
 
     private static class InboundHandler extends MessageToMessageCodec<DatagramPacket, DatagramPacket> {
-
         private final Channel inboundChannel;
         private final Map<InetSocketAddress, InetSocketAddress> callbackMap = new ConcurrentHashMap<>();
 
@@ -96,12 +96,11 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
 
         @Override
         protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List<Object> out) {
-            InetSocketAddress sender = msg.sender();
-            Channel outboundChannel = ctx.channel();
-            InetSocketAddress callback = callbackMap.get(sender);
-            if (callback != null) {
-                logger.info("[udp][relay]{}←{}~{}←{}", callback, sender, inboundChannel.localAddress(), outboundChannel.localAddress());
-                inboundChannel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(msg.retain().content(), sender), callback));
+            InetSocketAddress callback = msg.sender(); // reverse naming
+            InetSocketAddress sender = this.callbackMap.get(callback);
+            if (sender != null) {
+                logger.info("[udp][relay]{}←{}~{}←{}", sender, callback, inboundChannel.localAddress(), ctx.channel().localAddress());
+                inboundChannel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(msg.retain().content(), callback), sender));
             } else {
                 logger.error("None callback of sender => {}", msg.sender());
             }
