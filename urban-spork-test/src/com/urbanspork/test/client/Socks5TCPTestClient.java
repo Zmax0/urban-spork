@@ -4,7 +4,6 @@ import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.protocol.socks.ClientHandshake;
 import com.urbanspork.test.server.tcp.HttpTestServer;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -21,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 
 public class Socks5TCPTestClient {
@@ -61,12 +59,13 @@ public class Socks5TCPTestClient {
         if (channel == null) {
             ClientHandshake.Result result = ClientHandshake.noAuth(bossGroup, Socks5CommandType.CONNECT, proxyAddress, dstAddress).await().get();
             channel = result.sessionChannel();
+            logger.info("Launch socks5 tcp test client => {}", channel.localAddress());
             channel.pipeline().addLast(
                 new StringDecoder(),
-                new SimpleChannelInboundHandler<ByteBuf>() {
+                new SimpleChannelInboundHandler<String>() {
                     @Override
-                    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
-                        logger.info("↓ Receive msg ↓\n{}", msg.toString(StandardCharsets.UTF_8));
+                    protected void channelRead0(ChannelHandlerContext ctx, String msg) {
+                        logger.info("↓ Receive msg ↓\n{}", msg);
                     }
 
                     @Override

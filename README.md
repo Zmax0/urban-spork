@@ -4,34 +4,41 @@
 
 A sock5 proxy
 
-## Quick start
-
-put *config.json* file into the unpacked folder before running
+## Config
+put *config.json* file into the unpacked folder before running server
 
 ```json5
 {
   "servers": [
     {
-      "cipher": "{cipher}",
-      "password": "{password}",
-      "port": "{port}",
-      "protocol": "{protocol}",
-      "packetEncoding": "{packetEncoding}",
+      "cipher": "aes-128-gcm",
+      "password": "foobar",
+      "host": "example.com",
+      "port": "443",
+      "protocol": "shadowsocks",
+      "packetEncoding": "None",
       "transport": [
-        "{transport}"
+        "TCP",
+        "UDP"
       ],
       "user": [
         {
-          "name": "username",
-          "password": "{user password}"
+          "name": "John Doe",
+          "password": "foobar"
         }
-      ]
+      ],
+      "ssl": {
+        "certificateFile": "/path/to/certificate.crt",
+        "keyFile": "/path/to/private.key",
+        "keyPassword": "",
+        "serverName": ""
+      }
     }
   ]
 }
 ```
 
-> `protocol`: "shadowsocks" | "vmess"
+> `protocol`: "shadowsocks" | "vmess" | "trojan"
 
 > `cipher`: see *Ciphers*
 
@@ -39,16 +46,26 @@ put *config.json* file into the unpacked folder before running
 
 > `packetEncoding`: "None" | "Packet"
 
-> `user`: (OPTIONAL) support multiple users with [*Shadowsocks 2022 Extensible Identity Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-shadowsocks-2022-extensible-identity-headers.md)
+> `user`: (OPTIONAL for shadowsocks) support multiple users with [*Shadowsocks 2022 Extensible Identity Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-shadowsocks-2022-extensible-identity-headers.md)
+
+> `sslSetting`: (REQUIRED for trojan) SSL specific configurations
+
+>> `certificateFile`: certificate file
+
+>> `keyFile`: private key file for encryption
+
+>> `keyPassword`: password of the private key file
+
+>> `serverName`: the Server Name Indication field in the SSL handshake. If left blank, it will be set to `server.host`
 
 ## Features
 
 ### Transport
 
-|     | Shadowsocks | VMess |
-|:----|:-----------:|:-----:|
-| TCP |      ✔     |   ✔   |
-| UDP |      ✔     |   ✔   |
+|     | Shadowsocks | VMess | Trojan |
+|:----|:-----------:|:-----:|:------:|
+| TCP |      ✔      |   ✔   |   ✔    |
+| UDP |      ✔      |   ✔   |   ✔    |
 
 ### Ciphers
 

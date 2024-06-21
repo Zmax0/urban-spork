@@ -16,7 +16,7 @@ public abstract class AbstractClientUdpRelayHandler<K> extends SimpleChannelInbo
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractClientUdpRelayHandler.class);
     protected final ServerConfig config;
-    private final LruCache<K, Channel> binding;
+    protected final LruCache<K, Channel> binding;
 
     protected AbstractClientUdpRelayHandler(ServerConfig config, Duration keepAlive) {
         super(false);
@@ -38,7 +38,7 @@ public abstract class AbstractClientUdpRelayHandler<K> extends SimpleChannelInbo
         DatagramPacket packet = msg.packet();
         Channel inbound = ctx.channel();
         Channel outbound = getBindingChannel(inbound, getKey(msg));
-        logger.info("[udp][{}]{}→{}~{}→{}", config.getProtocol(), packet.sender(), inbound.localAddress(), outbound.localAddress(), msg.proxy());
+        logger.info("[udp][{}]{}→{}~{}→{}", config.getProtocol(), packet.sender(), msg.proxy(), inbound.localAddress(), outbound.localAddress());
         outbound.writeAndFlush(convertToWrite(msg));
     }
 

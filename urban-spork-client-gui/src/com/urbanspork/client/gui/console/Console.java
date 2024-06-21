@@ -31,6 +31,7 @@ import com.urbanspork.common.config.shadowsocks.ShareableServerConfig;
 import com.urbanspork.common.protocol.Protocol;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -73,7 +74,7 @@ public class Console extends Application {
 
     Tray tray;
     Proxy proxy;
-    ObjectProperty<Client.Instance> instance = new SimpleObjectProperty<>();
+    final ObjectProperty<Client.Instance> instance = new SimpleObjectProperty<>();
 
     private Stage primaryStage;
     private JFXTabPane root;
@@ -236,18 +237,6 @@ public class Console extends Application {
         }
     }
 
-    public void cancelServerConfig() {
-        hide();
-        int lastIndex = serverConfigObservableList.size() - 1;
-        if (lastIndex > -1) {
-            ServerConfig lastConfig = serverConfigObservableList.get(lastIndex);
-            if (!lastConfig.check()) {
-                serverConfigObservableList.remove(lastIndex);
-            }
-            serverConfigJFXListView.getSelectionModel().select(CLIENT_CONFIG.getCurrent());
-        }
-    }
-
     private void initWidget() {
         serverConfigJFXListView = new ServerConfigListView();
         logTextArea = initLogTextArea();
@@ -259,7 +248,7 @@ public class Console extends Application {
         moveUpServerConfigButton = new ConsoleLiteButton(I18N.getString(I18N.CONSOLE_BUTTON_UP), event -> moveUpServerConfig());
         moveDownServerConfigButton = new ConsoleLiteButton(I18N.getString(I18N.CONSOLE_BUTTON_DOWN), event -> moveDownServerConfig());
         confirmServerConfigButton = new ConsoleButton(I18N.getString(I18N.CONSOLE_BUTTON_CONFIRM), event -> confirmServerConfig());
-        cancelServerConfigButton = new ConsoleButton(I18N.getString(I18N.CONSOLE_BUTTON_CANCEL), event -> cancelServerConfig());
+        cancelServerConfigButton = new ConsoleButton(I18N.getString(I18N.CONSOLE_BUTTON_CANCEL), event -> hide());
         currentConfigHostTextField = new ConsoleTextField();
         currentConfigPortTextField = new NumericTextField();
         currentConfigPasswordPasswordField = new JFXPasswordField();
@@ -436,6 +425,8 @@ public class Console extends Application {
         initCurrentConfigPasswordTextField();
         initCurrentConfigPasswordPasswordField();
         initClientConfigPortTextField();
+        initShareServerConfigButton();
+        initImportServerConfigButton();
         display();
     }
 
@@ -495,6 +486,7 @@ public class Console extends Application {
         List<CipherKind> ciphers = Arrays.asList(CipherKind.values());
         currentConfigCipherChoiceBox.setItems(FXCollections.observableArrayList(ciphers));
         currentConfigCipherChoiceBox.setValue(CipherKind.aes_128_gcm);
+        currentConfigCipherChoiceBox.disableProperty().bind(Bindings.equal(Protocol.trojan, currentConfigProtocolChoiceBox.valueProperty()));
         // currentConfigHostTextField
         currentConfigHostTextField.getValidators().add(REQUIRED_FIELD_VALIDATOR);
         currentConfigHostTextField.textProperty().addListener((o, oldValue, newValue) -> currentConfigHostTextField.validate());
@@ -504,6 +496,14 @@ public class Console extends Application {
         List<Protocol> ciphers = Arrays.asList(Protocol.values());
         currentConfigProtocolChoiceBox.setItems(FXCollections.observableArrayList(ciphers));
         currentConfigProtocolChoiceBox.setValue(Protocol.shadowsocks);
+    }
+
+    private void initShareServerConfigButton() {
+        shareServerConfigButton.visibleProperty().bind(Bindings.equal(Protocol.shadowsocks, currentConfigProtocolChoiceBox.valueProperty()));
+    }
+
+    private void initImportServerConfigButton() {
+        importServerConfigButton.visibleProperty().bind(Bindings.equal(Protocol.shadowsocks, currentConfigProtocolChoiceBox.valueProperty()));
     }
 
     private void initServerConfigListView() {
