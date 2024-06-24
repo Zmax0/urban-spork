@@ -5,7 +5,7 @@ import com.urbanspork.test.TestUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class UDPCipherCacheTest {
+class UdpCipherCacheTest {
     @Test
     void testKey() {
         CipherKind kind = CipherKind.aead2022_blake3_aes_128_gcm;
