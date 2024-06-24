@@ -1,7 +1,6 @@
 package com.urbanspork.client;
 
 import com.urbanspork.client.shadowsocks.ClientUdpRelayHandler;
-import com.urbanspork.client.vmess.ClientUdpOverTcpHandler;
 import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
 import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.config.ClientConfig;
@@ -41,7 +40,7 @@ public class Client {
     public static void launch(ClientConfig config, CompletableFuture<Instance> promise) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        GlobalChannelTrafficShapingHandler trafficShapingHandler = new GlobalChannelTrafficShapingHandler(bossGroup);
+        GlobalChannelTrafficShapingHandler trafficShapingHandler = new GlobalChannelTrafficShapingHandler(workerGroup);
         ServerConfig current = config.getCurrent();
         current.setTrafficShapingHandler(trafficShapingHandler);
         try {
@@ -81,7 +80,7 @@ public class Client {
         ServerConfig current = config.getCurrent();
         ChannelHandler udpTransportHandler;
         if (Protocol.vmess == current.getProtocol()) {
-            udpTransportHandler = new ClientUdpOverTcpHandler(current, workerGroup);
+            udpTransportHandler = new com.urbanspork.client.vmess.ClientUdpOverTcpHandler(current, workerGroup);
         } else if (Protocol.trojan == current.getProtocol()) {
             udpTransportHandler = new com.urbanspork.client.trojan.ClientUdpOverTcpHandler(current, workerGroup);
         } else {
