@@ -30,8 +30,7 @@ public class ExceptionHandler extends ChannelInboundHandlerAdapter {
         if (cause.getCause() instanceof InvalidCipherTextException) {
             logger.error("[{}][{}][{}] Invalid cipher text", transport, protocol, transLog);
         } else {
-            String msg = String.format("[%s][%s][%s] Caught exception", transport, protocol, transLog);
-            logger.error(msg, cause);
+            logger.error("[{}][{}][{}] Caught exception", transport, protocol, transLog, cause);
         }
         ctx.close();
     }
