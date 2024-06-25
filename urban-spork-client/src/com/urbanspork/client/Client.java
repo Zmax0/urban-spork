@@ -25,6 +25,7 @@ import io.netty.handler.traffic.TrafficCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
@@ -101,7 +102,8 @@ public class Client {
             .bind(InetAddress.getLoopbackAddress(), config.getPort()).sync().channel();
     }
 
-    public record Instance(ServerSocketChannel tcp, DatagramChannel udp, TrafficCounter traffic) {
+    public record Instance(ServerSocketChannel tcp, DatagramChannel udp, TrafficCounter traffic) implements Closeable {
+        @Override
         public void close() {
             traffic.stop();
             tcp.close().awaitUninterruptibly();
