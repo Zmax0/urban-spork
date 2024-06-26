@@ -13,7 +13,9 @@ class ClientSocksInitializerTest {
         EmbeddedChannel channel = new EmbeddedChannel();
         ServerConfig config = ServerConfigTest.testConfig(0);
         Assertions.assertDoesNotThrow(() -> ClientSocksInitializer.buildSslHandler(channel, config));
-        config.setSsl(new SslSetting());
+        SslSetting ssl = new SslSetting();
+        ssl.setVerifyHostname(false);
+        config.setSsl(ssl);
         Assertions.assertDoesNotThrow(() -> ClientSocksInitializer.buildSslHandler(channel, config));
     }
 }
