@@ -24,6 +24,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -127,7 +128,8 @@ public class Server {
         }
     }
 
-    public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp) {
+    public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp) implements Closeable {
+        @Override
         public void close() {
             tcp.close().awaitUninterruptibly();
             udp.ifPresent(c -> c.close().awaitUninterruptibly());

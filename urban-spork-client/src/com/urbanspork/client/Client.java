@@ -1,7 +1,6 @@
 package com.urbanspork.client;
 
 import com.urbanspork.client.shadowsocks.ClientUdpRelayHandler;
-import com.urbanspork.client.vmess.ClientUdpOverTcpHandler;
 import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
 import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.config.ClientConfig;
@@ -26,6 +25,7 @@ import io.netty.handler.traffic.TrafficCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
@@ -41,7 +41,7 @@ public class Client {
     public static void launch(ClientConfig config, CompletableFuture<Instance> promise) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        GlobalChannelTrafficShapingHandler trafficShapingHandler = new GlobalChannelTrafficShapingHandler(bossGroup);
+        GlobalChannelTrafficShapingHandler trafficShapingHandler = new GlobalChannelTrafficShapingHandler(workerGroup);
         ServerConfig current = config.getCurrent();
         current.setTrafficShapingHandler(trafficShapingHandler);
         try {
@@ -81,7 +81,7 @@ public class Client {
         ServerConfig current = config.getCurrent();
         ChannelHandler udpTransportHandler;
         if (Protocol.vmess == current.getProtocol()) {
-            udpTransportHandler = new ClientUdpOverTcpHandler(current, workerGroup);
+            udpTransportHandler = new com.urbanspork.client.vmess.ClientUdpOverTcpHandler(current, workerGroup);
         } else if (Protocol.trojan == current.getProtocol()) {
             udpTransportHandler = new com.urbanspork.client.trojan.ClientUdpOverTcpHandler(current, workerGroup);
         } else {
@@ -102,7 +102,8 @@ public class Client {
             .bind(InetAddress.getLoopbackAddress(), config.getPort()).sync().channel();
     }
 
-    public record Instance(ServerSocketChannel tcp, DatagramChannel udp, TrafficCounter traffic) {
+    public record Instance(ServerSocketChannel tcp, DatagramChannel udp, TrafficCounter traffic) implements Closeable {
+        @Override
         public void close() {
             traffic.stop();
             tcp.close().awaitUninterruptibly();

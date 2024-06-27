@@ -11,7 +11,9 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLParameters;
 import java.io.File;
 
 public class ClientSocksInitializer extends ChannelInitializer<NioSocketChannel> {
@@ -34,6 +36,7 @@ public class ClientSocksInitializer extends ChannelInitializer<NioSocketChannel>
     public static SslHandler buildSslHandler(Channel ch, ServerConfig config) throws SSLException {
         String serverName = config.getHost();
         SslContextBuilder sslContextBuilder = SslContextBuilder.forClient();
+        boolean verifyHostname = true;
         if (config.getSsl() != null) {
             SslSetting ssl = config.getSsl();
             if (ssl.getCertificateFile() != null) {
@@ -42,8 +45,16 @@ public class ClientSocksInitializer extends ChannelInitializer<NioSocketChannel>
             if (ssl.getServerName() != null) {
                 serverName = ssl.getServerName(); // override
             }
+            verifyHostname = ssl.isVerifyHostname();
         }
         SslContext sslContext = sslContextBuilder.build();
-        return sslContext.newHandler(ch.alloc(), serverName, config.getPort());
+        SslHandler sslHandler = sslContext.newHandler(ch.alloc(), serverName, config.getPort());
+        if (verifyHostname) {
+            SSLEngine sslEngine = sslHandler.engine();
+            SSLParameters sslParameters = sslEngine.getSSLParameters();
+            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+            sslEngine.setSSLParameters(sslParameters);
+        }
+        return sslHandler;
     }
 }

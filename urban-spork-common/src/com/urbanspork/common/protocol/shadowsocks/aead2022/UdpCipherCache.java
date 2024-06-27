@@ -2,41 +2,25 @@ package com.urbanspork.common.protocol.shadowsocks.aead2022;
 
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.codec.aead.CipherMethod;
-import io.netty.util.HashedWheelTimer;
+import com.urbanspork.common.util.LruCache;
 
-import java.time.Duration;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
-public class UdpCipherCache {
-    private final HashedWheelTimer timer = new HashedWheelTimer(1, TimeUnit.SECONDS);
-    private final LinkedHashMap<Key, UdpCipher> map = new LinkedHashMap<>() {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry eldest) {
-            return map.size() > limit;
-        }
-    };
-    private final Duration duration;
-    private final int limit;
+public enum UdpCipherCache {
+    INSTANCE(new LruCache<>(AEAD2022.UDP.CIPHER_CACHE_LIMIT, AEAD2022.UDP.CIPHER_CACHE_DURATION, (k, v) -> {}));
 
-    public UdpCipherCache(Duration duration, int limit) {
-        this.duration = duration;
-        this.limit = limit;
+    private final LruCache<Key, UdpCipher> cache;
+
+    UdpCipherCache(LruCache<Key, UdpCipher> cache) {
+        this.cache = cache;
     }
 
-    public UdpCipher computeIfAbsent(CipherKind kind, CipherMethod method, byte[] key, long sessionId) {
-        Key cacheKey = new Key(kind, key, sessionId);
-        return map.computeIfAbsent(cacheKey, k -> {
-            timer.newTimeout(timeout -> map.remove(cacheKey), duration.toSeconds(), TimeUnit.SECONDS);
-            return new UdpCipher(method, AEAD2022.UDP.sessionSubkey(key, sessionId));
-        });
-    }
-
-    public boolean contains(CipherKind kind, byte[] key, long sessionId) {
-        return map.containsKey(new Key(kind, key, sessionId));
+    public UdpCipher get(CipherKind kind, CipherMethod method, byte[] key, long sessionId) {
+        return cache.computeIfAbsent(
+            new Key(kind, key, sessionId),
+            k -> new UdpCipher(method, AEAD2022.UDP.sessionSubkey(key, sessionId))
+        );
     }
 
     record Key(CipherKind kind, byte[] key, long sessionId) {
