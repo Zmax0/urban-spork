@@ -232,7 +232,7 @@ public interface AEAD2022 {
         }
 
         static UdpCipher getCipher(CipherKind kind, CipherMethod method, byte[] key, long sessionId) {
-            return UdpCipherCaches.INSTANCE.get(kind, method, key, sessionId);
+            return UdpCipherCache.INSTANCE.get(kind, method, key, sessionId);
         }
 
         static void encodePacket(UdpCipher cipher, byte[] iPSK, int eihLength, ByteBuf in, ByteBuf out) throws InvalidCipherTextException {

@@ -58,6 +58,8 @@ put *config.json* file into the unpacked folder before running server
 
 >> `serverName`: the Server Name Indication field in the SSL handshake. If left blank, it will be set to `server.host`
 
+>> `verifyHostname`: whether to verify SSL hostname, default is `true`
+
 ## Features
 
 ### Transport
