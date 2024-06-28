@@ -76,6 +76,11 @@
         <version>${netty.version}</version>
       </dependency>
       <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-codec-http</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcpkix-lts8on</artifactId>
         <version>${bouncycastle.version}</version>
