@@ -2,9 +2,32 @@
 
 [![codecov](https://codecov.io/gh/Zmax0/urban-spork/branch/master/graph/badge.svg?token=6QAZQ05HZV)](https://codecov.io/gh/Zmax0/urban-spork)
 
-A sock5 proxy
+A sock5 proxy for improved privacy and security
+
+## Features
+
+### Transport
+
+|               | Shadowsocks | VMess | Trojan |
+|:--------------|:-----------:|:-----:|:------:|
+| TCP           |      ✔      |   ✔   |   ✔    |
+| UDP           |      ✔      |   ✔   |   ✔    |
+| WS(WebSocket) |      ✔      |   ✔   |        |
+
+### Ciphers
+
+|                         | Shadowsocks |  VMess  |
+|:------------------------|:-----------:|:-------:|
+| aes-128-gcm             |   `C` `S`   | `C` `S` |
+| aes-256-gcm             |   `C` `S`   |         |
+| chacha20-poly1305       |   `C` `S`   | `C` `S` |
+| 2022-blake3-aes-128-gcm |   `C` `S`   |         |
+| 2022-blake3-aes-256-gcm |   `C` `S`   |         |
+
+`C` for client `S` for server
 
 ## Config
+
 put *config.json* file into the unpacked folder before running server
 
 ```json5
@@ -32,6 +55,12 @@ put *config.json* file into the unpacked folder before running server
         "keyFile": "/path/to/private.key",
         "keyPassword": "",
         "serverName": ""
+      },
+      "ws": {
+        "header": {
+          "Host": "example.com"
+        },
+        "path": "/ws"
       }
     }
   ]
@@ -48,7 +77,7 @@ put *config.json* file into the unpacked folder before running server
 
 > `user`: (OPTIONAL for shadowsocks) support multiple users with [*Shadowsocks 2022 Extensible Identity Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-shadowsocks-2022-extensible-identity-headers.md)
 
-> `sslSetting`: (REQUIRED for trojan) SSL specific configurations
+> `ssl`: (OPTIONAL) SSL specific configurations
 
 >> `certificateFile`: certificate file
 
@@ -60,26 +89,11 @@ put *config.json* file into the unpacked folder before running server
 
 >> `verifyHostname`: whether to verify SSL hostname, default is `true`
 
-## Features
+> `ws`: (OPTIONAL) WebSocket specific configurations
 
-### Transport
+>> `header`: the header to be sent in HTTP request, should be key-value pairs in clear-text string format
 
-|     | Shadowsocks | VMess | Trojan |
-|:----|:-----------:|:-----:|:------:|
-| TCP |      ✔      |   ✔   |   ✔    |
-| UDP |      ✔      |   ✔   |   ✔    |
-
-### Ciphers
-
-|                         | Shadowsocks |  VMess  |
-|:------------------------|:-----------:|:-------:|
-| aes-128-gcm             |   `C` `S`   | `C` `S` |
-| aes-256-gcm             |   `C` `S`   |         |
-| chacha20-poly1305       |   `C` `S`   | `C` `S` |
-| 2022-blake3-aes-128-gcm |   `C` `S`   |         |
-| 2022-blake3-aes-256-gcm |   `C` `S`   |         |
-
-`C` for client `S` for server
+>> `path`: the HTTP path for the websocket request
 
 ## Build
 

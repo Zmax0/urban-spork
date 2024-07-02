@@ -9,6 +9,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.ByteToMessageCodec;
+import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +44,7 @@ public class TcpRelayCodec extends ByteToMessageCodec<ByteBuf> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        if (Mode.Server == session.mode() && ctx.channel() instanceof SocketChannel socketChannel) {
+        if (Mode.Server == session.mode() && cause instanceof DecoderException && ctx.channel() instanceof SocketChannel socketChannel) {
             String transLog = ExceptionHandler.transLog(ctx.channel());
             logger.error("[tcp][{}] {}", transLog, cause.getMessage());
             ctx.deregister();

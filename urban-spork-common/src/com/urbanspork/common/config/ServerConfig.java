@@ -7,7 +7,6 @@ import com.urbanspork.common.transport.Transport;
 import com.urbanspork.common.transport.udp.PacketEncoding;
 import io.netty.handler.traffic.AbstractTrafficShapingHandler;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class ServerConfig {
@@ -31,6 +30,8 @@ public class ServerConfig {
     private List<ServerUserConfig> user;
 
     private SslSetting ssl;
+
+    private WebSocketSetting ws;
 
     @JsonIgnore
     private AbstractTrafficShapingHandler trafficShapingHandler;
@@ -83,8 +84,12 @@ public class ServerConfig {
         this.remark = remark;
     }
 
+    public Transport[] getTransport() {
+        return transport;
+    }
+
     public void setTransport(Transport[] transports) {
-        this.transport = transports;
+        this.transport = Transport.regroup(transports);
     }
 
     public PacketEncoding getPacketEncoding() {
@@ -109,6 +114,14 @@ public class ServerConfig {
 
     public void setSsl(SslSetting ssl) {
         this.ssl = ssl;
+    }
+
+    public WebSocketSetting getWs() {
+        return ws;
+    }
+
+    public void setWs(WebSocketSetting ws) {
+        this.ws = ws;
     }
 
     public AbstractTrafficShapingHandler getTrafficShapingHandler() {
@@ -142,6 +155,10 @@ public class ServerConfig {
     }
 
     public boolean udpEnabled() {
-        return transport != null && Arrays.stream(transport).anyMatch(n -> n == Transport.UDP);
+        return transport != null && transport[Transport.UDP.index()] != null;
+    }
+
+    public boolean wsEnabled() {
+        return Protocol.trojan != protocol && transport != null && transport[Transport.TCP.index()] == Transport.WS;
     }
 }

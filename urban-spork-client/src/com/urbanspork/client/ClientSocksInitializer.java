@@ -3,9 +3,14 @@ package com.urbanspork.client;
 import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.SslSetting;
+import com.urbanspork.common.config.WebSocketSetting;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolConfig;
+import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler;
 import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
@@ -15,6 +20,10 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Map;
+import java.util.Optional;
 
 public class ClientSocksInitializer extends ChannelInitializer<NioSocketChannel> {
 
@@ -56,5 +65,20 @@ public class ClientSocksInitializer extends ChannelInitializer<NioSocketChannel>
             sslEngine.setSSLParameters(sslParameters);
         }
         return sslHandler;
+    }
+
+    public static WebSocketClientProtocolHandler buildWebSocketHandler(ServerConfig config) throws URISyntaxException {
+        Optional<WebSocketSetting> ws = Optional.of(config.getWs());
+        String path = ws.map(WebSocketSetting::getPath).orElseThrow(() -> new IllegalArgumentException("required path not present"));
+        WebSocketClientProtocolConfig.Builder builder = WebSocketClientProtocolConfig.newBuilder()
+            .webSocketUri(new URI("ws", null, config.getHost(), config.getPort(), path, null, null));
+        ws.map(WebSocketSetting::getHeader).ifPresent(h -> {
+            HttpHeaders headers = new DefaultHttpHeaders();
+            for (Map.Entry<String, String> entry : h.entrySet()) {
+                headers.set(entry.getKey(), entry.getValue());
+            }
+            builder.generateOriginHeader(false).customHeaders(headers);
+        });
+        return new WebSocketClientProtocolHandler(builder.build());
     }
 }
