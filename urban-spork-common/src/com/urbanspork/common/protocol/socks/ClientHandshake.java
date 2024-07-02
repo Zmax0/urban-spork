@@ -18,8 +18,6 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandResponseDecoder;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import io.netty.handler.codec.socksx.v5.Socks5InitialResponse;
 import io.netty.handler.codec.socksx.v5.Socks5InitialResponseDecoder;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.Promise;
 
 import java.net.InetSocketAddress;
@@ -36,7 +34,6 @@ public interface ClientHandshake {
                         Socks5InitialResponseDecoder socks5InitialResponseDecoder = new Socks5InitialResponseDecoder();
                         Socks5CommandResponseDecoder socks5CommandResponseDecoder = new Socks5CommandResponseDecoder();
                         ch.pipeline().addLast(
-                            new LoggingHandler(LogLevel.DEBUG),
                             new Socks5ClientEncoder(Socks5AddressEncoder.DEFAULT),
                             socks5InitialResponseDecoder,
                             socks5CommandResponseDecoder,
