@@ -46,8 +46,7 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
             case vmess -> c.pipeline().addLast(new ServerAeadCodec(config), new ExceptionHandler(config), new ServerRelayHandler(config));
             case trojan -> {
                 String serverName = config.getHost();
-                SslSetting sslSetting = Optional.ofNullable(config.getSsl())
-                    .orElseThrow(() -> new IllegalArgumentException("required security setting not present"));
+                SslSetting sslSetting = Optional.ofNullable(config.getSsl()).orElseThrow(() -> new IllegalArgumentException("required security setting not present"));
                 SslContext sslContext = SslContextBuilder.forServer(new File(sslSetting.getCertificateFile()), new File(sslSetting.getKeyFile()), sslSetting.getKeyPassword()).build();
                 if (sslSetting.getServerName() != null) {
                     serverName = sslSetting.getServerName();
@@ -60,7 +59,7 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
     }
 
     private void enableWebSocket(Channel channel) {
-        String path = Optional.of(config.getWs()).map(WebSocketSetting::getPath).orElseThrow(() -> new IllegalArgumentException("required path not present"));
+        String path = Optional.ofNullable(config.getWs()).map(WebSocketSetting::getPath).orElseThrow(() -> new IllegalArgumentException("required path not present"));
         channel.pipeline().addLast(
             new HttpServerCodec(),
             new HttpObjectAggregator(0xffff),

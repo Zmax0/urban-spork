@@ -90,18 +90,18 @@ public class Server {
             }
         }
         Context context = Context.newCheckReplayInstance();
-        ServerSocketChannel tcp;
-        try {
-            tcp = (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
-                .childHandler(new ServerInitializer(config, context))
-                .childOption(ChannelOption.ALLOW_HALF_CLOSURE, true)
-                .bind(config.getPort()).sync().addListener(future -> logger.info("Startup tcp server => {}", config)).channel()
-                .closeFuture().addListener(future -> context.release()).channel();
-        } catch (Exception e) {
-            context.release();
-            throw e;
-        }
+        ServerSocketChannel tcp = (ServerSocketChannel) new ServerBootstrap()
+            .group(bossGroup, workerGroup)
+            .channel(NioServerSocketChannel.class)
+            .childHandler(new ServerInitializer(config, context))
+            .childOption(ChannelOption.ALLOW_HALF_CLOSURE, true)
+            .bind(config.getPort()).addListener(future -> {
+                if (!future.isSuccess()) {
+                    context.release();
+                }
+            })
+            .sync().addListener(future -> logger.info("Startup tcp server => {}", config))
+            .channel().closeFuture().addListener(future -> context.release()).channel();
         config.setPort(tcp.localAddress().getPort());
         Optional<DatagramChannel> udp = startupUdp(bossGroup, workerGroup, config);
         return new Instance(tcp, udp);

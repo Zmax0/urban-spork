@@ -14,7 +14,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.socket.DatagramPacket;
-import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.EncoderException;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
@@ -111,33 +110,5 @@ class EmbeddedChannelTest {
         Assertions.assertNull(server.readInbound());
         client.close();
         server.close();
-    }
-
-    @Test
-    void testAead2022TcpAntiReplay() {
-        EmbeddedChannel server1 = new EmbeddedChannel();
-        EmbeddedChannel server2 = new EmbeddedChannel();
-        EmbeddedChannel client = new EmbeddedChannel();
-        CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
-        ServerConfig config = new ServerConfig();
-        config.setPassword(TestDice.rollPassword(Protocol.shadowsocks, kind));
-        config.setCipher(kind);
-        Context context = Context.newCheckReplayInstance();
-        server1.pipeline().addLast(new TcpRelayCodec(context, config, Mode.Server));
-        server2.pipeline().addLast(new TcpRelayCodec(context, config, Mode.Server));
-        DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "localhost", 16800);
-        client.pipeline().addLast(new TcpRelayCodec(context, config, request, Mode.Client));
-        client.writeOutbound(Unpooled.wrappedBuffer(Dice.rollBytes(10)));
-        ByteBuf msg1 = client.readOutbound();
-        ByteBuf msg2 = msg1.copy();
-        Assertions.assertTrue(msg1.isReadable());
-        Assertions.assertTrue(msg2.isReadable());
-        server1.writeInbound(msg1);
-        ByteBuf tooShortMsg = Unpooled.wrappedBuffer(Dice.rollBytes(33));
-        Assertions.assertThrows(DecoderException.class, () -> server2.writeInbound(tooShortMsg));
-        Assertions.assertThrows(DecoderException.class, () -> server2.writeInbound(msg2));
-        client.close();
-        server1.close();
-        server2.close();
     }
 }

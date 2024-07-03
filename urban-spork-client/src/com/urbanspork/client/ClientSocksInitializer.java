@@ -68,7 +68,7 @@ public class ClientSocksInitializer extends ChannelInitializer<NioSocketChannel>
     }
 
     public static WebSocketClientProtocolHandler buildWebSocketHandler(ServerConfig config) throws URISyntaxException {
-        Optional<WebSocketSetting> ws = Optional.of(config.getWs());
+        Optional<WebSocketSetting> ws = Optional.ofNullable(config.getWs());
         String path = ws.map(WebSocketSetting::getPath).orElseThrow(() -> new IllegalArgumentException("required path not present"));
         WebSocketClientProtocolConfig.Builder builder = WebSocketClientProtocolConfig.newBuilder()
             .webSocketUri(new URI("ws", null, config.getHost(), config.getPort(), path, null, null));
