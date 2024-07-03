@@ -44,12 +44,13 @@ public class TcpRelayCodec extends ByteToMessageCodec<ByteBuf> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        if (Mode.Server == session.mode() && cause instanceof DecoderException && ctx.channel() instanceof SocketChannel socketChannel) {
-            String transLog = ExceptionHandler.transLog(ctx.channel());
+        if (Mode.Server == session.mode() && cause instanceof DecoderException) {
+            SocketChannel channel = (SocketChannel) ctx.channel();
+            String transLog = ExceptionHandler.transLog(channel);
             logger.error("[tcp][{}] {}", transLog, cause.getMessage());
             ctx.deregister();
-            socketChannel.config().setSoLinger(0);
-            socketChannel.shutdownOutput().addListener(future -> socketChannel.unsafe().beginRead());
+            channel.config().setSoLinger(0);
+            channel.shutdownOutput().addListener(future -> channel.unsafe().beginRead());
         } else {
             ctx.fireExceptionCaught(cause);
         }

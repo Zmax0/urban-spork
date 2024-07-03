@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 public class DelayedEchoTestServer {
 
     public static final int PORT = 16801;
-    public static final int MAX_DELAYED_SECOND = 5;
+    public static final int MAX_DELAYED_SECOND = 2;
 
     public static void main(String[] args) throws IOException {
         launch(PORT, new CompletableFuture<>());

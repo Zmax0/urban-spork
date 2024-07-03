@@ -20,7 +20,7 @@
   </appender>
 
   <logger name="io.netty" level="DEBUG"/>
-  <logger name="io.netty.handler.ssl" level="INFO"/>
+  <logger name="io.netty.handler" level="INFO"/>
   <logger name="com.urbanspork" level="INFO"/>
 
   <root level="WARN">

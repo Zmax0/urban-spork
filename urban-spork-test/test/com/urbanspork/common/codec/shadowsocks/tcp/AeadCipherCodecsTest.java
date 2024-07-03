@@ -21,7 +21,6 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,8 +32,8 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 @TestInstance(Lifecycle.PER_CLASS)
+@DisplayName("tcp.AeadCipherCodecsTest")
 class AeadCipherCodecsTest {
-
     private final byte[] in = Dice.rollBytes(0xffff * 10);
     private CipherKind kind;
     private String password;
@@ -46,17 +45,9 @@ class AeadCipherCodecsTest {
         logger.setLevel(Level.TRACE);
     }
 
-    @DisplayName("Single cipher")
-    @Test
-    void test() throws Exception {
-        parameterizedTest(CipherKind.chacha20_poly1305);
-        parameterizedTest(CipherKind.aead2022_blake3_aes_256_gcm);
-    }
-
     @ParameterizedTest
-    @DisplayName("All supported cipher iterate")
     @EnumSource(CipherKind.class)
-    void parameterizedTest(CipherKind kind) throws Exception {
+    void testByKind(CipherKind kind) throws Exception {
         this.password = TestDice.rollPassword(Protocol.shadowsocks, kind);
         this.kind = kind;
         int port = TestDice.rollPort();

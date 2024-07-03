@@ -24,12 +24,12 @@ class ClientSocksInitializerTest {
 
     @Test
     void testBuildWebSocketHandler() {
-        ServerConfig config = ServerConfigTest.testConfig(0);
-        Assertions.assertThrows(NullPointerException.class, () -> ClientSocksInitializer.buildWebSocketHandler(config));
         WebSocketSetting webSocket = new WebSocketSetting();
+        ServerConfig config = ServerConfigTest.testConfig(0);
+        config.setWs(webSocket);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ClientSocksInitializer.buildWebSocketHandler(config));
         webSocket.setPath("/ws");
         webSocket.setHeader(Map.of("Host", "localhost"));
-        config.setWs(webSocket);
         Assertions.assertDoesNotThrow(() -> ClientSocksInitializer.buildWebSocketHandler(config));
     }
 }

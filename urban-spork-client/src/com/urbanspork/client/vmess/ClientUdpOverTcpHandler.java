@@ -57,37 +57,7 @@ public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<Cli
                         new HttpClientCodec(),
                         new HttpObjectAggregator(0xffff),
                         ClientSocksInitializer.buildWebSocketHandler(config),
-                        new MessageToMessageCodec<BinaryWebSocketFrame, ByteBuf>() {
-                            private ChannelPromise promise;
-
-                            @Override
-                            protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
-                                BinaryWebSocketFrame frame = new BinaryWebSocketFrame(msg.retain());
-                                if (!promise.isDone()) {
-                                    promise.addListener(f -> ctx.writeAndFlush(frame));
-                                } else {
-                                    out.add(frame);
-                                }
-                            }
-
-                            @Override
-                            protected void decode(ChannelHandlerContext ctx, BinaryWebSocketFrame msg, List<Object> out) {
-                                out.add(msg.retain().content());
-                            }
-
-                            @Override
-                            public void handlerAdded(ChannelHandlerContext ctx) {
-                                promise = ctx.newPromise();
-                            }
-
-                            @Override
-                            public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-                                if (evt == WebSocketClientProtocolHandler.ClientHandshakeStateEvent.HANDSHAKE_COMPLETE) {
-                                    promise.setSuccess();
-                                }
-                                ctx.fireUserEventTriggered(evt);
-                            }
-                        }
+                        new WebSocketCodec()
                     );
                 }
                 pipeline.addLast(new ClientAeadCodec(config.getCipher(), RequestCommand.UDP, key.recipient, config.getPassword()));
@@ -125,6 +95,38 @@ public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<Cli
             Channel inboundChannel = ctx.channel();
             logger.info("[udp][vmess]{} ← {} ~ {} ← {}", sender, inboundChannel.localAddress(), inboundChannel.remoteAddress(), recipient);
             channel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(msg, recipient), sender));
+        }
+    }
+
+    private static class WebSocketCodec extends MessageToMessageCodec<BinaryWebSocketFrame, ByteBuf> {
+        private ChannelPromise promise;
+
+        @Override
+        public void handlerAdded(ChannelHandlerContext ctx) {
+            promise = ctx.newPromise();
+        }
+
+        @Override
+        protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
+            BinaryWebSocketFrame frame = new BinaryWebSocketFrame(msg.retain());
+            if (!promise.isDone()) {
+                promise.addListener(f -> ctx.writeAndFlush(frame));
+            } else {
+                out.add(frame);
+            }
+        }
+
+        @Override
+        protected void decode(ChannelHandlerContext ctx, BinaryWebSocketFrame msg, List<Object> out) {
+            out.add(msg.retain().content());
+        }
+
+        @Override
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+            if (evt == WebSocketClientProtocolHandler.ClientHandshakeStateEvent.HANDSHAKE_COMPLETE) {
+                promise.setSuccess();
+            }
+            ctx.fireUserEventTriggered(evt);
         }
     }
 }

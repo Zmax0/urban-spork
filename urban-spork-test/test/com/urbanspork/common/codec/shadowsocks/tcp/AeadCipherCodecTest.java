@@ -22,11 +22,14 @@ import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
+@DisplayName("tcp.AeadCipherCodecTest")
 class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
 
     @Test
@@ -68,6 +71,32 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
         Session session = new Session(Mode.Server, new Identity(kind), request, ServerUserManager.EMPTY, new Context());
         codec.decode(session, msg, out);
         Assertions.assertThrows(DecoderException.class, () -> codec.decode(session, temp, out));
+    }
+
+    @Test
+    void testAead2022TcpAntiReplay() {
+        CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
+        ServerConfig config = new ServerConfig();
+        config.setPassword(TestDice.rollPassword(Protocol.shadowsocks, kind));
+        config.setCipher(kind);
+        Context context = Context.newCheckReplayInstance();
+        DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "localhost", 16800);
+        ByteBuf msg1 = Unpooled.buffer();
+        Identity identity = new Identity(kind);
+        Session clientSession = new Session(Mode.Client, identity, request, ServerUserManager.EMPTY, context);
+        AeadCipherCodec clientCodec = AeadCipherCodecs.get(config);
+        Assertions.assertDoesNotThrow(() -> clientCodec.encode(clientSession, Unpooled.wrappedBuffer(Dice.rollBytes(10)), msg1));
+        ByteBuf msg2 = msg1.copy();
+        Assertions.assertTrue(msg1.isReadable());
+        Assertions.assertTrue(msg2.isReadable());
+        ByteBuf tooShortMsg = Unpooled.wrappedBuffer(Dice.rollBytes(33));
+        Session serverSession = new Session(Mode.Server, identity, request, ServerUserManager.EMPTY, context);
+        List<Object> out = new ArrayList<>();
+        AeadCipherCodec serverCodec1 = AeadCipherCodecs.get(config);
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> serverCodec1.decode(serverSession, tooShortMsg, out));
+        Assertions.assertDoesNotThrow(() -> serverCodec1.decode(serverSession, msg1, out));
+        AeadCipherCodec serverCodec2 = AeadCipherCodecs.get(config);
+        Assertions.assertThrows(DecoderException.class, () -> serverCodec2.decode(serverSession, msg2, out));
     }
 
     @Override

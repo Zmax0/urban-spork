@@ -15,11 +15,13 @@ import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 import java.util.Base64;
 
+@DisplayName("udp.AeadCipherCodecTest")
 class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
 
     @Test
@@ -41,13 +43,18 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
 
     @Test
     void testEmptyMsg() throws InvalidCipherTextException {
+        testEmptyMsg(Mode.Client, Mode.Server);
+        testEmptyMsg(Mode.Server, Mode.Client);
+    }
+
+    void testEmptyMsg(Mode from, Mode to) throws InvalidCipherTextException {
         AeadCipherCodec codec = newAEADCipherCodec();
         InetSocketAddress address = InetSocketAddress.createUnresolved(TestDice.rollHost(), TestDice.rollPort());
         ByteBuf in = Unpooled.buffer();
         CipherKind kind = TestDice.rollCipher();
-        codec.encode(new Context(Mode.Client, new Control(kind), address, ServerUserManager.EMPTY), Unpooled.EMPTY_BUFFER, in);
+        codec.encode(new Context(from, new Control(kind), address, ServerUserManager.EMPTY), Unpooled.EMPTY_BUFFER, in);
         Assertions.assertTrue(in.isReadable());
-        RelayingPacket<ByteBuf> pocket = codec.decode(new Context(Mode.Server, new Control(kind), address, ServerUserManager.EMPTY), in);
+        RelayingPacket<ByteBuf> pocket = codec.decode(new Context(to, new Control(kind), address, ServerUserManager.EMPTY), in);
         Assertions.assertFalse(in.isReadable());
         Assertions.assertNotNull(pocket);
     }
