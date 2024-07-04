@@ -85,11 +85,11 @@ public class ServerConfig {
     }
 
     public Transport[] getTransport() {
-        return transport;
+        return Transport.reverseToMap(transport);
     }
 
     public void setTransport(Transport[] transports) {
-        this.transport = Transport.regroup(transports);
+        this.transport = Transport.toMap(transports);
     }
 
     public PacketEncoding getPacketEncoding() {
@@ -155,10 +155,10 @@ public class ServerConfig {
     }
 
     public boolean udpEnabled() {
-        return transport != null && transport[Transport.UDP.index()] != null;
+        return transport != null && transport.length != 0 && transport[Transport.UDP.index()] != null;
     }
 
     public boolean wsEnabled() {
-        return Protocol.trojan != protocol && transport != null && transport[Transport.TCP.index()] == Transport.WS;
+        return Protocol.trojan != protocol && transport != null && transport.length != 0 && transport[Transport.TCP.index()] == Transport.WS;
     }
 }
