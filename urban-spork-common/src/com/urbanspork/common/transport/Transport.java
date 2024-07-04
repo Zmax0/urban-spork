@@ -1,10 +1,11 @@
 package com.urbanspork.common.transport;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public enum Transport {
-
     UDP(0, 1), TCP(1, 1), WS(1, 2);
 
     private final int index;
@@ -21,11 +22,31 @@ public enum Transport {
         return index;
     }
 
+    @JsonValue
     public String value() {
         return value;
     }
 
-    public static Transport[] regroup(Transport[] transports) {
+    public static Transport[] reverseToMap(Transport[] transports) {
+        if (transports == null || transports.length == 0) {
+            return transports;
+        }
+        int count = 0;
+        for (Transport transport : transports) {
+            if (transport != null) {
+                count++;
+            }
+        }
+        Transport[] res = new Transport[count];
+        for (Transport transport : transports) {
+            if (transport != null) {
+                res[res.length - count--] = transport;
+            }
+        }
+        return res;
+    }
+
+    public static Transport[] toMap(Transport[] transports) {
         if (transports == null || transports.length == 0) {
             return transports;
         }

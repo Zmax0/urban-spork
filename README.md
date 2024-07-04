@@ -10,9 +10,9 @@ A sock5 proxy for improved privacy and security
 
 |               | Shadowsocks | VMess | Trojan |
 |:--------------|:-----------:|:-----:|:------:|
-| TCP           |      ✔      |   ✔   |   ✔    |
-| UDP           |      ✔      |   ✔   |   ✔    |
-| WS(WebSocket) |      ✔      |   ✔   |        |
+| tcp           |      ✔      |   ✔   |   ✔    |
+| udp           |      ✔      |   ✔   |   ✔    |
+| ws(WebSocket) |      ✔      |   ✔   |        |
 
 ### Ciphers
 
