@@ -16,6 +16,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -23,6 +24,7 @@ import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler;
 import io.netty.handler.codec.socks.SocksCmdType;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse;
@@ -101,6 +103,7 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
             ClientSocksInitializer.buildWebSocketHandler(config),
             new WebSocketCodec(inbound, config, request)
         );
+        inbound.closeFuture().addListener(future -> outbound.writeAndFlush(new CloseWebSocketFrame()));
     }
 
     static class WebSocketCodec extends MessageToMessageCodec<BinaryWebSocketFrame, ByteBuf> {
@@ -127,9 +130,14 @@ public class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
             if (evt == WebSocketClientProtocolHandler.ClientHandshakeStateEvent.HANDSHAKE_COMPLETE) {
+                inbound.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+                    @Override
+                    public void channelRead(ChannelHandlerContext ctx2, Object msg) {
+                        ctx.channel().writeAndFlush(msg);
+                    }
+                }); // L → R
                 Socks5CommandRequest bndRequest = Socks5.toCommandRequest(Socks5CommandType.CONNECT, (InetSocketAddress) inbound.localAddress());
-                inbound.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, bndRequest.dstAddrType(), bndRequest.dstAddr(), bndRequest.dstPort()))
-                    .addListener((ChannelFutureListener) channelFuture -> inbound.pipeline().addLast(new DefaultChannelInboundHandler(ctx.channel()))); // L → R
+                inbound.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, bndRequest.dstAddrType(), bndRequest.dstAddr(), bndRequest.dstPort()));
             }
             if (evt == WebSocketClientProtocolHandler.ClientHandshakeStateEvent.HANDSHAKE_TIMEOUT) {
                 logger.error("Connect proxy websocket server {}:{} time out", config.getHost(), config.getPort());

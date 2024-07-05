@@ -8,9 +8,9 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.socksx.v5.*;
 
 @ChannelHandler.Sharable
-public class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks5Message> {
+class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks5Message> {
 
-    public static final ClientSocksMessageHandler INSTANCE = new ClientSocksMessageHandler();
+    static final ClientSocksMessageHandler INSTANCE = new ClientSocksMessageHandler();
 
     private ClientSocksMessageHandler() {}
 
