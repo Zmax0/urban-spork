@@ -31,6 +31,12 @@ public record Context(LruCache<Key, Object> saltCache) {
         }
     }
 
+    public void resetNonceReplay(byte[] nonce) {
+        if (saltCache != null) {
+            saltCache.remove(new Key(nonce));
+        }
+    }
+
     public void release() {
         saltCache.release();
     }

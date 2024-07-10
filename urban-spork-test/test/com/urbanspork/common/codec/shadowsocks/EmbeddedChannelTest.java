@@ -15,9 +15,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.EncoderException;
-import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
-import io.netty.handler.codec.socksx.v5.Socks5AddressType;
-import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +27,7 @@ class EmbeddedChannelTest {
     void testTcpRelayChannel() {
         int port = TestDice.rollPort();
         String host = TestDice.rollHost();
-        DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, host, port);
+        InetSocketAddress request = InetSocketAddress.createUnresolved(host, port);
         CipherKind cipher = TestDice.rollCipher();
         String password = TestDice.rollPassword(Protocol.shadowsocks, cipher);
         ServerConfig config = new ServerConfig();

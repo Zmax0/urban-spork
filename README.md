@@ -2,9 +2,14 @@
 
 [![codecov](https://codecov.io/gh/Zmax0/urban-spork/branch/master/graph/badge.svg?token=6QAZQ05HZV)](https://codecov.io/gh/Zmax0/urban-spork)
 
-A sock5 proxy for improved privacy and security
+A network tool for improved privacy and security
 
 ## Features
+
+### Local
+
+- http
+- socks5
 
 ### Transport
 
@@ -75,25 +80,26 @@ put *config.json* file into the unpacked folder before running server
 
 > `packetEncoding`: "None" | "Packet"
 
-> `user`: (OPTIONAL for shadowsocks) support multiple users with [*Shadowsocks 2022 Extensible Identity Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-shadowsocks-2022-extensible-identity-headers.md)
+> `user`: (OPTIONAL for shadowsocks) support multiple users with [*Shadowsocks 2022 Extensible Identity
+Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-shadowsocks-2022-extensible-identity-headers.md)
 
 > `ssl`: (OPTIONAL) SSL specific configurations
 
->> `certificateFile`: certificate file
+> > `certificateFile`: certificate file
 
->> `keyFile`: private key file for encryption
+> > `keyFile`: private key file for encryption
 
->> `keyPassword`: password of the private key file
+> > `keyPassword`: password of the private key file
 
->> `serverName`: the Server Name Indication field in the SSL handshake. If left blank, it will be set to `server.host`
+> > `serverName`: the Server Name Indication field in the SSL handshake. If left blank, it will be set to `server.host`
 
->> `verifyHostname`: whether to verify SSL hostname, default is `true`
+> > `verifyHostname`: whether to verify SSL hostname, default is `true`
 
 > `ws`: (OPTIONAL) WebSocket specific configurations
 
->> `header`: the header to be sent in HTTP request, should be key-value pairs in clear-text string format
+> > `header`: the header to be sent in HTTP request, should be key-value pairs in clear-text string format
 
->> `path`: the HTTP path for the websocket request
+> > `path`: the HTTP path for the websocket request
 
 ## Build
 

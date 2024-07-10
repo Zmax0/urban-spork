@@ -174,6 +174,7 @@ class AeadCipherCodec {
         in.skipBytes(sealedHeaderLength);
         int length = headerBuf.readUnsignedShort();
         if (in.readableBytes() < length + tagSize) {
+            session.context().resetNonceReplay(salt);
             in.resetReaderIndex();
             return;
         }

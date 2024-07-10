@@ -38,6 +38,11 @@
         </includes>
       </resource>
     </resources>
+    <testResources>
+      <testResource>
+        <directory>resource</directory>
+      </testResource>
+    </testResources>
     <plugins>
       <plugin>
         <groupId>org.jacoco</groupId>

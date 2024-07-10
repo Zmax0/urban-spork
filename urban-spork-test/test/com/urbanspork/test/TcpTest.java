@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -47,7 +48,10 @@ class TcpTest extends TcpTestTemplate {
         }
         List<Server.Instance> server = launchServer(config.getServers());
         Client.Instance client = launchClient(config);
-        handshakeAndSendBytes(client.tcp().localAddress());
+        InetSocketAddress clientAddress = client.tcp().localAddress();
+        socksHandshakeAndSendBytes(clientAddress);
+        httpsHandshakeAndSendBytes(clientAddress);
+        httpSendBytes(clientAddress);
         closeServer(server);
         client.close();
     }
@@ -56,7 +60,10 @@ class TcpTest extends TcpTestTemplate {
     void testConnectServerFailed() throws ExecutionException, InterruptedException {
         ClientConfig config = ClientConfigTest.testConfig(0, TestDice.rollPort());
         Client.Instance client = launchClient(config);
-        Assertions.assertThrows(ExecutionException.class, () -> handshakeAndSendBytes(client.tcp().localAddress()));
+        InetSocketAddress clientAddress = client.tcp().localAddress();
+        Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientAddress));
+        Assertions.assertThrows(ExecutionException.class, () -> httpsHandshakeAndSendBytes(clientAddress));
+        Assertions.assertThrows(ExecutionException.class, () -> httpSendBytes(clientAddress));
         client.close();
     }
 
@@ -77,7 +84,10 @@ class TcpTest extends TcpTestTemplate {
         current.setProtocol(protocol);
         current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
         Client.Instance client = launchClient(config);
-        handshakeAndSendBytes(client.udp().localAddress());
+        InetSocketAddress clientAddress = client.udp().localAddress();
+        socksHandshakeAndSendBytes(clientAddress);
+        httpsHandshakeAndSendBytes(clientAddress);
+        httpSendBytes(clientAddress);
         ServerUserManager.DEFAULT.clear();
         closeServer(server);
         client.close();
