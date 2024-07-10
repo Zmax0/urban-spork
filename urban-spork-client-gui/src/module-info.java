@@ -6,7 +6,6 @@ module com.urbanspork.client.gui {
     requires com.urbanspork.client;
     requires com.urbanspork.common;
     requires io.netty.handler;
-    requires java.datatransfer;
     requires java.desktop;
     requires javafx.base;
     requires javafx.controls;
@@ -14,4 +13,5 @@ module com.urbanspork.client.gui {
     requires org.slf4j;
 
     exports com.urbanspork.client.gui.console to javafx.graphics, ch.qos.logback.core;
+    exports com.urbanspork.client.gui.tray to javafx.graphics, ch.qos.logback.core;
 }

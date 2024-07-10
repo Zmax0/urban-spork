@@ -11,7 +11,6 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolConfig;
 import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler;
-import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
@@ -25,11 +24,11 @@ import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Optional;
 
-public class ClientSocksInitializer extends ChannelInitializer<NioSocketChannel> {
+public class ClientInitializer extends ChannelInitializer<NioSocketChannel> {
 
     private final ServerConfig config;
 
-    public ClientSocksInitializer(ServerConfig config) {
+    public ClientInitializer(ServerConfig config) {
         this.config = config;
     }
 
@@ -37,9 +36,8 @@ public class ClientSocksInitializer extends ChannelInitializer<NioSocketChannel>
     protected void initChannel(NioSocketChannel channel) {
         channel.attr(AttributeKeys.SERVER_CONFIG).set(config);
         channel.pipeline()
-            .addLast(config.getTrafficShapingHandler())
-            .addLast(new SocksPortUnificationServerHandler())
-            .addLast(ClientSocksMessageHandler.INSTANCE);
+                .addLast(config.getTrafficShapingHandler())
+                .addLast(new ClientProxyUnificationHandler());
     }
 
     public static SslHandler buildSslHandler(Channel ch, ServerConfig config) throws SSLException {
@@ -71,7 +69,7 @@ public class ClientSocksInitializer extends ChannelInitializer<NioSocketChannel>
         Optional<WebSocketSetting> ws = Optional.ofNullable(config.getWs());
         String path = ws.map(WebSocketSetting::getPath).orElseThrow(() -> new IllegalArgumentException("required path not present"));
         WebSocketClientProtocolConfig.Builder builder = WebSocketClientProtocolConfig.newBuilder()
-            .webSocketUri(new URI("ws", null, config.getHost(), config.getPort(), path, null, null));
+                .webSocketUri(new URI("ws", null, config.getHost(), config.getPort(), path, null, null));
         ws.map(WebSocketSetting::getHeader).ifPresent(h -> {
             HttpHeaders headers = new DefaultHttpHeaders();
             for (Map.Entry<String, String> entry : h.entrySet()) {

@@ -3,16 +3,19 @@ module com.urbanspork.common {
     requires com.fasterxml.jackson.core;
     requires com.fasterxml.jackson.databind;
     requires io.netty.buffer;
+    requires io.netty.codec.http;
     requires io.netty.codec.socks;
     requires io.netty.codec;
     requires io.netty.common;
     requires io.netty.handler;
     requires io.netty.transport;
+    requires jdk.unsupported;
     requires org.bouncycastle.lts.prov;
     requires org.slf4j;
 
     exports com.urbanspork.common.channel;
     exports com.urbanspork.common.codec.aead;
+    exports com.urbanspork.common.codec.chunk;
     exports com.urbanspork.common.codec.shadowsocks.tcp;
     exports com.urbanspork.common.codec.shadowsocks.udp;
     exports com.urbanspork.common.codec.shadowsocks;

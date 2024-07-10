@@ -1,7 +1,7 @@
 package com.urbanspork.client.vmess;
 
 import com.urbanspork.client.AbstractClientUdpOverTcpHandler;
-import com.urbanspork.client.ClientSocksInitializer;
+import com.urbanspork.client.ClientInitializer;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.vmess.header.RequestCommand;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
@@ -56,7 +56,7 @@ public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<Cli
                     pipeline.addLast(
                         new HttpClientCodec(),
                         new HttpObjectAggregator(0xffff),
-                        ClientSocksInitializer.buildWebSocketHandler(config),
+                        ClientInitializer.buildWebSocketHandler(config),
                         new WebSocketCodec()
                     );
                 }

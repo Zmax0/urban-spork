@@ -14,10 +14,6 @@ import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
-import io.netty.handler.codec.socksx.v5.Socks5AddressType;
-import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
-import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -27,6 +23,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -52,7 +49,7 @@ class AeadCipherCodecsTest {
         this.kind = kind;
         int port = TestDice.rollPort();
         String host = TestDice.rollHost();
-        DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, host, port);
+        InetSocketAddress request = InetSocketAddress.createUnresolved(host, port);
         cipherTest(newContext(Mode.Client, kind, request), newContext(Mode.Server, kind, null));
     }
 
@@ -121,7 +118,7 @@ class AeadCipherCodecsTest {
         return merged;
     }
 
-    Session newContext(Mode mode, CipherKind kind, Socks5CommandRequest request) {
+    Session newContext(Mode mode, CipherKind kind, InetSocketAddress request) {
         return new Session(mode, new Identity(kind), request, ServerUserManager.EMPTY, new Context());
     }
 }

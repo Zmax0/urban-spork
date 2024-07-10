@@ -17,14 +17,12 @@ import com.urbanspork.test.template.TraceLevelLoggerTestTemplate;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
-import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
-import io.netty.handler.codec.socksx.v5.Socks5AddressType;
-import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -43,7 +41,7 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
 
     @Test
     void testUnexpectedStreamType() throws InvalidCipherTextException {
-        DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, TestDice.rollHost(), TestDice.rollPort());
+        InetSocketAddress request = InetSocketAddress.createUnresolved(TestDice.rollHost(), TestDice.rollPort());
         CipherKind kind = CipherKind.aead2022_blake3_aes_128_gcm;
         int saltSize = 16;
         String password = TestDice.rollPassword(Protocol.shadowsocks, kind);
@@ -80,7 +78,7 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
         config.setPassword(TestDice.rollPassword(Protocol.shadowsocks, kind));
         config.setCipher(kind);
         Context context = Context.newCheckReplayInstance();
-        DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "localhost", 16800);
+        InetSocketAddress request = InetSocketAddress.createUnresolved("localhost", 16800);
         ByteBuf msg1 = Unpooled.buffer();
         Identity identity = new Identity(kind);
         Session clientSession = new Session(Mode.Client, identity, request, ServerUserManager.EMPTY, context);

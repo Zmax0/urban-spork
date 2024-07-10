@@ -10,16 +10,16 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-class ClientSocksInitializerTest {
+class ClientInitializerTest {
     @Test
     void testBuildSslHandler() {
         EmbeddedChannel channel = new EmbeddedChannel();
         ServerConfig config = ServerConfigTest.testConfig(0);
-        Assertions.assertDoesNotThrow(() -> ClientSocksInitializer.buildSslHandler(channel, config));
+        Assertions.assertDoesNotThrow(() -> ClientInitializer.buildSslHandler(channel, config));
         SslSetting ssl = new SslSetting();
         ssl.setVerifyHostname(false);
         config.setSsl(ssl);
-        Assertions.assertDoesNotThrow(() -> ClientSocksInitializer.buildSslHandler(channel, config));
+        Assertions.assertDoesNotThrow(() -> ClientInitializer.buildSslHandler(channel, config));
     }
 
     @Test
@@ -27,9 +27,9 @@ class ClientSocksInitializerTest {
         WebSocketSetting webSocket = new WebSocketSetting();
         ServerConfig config = ServerConfigTest.testConfig(0);
         config.setWs(webSocket);
-        Assertions.assertThrows(IllegalArgumentException.class, () -> ClientSocksInitializer.buildWebSocketHandler(config));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ClientInitializer.buildWebSocketHandler(config));
         webSocket.setPath("/ws");
         webSocket.setHeader(Map.of("Host", "localhost"));
-        Assertions.assertDoesNotThrow(() -> ClientSocksInitializer.buildWebSocketHandler(config));
+        Assertions.assertDoesNotThrow(() -> ClientInitializer.buildWebSocketHandler(config));
     }
 }

@@ -6,10 +6,9 @@ import com.urbanspork.common.config.WebSocketSetting;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler;
-import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
-import io.netty.handler.codec.socksx.v5.Socks5CommandType;
+import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -24,8 +23,12 @@ class ClientSocksConnectHandlerTest {
         webSocket.setPath("/ws");
         webSocket.setHeader(Map.of("Host", "localhost"));
         config.setWs(webSocket);
-        DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, "localhost", 0);
-        ClientSocksConnectHandler.WebSocketCodec codec = new ClientSocksConnectHandler.WebSocketCodec(channel, config, request);
+        ClientConnectHandler.WebSocketCodec codec = new ClientConnectHandler.WebSocketCodec(
+                channel,
+                config,
+                new ClientConnectHandler.InboundWriter(c -> {}, c -> c.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, new Socks5AddressType(-1)))),
+                c -> {}
+        );
         ChannelPipeline pipeline = channel.pipeline();
         pipeline.addLast(codec);
         codec.userEventTriggered(pipeline.context(codec), WebSocketClientProtocolHandler.ClientHandshakeStateEvent.HANDSHAKE_TIMEOUT);

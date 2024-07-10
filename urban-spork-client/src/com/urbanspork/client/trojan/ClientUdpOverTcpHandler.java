@@ -1,7 +1,7 @@
 package com.urbanspork.client.trojan;
 
 import com.urbanspork.client.AbstractClientUdpOverTcpHandler;
-import com.urbanspork.client.ClientSocksInitializer;
+import com.urbanspork.client.ClientInitializer;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.socks.Address;
 import com.urbanspork.common.protocol.trojan.Trojan;
@@ -55,7 +55,7 @@ public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<Ine
             @Override
             protected void initChannel(Channel ch) throws SSLException {
                 ch.pipeline().addLast(
-                    ClientSocksInitializer.buildSslHandler(ch, config),
+                    ClientInitializer.buildSslHandler(ch, config),
                     new ClientHeaderEncoder(config.getPassword(), serverAddress, SocksCmdType.UDP.byteValue())
                 );
             }

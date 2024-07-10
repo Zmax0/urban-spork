@@ -1,8 +1,6 @@
 package com.urbanspork.test.client;
 
-import com.urbanspork.common.config.ClientConfig;
-import com.urbanspork.common.config.ConfigHandler;
-import com.urbanspork.common.protocol.socks.ClientHandshake;
+import com.urbanspork.common.protocol.HandshakeResult;
 import com.urbanspork.test.server.tcp.HttpTestServer;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -10,8 +8,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,22 +21,12 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 
-public class Socks5TCPTestClient {
+abstract class TcpTestClientTemplate<T> extends TestClientTemplate {
+    protected static final Logger logger = LoggerFactory.getLogger(TcpTestClientTemplate.class);
+    protected Channel channel;
+    protected final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
 
-    private static final Logger logger = LoggerFactory.getLogger(Socks5TCPTestClient.class);
-    private static Channel channel;
-    private static final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
-
-    public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
-        int proxyPort = 1089;
-        String hostname;
-        try {
-            ClientConfig config = ConfigHandler.DEFAULT.read();
-            proxyPort = config.getPort();
-            hostname = config.getCurrent().getHost();
-        } catch (Exception ignore) {
-            hostname = InetAddress.getLoopbackAddress().getHostName();
-        }
+    protected void launch() throws IOException, ExecutionException, InterruptedException {
         InetSocketAddress proxyAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), proxyPort);
         InetSocketAddress dstAddress = new InetSocketAddress(hostname, HttpTestServer.PORT);
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -55,12 +44,13 @@ public class Socks5TCPTestClient {
         bossGroup.shutdownGracefully();
     }
 
-    private static void connect(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) throws InterruptedException, ExecutionException {
+    private void connect(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) throws InterruptedException, ExecutionException {
         if (channel == null) {
-            ClientHandshake.Result result = ClientHandshake.noAuth(bossGroup, Socks5CommandType.CONNECT, proxyAddress, dstAddress).await().get();
-            channel = result.sessionChannel();
-            logger.info("Launch socks5 tcp test client => {}", channel.localAddress());
+            HandshakeResult<T> result = handshake(proxyAddress, dstAddress);
+            channel = result.channel();
+            logger.info("Launch {} => {}", this.getClass().getSimpleName(), channel.localAddress());
             channel.pipeline().addLast(
+                new LoggingHandler(LogLevel.TRACE),
                 new StringDecoder(),
                 new SimpleChannelInboundHandler<String>() {
                     @Override
@@ -77,4 +67,6 @@ public class Socks5TCPTestClient {
             );
         }
     }
+
+    protected abstract HandshakeResult<T> handshake(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) throws InterruptedException, ExecutionException;
 }
