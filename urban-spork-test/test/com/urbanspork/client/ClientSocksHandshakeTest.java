@@ -3,7 +3,7 @@ package com.urbanspork.client;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ClientConfigTest;
 import com.urbanspork.common.protocol.Protocol;
-import com.urbanspork.common.protocol.socks.ClientHandshake;
+import com.urbanspork.common.protocol.socks.Handshake;
 import com.urbanspork.test.TestDice;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -44,6 +44,6 @@ class ClientSocksHandshakeTest {
 
 
     private void assertFailedHandshake(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) {
-        Assertions.assertThrows(ExecutionException.class, () -> ClientHandshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS));
+        Assertions.assertThrows(ExecutionException.class, () -> Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS));
     }
 }

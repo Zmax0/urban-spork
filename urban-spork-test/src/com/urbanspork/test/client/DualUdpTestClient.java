@@ -23,9 +23,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
-public class DualUDPTestClient {
+public class DualUdpTestClient {
 
-    private static final Logger logger = LoggerFactory.getLogger(DualUDPTestClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(DualUdpTestClient.class);
 
     public static void main(String[] args) throws IOException, InterruptedException {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);

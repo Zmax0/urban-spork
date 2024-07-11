@@ -7,6 +7,7 @@ import com.urbanspork.common.config.ClientConfigTest;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTest;
 import com.urbanspork.common.config.ServerUserConfig;
+import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.server.Server;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -35,12 +37,21 @@ class TcpTest extends TcpTestTemplate {
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
         serverConfig.setPassword(parameter.serverPassword());
+        serverConfig.setTransport(parameter.transport());
         if (protocol == Protocol.trojan) {
             serverConfig.setSsl(SslUtil.getSslSetting());
         }
+        if (serverConfig.wsEnabled()) {
+            WebSocketSetting webSocketSetting = new WebSocketSetting();
+            webSocketSetting.setPath("/ws");
+            serverConfig.setWs(webSocketSetting);
+        }
         List<Server.Instance> server = launchServer(config.getServers());
         Client.Instance client = launchClient(config);
-        handshakeAndSendBytes(client.tcp().localAddress());
+        InetSocketAddress clientAddress = client.tcp().localAddress();
+        socksHandshakeAndSendBytes(clientAddress);
+        httpsHandshakeAndSendBytes(clientAddress);
+        httpSendBytes(clientAddress);
         closeServer(server);
         client.close();
     }
@@ -49,7 +60,10 @@ class TcpTest extends TcpTestTemplate {
     void testConnectServerFailed() throws ExecutionException, InterruptedException {
         ClientConfig config = ClientConfigTest.testConfig(0, TestDice.rollPort());
         Client.Instance client = launchClient(config);
-        Assertions.assertThrows(ExecutionException.class, () -> handshakeAndSendBytes(client.tcp().localAddress()));
+        InetSocketAddress clientAddress = client.tcp().localAddress();
+        Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientAddress));
+        Assertions.assertThrows(ExecutionException.class, () -> httpsHandshakeAndSendBytes(clientAddress));
+        Assertions.assertThrows(ExecutionException.class, () -> httpSendBytes(clientAddress));
         client.close();
     }
 
@@ -70,7 +84,10 @@ class TcpTest extends TcpTestTemplate {
         current.setProtocol(protocol);
         current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
         Client.Instance client = launchClient(config);
-        handshakeAndSendBytes(client.udp().localAddress());
+        InetSocketAddress clientAddress = client.udp().localAddress();
+        socksHandshakeAndSendBytes(clientAddress);
+        httpsHandshakeAndSendBytes(clientAddress);
+        httpSendBytes(clientAddress);
         ServerUserManager.DEFAULT.clear();
         closeServer(server);
         client.close();

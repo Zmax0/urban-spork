@@ -2,20 +2,15 @@ package com.urbanspork.test.client;
 
 import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
 import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
-import com.urbanspork.common.config.ClientConfig;
-import com.urbanspork.common.config.ConfigHandler;
-import com.urbanspork.common.protocol.socks.ClientHandshake;
+import com.urbanspork.common.protocol.HandshakeResult;
+import com.urbanspork.common.protocol.socks.Handshake;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.test.server.udp.DelayedEchoTestServer;
 import com.urbanspork.test.server.udp.SimpleEchoTestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
@@ -32,26 +27,20 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 
-public class Socks5UDPTestClient {
-
-    private static final Logger logger = LoggerFactory.getLogger(Socks5UDPTestClient.class);
+public class Socks5UdpTestClient extends TestClientTemplate {
+    private static final Logger logger = LoggerFactory.getLogger(Socks5UdpTestClient.class);
 
     public static void main(String[] args) throws InterruptedException, IOException, ExecutionException {
-        int proxyPort = 1089;
-        String hostname;
-        try {
-            ClientConfig config = ConfigHandler.DEFAULT.read();
-            proxyPort = config.getPort();
-            hostname = config.getCurrent().getHost();
-        } catch (Exception ignore) {
-            hostname = InetAddress.getLoopbackAddress().getHostName();
-        }
+        new Socks5UdpTestClient().launch();
+    }
+
+    private void launch() throws InterruptedException, ExecutionException, IOException {
         InetSocketAddress proxyAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), proxyPort);
         InetSocketAddress dstAddress1 = new InetSocketAddress(hostname, SimpleEchoTestServer.PORT);
         InetSocketAddress dstAddress2 = new InetSocketAddress(hostname, DelayedEchoTestServer.PORT);
         EventLoopGroup group = new NioEventLoopGroup();
-        ClientHandshake.Result result1 = ClientHandshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress1).await().get();
-        ClientHandshake.Result result2 = ClientHandshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress2).await().get();
+        HandshakeResult<Socks5CommandResponse> result1 = Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress1).await().get();
+        HandshakeResult<Socks5CommandResponse> result2 = Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress2).await().get();
         Socks5CommandResponse response1 = result1.response();
         Socks5CommandResponse response2 = result2.response();
         logger.info("Associate ports: [{}, {}]", response1.bndPort(), response2.bndPort());
@@ -90,8 +79,8 @@ public class Socks5UDPTestClient {
             sendMsg(channel, dstAddress1, new InetSocketAddress(response1.bndAddr(), response1.bndPort()), bytes);
             sendMsg(channel, dstAddress2, new InetSocketAddress(response2.bndAddr(), response2.bndPort()), bytes);
         }
-        result1.sessionChannel().eventLoop().shutdownGracefully();
-        result2.sessionChannel().eventLoop().shutdownGracefully();
+        result1.channel().eventLoop().shutdownGracefully();
+        result2.channel().eventLoop().shutdownGracefully();
         group.shutdownGracefully();
     }
 

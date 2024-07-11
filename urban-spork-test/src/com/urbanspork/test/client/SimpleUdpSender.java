@@ -10,7 +10,7 @@ import java.net.InetSocketAddress;
 import java.text.MessageFormat;
 import java.util.logging.Logger;
 
-public class SimpleUDPSender {
+public class SimpleUdpSender {
     public static void main(String[] args) throws IOException {
         Logger logger = Logger.getGlobal();
         try (DatagramSocket socket = new DatagramSocket(0); BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {

@@ -17,7 +17,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import java.net.InetSocketAddress;
 
-class ServerUDPRelayHandlerTest {
+class ServerUdpRelayHandlerTest {
     @ParameterizedTest
     @EnumSource(PacketEncoding.class)
     void testWorkAndIdle(PacketEncoding packetEncoding) throws Exception {
