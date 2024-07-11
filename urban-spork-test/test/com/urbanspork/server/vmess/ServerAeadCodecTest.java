@@ -1,7 +1,7 @@
 package com.urbanspork.server.vmess;
 
 import com.urbanspork.client.vmess.ClientAeadCodec;
-import com.urbanspork.client.vmess.ClientAEADCodecTest;
+import com.urbanspork.client.vmess.ClientAeadCodecTest;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.vmess.ID;
@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 
-class ServerAEADCodecTest {
+class ServerAeadCodecTest {
 
     private static final String UUID = java.util.UUID.randomUUID().toString();
     private static final InetSocketAddress ADDRESS = InetSocketAddress.createUnresolved("www.urban-spork.com", TestDice.rollPort());
@@ -49,7 +49,7 @@ class ServerAEADCodecTest {
     @Test
     void testInvalidRequest() {
         RequestHeader header = RequestHeader.defaultHeader(SecurityType.AES128_GCM, new RequestCommand((byte) 100), ADDRESS, UUID);
-        ClientAeadCodec clientCodec = ClientAEADCodecTest.codec(header, new ClientSession());
+        ClientAeadCodec clientCodec = ClientAeadCodecTest.codec(header, new ClientSession());
         ByteBuf buf = readOutbound(clientCodec);
         ServerConfig config = new ServerConfig();
         config.setPassword(UUID);

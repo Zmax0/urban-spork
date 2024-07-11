@@ -46,7 +46,7 @@ public abstract class TcpTestTemplate extends TestTemplate {
     }
 
     protected void socksHandshakeAndSendBytes(InetSocketAddress proxyAddress) throws ExecutionException, InterruptedException {
-        HandshakeResult<Socks5CommandResponse> result = com.urbanspork.common.protocol.socks.ClientHandshake
+        HandshakeResult<Socks5CommandResponse> result = com.urbanspork.common.protocol.socks.Handshake
             .noAuth(group, Socks5CommandType.CONNECT, proxyAddress, dstAddress).get();
         Channel channel = result.channel();
         sendRandomBytes(channel);
@@ -88,8 +88,8 @@ public abstract class TcpTestTemplate extends TestTemplate {
     }
 
     protected void httpsHandshakeAndSendBytes(InetSocketAddress proxyAddress) throws ExecutionException, InterruptedException {
-        HandshakeResult<HttpResponse> result = com.urbanspork.common.protocol.http.ClientHandshake
-            .https(group, proxyAddress, dstAddress).get();
+        HandshakeResult<HttpResponse> result = com.urbanspork.common.protocol.https.proxy.Handshake
+            .start(group, proxyAddress, dstAddress).get();
         Channel channel = result.channel();
         sendRandomBytes(channel);
     }

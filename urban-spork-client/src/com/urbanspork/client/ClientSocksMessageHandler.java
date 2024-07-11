@@ -1,6 +1,6 @@
 package com.urbanspork.client;
 
-import com.urbanspork.client.shadowsocks.ClientUdpAssociateHandler;
+import com.urbanspork.client.shadowsocks.ClientSocksUdpAssociateHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -33,7 +33,7 @@ class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks5Messag
             pipeline.remove(Socks5CommandRequestDecoder.class);
             ctx.fireChannelRead(request);
         } else if (request.type() == Socks5CommandType.UDP_ASSOCIATE) {
-            pipeline.replace(this, null, ClientUdpAssociateHandler.INSTANCE);
+            pipeline.replace(this, null, ClientSocksUdpAssociateHandler.INSTANCE);
             pipeline.remove(Socks5CommandRequestDecoder.class);
             ctx.fireChannelRead(request);
         } else {

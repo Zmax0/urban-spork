@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 
-class ClientUDPOverTCPHandlerTest {
+class ClientUdpOverTcpHandlerTest {
     @Test
     void testConnectFailed() {
         ServerConfig config = ServerConfigTest.testConfig(TestDice.rollPort());

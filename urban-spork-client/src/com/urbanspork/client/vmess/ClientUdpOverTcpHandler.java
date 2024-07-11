@@ -1,19 +1,12 @@
 package com.urbanspork.client.vmess;
 
 import com.urbanspork.client.AbstractClientUdpOverTcpHandler;
-import com.urbanspork.client.ClientInitializer;
+import com.urbanspork.client.ClientTcpRelayHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.vmess.header.RequestCommand;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -56,7 +49,7 @@ public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<Cli
                     pipeline.addLast(
                         new HttpClientCodec(),
                         new HttpObjectAggregator(0xffff),
-                        ClientInitializer.buildWebSocketHandler(config),
+                        ClientTcpRelayHandler.buildWebSocketHandler(config),
                         new WebSocketCodec()
                     );
                 }

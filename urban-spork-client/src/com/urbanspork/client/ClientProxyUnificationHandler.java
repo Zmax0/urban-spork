@@ -12,11 +12,10 @@ import java.util.List;
 class ClientProxyUnificationHandler extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
-        byte versionVal = in.getByte(in.readerIndex());
-        SocksVersion version = SocksVersion.valueOf(versionVal);
+        SocksVersion version = SocksVersion.valueOf(in.getByte(in.readerIndex()));
         ChannelPipeline p = ctx.pipeline();
         if (version == SocksVersion.UNKNOWN) {
-            p.addLast(HttpPortUnificationHandler.INSTANCE);
+            p.addLast(ClientHttpUnificationHandler.INSTANCE);
         } else {
             p.addLast(new SocksPortUnificationServerHandler(), ClientSocksMessageHandler.INSTANCE);
         }

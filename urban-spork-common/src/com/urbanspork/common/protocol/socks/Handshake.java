@@ -23,7 +23,7 @@ import io.netty.util.concurrent.Promise;
 
 import java.net.InetSocketAddress;
 
-public interface ClientHandshake {
+public interface Handshake {
     static Promise<HandshakeResult<Socks5CommandResponse>> noAuth(EventLoopGroup worker, Socks5CommandType type, InetSocketAddress proxyAddress, InetSocketAddress dstAddress) {
         Promise<HandshakeResult<Socks5CommandResponse>> promise = worker.next().newPromise();
         try {
