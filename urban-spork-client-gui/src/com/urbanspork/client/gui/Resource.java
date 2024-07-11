@@ -34,7 +34,7 @@ public class Resource {
         }
         String language = config.getLanguage();
         ResourceBundle bundle;
-        String baseName = "language";
+        String baseName = "resource.locales.console";
         try {
             if (language == null) {
                 Locale locale = Locale.getDefault();
