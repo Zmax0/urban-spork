@@ -21,6 +21,15 @@ public class ServerConfigTest {
         Assertions.assertFalse(config.udpEnabled());
         config.setTransport(null);
         Assertions.assertFalse(config.udpEnabled());
+        config.setTransport(new Transport[]{});
+        Assertions.assertFalse(config.udpEnabled());
+    }
+
+    @Test
+    void testWsEnable() {
+        ServerConfig config = testConfig(TestDice.rollPort());
+        config.setTransport(new Transport[]{});
+        Assertions.assertFalse(config.wsEnabled());
     }
 
     @Test

@@ -18,12 +18,12 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 
 @ChannelHandler.Sharable
-public class ClientUdpAssociateHandler extends ChannelInboundHandlerAdapter {
+public class ClientSocksUdpAssociateHandler extends ChannelInboundHandlerAdapter {
 
-    public static final ClientUdpAssociateHandler INSTANCE = new ClientUdpAssociateHandler();
-    private static final Logger logger = LoggerFactory.getLogger(ClientUdpAssociateHandler.class);
+    public static final ClientSocksUdpAssociateHandler INSTANCE = new ClientSocksUdpAssociateHandler();
+    private static final Logger logger = LoggerFactory.getLogger(ClientSocksUdpAssociateHandler.class);
 
-    private ClientUdpAssociateHandler() {}
+    private ClientSocksUdpAssociateHandler() {}
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {

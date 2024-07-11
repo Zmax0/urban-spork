@@ -1,5 +1,6 @@
 package com.urbanspork.common.protocol.socks;
 
+import com.urbanspork.common.protocol.HandshakeResult;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -18,15 +19,13 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandResponseDecoder;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import io.netty.handler.codec.socksx.v5.Socks5InitialResponse;
 import io.netty.handler.codec.socksx.v5.Socks5InitialResponseDecoder;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.Promise;
 
 import java.net.InetSocketAddress;
 
-public interface ClientHandshake {
-    static Promise<Result> noAuth(EventLoopGroup worker, Socks5CommandType type, InetSocketAddress proxyAddress, InetSocketAddress dstAddress) {
-        Promise<Result> promise = worker.next().newPromise();
+public interface Handshake {
+    static Promise<HandshakeResult<Socks5CommandResponse>> noAuth(EventLoopGroup worker, Socks5CommandType type, InetSocketAddress proxyAddress, InetSocketAddress dstAddress) {
+        Promise<HandshakeResult<Socks5CommandResponse>> promise = worker.next().newPromise();
         try {
             new Bootstrap().group(worker).channel(NioSocketChannel.class)
                 .option(ChannelOption.SO_KEEPALIVE, true)
@@ -36,7 +35,6 @@ public interface ClientHandshake {
                         Socks5InitialResponseDecoder socks5InitialResponseDecoder = new Socks5InitialResponseDecoder();
                         Socks5CommandResponseDecoder socks5CommandResponseDecoder = new Socks5CommandResponseDecoder();
                         ch.pipeline().addLast(
-                            new LoggingHandler(LogLevel.DEBUG),
                             new Socks5ClientEncoder(Socks5AddressEncoder.DEFAULT),
                             socks5InitialResponseDecoder,
                             socks5CommandResponseDecoder,
@@ -55,7 +53,7 @@ public interface ClientHandshake {
                                         pipeline.remove(socks5CommandResponseDecoder);
                                         pipeline.remove(socks5InitialResponseDecoder);
                                         pipeline.remove(this);
-                                        promise.setSuccess(new Result(ch, msg));
+                                        promise.setSuccess(new HandshakeResult<>(ch, msg));
                                     } else {
                                         promise.setFailure(new IllegalStateException("Unsuccessful response status: " + msg.status().toString()));
                                     }
@@ -71,6 +69,4 @@ public interface ClientHandshake {
         }
         return promise;
     }
-
-    record Result(Channel sessionChannel, Socks5CommandResponse response) {}
 }

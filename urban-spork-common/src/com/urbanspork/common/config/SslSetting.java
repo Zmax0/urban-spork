@@ -1,7 +1,6 @@
 package com.urbanspork.common.config;
 
 public class SslSetting {
-
     private String certificateFile;
     private String keyFile;
     private String keyPassword;

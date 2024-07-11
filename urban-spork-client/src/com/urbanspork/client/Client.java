@@ -50,7 +50,7 @@ public class Client {
                 .childOption(ChannelOption.SO_KEEPALIVE, true) // socks5 require
                 .childOption(ChannelOption.TCP_NODELAY, false)
                 .childOption(ChannelOption.SO_LINGER, 1)
-                .childHandler(new ClientSocksInitializer(current))
+                .childHandler(new ClientInitializer(current))
                 .bind(InetAddress.getLoopbackAddress(), config.getPort()).sync().addListener((ChannelFutureListener) future -> {
                     ServerSocketChannel tcp = (ServerSocketChannel) future.channel();
                     InetSocketAddress tcpLocalAddress = tcp.localAddress();

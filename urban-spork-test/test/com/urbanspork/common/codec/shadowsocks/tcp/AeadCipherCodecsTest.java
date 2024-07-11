@@ -14,27 +14,23 @@ import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
-import io.netty.handler.codec.socksx.v5.Socks5AddressType;
-import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
-import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 @TestInstance(Lifecycle.PER_CLASS)
+@DisplayName("tcp.AeadCipherCodecsTest")
 class AeadCipherCodecsTest {
-
     private final byte[] in = Dice.rollBytes(0xffff * 10);
     private CipherKind kind;
     private String password;
@@ -46,22 +42,14 @@ class AeadCipherCodecsTest {
         logger.setLevel(Level.TRACE);
     }
 
-    @DisplayName("Single cipher")
-    @Test
-    void test() throws Exception {
-        parameterizedTest(CipherKind.chacha20_poly1305);
-        parameterizedTest(CipherKind.aead2022_blake3_aes_256_gcm);
-    }
-
     @ParameterizedTest
-    @DisplayName("All supported cipher iterate")
     @EnumSource(CipherKind.class)
-    void parameterizedTest(CipherKind kind) throws Exception {
+    void testByKind(CipherKind kind) throws Exception {
         this.password = TestDice.rollPassword(Protocol.shadowsocks, kind);
         this.kind = kind;
         int port = TestDice.rollPort();
         String host = TestDice.rollHost();
-        DefaultSocks5CommandRequest request = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN, host, port);
+        InetSocketAddress request = InetSocketAddress.createUnresolved(host, port);
         cipherTest(newContext(Mode.Client, kind, request), newContext(Mode.Server, kind, null));
     }
 
@@ -130,7 +118,7 @@ class AeadCipherCodecsTest {
         return merged;
     }
 
-    Session newContext(Mode mode, CipherKind kind, Socks5CommandRequest request) {
+    Session newContext(Mode mode, CipherKind kind, InetSocketAddress request) {
         return new Session(mode, new Identity(kind), request, ServerUserManager.EMPTY, new Context());
     }
 }

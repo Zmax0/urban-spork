@@ -9,10 +9,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.ByteToMessageCodec;
-import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
+import io.netty.handler.codec.DecoderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.util.List;
 
 public class TcpRelayCodec extends ByteToMessageCodec<ByteBuf> {
@@ -24,7 +25,7 @@ public class TcpRelayCodec extends ByteToMessageCodec<ByteBuf> {
         this(context, config, null, mode);
     }
 
-    public TcpRelayCodec(Context context, ServerConfig config, Socks5CommandRequest request, Mode mode) {
+    public TcpRelayCodec(Context context, ServerConfig config, InetSocketAddress request, Mode mode) {
         ServerUserManager userManager = Mode.Server == mode ? ServerUserManager.DEFAULT : ServerUserManager.EMPTY;
         Identity identity = new Identity(config.getCipher());
         this.session = new Session(mode, identity, request, userManager, context);
@@ -43,12 +44,13 @@ public class TcpRelayCodec extends ByteToMessageCodec<ByteBuf> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        if (Mode.Server == session.mode() && ctx.channel() instanceof SocketChannel socketChannel) {
-            String transLog = ExceptionHandler.transLog(ctx.channel());
+        if (Mode.Server == session.mode() && cause instanceof DecoderException) {
+            SocketChannel channel = (SocketChannel) ctx.channel();
+            String transLog = ExceptionHandler.transLog(channel);
             logger.error("[tcp][{}] {}", transLog, cause.getMessage());
             ctx.deregister();
-            socketChannel.config().setSoLinger(0);
-            socketChannel.shutdownOutput().addListener(future -> socketChannel.unsafe().beginRead());
+            channel.config().setSoLinger(0);
+            channel.shutdownOutput().addListener(future -> channel.unsafe().beginRead());
         } else {
             ctx.fireExceptionCaught(cause);
         }

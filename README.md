@@ -2,9 +2,37 @@
 
 [![codecov](https://codecov.io/gh/Zmax0/urban-spork/branch/master/graph/badge.svg?token=6QAZQ05HZV)](https://codecov.io/gh/Zmax0/urban-spork)
 
-A sock5 proxy
+A network tool for improved privacy and security
+
+## Features
+
+### Local
+
+- http
+- socks5
+
+### Transport
+
+|               | Shadowsocks | VMess | Trojan |
+|:--------------|:-----------:|:-----:|:------:|
+| tcp           |      ✔      |   ✔   |   ✔    |
+| udp           |      ✔      |   ✔   |   ✔    |
+| ws(WebSocket) |      ✔      |   ✔   |        |
+
+### Ciphers
+
+|                         | Shadowsocks |  VMess  |
+|:------------------------|:-----------:|:-------:|
+| aes-128-gcm             |   `C` `S`   | `C` `S` |
+| aes-256-gcm             |   `C` `S`   |         |
+| chacha20-poly1305       |   `C` `S`   | `C` `S` |
+| 2022-blake3-aes-128-gcm |   `C` `S`   |         |
+| 2022-blake3-aes-256-gcm |   `C` `S`   |         |
+
+`C` for client `S` for server
 
 ## Config
+
 put *config.json* file into the unpacked folder before running server
 
 ```json5
@@ -32,6 +60,12 @@ put *config.json* file into the unpacked folder before running server
         "keyFile": "/path/to/private.key",
         "keyPassword": "",
         "serverName": ""
+      },
+      "ws": {
+        "header": {
+          "Host": "example.com"
+        },
+        "path": "/ws"
       }
     }
   ]
@@ -46,40 +80,26 @@ put *config.json* file into the unpacked folder before running server
 
 > `packetEncoding`: "None" | "Packet"
 
-> `user`: (OPTIONAL for shadowsocks) support multiple users with [*Shadowsocks 2022 Extensible Identity Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-shadowsocks-2022-extensible-identity-headers.md)
+> `user`: (OPTIONAL for shadowsocks) support multiple users with [*Shadowsocks 2022 Extensible Identity
+Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-shadowsocks-2022-extensible-identity-headers.md)
 
-> `sslSetting`: (REQUIRED for trojan) SSL specific configurations
+> `ssl`: (OPTIONAL) SSL specific configurations
 
->> `certificateFile`: certificate file
+> > `certificateFile`: certificate file
 
->> `keyFile`: private key file for encryption
+> > `keyFile`: private key file for encryption
 
->> `keyPassword`: password of the private key file
+> > `keyPassword`: password of the private key file
 
->> `serverName`: the Server Name Indication field in the SSL handshake. If left blank, it will be set to `server.host`
+> > `serverName`: the Server Name Indication field in the SSL handshake. If left blank, it will be set to `server.host`
 
->> `verifyHostname`: whether to verify SSL hostname, default is `true`
+> > `verifyHostname`: whether to verify SSL hostname, default is `true`
 
-## Features
+> `ws`: (OPTIONAL) WebSocket specific configurations
 
-### Transport
+> > `header`: the header to be sent in HTTP request, should be key-value pairs in clear-text string format
 
-|     | Shadowsocks | VMess | Trojan |
-|:----|:-----------:|:-----:|:------:|
-| TCP |      ✔      |   ✔   |   ✔    |
-| UDP |      ✔      |   ✔   |   ✔    |
-
-### Ciphers
-
-|                         | Shadowsocks |  VMess  |
-|:------------------------|:-----------:|:-------:|
-| aes-128-gcm             |   `C` `S`   | `C` `S` |
-| aes-256-gcm             |   `C` `S`   |         |
-| chacha20-poly1305       |   `C` `S`   | `C` `S` |
-| 2022-blake3-aes-128-gcm |   `C` `S`   |         |
-| 2022-blake3-aes-256-gcm |   `C` `S`   |         |
-
-`C` for client `S` for server
+> > `path`: the HTTP path for the websocket request
 
 ## Build
 

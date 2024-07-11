@@ -12,10 +12,7 @@ import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
@@ -90,18 +87,18 @@ public class Server {
             }
         }
         Context context = Context.newCheckReplayInstance();
-        ServerSocketChannel tcp;
-        try {
-            tcp = (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
-                .childHandler(new ServerInitializer(config, context))
-                .childOption(ChannelOption.ALLOW_HALF_CLOSURE, true)
-                .bind(config.getPort()).sync().addListener(future -> logger.info("Startup tcp server => {}", config)).channel()
-                .closeFuture().addListener(future -> context.release()).channel();
-        } catch (Exception e) {
-            context.release();
-            throw e;
-        }
+        ServerSocketChannel tcp = (ServerSocketChannel) new ServerBootstrap()
+            .group(bossGroup, workerGroup)
+            .channel(NioServerSocketChannel.class)
+            .childHandler(new ServerInitializer(config, context))
+            .childOption(ChannelOption.ALLOW_HALF_CLOSURE, true)
+            .bind(config.getPort()).addListener(future -> {
+                if (!future.isSuccess()) {
+                    context.release();
+                }
+            })
+            .sync().addListener(future -> logger.info("Startup tcp server => {}", config))
+            .channel().closeFuture().addListener(future -> context.release()).channel();
         config.setPort(tcp.localAddress().getPort());
         Optional<DatagramChannel> udp = startupUdp(bossGroup, workerGroup, config);
         return new Instance(tcp, udp);

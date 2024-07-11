@@ -23,11 +23,10 @@ public class Resource {
     public static final URL CONSOLE_CSS;
 
     static {
-        ClassLoader classLoader = Resource.class.getClassLoader();
-        String resourcePath = "resource/";
-        PROGRAM_ICON = Objects.requireNonNull(classLoader.getResource(resourcePath + PROGRAM_ICON_NAME));
-        TRAY_ICON = Objects.requireNonNull(classLoader.getResource(resourcePath + TRAY_ICON_NAME));
-        CONSOLE_CSS = Objects.requireNonNull(classLoader.getResource(resourcePath + CONSOLE_CSS_NAME));
+        String resourcePath = "/resource/";
+        PROGRAM_ICON = Objects.requireNonNull(Resource.class.getResource(resourcePath + PROGRAM_ICON_NAME));
+        TRAY_ICON = Objects.requireNonNull(Resource.class.getResource(resourcePath + TRAY_ICON_NAME));
+        CONSOLE_CSS = Objects.requireNonNull(Resource.class.getResource(resourcePath + CONSOLE_CSS_NAME));
         ClientConfig config = ConfigHandler.DEFAULT.read();
         if (config == null) {
             config = new ClientConfig();
