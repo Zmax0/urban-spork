@@ -27,7 +27,7 @@
         <directory>resource</directory>
         <includes>
           <include>**/*.xml</include>
-          <include>**/*.properties</include><!-- i18n -->
+          <include>application.properties</include>
         </includes>
       </resource>
       <resource>
@@ -35,6 +35,8 @@
         <targetPath>resource</targetPath>
         <excludes>
           <exclude>**/*.xml</exclude>
+          <exclude>**/*.cmd</exclude>
+          <exclude>application.properties</exclude>
         </excludes>
       </resource>
     </resources>
