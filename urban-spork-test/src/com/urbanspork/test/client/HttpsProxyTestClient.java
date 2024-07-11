@@ -1,7 +1,7 @@
 package com.urbanspork.test.client;
 
 import com.urbanspork.common.protocol.HandshakeResult;
-import com.urbanspork.common.protocol.http.ClientHandshake;
+import com.urbanspork.common.protocol.https.proxy.Handshake;
 import io.netty.handler.codec.http.HttpResponse;
 
 import java.io.IOException;
@@ -15,6 +15,6 @@ public class HttpsProxyTestClient extends TcpTestClientTemplate<HttpResponse> {
 
     @Override
     protected HandshakeResult<HttpResponse> handshake(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) throws InterruptedException, ExecutionException {
-        return ClientHandshake.https(bossGroup, proxyAddress, dstAddress).get();
+        return Handshake.start(bossGroup, proxyAddress, dstAddress).get();
     }
 }

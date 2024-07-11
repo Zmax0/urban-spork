@@ -1,4 +1,4 @@
-package com.urbanspork.common.protocol.http;
+package com.urbanspork.common.protocol.https.proxy;
 
 import com.urbanspork.common.protocol.HandshakeResult;
 import io.netty.bootstrap.Bootstrap;
@@ -10,8 +10,8 @@ import io.netty.util.concurrent.Promise;
 
 import java.net.InetSocketAddress;
 
-public interface ClientHandshake {
-    static Promise<HandshakeResult<HttpResponse>> https(EventLoopGroup worker, InetSocketAddress proxyAddress, InetSocketAddress dstAddress) {
+public interface Handshake {
+    static Promise<HandshakeResult<HttpResponse>> start(EventLoopGroup worker, InetSocketAddress proxyAddress, InetSocketAddress dstAddress) {
         Promise<HandshakeResult<HttpResponse>> promise = worker.next().newPromise();
         try {
             new Bootstrap().group(worker).channel(NioSocketChannel.class)

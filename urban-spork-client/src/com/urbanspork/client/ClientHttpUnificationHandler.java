@@ -12,22 +12,22 @@ import io.netty.handler.codec.http.HttpMethod;
 import java.util.function.Consumer;
 
 @ChannelHandler.Sharable
-class HttpPortUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> {
-    static final HttpPortUnificationHandler INSTANCE = new HttpPortUnificationHandler();
+class ClientHttpUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> {
+    static final ClientHttpUnificationHandler INSTANCE = new ClientHttpUnificationHandler();
 
-    private HttpPortUnificationHandler() {}
+    private ClientHttpUnificationHandler() {}
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
         HttpProxyUtil.Option option = HttpProxyUtil.parseOption(msg);
         if (HttpMethod.GET == option.method()) {
-            new HttpConnectHandler(msg.retain()).connect(ctx.channel(), option.address());
+            new HttpRelayHandler(msg.retain()).connect(ctx.channel(), option.address());
         } else {
-            new HttpsConnectHandler().connect(ctx.channel(), option.address());
+            new HttpsRelayHandler().connect(ctx.channel(), option.address());
         }
     }
 
-    private record HttpConnectHandler(ByteBuf msg) implements ClientConnectHandler {
+    private record HttpRelayHandler(ByteBuf msg) implements ClientTcpRelayHandler {
         @Override
         public ChannelHandler inboundHandler() {
             return INSTANCE;
@@ -44,7 +44,7 @@ class HttpPortUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> {
         }
     }
 
-    private static class HttpsConnectHandler implements ClientConnectHandler {
+    private static class HttpsRelayHandler implements ClientTcpRelayHandler {
         private static final byte[] SUCCESS = "HTTP/1.1 200 Connection established\r\n\r\n".getBytes();
         private static final byte[] FAILED = "HTTP/1.1 500 Internal Server Error\r\n\r\n".getBytes();
 

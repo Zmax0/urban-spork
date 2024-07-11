@@ -3,7 +3,7 @@ package com.urbanspork.client;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ClientConfigTest;
 import com.urbanspork.common.config.ConfigHandler;
-import com.urbanspork.common.protocol.socks.ClientHandshake;
+import com.urbanspork.common.protocol.socks.Handshake;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
@@ -71,7 +71,7 @@ class ClientTest {
     void testHandshake(Socks5CommandType type) {
         InetSocketAddress proxyAddress = new InetSocketAddress(0);
         InetSocketAddress dstAddress = new InetSocketAddress(0);
-        Assertions.assertThrows(ExecutionException.class, () -> ClientHandshake.noAuth(group, type, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS));
+        Assertions.assertThrows(ExecutionException.class, () -> Handshake.noAuth(group, type, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS));
     }
 
     public static Client.Instance asyncLaunchClient(ClientConfig config) throws InterruptedException, ExecutionException {

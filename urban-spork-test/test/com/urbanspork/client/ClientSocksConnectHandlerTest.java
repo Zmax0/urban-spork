@@ -23,10 +23,10 @@ class ClientSocksConnectHandlerTest {
         webSocket.setPath("/ws");
         webSocket.setHeader(Map.of("Host", "localhost"));
         config.setWs(webSocket);
-        ClientConnectHandler.WebSocketCodec codec = new ClientConnectHandler.WebSocketCodec(
+        ClientTcpRelayHandler.WebSocketCodec codec = new ClientTcpRelayHandler.WebSocketCodec(
                 channel,
                 config,
-                new ClientConnectHandler.InboundWriter(c -> {}, c -> c.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, new Socks5AddressType(-1)))),
+                new ClientTcpRelayHandler.InboundWriter(c -> {}, c -> c.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, new Socks5AddressType(-1)))),
                 c -> {}
         );
         ChannelPipeline pipeline = channel.pipeline();
