@@ -7,18 +7,28 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.FixedLengthFrameDecoder;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultHttpRequest;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpRequestEncoder;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.socksx.v5.Socks5CommandResponse;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import io.netty.util.NetUtil;
 import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 
@@ -28,6 +38,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TcpTestTemplate extends TestTemplate {
@@ -45,14 +56,18 @@ public abstract class TcpTestTemplate extends TestTemplate {
         dstAddress = promise.get().localAddress();
     }
 
-    protected void socksHandshakeAndSendBytes(InetSocketAddress proxyAddress) throws ExecutionException, InterruptedException {
+    protected void socksHandshakeAndSendBytes(InetSocketAddress proxyAddress) throws ExecutionException, InterruptedException, TimeoutException {
         HandshakeResult<Socks5CommandResponse> result = com.urbanspork.common.protocol.socks.Handshake
             .noAuth(group, Socks5CommandType.CONNECT, proxyAddress, dstAddress).get();
         Channel channel = result.channel();
         sendRandomBytes(channel);
     }
 
-    protected void httpSendBytes(InetSocketAddress proxyAddress) throws InterruptedException, ExecutionException {
+    protected void httpSendBytes(InetSocketAddress proxyAddress) throws InterruptedException, ExecutionException, TimeoutException {
+        httpSendBytes(proxyAddress, dstAddress);
+    }
+
+    protected void httpSendBytes(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) throws InterruptedException, ExecutionException, TimeoutException {
         Promise<HttpRequest> promise = group.next().newPromise();
         String uri = String.format("http://%s/", NetUtil.toSocketAddressString(dstAddress));
         DefaultHttpRequest msg1 = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri);
@@ -84,17 +99,17 @@ public abstract class TcpTestTemplate extends TestTemplate {
                 promise.setFailure(new IllegalStateException("Channel closed"));
             }
         });
-        promise.get();
+        promise.get(10, TimeUnit.SECONDS);
     }
 
-    protected void httpsHandshakeAndSendBytes(InetSocketAddress proxyAddress) throws ExecutionException, InterruptedException {
+    protected void httpsHandshakeAndSendBytes(InetSocketAddress proxyAddress) throws ExecutionException, InterruptedException, TimeoutException {
         HandshakeResult<HttpResponse> result = com.urbanspork.common.protocol.https.proxy.Handshake
             .start(group, proxyAddress, dstAddress).get();
         Channel channel = result.channel();
         sendRandomBytes(channel);
     }
 
-    private static void sendRandomBytes(Channel channel) throws InterruptedException {
+    private static void sendRandomBytes(Channel channel) throws InterruptedException, ExecutionException, TimeoutException {
         int length = ThreadLocalRandom.current().nextInt(0xfff, 0xffff);
         byte[] bytes = Dice.rollBytes(length);
         ChannelPromise promise = channel.newPromise();
@@ -117,8 +132,7 @@ public abstract class TcpTestTemplate extends TestTemplate {
             }
         );
         channel.writeAndFlush(Unpooled.wrappedBuffer(bytes));
-        promise.await(10, TimeUnit.SECONDS);
-        Assertions.assertTrue(promise.isSuccess());
+        promise.get(10, TimeUnit.SECONDS);
     }
 
     @AfterAll

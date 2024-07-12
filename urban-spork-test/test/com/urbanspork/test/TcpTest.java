@@ -22,11 +22,12 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 class TcpTest extends TcpTestTemplate {
     @ParameterizedTest
     @ArgumentsSource(Parameter.Provider.class)
-    void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
+    void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
         Protocol protocol = parameter.protocol();
         CipherKind cipher = parameter.cipher();
         if (protocol == Protocol.shadowsocks && cipher.isAead2022() && cipher.supportEih()) {
@@ -57,6 +58,14 @@ class TcpTest extends TcpTestTemplate {
     }
 
     @Test
+    void testHttpBadRequest() throws ExecutionException, InterruptedException {
+        ClientConfig config = ClientConfigTest.testConfig(0, 0);
+        Client.Instance client = launchClient(config);
+        InetSocketAddress proxyAddress = client.udp().localAddress();
+        Assertions.assertThrows(ExecutionException.class, () -> httpSendBytes(proxyAddress, proxyAddress));
+    }
+
+    @Test
     void testConnectServerFailed() throws ExecutionException, InterruptedException {
         ClientConfig config = ClientConfigTest.testConfig(0, TestDice.rollPort());
         Client.Instance client = launchClient(config);
@@ -67,7 +76,7 @@ class TcpTest extends TcpTestTemplate {
         client.close();
     }
 
-    void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
+    void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
         Protocol protocol = parameter.protocol();
         CipherKind cipher = parameter.cipher();
         ServerConfig serverConfig = ServerConfigTest.testConfig(0);
