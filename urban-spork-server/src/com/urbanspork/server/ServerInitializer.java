@@ -14,7 +14,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.handler.codec.MessageToMessageCodec;
-import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
@@ -62,8 +61,7 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
         String path = Optional.ofNullable(config.getWs()).map(WebSocketSetting::getPath).orElseThrow(() -> new IllegalArgumentException("required path not present"));
         channel.pipeline().addLast(
             new HttpServerCodec(),
-            new HttpObjectAggregator(0xffff),
-            new WebSocketServerProtocolHandler(path),
+            new WebSocketServerProtocolHandler(path, null, true, 0xfffff),
             new MessageToMessageCodec<BinaryWebSocketFrame, ByteBuf>() {
                 @Override
                 protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
