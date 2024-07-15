@@ -42,11 +42,6 @@ class ClientHttpUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> 
         }
 
         @Override
-        public InboundWriter inboundWriter() {
-            return new InboundWriter(channel -> {}, channel -> {});
-        }
-
-        @Override
         public Consumer<Channel> outboundWriter() {
             return channel -> channel.writeAndFlush(msg);
         }
@@ -67,11 +62,6 @@ class ClientHttpUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> 
                 channel -> channel.writeAndFlush(Unpooled.wrappedBuffer(SUCCESS)),
                 channel -> channel.writeAndFlush(Unpooled.wrappedBuffer(FAILED))
             );
-        }
-
-        @Override
-        public Consumer<Channel> outboundWriter() {
-            return channel -> {};
         }
     }
 }

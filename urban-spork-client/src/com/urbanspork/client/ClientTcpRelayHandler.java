@@ -47,9 +47,13 @@ public interface ClientTcpRelayHandler {
 
     ChannelHandler inboundHandler();
 
-    InboundWriter inboundWriter();
+    default InboundWriter inboundWriter() {
+        return new InboundWriter(channel -> {}, channel -> {});
+    }
 
-    Consumer<Channel> outboundWriter();
+    default Consumer<Channel> outboundWriter() {
+        return channel -> {};
+    }
 
     default void connect(Channel inbound, InetSocketAddress dstAddress) {
         ServerConfig config = inbound.attr(AttributeKeys.SERVER_CONFIG).get();
