@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.InetSocketAddress;
 
@@ -30,11 +31,12 @@ class AddressTest {
         Assertions.assertThrows(EncoderException.class, () -> Address.writeAddressPort(buf, null));
     }
 
-    @Test
-    void testReadUnknown() {
+    @ParameterizedTest
+    @ValueSource(ints = {-1, 4})
+    void testReadUnknown(int type) {
         ByteBuf buf = Unpooled.buffer();
         buf.writeShort(TestDice.rollPort());
-        buf.writeByte(-1);
+        buf.writeByte(type);
         Assertions.assertThrows(IllegalArgumentException.class, () -> Address.readAddressPort(buf));
     }
 }

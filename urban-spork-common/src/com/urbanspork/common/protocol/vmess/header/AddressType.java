@@ -1,11 +1,10 @@
 package com.urbanspork.common.protocol.vmess.header;
 
-import java.util.Arrays;
-
 public enum AddressType {
 
     IPV4((byte) 1), DOMAIN((byte) 2), IPV6((byte) 3);
 
+    private static final AddressType[] VALUES = values();
     private final byte value;
 
     AddressType(byte value) {
@@ -17,7 +16,10 @@ public enum AddressType {
     }
 
     public static AddressType valueOf(byte value) {
-        return Arrays.stream(values()).filter(type -> type.value == value)
-            .findFirst().orElseThrow(() -> new IllegalArgumentException("Unknown address type: " + value));
+        if (1 <= value && value <= 3) {
+            return VALUES[value - 1];
+        } else {
+            throw new IllegalArgumentException("Unknown address type: " + value);
+        }
     }
 }
