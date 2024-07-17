@@ -28,10 +28,10 @@ class ClientHttpUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> 
             ctx.writeAndFlush(Unpooled.wrappedBuffer("HTTP/1.1 400 Bad Request\r\n\r\n".getBytes())).addListener(ChannelFutureListener.CLOSE);
             return;
         }
-        if (HttpMethod.GET == option.method()) {
-            new HttpRelayHandler(msg.retain()).connect(ctx.channel(), dstAddress);
-        } else {
+        if (HttpMethod.CONNECT == option.method()) {
             new HttpsRelayHandler().connect(ctx.channel(), dstAddress);
+        } else {
+            new HttpRelayHandler(msg.retain()).connect(ctx.channel(), dstAddress);
         }
     }
 

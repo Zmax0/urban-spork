@@ -13,31 +13,22 @@ class HttpProxyUtilTest {
         CONNECT www.example.com:443 HTTP/1.1
         Proxy-Connection: keep-alive
         """, """
-        GET http://www.example.com:8080/?a=b&c=d HTTP/1.1
+        POST http://www.example.com:8080/?a=b&c=d HTTP/1.1
         Connection: keep-alive
         """, """
         GET http://www.example.com/?a=b&c=d HTTP/1.1
         Connection: keep-alive
         """, """
-        GET http://[::1] HTTP/1.1
+        PUT http://[::1] HTTP/1.1
         Connection: keep-alive
         """, """
-        GET http://[0:0:0:0:0:0:0:1]:8080 HTTP/1.1
+        OPTIONS http://[0:0:0:0:0:0:0:1]:8080 HTTP/1.1
         Connection: keep-alive
         """})
     void testParseOption(String msg) {
         HttpProxyUtil.Option option = HttpProxyUtil.parseOption(Unpooled.wrappedBuffer(msg.getBytes()));
         Assertions.assertNotNull(option.method());
         Assertions.assertNotNull(option.address());
-    }
-
-    @Test
-    void testParseUnsupportedOption() {
-        ByteBuf msg = Unpooled.wrappedBuffer(("""
-            POST http://www.example.com HTTP/1.1
-             Connection: keep-alive
-            """).getBytes());
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> HttpProxyUtil.parseOption(msg));
     }
 
     @Test
