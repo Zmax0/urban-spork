@@ -2,26 +2,14 @@ package com.urbanspork.common.config;
 
 import com.urbanspork.test.TestDice;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.lang.reflect.Field;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ConfigHandlerTest {
-
     @Test
-    @Order(1)
     void testSaveAndRead() {
         int clientPort = TestDice.rollPort();
         int serverPort = TestDice.rollPort();
@@ -30,28 +18,33 @@ class ConfigHandlerTest {
         ClientConfig config = ConfigHandler.DEFAULT.read();
         Assertions.assertEquals(clientPort, config.getPort());
         Assertions.assertEquals(serverPort, config.getServers().getFirst().getPort());
+        Assertions.assertDoesNotThrow(ConfigHandler.DEFAULT::delete);
     }
 
     @Test
-    @Order(2)
-    void testException() throws IOException {
-        ClientConfig config = ConfigHandler.DEFAULT.read();
-        File file = FileConfigHolder.path().toFile();
-        Assertions.assertTrue(file.setWritable(false));
-        Assertions.assertThrows(UncheckedIOException.class, () -> ConfigHandler.DEFAULT.save(config));
-        Assertions.assertTrue(file.setWritable(true));
-        List<String> lines;
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            lines = new ArrayList<>(reader.lines().toList());
-        }
-        lines.removeFirst();
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            for (String line : lines) {
-                writer.write(line);
+    void testException() throws NoSuchFieldException, IllegalAccessException {
+        Field holderField = ConfigHandler.class.getDeclaredField("holder");
+        holderField.setAccessible(true);
+        Object temp = holderField.get(ConfigHandler.DEFAULT);
+        holderField.set(ConfigHandler.DEFAULT, new ConfigHolder() {
+            @Override
+            public void save(String str) throws IOException {
+                throw new IOException();
             }
-        }
+
+            @Override
+            public String read() throws IOException {
+                throw new IOException();
+            }
+
+            @Override
+            public void delete() throws IOException {
+                throw new IOException();
+            }
+        });
+        ClientConfig config = ClientConfigTest.testConfig(0, 0);
+        Assertions.assertThrows(UncheckedIOException.class, () -> ConfigHandler.DEFAULT.save(config));
         Assertions.assertThrows(UncheckedIOException.class, ConfigHandler.DEFAULT::read);
-        ConfigHandler.DEFAULT.delete();
-        Assertions.assertThrows(IllegalArgumentException.class, ConfigHandler.DEFAULT::read);
+        holderField.set(ConfigHandler.DEFAULT, temp);
     }
 }

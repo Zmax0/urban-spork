@@ -47,9 +47,13 @@ public interface ClientTcpRelayHandler {
 
     ChannelHandler inboundHandler();
 
-    InboundWriter inboundWriter();
+    default InboundWriter inboundWriter() {
+        return new InboundWriter(channel -> {}, channel -> {});
+    }
 
-    Consumer<Channel> outboundWriter();
+    default Consumer<Channel> outboundWriter() {
+        return channel -> {};
+    }
 
     default void connect(Channel inbound, InetSocketAddress dstAddress) {
         ServerConfig config = inbound.attr(AttributeKeys.SERVER_CONFIG).get();
@@ -100,7 +104,7 @@ public interface ClientTcpRelayHandler {
     private void enableWebSocket(Channel inbound, Channel outbound, ServerConfig config) throws URISyntaxException {
         outbound.pipeline().addLast(
             new HttpClientCodec(),
-            new HttpObjectAggregator(0xffff),
+            new HttpObjectAggregator(0xfffff),
             buildWebSocketHandler(config),
             new WebSocketCodec(inbound, config, inboundWriter(), outboundWriter())
         );
@@ -190,6 +194,7 @@ public interface ClientTcpRelayHandler {
             }
             builder.generateOriginHeader(false).customHeaders(headers);
         });
+        builder.maxFramePayloadLength(0xfffff);
         return new WebSocketClientProtocolHandler(builder.build());
     }
 }

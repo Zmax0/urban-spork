@@ -22,11 +22,12 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 class TcpTest extends TcpTestTemplate {
     @ParameterizedTest
     @ArgumentsSource(Parameter.Provider.class)
-    void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
+    void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
         Protocol protocol = parameter.protocol();
         CipherKind cipher = parameter.cipher();
         if (protocol == Protocol.shadowsocks && cipher.isAead2022() && cipher.supportEih()) {
@@ -50,10 +51,18 @@ class TcpTest extends TcpTestTemplate {
         Client.Instance client = launchClient(config);
         InetSocketAddress clientAddress = client.tcp().localAddress();
         socksHandshakeAndSendBytes(clientAddress);
-        httpsHandshakeAndSendBytes(clientAddress);
-        httpSendBytes(clientAddress);
+        checkHttpsHandshakeAndSendBytes(clientAddress);
+        checkHttpSendBytes(clientAddress);
         closeServer(server);
         client.close();
+    }
+
+    @Test
+    void testHttpBadRequest() throws ExecutionException, InterruptedException {
+        ClientConfig config = ClientConfigTest.testConfig(0, 0);
+        Client.Instance client = launchClient(config);
+        InetSocketAddress proxyAddress = client.udp().localAddress();
+        Assertions.assertThrows(ExecutionException.class, () -> checkHttpSendBytes(proxyAddress, proxyAddress));
     }
 
     @Test
@@ -62,12 +71,12 @@ class TcpTest extends TcpTestTemplate {
         Client.Instance client = launchClient(config);
         InetSocketAddress clientAddress = client.tcp().localAddress();
         Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientAddress));
-        Assertions.assertThrows(ExecutionException.class, () -> httpsHandshakeAndSendBytes(clientAddress));
-        Assertions.assertThrows(ExecutionException.class, () -> httpSendBytes(clientAddress));
+        Assertions.assertThrows(ExecutionException.class, () -> checkHttpsHandshakeAndSendBytes(clientAddress));
+        Assertions.assertThrows(ExecutionException.class, () -> checkHttpSendBytes(clientAddress));
         client.close();
     }
 
-    void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException {
+    void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
         Protocol protocol = parameter.protocol();
         CipherKind cipher = parameter.cipher();
         ServerConfig serverConfig = ServerConfigTest.testConfig(0);
@@ -84,10 +93,10 @@ class TcpTest extends TcpTestTemplate {
         current.setProtocol(protocol);
         current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
         Client.Instance client = launchClient(config);
-        InetSocketAddress clientAddress = client.udp().localAddress();
+        InetSocketAddress clientAddress = client.tcp().localAddress();
         socksHandshakeAndSendBytes(clientAddress);
-        httpsHandshakeAndSendBytes(clientAddress);
-        httpSendBytes(clientAddress);
+        checkHttpsHandshakeAndSendBytes(clientAddress);
+        checkHttpSendBytes(clientAddress);
         ServerUserManager.DEFAULT.clear();
         closeServer(server);
         client.close();

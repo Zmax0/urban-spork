@@ -12,7 +12,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 abstract class TestTemplate {
-
     protected static final ExecutorService POOL = Executors.newVirtualThreadPerTaskExecutor();
 
     protected static Client.Instance launchClient(ClientConfig config)

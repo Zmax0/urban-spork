@@ -37,7 +37,12 @@ public class HttpProxyUtil {
         String uri = getString(msg, bStart, bEnd - bStart);
         String host;
         int port;
-        if (HttpMethod.GET == method) {
+        if (HttpMethod.CONNECT == method) {
+            int hEnd = uri.lastIndexOf(":");
+            int pEnd = uri.length();
+            host = getString(msg, bStart, hEnd);
+            port = getInt(msg, bStart + hEnd + 1, pEnd - hEnd - 1);
+        } else {
             int hStart = uri.indexOf("//") + 2;
             int hEnd = uri.lastIndexOf(":");
             int hv6End = uri.lastIndexOf("]");
@@ -54,13 +59,6 @@ public class HttpProxyUtil {
                 host = getString(msg, bStart + hStart, hEnd - hStart);
                 port = getInt(msg, bStart + pStart, pEnd - pStart);
             }
-        } else if (HttpMethod.CONNECT == method) {
-            int hEnd = uri.lastIndexOf(":");
-            int pEnd = uri.length();
-            host = getString(msg, bStart, hEnd);
-            port = getInt(msg, bStart + hEnd + 1, pEnd - hEnd - 1);
-        } else {
-            throw new UnsupportedOperationException("Unsupported HTTP method: " + method);
         }
         return new Option(method, InetSocketAddress.createUnresolved(host, port));
     }

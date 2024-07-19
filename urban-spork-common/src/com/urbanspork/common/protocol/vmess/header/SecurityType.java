@@ -2,10 +2,7 @@ package com.urbanspork.common.protocol.vmess.header;
 
 import com.urbanspork.common.codec.CipherKind;
 
-import java.util.Arrays;
-
 public enum SecurityType {
-
     UNKNOWN((byte) 0),
     LEGACY((byte) 1),
     AUTO((byte) 2),
@@ -14,6 +11,7 @@ public enum SecurityType {
     NONE((byte) 5),
     ZERO((byte) 6);
 
+    private static final SecurityType[] VALUES = values();
     private final byte value;
 
     SecurityType(byte value) {
@@ -25,7 +23,7 @@ public enum SecurityType {
     }
 
     public static SecurityType valueOf(byte value) {
-        return Arrays.stream(values()).filter(type -> type.value == value).findFirst().orElse(UNKNOWN);
+        return VALUES[value];
     }
 
     public static SecurityType valueOf(CipherKind cipher) {
