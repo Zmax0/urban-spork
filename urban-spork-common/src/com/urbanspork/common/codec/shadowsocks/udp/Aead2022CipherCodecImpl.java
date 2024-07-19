@@ -109,7 +109,7 @@ class Aead2022CipherCodecImpl implements AeadCipherCodec {
         }
     }
 
-    // Client -> Server
+    // Client -> Server(*)
     private RelayingPacket<ByteBuf> decodeClientPocketAead2022(Context context, ByteBuf in) throws InvalidCipherTextException {
         int nonceLength = AEAD2022.UDP.getNonceLength(cipherKind);
         int tagSize = cipherMethod.tagSize();
@@ -144,7 +144,7 @@ class Aead2022CipherCodecImpl implements AeadCipherCodec {
         return new RelayingPacket<>(address, packet);
     }
 
-    // Server -> Client
+    // Server -> Client(*)
     private RelayingPacket<ByteBuf> decodeServerPocketAead2022(Context context, ByteBuf in) throws InvalidCipherTextException {
         int nonceLength = AEAD2022.UDP.getNonceLength(cipherKind);
         int tagSize = cipherMethod.tagSize();

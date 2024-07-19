@@ -51,8 +51,8 @@ class TcpTest extends TcpTestTemplate {
         Client.Instance client = launchClient(config);
         InetSocketAddress clientAddress = client.tcp().localAddress();
         socksHandshakeAndSendBytes(clientAddress);
-        httpsHandshakeAndSendBytes(clientAddress);
-        httpSendBytes(clientAddress);
+        checkHttpsHandshakeAndSendBytes(clientAddress);
+        checkHttpSendBytes(clientAddress);
         closeServer(server);
         client.close();
     }
@@ -62,7 +62,7 @@ class TcpTest extends TcpTestTemplate {
         ClientConfig config = ClientConfigTest.testConfig(0, 0);
         Client.Instance client = launchClient(config);
         InetSocketAddress proxyAddress = client.udp().localAddress();
-        Assertions.assertThrows(ExecutionException.class, () -> httpSendBytes(proxyAddress, proxyAddress));
+        Assertions.assertThrows(ExecutionException.class, () -> checkHttpSendBytes(proxyAddress, proxyAddress));
     }
 
     @Test
@@ -71,8 +71,8 @@ class TcpTest extends TcpTestTemplate {
         Client.Instance client = launchClient(config);
         InetSocketAddress clientAddress = client.tcp().localAddress();
         Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientAddress));
-        Assertions.assertThrows(ExecutionException.class, () -> httpsHandshakeAndSendBytes(clientAddress));
-        Assertions.assertThrows(ExecutionException.class, () -> httpSendBytes(clientAddress));
+        Assertions.assertThrows(ExecutionException.class, () -> checkHttpsHandshakeAndSendBytes(clientAddress));
+        Assertions.assertThrows(ExecutionException.class, () -> checkHttpSendBytes(clientAddress));
         client.close();
     }
 
@@ -93,10 +93,10 @@ class TcpTest extends TcpTestTemplate {
         current.setProtocol(protocol);
         current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
         Client.Instance client = launchClient(config);
-        InetSocketAddress clientAddress = client.udp().localAddress();
+        InetSocketAddress clientAddress = client.tcp().localAddress();
         socksHandshakeAndSendBytes(clientAddress);
-        httpsHandshakeAndSendBytes(clientAddress);
-        httpSendBytes(clientAddress);
+        checkHttpsHandshakeAndSendBytes(clientAddress);
+        checkHttpSendBytes(clientAddress);
         ServerUserManager.DEFAULT.clear();
         closeServer(server);
         client.close();
