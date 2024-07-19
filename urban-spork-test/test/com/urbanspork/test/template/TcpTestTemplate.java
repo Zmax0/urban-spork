@@ -26,6 +26,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.socksx.v5.Socks5CommandResponse;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.NetUtil;
 import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.AfterAll;
@@ -43,7 +44,7 @@ import java.util.concurrent.TimeoutException;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TcpTestTemplate extends TestTemplate {
     final EventLoopGroup group = new NioEventLoopGroup();
-    InetSocketAddress dstAddress;
+    protected InetSocketAddress dstAddress;
 
     @BeforeAll
     protected void beforeAll() throws ExecutionException, InterruptedException {
@@ -56,18 +57,22 @@ public abstract class TcpTestTemplate extends TestTemplate {
         dstAddress = promise.get().localAddress();
     }
 
+    protected Channel connect(InetSocketAddress address) throws InterruptedException {
+        return new Bootstrap().group(group.next().next()).channel(NioSocketChannel.class).handler(new LoggingHandler()).connect(address).sync().channel();
+    }
+
     protected void socksHandshakeAndSendBytes(InetSocketAddress proxyAddress) throws ExecutionException, InterruptedException, TimeoutException {
         HandshakeResult<Socks5CommandResponse> result = com.urbanspork.common.protocol.socks.Handshake
             .noAuth(group, Socks5CommandType.CONNECT, proxyAddress, dstAddress).get();
         Channel channel = result.channel();
-        sendRandomBytes(channel);
+        checkSendRandomBytes(channel);
     }
 
-    protected void httpSendBytes(InetSocketAddress proxyAddress) throws InterruptedException, ExecutionException, TimeoutException {
-        httpSendBytes(proxyAddress, dstAddress);
+    protected void checkHttpSendBytes(InetSocketAddress proxyAddress) throws InterruptedException, ExecutionException, TimeoutException {
+        checkHttpSendBytes(proxyAddress, dstAddress);
     }
 
-    protected void httpSendBytes(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) throws InterruptedException, ExecutionException, TimeoutException {
+    protected void checkHttpSendBytes(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) throws InterruptedException, ExecutionException, TimeoutException {
         Promise<HttpRequest> promise = group.next().newPromise();
         String uri = String.format("http://%s/", NetUtil.toSocketAddressString(dstAddress));
         DefaultHttpRequest msg1 = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri);
@@ -102,14 +107,14 @@ public abstract class TcpTestTemplate extends TestTemplate {
         promise.get(10, TimeUnit.SECONDS);
     }
 
-    protected void httpsHandshakeAndSendBytes(InetSocketAddress proxyAddress) throws ExecutionException, InterruptedException, TimeoutException {
+    protected void checkHttpsHandshakeAndSendBytes(InetSocketAddress proxyAddress) throws ExecutionException, InterruptedException, TimeoutException {
         HandshakeResult<HttpResponse> result = com.urbanspork.common.protocol.https.proxy.Handshake
             .start(group, proxyAddress, dstAddress).get();
         Channel channel = result.channel();
-        sendRandomBytes(channel);
+        checkSendRandomBytes(channel);
     }
 
-    private static void sendRandomBytes(Channel channel) throws InterruptedException, ExecutionException, TimeoutException {
+    private static void checkSendRandomBytes(Channel channel) throws InterruptedException, ExecutionException, TimeoutException {
         int length = ThreadLocalRandom.current().nextInt(0xfff, 0xffff);
         byte[] bytes = Dice.rollBytes(length);
         ChannelPromise promise = channel.newPromise();
