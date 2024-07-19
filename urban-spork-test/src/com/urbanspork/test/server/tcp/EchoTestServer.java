@@ -14,6 +14,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
 import java.util.concurrent.CompletableFuture;
 
 public class EchoTestServer {
@@ -43,7 +44,7 @@ public class EchoTestServer {
                         });
                     }
                 })
-                .bind(port).addListener((ChannelFutureListener) future -> {
+                .bind(InetAddress.getLoopbackAddress(), port).addListener((ChannelFutureListener) future -> {
                     if (future.isSuccess()) {
                         ServerSocketChannel channel = (ServerSocketChannel) future.channel();
                         logger.info("Launch echo test server => {}", channel.localAddress());

@@ -91,7 +91,7 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
         Session serverSession = new Session(Mode.Server, identity, request, ServerUserManager.EMPTY, context);
         List<Object> out = new ArrayList<>();
         AeadCipherCodec serverCodec1 = AeadCipherCodecs.get(config);
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> serverCodec1.decode(serverSession, tooShortMsg, out));
+        Assertions.assertThrows(TooShortHeaderException.class, () -> serverCodec1.decode(serverSession, tooShortMsg, out));
         Assertions.assertDoesNotThrow(() -> serverCodec1.decode(serverSession, msg1, out));
         AeadCipherCodec serverCodec2 = AeadCipherCodecs.get(config);
         Assertions.assertThrows(DecoderException.class, () -> serverCodec2.decode(serverSession, msg2, out));

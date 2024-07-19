@@ -137,11 +137,15 @@ class AeadCipherCodec {
         }
         if (session.context().checkNonceReplay(salt)) {
             String msg = String.format("detected repeated nonce salt %s", ByteString.valueOf(salt));
-            throw new DecoderException(msg);
+            throw new RepeatedNonceException(msg);
         }
         session.identity().setRequestSalt(salt);
         ByteBuf sealedHeaderBuf = Unpooled.buffer();
         int sealedHeaderLength = eihLength + 1 + 8 + requestSaltLength + 2 + tagSize;
+        if (in.readableBytes() < sealedHeaderLength) {
+            String msg = String.format("header too short, expecting %d bytes, but found %d bytes", sealedHeaderLength, in.readableBytes());
+            throw new TooShortHeaderException(msg);
+        }
         in.getBytes(in.readerIndex(), sealedHeaderBuf, sealedHeaderLength);
         PayloadDecoder newPayloadDecoder;
         if (requireEih) {

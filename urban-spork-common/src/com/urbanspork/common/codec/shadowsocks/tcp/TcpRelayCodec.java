@@ -9,7 +9,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.ByteToMessageCodec;
-import io.netty.handler.codec.DecoderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,15 +43,28 @@ public class TcpRelayCodec extends ByteToMessageCodec<ByteBuf> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        if (Mode.Server == session.mode() && cause instanceof DecoderException) {
-            SocketChannel channel = (SocketChannel) ctx.channel();
-            String transLog = ExceptionHandler.transLog(channel);
-            logger.error("[tcp][{}] {}", transLog, cause.getMessage());
-            ctx.deregister();
-            channel.config().setSoLinger(0);
-            channel.shutdownOutput().addListener(future -> channel.unsafe().beginRead());
-        } else {
-            ctx.fireExceptionCaught(cause);
+        switch (cause) {
+            case TooShortHeaderException ignore -> {
+                logError(ctx, cause);
+                ctx.deregister();
+                SocketChannel channel = (SocketChannel) ctx.channel();
+                if (channel.isActive()) {
+                    channel.config().setSoLinger(0);
+                    channel.shutdownOutput();
+                }
+            }
+            case RepeatedNonceException ignore -> {
+                logError(ctx, cause);
+                SocketChannel channel = (SocketChannel) ctx.channel();
+                channel.config().setSoLinger(0);
+                channel.close(); // send RST
+            }
+            default -> ctx.fireExceptionCaught(cause);
         }
+    }
+
+    private void logError(ChannelHandlerContext ctx, Throwable cause) {
+        String transLog = ExceptionHandler.transLog(ctx.channel());
+        logger.error("[tcp][{}] {}", transLog, cause.getMessage());
     }
 }
