@@ -1,5 +1,5 @@
 <assembly>
-  <id>${project.version}</id>
+  <id>linux-${project.version}</id>
   <formats>
     <format>zip</format>
   </formats>
@@ -9,6 +9,11 @@
       <useProjectArtifact>false</useProjectArtifact>
       <outputDirectory>lib</outputDirectory>
       <unpack>false</unpack>
+      <excludes>
+        <exclude>org.openjfx:javafx-base:jar:win</exclude>
+        <exclude>org.openjfx:javafx-controls:jar:win</exclude>
+        <exclude>org.openjfx:javafx-graphics:jar:win</exclude>
+      </excludes>
     </dependencySet>
   </dependencySets>
   <fileSets>
