@@ -1,10 +1,10 @@
 name: release
-
 on:
   push:
+    branches:
+      - master
     tags:
       - "v*.*.*"
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,6 +26,3 @@ jobs:
           files: |
             urban-spork-client-gui/target/*.zip
             urban-spork-server/target/*.zip
-
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
