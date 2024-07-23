@@ -44,27 +44,18 @@ public class TcpRelayCodec extends ByteToMessageCodec<ByteBuf> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         switch (cause) {
-            case TooShortHeaderException ignore -> {
-                logError(ctx, cause);
-                ctx.deregister();
-                SocketChannel channel = (SocketChannel) ctx.channel();
-                if (channel.isActive()) {
-                    channel.config().setSoLinger(0);
-                    channel.shutdownOutput();
-                }
-            }
-            case RepeatedNonceException ignore -> {
-                logError(ctx, cause);
-                SocketChannel channel = (SocketChannel) ctx.channel();
-                channel.config().setSoLinger(0);
-                channel.close(); // send RST
-            }
+            case TooShortHeaderException ignore -> exceptionCaught0(ctx, cause);
+            case RepeatedNonceException ignore -> exceptionCaught0(ctx, cause);
             default -> ctx.fireExceptionCaught(cause);
         }
     }
 
-    private void logError(ChannelHandlerContext ctx, Throwable cause) {
+    private void exceptionCaught0(ChannelHandlerContext ctx, Throwable cause) {
         String transLog = ExceptionHandler.transLog(ctx.channel());
         logger.error("[tcp][{}] {}", transLog, cause.getMessage());
+        SocketChannel channel = (SocketChannel) ctx.channel();
+        ctx.deregister();
+        channel.config().setSoLinger(0);
+        channel.close(); // send RST
     }
 }

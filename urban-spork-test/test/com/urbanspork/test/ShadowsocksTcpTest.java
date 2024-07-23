@@ -13,17 +13,20 @@ import com.urbanspork.test.template.TcpTestTemplate;
 import com.urbanspork.test.tool.TcpCapture;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.util.NetUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-class TcpPreventionTest extends TcpTestTemplate {
+class ShadowsocksTcpTest extends TcpTestTemplate {
     private List<Server.Instance> server;
     private TcpCapture capture;
     private Client.Instance client;
@@ -33,19 +36,16 @@ class TcpPreventionTest extends TcpTestTemplate {
         setUp(true);
         Channel channel = connect(client.tcp().localAddress());
         String request = "GET http://" + NetUtil.toSocketAddressString(dstAddress) + "/?a=b&c=d HTTP/1.1\r\n\r\n";
-        channel.writeAndFlush(Unpooled.wrappedBuffer(request.getBytes())).sync();
+        channel.writeAndFlush(Unpooled.wrappedBuffer(request.getBytes())).sync().addListener(ChannelFutureListener.CLOSE);
         byte[] msg = capture.nextOutboundCapture().getLast();
-        capture.send(msg, (c, m) -> {
-            byte[] header = Arrays.copyOf(m, 42);
-            c.writeAndFlush(Unpooled.wrappedBuffer(header));
-            int i = 42;
-            for (; i < m.length; i++) {
-                if (!c.isActive()) {
-                    c.writeAndFlush(Unpooled.wrappedBuffer(new byte[]{msg[i]}));
-                }
-            }
-            Assertions.assertEquals(msg.length, i);
-        });
+        SocketChannel remoteChannel = capture.newRemoteChannel();
+        byte[] left = Arrays.copyOf(msg, 42);
+        byte[] right = Arrays.copyOfRange(msg, 42, msg.length);
+        remoteChannel.writeAndFlush(Unpooled.wrappedBuffer(left));
+        Thread.sleep(Duration.ofMillis(100)); // flush output buffer
+        remoteChannel.writeAndFlush(Unpooled.wrappedBuffer(right));
+        Assertions.assertFalse(remoteChannel.isActive());
+        remoteChannel.closeFuture().sync();
         closeServer(server);
         client.close();
     }
@@ -55,43 +55,48 @@ class TcpPreventionTest extends TcpTestTemplate {
         setUp(false);
         checkHttpSendBytes(client.tcp().localAddress());
         byte[] msg = capture.nextOutboundCapture().getLast();
-        capture.send(msg, (c, m) -> {
-            byte[] header = Arrays.copyOf(m, 75);
-            c.writeAndFlush(Unpooled.wrappedBuffer(header));
-            int count = 75;
-            for (int i = 75; i < m.length; i++) {
-                if (c.isWritable()) {
-                    count++;
-                    c.writeAndFlush(Unpooled.wrappedBuffer(new byte[]{m[i]}));
-                } else {
-                    break;
-                }
+        SocketChannel remoteChannel = capture.newRemoteChannel();
+        byte[] header = Arrays.copyOf(msg, 75);
+        remoteChannel.writeAndFlush(Unpooled.wrappedBuffer(header));
+        Thread.sleep(Duration.ofMillis(100)); // flush output buffer
+        int count = 75;
+        for (int i = 75; i < msg.length; i++) {
+            if (!remoteChannel.isWritable()) {
+                break;
             }
-            Assertions.assertEquals(msg.length, count);
-        });
+            count++;
+            remoteChannel.writeAndFlush(Unpooled.wrappedBuffer(new byte[]{msg[i]}));
+        }
+        Assertions.assertNotEquals(msg.length, count);
+        remoteChannel.closeFuture().sync();
         closeServer(server);
         client.close();
     }
 
     void setUp(boolean block) throws ExecutionException, InterruptedException {
-        ServerConfig serverConfig = ServerConfigTest.testConfig(0);
+        ServerConfig serverConfig = ServerConfigTest.testConfig(serverPort);
         Protocol protocol = Protocol.shadowsocks;
         CipherKind cipher = CipherKind.aead2022_blake3_aes_256_gcm;
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
-        String clientPassword = TestDice.rollPassword(protocol, cipher);
-        String serverPassword = TestDice.rollPassword(protocol, cipher);
+        String clientPassword = getPropertyOrDefault("com.urbanspork.test.client.password", TestDice.rollPassword(protocol, cipher));
+        String serverPassword = getPropertyOrDefault("com.urbanspork.test.server.password", TestDice.rollPassword(protocol, cipher));
         serverConfig.setPassword(serverPassword);
         List<ServerUserConfig> user = new ArrayList<>();
         user.add(new ServerUserConfig(TestDice.rollString(10), clientPassword));
         serverConfig.setUser(user);
         server = launchServer(List.of(serverConfig));
         capture = new TcpCapture(serverConfig.getPort(), block);
-        ClientConfig config = ClientConfigTest.testConfig(0, capture.getLocalChannel().localAddress().getPort());
+        ClientConfig config = ClientConfigTest.testConfig(clientPort, capture.getLocalChannel().localAddress().getPort());
         ServerConfig current = config.getCurrent();
         current.setCipher(serverConfig.getCipher());
         current.setProtocol(serverConfig.getProtocol());
         current.setPassword(serverPassword + ":" + clientPassword);
         client = launchClient(config);
+    }
+
+    private static String getPropertyOrDefault(String key, String defaultValue) {
+        String property = System.getProperty(key);
+        return property == null ? defaultValue : property;
     }
 }
