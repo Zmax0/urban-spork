@@ -7,6 +7,7 @@ import com.urbanspork.common.config.ClientConfigTest;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTest;
 import com.urbanspork.common.config.ServerUserConfig;
+import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.server.Server;
 import com.urbanspork.test.template.TcpTestTemplate;
@@ -46,6 +47,7 @@ class ShadowsocksTcpTest extends TcpTestTemplate {
         remoteChannel.writeAndFlush(Unpooled.wrappedBuffer(right));
         Assertions.assertFalse(remoteChannel.isActive());
         remoteChannel.closeFuture().sync();
+        ServerUserManager.DEFAULT.clear();
         closeServer(server);
         client.close();
     }
@@ -69,6 +71,7 @@ class ShadowsocksTcpTest extends TcpTestTemplate {
         }
         Assertions.assertNotEquals(msg.length, count);
         remoteChannel.closeFuture().sync();
+        ServerUserManager.DEFAULT.clear();
         closeServer(server);
         client.close();
     }
