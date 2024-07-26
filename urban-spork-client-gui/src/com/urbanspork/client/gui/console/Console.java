@@ -117,6 +117,7 @@ public class Console extends Application {
         primaryStage.setTitle(I18N.getString(I18N.PROGRAM_TITLE));
         primaryStage.setOnCloseRequest(event -> primaryStage.hide());
         primaryStage.hide();
+        launchProxy();
     }
 
     @Override
@@ -368,11 +369,24 @@ public class Console extends Application {
     private Tab initTrafficTab() {
         StackPane stackPane = new StackPane();
         stackPane.setAlignment(Pos.TOP_CENTER);
-        stackPane.getChildren().add(new TrafficCounterLineChart(instance).init());
+        instance.addListener((observable, oldValue, newValue) -> {
+                if (Platform.isFxApplicationThread()) {
+                    initTrafficLineChart(newValue, stackPane);
+                } else {
+                    Platform.runLater(() -> initTrafficLineChart(newValue, stackPane));
+                }
+            }
+        );
         Tab tab = new Tab(I18N.getString(I18N.CONSOLE_TAB2_TEXT));
         tab.setContent(stackPane);
         tab.setClosable(false);
         return tab;
+    }
+
+    private static void initTrafficLineChart(Client.Instance newValue, StackPane stackPane) {
+        ObservableList<Node> children = stackPane.getChildren();
+        children.clear();
+        children.add(new TrafficCounterLineChart(newValue).init());
     }
 
     private void addGridPane0Children(GridPane gridPane0) {

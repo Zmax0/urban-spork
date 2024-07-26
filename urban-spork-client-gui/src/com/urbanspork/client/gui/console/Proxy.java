@@ -14,7 +14,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Proxy {
-
     private static final ClientConfig config = Resource.config();
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Tray tray;
@@ -30,9 +29,7 @@ public class Proxy {
             tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
             return Optional.empty();
         }
-        if (client != null) {
-            client.close();
-        }
+        Optional.ofNullable(client).ifPresent(Client.Instance::close);
         CompletableFuture<Client.Instance> promise = new CompletableFuture<>();
         executor.submit(() -> Client.launch(config, promise));
         try {
@@ -51,7 +48,7 @@ public class Proxy {
     }
 
     public void exit() {
-        client.close();
+        Optional.ofNullable(client).ifPresent(Client.Instance::close);
         executor.shutdown();
     }
 }
