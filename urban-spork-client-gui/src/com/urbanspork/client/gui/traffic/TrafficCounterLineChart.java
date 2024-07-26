@@ -6,7 +6,6 @@ import io.netty.handler.traffic.TrafficCounter;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-import javafx.beans.property.ObjectProperty;
 import javafx.collections.ObservableList;
 import javafx.geometry.Point2D;
 import javafx.scene.chart.LineChart;
@@ -23,9 +22,9 @@ public class TrafficCounterLineChart {
     private final XYChart.Series<Number, Number> write = new XYChart.Series<>();
     private final XYChart.Series<Number, Number> read = new XYChart.Series<>();
     private final Timeline timeline = new Timeline();
-    private final ObjectProperty<Client.Instance> instance;
+    private final Client.Instance instance;
 
-    public TrafficCounterLineChart(ObjectProperty<Client.Instance> instance) {
+    public TrafficCounterLineChart(Client.Instance instance) {
         this.instance = instance;
     }
 
@@ -92,7 +91,7 @@ public class TrafficCounterLineChart {
         data.add(write);
         data.add(read);
         timeline.setCycleCount(Animation.INDEFINITE);
-        timeline.getKeyFrames().add(new KeyFrame(Duration.millis(instance.get().traffic().checkInterval()), event -> refresh()));
+        timeline.getKeyFrames().add(new KeyFrame(Duration.millis(instance.traffic().checkInterval()), event -> refresh()));
         timeline.playFromStart();
         return lineChart;
     }
@@ -100,7 +99,7 @@ public class TrafficCounterLineChart {
     private void refresh() {
         ObservableList<XYChart.Data<Number, Number>> writeData = write.getData();
         ObservableList<XYChart.Data<Number, Number>> readData = read.getData();
-        TrafficCounter counter = instance.get().traffic();
+        TrafficCounter counter = instance.traffic();
         long writeBytes = counter.lastWrittenBytes() / 1024;
         long readBytes = counter.lastReadBytes() / 1024;
         write.setName(writeBytes + " KB/s");
