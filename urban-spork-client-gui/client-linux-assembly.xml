@@ -21,7 +21,7 @@
       <directory>resource</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
-        <include>*.cmd</include>
+        <include>*.sh</include>
       </includes>
     </fileSet>
     <fileSet>
