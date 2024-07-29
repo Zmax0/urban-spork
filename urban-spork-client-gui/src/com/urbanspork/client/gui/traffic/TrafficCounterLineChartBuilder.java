@@ -1,11 +1,11 @@
 package com.urbanspork.client.gui.traffic;
 
-import com.urbanspork.client.Client;
 import com.urbanspork.client.gui.spine.CatmullRom;
 import io.netty.handler.traffic.TrafficCounter;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.beans.property.ObjectProperty;
 import javafx.collections.ObservableList;
 import javafx.geometry.Point2D;
 import javafx.scene.chart.LineChart;
@@ -16,19 +16,19 @@ import javafx.scene.shape.Path;
 import javafx.scene.shape.PathElement;
 import javafx.util.Duration;
 
-public class TrafficCounterLineChart {
+public class TrafficCounterLineChartBuilder {
     private static final int WINDOW = 60;
 
     private final XYChart.Series<Number, Number> write = new XYChart.Series<>();
     private final XYChart.Series<Number, Number> read = new XYChart.Series<>();
     private final Timeline timeline = new Timeline();
-    private final Client.Instance instance;
 
-    public TrafficCounterLineChart(Client.Instance instance) {
-        this.instance = instance;
+    public TrafficCounterLineChartBuilder(ObjectProperty<TrafficCounter> counter) {
+        counter.addListener((observable, oldValue, newValue) -> refresh(newValue));
+        timeline.setCycleCount(Animation.INDEFINITE);
     }
 
-    public LineChart<Number, Number> init() {
+    public LineChart<Number, Number> build() {
         NumberAxis xAxis = new NumberAxis(0, WINDOW, WINDOW);
         NumberAxis yAxis = new NumberAxis();
         yAxis.setTickLabelsVisible(false);
@@ -90,22 +90,23 @@ public class TrafficCounterLineChart {
         }
         data.add(write);
         data.add(read);
-        timeline.setCycleCount(Animation.INDEFINITE);
-        timeline.getKeyFrames().add(new KeyFrame(Duration.millis(instance.traffic().checkInterval()), event -> refresh()));
-        timeline.playFromStart();
         return lineChart;
     }
 
-    private void refresh() {
-        ObservableList<XYChart.Data<Number, Number>> writeData = write.getData();
-        ObservableList<XYChart.Data<Number, Number>> readData = read.getData();
-        TrafficCounter counter = instance.traffic();
-        long writeBytes = counter.lastWrittenBytes() / 1024;
-        long readBytes = counter.lastReadBytes() / 1024;
-        write.setName(writeBytes + " KB/s");
-        read.setName(readBytes + " KB/s");
-        scroll(writeData, writeBytes);
-        scroll(readData, readBytes);
+    private void refresh(TrafficCounter counter) {
+        ObservableList<KeyFrame> keyFrames = timeline.getKeyFrames();
+        keyFrames.clear();
+        keyFrames.add(new KeyFrame(Duration.millis(counter.checkInterval()), event -> {
+            ObservableList<XYChart.Data<Number, Number>> writeData = write.getData();
+            ObservableList<XYChart.Data<Number, Number>> readData = read.getData();
+            long writeBytes = counter.lastWrittenBytes() / 1024;
+            long readBytes = counter.lastReadBytes() / 1024;
+            write.setName(writeBytes + " KB/s");
+            read.setName(readBytes + " KB/s");
+            scroll(writeData, writeBytes);
+            scroll(readData, readBytes);
+        }));
+        timeline.playFromStart();
     }
 
     private void scroll(ObservableList<XYChart.Data<Number, Number>> dataList, Number y) {
