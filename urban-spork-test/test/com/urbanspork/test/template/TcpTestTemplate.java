@@ -40,21 +40,31 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.ToIntFunction;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TcpTestTemplate extends TestTemplate {
     final EventLoopGroup group = new NioEventLoopGroup();
     protected InetSocketAddress dstAddress;
+    protected int serverPort;
+    protected int clientPort;
 
     @BeforeAll
     protected void beforeAll() throws ExecutionException, InterruptedException {
         launchEchoTestServer();
+        serverPort = getPortOrDefault("com.urbanspork.test.server.port", Integer::parseInt);
+        clientPort = getPortOrDefault("com.urbanspork.test.client.port", Integer::parseInt);
     }
 
     private void launchEchoTestServer() throws InterruptedException, ExecutionException {
         CompletableFuture<ServerSocketChannel> promise = new CompletableFuture<>();
         POOL.submit(() -> EchoTestServer.launch(0, promise));
         dstAddress = promise.get().localAddress();
+    }
+
+    private int getPortOrDefault(String key, ToIntFunction<String> converter) {
+        String property = System.getProperty(key);
+        return property == null ? 0 : converter.applyAsInt(property);
     }
 
     protected Channel connect(InetSocketAddress address) throws InterruptedException {

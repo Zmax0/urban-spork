@@ -91,7 +91,6 @@ public class Server {
             .group(bossGroup, workerGroup)
             .channel(NioServerSocketChannel.class)
             .childHandler(new ServerInitializer(config, context))
-            .childOption(ChannelOption.ALLOW_HALF_CLOSURE, true)
             .bind(config.getPort()).addListener(future -> {
                 if (!future.isSuccess()) {
                     context.release();

@@ -9,7 +9,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -26,7 +25,6 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.function.BiConsumer;
 
 public class TcpCapture {
     private static final Logger logger = LoggerFactory.getLogger(TcpCapture.class);
@@ -53,9 +51,8 @@ public class TcpCapture {
         return localChannel;
     }
 
-    public void send(byte[] msg, BiConsumer<SocketChannel, byte[]> func) throws InterruptedException {
-        SocketChannel channel = (SocketChannel) new Bootstrap().group(bossGroup)
-            .option(ChannelOption.TCP_NODELAY, true)
+    public SocketChannel newRemoteChannel() throws InterruptedException {
+        return (SocketChannel) new Bootstrap().group(bossGroup)
             .channel(NioSocketChannel.class)
             .handler(new LoggingHandler() {
                 @Override
@@ -66,8 +63,6 @@ public class TcpCapture {
             })
             .connect(InetAddress.getLoopbackAddress(), remotePort)
             .sync().channel();
-        func.accept(channel, msg);
-        channel.closeFuture().sync();
     }
 
     private ServerSocketChannel startup() {
@@ -78,6 +73,9 @@ public class TcpCapture {
 
                 @Override
                 public void handlerAdded(ChannelHandlerContext ctx) {
+                    if (block) {
+                        return;
+                    }
                     promise = ctx.newPromise();
                     Channel inbound = ctx.channel();
                     new Bootstrap().group(inbound.eventLoop())

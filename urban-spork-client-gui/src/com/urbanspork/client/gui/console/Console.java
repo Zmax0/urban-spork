@@ -6,22 +6,10 @@ import com.jfoenix.controls.JFXPasswordField;
 import com.jfoenix.controls.JFXTabPane;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.validation.RequiredFieldValidator;
-import com.urbanspork.client.Client;
 import com.urbanspork.client.gui.Resource;
-import com.urbanspork.client.gui.console.widget.ConsoleButton;
-import com.urbanspork.client.gui.console.widget.ConsoleColumnConstraints;
-import com.urbanspork.client.gui.console.widget.ConsoleLabel;
-import com.urbanspork.client.gui.console.widget.ConsoleLiteButton;
-import com.urbanspork.client.gui.console.widget.ConsolePasswordTextField;
-import com.urbanspork.client.gui.console.widget.ConsoleRowConstraints;
-import com.urbanspork.client.gui.console.widget.ConsoleTextField;
-import com.urbanspork.client.gui.console.widget.CurrentConfigCipherChoiceBox;
-import com.urbanspork.client.gui.console.widget.CurrentConfigPasswordToggleButton;
-import com.urbanspork.client.gui.console.widget.CurrentConfigProtocolChoiceBox;
-import com.urbanspork.client.gui.console.widget.NumericTextField;
-import com.urbanspork.client.gui.console.widget.ServerConfigListView;
+import com.urbanspork.client.gui.console.widget.*;
 import com.urbanspork.client.gui.i18n.I18N;
-import com.urbanspork.client.gui.traffic.TrafficCounterLineChart;
+import com.urbanspork.client.gui.traffic.TrafficCounterLineChartBuilder;
 import com.urbanspork.client.gui.tray.Tray;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.config.ClientConfig;
@@ -29,6 +17,7 @@ import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.shadowsocks.ShareableServerConfig;
 import com.urbanspork.common.protocol.Protocol;
+import io.netty.handler.traffic.TrafficCounter;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -41,16 +30,7 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.DialogPane;
-import javafx.scene.control.MultipleSelectionModel;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
-import javafx.scene.control.ToggleButton;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -74,7 +54,7 @@ public class Console extends Application {
 
     Tray tray;
     Proxy proxy;
-    final ObjectProperty<Client.Instance> instance = new SimpleObjectProperty<>();
+    final ObjectProperty<TrafficCounter> trafficCounter = new SimpleObjectProperty<>();
 
     private Stage primaryStage;
     private JFXTabPane root;
@@ -117,6 +97,7 @@ public class Console extends Application {
         primaryStage.setTitle(I18N.getString(I18N.PROGRAM_TITLE));
         primaryStage.setOnCloseRequest(event -> primaryStage.hide());
         primaryStage.hide();
+        launchProxy();
     }
 
     @Override
@@ -368,7 +349,7 @@ public class Console extends Application {
     private Tab initTrafficTab() {
         StackPane stackPane = new StackPane();
         stackPane.setAlignment(Pos.TOP_CENTER);
-        stackPane.getChildren().add(new TrafficCounterLineChart(instance).init());
+        stackPane.getChildren().add(new TrafficCounterLineChartBuilder(trafficCounter).build());
         Tab tab = new Tab(I18N.getString(I18N.CONSOLE_TAB2_TEXT));
         tab.setContent(stackPane);
         tab.setClosable(false);
@@ -618,6 +599,6 @@ public class Console extends Application {
     }
 
     public void launchProxy() {
-        proxy.launch().ifPresent(instance::set);
+        proxy.launch().ifPresent(instance -> trafficCounter.set(instance.traffic()));
     }
 }

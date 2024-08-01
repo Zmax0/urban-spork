@@ -14,7 +14,6 @@ public class ConsolePreloader extends Preloader {
             && info.getApplication() instanceof Console console) {
             console.tray = SystemTray.isSupported() ? new ConsoleTray(console) : new Unsupported();
             console.proxy = new Proxy(console.tray);
-            console.proxy.launch().ifPresent(console.instance::set);
         }
     }
 

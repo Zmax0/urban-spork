@@ -143,7 +143,7 @@ class AeadCipherCodec {
         ByteBuf sealedHeaderBuf = Unpooled.buffer();
         int sealedHeaderLength = eihLength + 1 + 8 + requestSaltLength + 2 + tagSize;
         if (in.readableBytes() < sealedHeaderLength) {
-            String msg = String.format("header too short, expecting %d bytes, but found %d bytes", sealedHeaderLength, in.readableBytes());
+            String msg = String.format("header too short, expecting %d bytes, but found %d bytes", sealedHeaderLength + saltLength, in.readableBytes() + saltLength);
             throw new TooShortHeaderException(msg);
         }
         in.getBytes(in.readerIndex(), sealedHeaderBuf, sealedHeaderLength);
