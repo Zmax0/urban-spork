@@ -27,8 +27,10 @@ public class Resource {
         PROGRAM_ICON = Objects.requireNonNull(Resource.class.getResource(resourcePath + PROGRAM_ICON_NAME));
         TRAY_ICON = Objects.requireNonNull(Resource.class.getResource(resourcePath + TRAY_ICON_NAME));
         CONSOLE_CSS = Objects.requireNonNull(Resource.class.getResource(resourcePath + CONSOLE_CSS_NAME));
-        ClientConfig config = ConfigHandler.DEFAULT.read();
-        if (config == null) {
+        ClientConfig config;
+        try {
+            config = ConfigHandler.DEFAULT.read();
+        } catch (IllegalArgumentException e) {
             config = new ClientConfig();
             config.setServers(new ArrayList<>());
         }
