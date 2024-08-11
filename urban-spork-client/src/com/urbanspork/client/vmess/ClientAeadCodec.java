@@ -88,7 +88,7 @@ public class ClientAeadCodec extends ByteToMessageCodec<ByteBuf> {
     @Override
     public void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         if (bodyDecoder == null) {
-            CipherMethod cipher = CipherMethods.AES_GCM.get();
+            CipherMethod cipher = CipherMethods.AES_128_GCM.get();
             int tagSize = cipher.tagSize();
             int nonceSize = cipher.nonceSize();
             byte[] aeadResponseHeaderLengthEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_LEN_KEY.getBytes());

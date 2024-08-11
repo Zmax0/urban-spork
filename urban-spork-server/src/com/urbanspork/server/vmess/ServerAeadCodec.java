@@ -55,7 +55,7 @@ public class ServerAeadCodec extends ByteToMessageCodec<ByteBuf> {
     public void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         if (payloadEncoder == null) {
             byte[] aeadResponseHeaderLengthEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_LEN_KEY.getBytes());
-            CipherMethod cipher = CipherMethods.AES_GCM.get();
+            CipherMethod cipher = CipherMethods.AES_128_GCM.get();
             int nonceSize = cipher.nonceSize();
             byte[] aeadResponseHeaderLengthEncryptionIV = KDF.kdf(session.getResponseBodyIV(), nonceSize, KDF_SALT_AEAD_RESP_HEADER_LEN_IV.getBytes());
             int option = RequestOption.toMask(header.option());

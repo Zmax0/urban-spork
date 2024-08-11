@@ -45,7 +45,7 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
         CipherKind kind = CipherKind.aead2022_blake3_aes_128_gcm;
         int saltSize = 16;
         String password = TestDice.rollPassword(Protocol.shadowsocks, kind);
-        CipherMethod method = CipherMethods.AES_GCM.get();
+        CipherMethod method = CipherMethods.AES_128_GCM.get();
         ServerConfig config = new ServerConfig();
         config.setPassword(password);
         config.setCipher(kind);

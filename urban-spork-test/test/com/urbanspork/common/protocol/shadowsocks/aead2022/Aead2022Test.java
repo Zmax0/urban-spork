@@ -60,14 +60,14 @@ class Aead2022Test extends TraceLevelLoggerTestTemplate {
         Keys keys = AEAD2022.passwordToKeys(password);
         byte[] salt = Dice.rollBytes(kind.keySize());
         ByteBuf out = Unpooled.buffer();
-        AEAD2022.TCP.withEih(keys, salt, out);
+        AEAD2022.TCP.withEih(kind, keys, salt, out);
         Assertions.assertTrue(out.isReadable());
     }
 
     @Test
     void testTcpInvalidClientUserIdentity() {
         CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
-        CipherMethod method = CipherMethods.AES_GCM.get();
+        CipherMethod method = CipherMethods.AES_265_GCM.get();
         ServerUser user = rollUser(kind);
         ServerUserManager userManager = ServerUserManager.DEFAULT;
         userManager.addUser(user);
@@ -81,7 +81,7 @@ class Aead2022Test extends TraceLevelLoggerTestTemplate {
     @Test
     void testUdpUserNotFound() throws InvalidCipherTextException {
         CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
-        CipherMethod method = CipherMethods.AES_GCM.get();
+        CipherMethod method = CipherMethods.AES_265_GCM.get();
         byte[] iPSK = Base64.getDecoder().decode(TestDice.rollPassword(Protocol.shadowsocks, kind));
         ServerUser user = rollUser(kind);
         ServerUserManager userManager = ServerUserManager.DEFAULT;
@@ -110,7 +110,7 @@ class Aead2022Test extends TraceLevelLoggerTestTemplate {
         }
         byte[] sessionIdPacketId = new byte[16];
         ByteBuf out = Unpooled.buffer();
-        AEAD2022.UDP.withEih(key, identityKeys, sessionIdPacketId, out);
+        AEAD2022.UDP.withEih(CipherKind.aead2022_blake3_aes_128_gcm, key, identityKeys, sessionIdPacketId, out);
         Assertions.assertTrue(out.isReadable());
     }
 
