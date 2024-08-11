@@ -12,7 +12,12 @@ class AeadCipherCodecs {
     static AeadCipherCodec get(ServerConfig config) {
         CipherKind kind = config.getCipher();
         Keys keys = Keys.from(kind, config.getPassword());
-        CipherMethods methods = CipherKind.chacha20_poly1305 == kind ? CipherMethods.CHACHA20_POLY1305 : CipherMethods.AES_GCM;
+        CipherMethods methods;
+        switch (kind) {
+            case aes_128_gcm, aead2022_blake3_aes_128_gcm -> methods = CipherMethods.AES_128_GCM;
+            case chacha20_poly1305 -> methods = CipherMethods.CHACHA20_POLY1305;
+            default -> methods = CipherMethods.AES_265_GCM;
+        }
         if (kind.isAead2022()) {
             return new Aead2022CipherCodecImpl(kind, methods.get(), keys);
         } else {

@@ -9,44 +9,80 @@ import java.util.function.Supplier;
 
 public enum CipherMethods implements Supplier<CipherMethod> {
 
-    AES_GCM, CHACHA20_POLY1305;
+    AES_128_GCM, AES_265_GCM, CHACHA20_POLY1305;
 
     @Override
     public CipherMethod get() {
-        if (CHACHA20_POLY1305 == this) {
-            return new CipherMethod() {
-                @Override
-                public AEADCipher cipher() {
-                    return new ChaCha20Poly1305();
-                }
+        switch (this) {
+            case AES_128_GCM -> {
+                return new CipherMethod() {
+                    @Override
+                    public int keySize() {
+                        return 16;
+                    }
 
-                @Override
-                public int macSize() {
-                    return 128;
-                }
+                    @Override
+                    public AEADCipher cipher() {
+                        return GCMBlockCipher.newInstance(AESEngine.newInstance());
+                    }
 
-                @Override
-                public int nonceSize() {
-                    return 12;
-                }
-            };
-        } else {
-            return new CipherMethod() {
-                @Override
-                public AEADCipher cipher() {
-                    return GCMBlockCipher.newInstance(AESEngine.newInstance());
-                }
+                    @Override
+                    public int macSize() {
+                        return 128;
+                    }
 
-                @Override
-                public int macSize() {
-                    return 128;
-                }
+                    @Override
+                    public int nonceSize() {
+                        return 12;
+                    }
+                };
+            }
+            case AES_265_GCM -> {
+                return new CipherMethod() {
+                    @Override
+                    public int keySize() {
+                        return 32;
+                    }
 
-                @Override
-                public int nonceSize() {
-                    return 12;
-                }
-            };
+                    @Override
+                    public AEADCipher cipher() {
+                        return GCMBlockCipher.newInstance(AESEngine.newInstance());
+                    }
+
+                    @Override
+                    public int macSize() {
+                        return 128;
+                    }
+
+                    @Override
+                    public int nonceSize() {
+                        return 12;
+                    }
+                };
+            }
+            default -> {
+                return new CipherMethod() {
+                    @Override
+                    public AEADCipher cipher() {
+                        return new ChaCha20Poly1305();
+                    }
+
+                    @Override
+                    public int keySize() {
+                        return 32;
+                    }
+
+                    @Override
+                    public int macSize() {
+                        return 128;
+                    }
+
+                    @Override
+                    public int nonceSize() {
+                        return 12;
+                    }
+                };
+            }
         }
     }
 }
