@@ -23,18 +23,18 @@ import java.util.List;
 public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, DatagramPacketWrapper> {
     private static final Logger logger = LoggerFactory.getLogger(UdpRelayCodec.class);
     private final ServerConfig config;
-    private final AeadCipherCodec cipher;
     private final Mode mode;
-    private final LruCache<InetSocketAddress, Control> controlMap;
     private final ServerUserManager userManager;
+    private final AeadCipherCodec cipher;
+    private final LruCache<InetSocketAddress, Control> controlMap;
     private final Control control0;
 
-    public UdpRelayCodec(ServerConfig config, Mode mode) {
+    public UdpRelayCodec(ServerConfig config, Mode mode, ServerUserManager userManager) {
         this.config = config;
-        this.cipher = AeadCipherCodecs.get(config);
         this.mode = mode;
+        this.userManager = userManager;
+        this.cipher = AeadCipherCodecs.get(config);
         this.controlMap = new LruCache<>(1024, Duration.ofMinutes(5), (k, v) -> logger.info("[udp]control map expire {}={}", k, v));
-        this.userManager = Mode.Server == mode ? ServerUserManager.DEFAULT : ServerUserManager.EMPTY;
         this.control0 = new Control(config.getCipher());
     }
 

@@ -1,10 +1,13 @@
 package com.urbanspork.common.manage.shadowsocks;
 
+import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.test.TestUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+
+import java.util.List;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ServerUserManagerTest {
@@ -13,7 +16,9 @@ class ServerUserManagerTest {
         ServerUserConfig userConfig = new ServerUserConfig("username", "4w0GKJ9U3Ox7CIXGU4A3LDQAqP6qrp/tUi/ilpOR9p4=");
         ServerUser user0 = ServerUser.from(userConfig);
         ServerUser user1 = ServerUser.from(userConfig);
-        ServerUserManager manager = ServerUserManager.DEFAULT;
+        ServerConfig serverConfig = new ServerConfig();
+        serverConfig.setUser(List.of(userConfig));
+        ServerUserManager manager = ServerUserManager.from(serverConfig);
         manager.clear();
         Assertions.assertEquals(0, manager.userCount());
         manager.addUser(user0);
