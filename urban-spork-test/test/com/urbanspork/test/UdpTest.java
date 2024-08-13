@@ -8,7 +8,6 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTest;
 import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.config.WebSocketSetting;
-import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.transport.Transport;
 import com.urbanspork.server.Server;
@@ -78,7 +77,6 @@ class UdpTest extends UdpTestTemplate {
         Client.Instance client = launchClient(clientConfig);
         InetSocketAddress clientLocalAddress = client.tcp().localAddress();
         handshakeAndSendBytes(clientLocalAddress);
-        ServerUserManager.DEFAULT.clear();
         closeServer(server);
         client.close();
     }

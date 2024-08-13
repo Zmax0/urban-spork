@@ -4,6 +4,7 @@ import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.codec.aead.CipherMethod;
 import com.urbanspork.common.codec.aead.CipherMethods;
 import com.urbanspork.common.codec.shadowsocks.Keys;
+import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
@@ -69,7 +70,7 @@ class Aead2022Test extends TraceLevelLoggerTestTemplate {
         CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
         CipherMethod method = CipherMethods.AES_265_GCM.get();
         ServerUser user = rollUser(kind);
-        ServerUserManager userManager = ServerUserManager.DEFAULT;
+        ServerUserManager userManager = ServerUserManager.from(new ServerConfig());
         userManager.addUser(user);
         byte[] key = Dice.rollBytes(kind.keySize());
         byte[] salt = Dice.rollBytes(kind.keySize());
@@ -84,7 +85,7 @@ class Aead2022Test extends TraceLevelLoggerTestTemplate {
         CipherMethod method = CipherMethods.AES_265_GCM.get();
         byte[] iPSK = Base64.getDecoder().decode(TestDice.rollPassword(Protocol.shadowsocks, kind));
         ServerUser user = rollUser(kind);
-        ServerUserManager userManager = ServerUserManager.DEFAULT;
+        ServerUserManager userManager = ServerUserManager.from(new ServerConfig());
         userManager.addUser(user);
         long sessionId = ThreadLocalRandom.current().nextLong();
         long packetId = ThreadLocalRandom.current().nextLong();

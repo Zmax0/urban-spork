@@ -2,7 +2,6 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
-import com.urbanspork.common.codec.shadowsocks.tcp.Context;
 import com.urbanspork.common.codec.shadowsocks.tcp.TcpRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.SslSetting;
@@ -28,16 +27,15 @@ import java.util.Optional;
 
 public class ServerInitializer extends ChannelInitializer<Channel> {
 
-    private final ServerConfig config;
-    private final Context context;
+    private final ServerInitializationContext context;
 
-    public ServerInitializer(ServerConfig config, Context context) {
-        this.config = config;
+    public ServerInitializer(ServerInitializationContext context) {
         this.context = context;
     }
 
     @Override
     protected void initChannel(Channel c) throws SSLException {
+        ServerConfig config = context.config();
         if (config.wsEnabled()) {
             enableWebSocket(c);
         }
@@ -53,12 +51,12 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
                 SslHandler sslHandler = sslContext.newHandler(c.alloc(), serverName, config.getPort());
                 c.pipeline().addLast(sslHandler, new ServerHeaderDecoder(config), new ExceptionHandler(config));
             }
-            default -> c.pipeline().addLast(new TcpRelayCodec(context, config, Mode.Server), new ExceptionHandler(config), new ServerRelayHandler(config));
+            default -> c.pipeline().addLast(new TcpRelayCodec(context.context(), config, Mode.Server, context.userManager()), new ExceptionHandler(config), new ServerRelayHandler(config));
         }
     }
 
     private void enableWebSocket(Channel channel) {
-        String path = Optional.ofNullable(config.getWs()).map(WebSocketSetting::getPath).orElseThrow(() -> new IllegalArgumentException("required path not present"));
+        String path = Optional.ofNullable(context.config().getWs()).map(WebSocketSetting::getPath).orElseThrow(() -> new IllegalArgumentException("required path not present"));
         channel.pipeline().addLast(
             new HttpServerCodec(),
             new WebSocketServerProtocolHandler(path, null, true, 0xfffff),
