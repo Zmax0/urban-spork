@@ -1,11 +1,9 @@
 package com.urbanspork.common.config;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.transport.Transport;
 import com.urbanspork.common.transport.udp.PacketEncoding;
-import io.netty.handler.traffic.AbstractTrafficShapingHandler;
 
 import java.util.List;
 
@@ -32,9 +30,6 @@ public class ServerConfig {
     private SslSetting ssl;
 
     private WebSocketSetting ws;
-
-    @JsonIgnore
-    private AbstractTrafficShapingHandler trafficShapingHandler;
 
     public String getHost() {
         return host;
@@ -122,14 +117,6 @@ public class ServerConfig {
 
     public void setWs(WebSocketSetting ws) {
         this.ws = ws;
-    }
-
-    public AbstractTrafficShapingHandler getTrafficShapingHandler() {
-        return trafficShapingHandler;
-    }
-
-    public void setTrafficShapingHandler(AbstractTrafficShapingHandler trafficShapingHandler) {
-        this.trafficShapingHandler = trafficShapingHandler;
     }
 
     @Override
