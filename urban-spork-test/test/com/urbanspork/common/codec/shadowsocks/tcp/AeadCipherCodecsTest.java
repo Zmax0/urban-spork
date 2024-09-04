@@ -119,6 +119,6 @@ class AeadCipherCodecsTest {
     }
 
     Session newContext(Mode mode, CipherKind kind, InetSocketAddress request) {
-        return new Session(mode, new Identity(kind), request, ServerUserManager.EMPTY, new Context());
+        return new Session(mode, new Identity(kind), request, ServerUserManager.empty(), new Context());
     }
 }

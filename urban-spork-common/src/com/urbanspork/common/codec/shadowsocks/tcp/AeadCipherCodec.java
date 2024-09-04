@@ -49,18 +49,18 @@ class AeadCipherCodec {
     public void encode(Session session, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         boolean isAead2022 = cipherKind.isAead2022();
         if (payloadEncoder == null) {
-            initTcpPayloadEncoder(session, isAead2022, out);
+            initPayloadEncoder(session, isAead2022, out);
             logger.trace("[tcp][encode identity]{}", session.identity());
             if (Mode.Client == session.mode()) {
-                msg = handleRequestHeader(session, isAead2022, msg, out);
+                msg = handleClientHeader(session, isAead2022, msg, out);
             } else {
-                handleResponseHeader(session, isAead2022, msg, out);
+                handleServerHeader(session, isAead2022, msg, out);
             }
         }
         payloadEncoder.encodePayload(msg, out);
     }
 
-    private void initTcpPayloadEncoder(Session session, boolean isAead2022, ByteBuf out) {
+    private void initPayloadEncoder(Session session, boolean isAead2022, ByteBuf out) {
         withIdentity(session, cipherKind, keys, out);
         byte[] salt = session.identity().salt();
         if (isAead2022) {
@@ -75,7 +75,7 @@ class AeadCipherCodec {
         }
     }
 
-    private ByteBuf handleRequestHeader(Session session, boolean isAead2022, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+    private ByteBuf handleClientHeader(Session session, boolean isAead2022, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         ByteBuf temp = Unpooled.buffer();
         Address.encode(session.request(), temp);
         if (isAead2022) {
@@ -93,7 +93,7 @@ class AeadCipherCodec {
         return temp;
     }
 
-    private void handleResponseHeader(Session session, boolean isAead2022, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+    private void handleServerHeader(Session session, boolean isAead2022, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         if (isAead2022) {
             for (byte[] bytes : AEAD2022.TCP.newHeader(session.mode(), session.identity().getRequestSalt(), msg)) {
                 out.writeBytes(payloadEncoder.auth().seal(bytes));
@@ -219,7 +219,7 @@ class AeadCipherCodec {
         byte[] salt = session.identity().salt();
         out.writeBytes(salt); // salt should be sent with the first chunk
         if (Mode.Client == session.mode() && kind.supportEih()) {
-            AEAD2022.TCP.withEih(keys, salt, out);
+            AEAD2022.TCP.withEih(kind, keys, salt, out);
         }
     }
 }

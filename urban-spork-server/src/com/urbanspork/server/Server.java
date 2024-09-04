@@ -6,13 +6,13 @@ import com.urbanspork.common.codec.shadowsocks.tcp.Context;
 import com.urbanspork.common.codec.shadowsocks.udp.UdpRelayCodec;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.config.ServerUserConfig;
-import com.urbanspork.common.manage.shadowsocks.ServerUser;
-import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
@@ -48,13 +48,14 @@ public class Server {
     }
 
     public static void launch(List<ServerConfig> configs, CompletableFuture<List<Instance>> promise) {
+        Context context = Context.newCheckReplayInstance();
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             List<Instance> servers = new ArrayList<>(configs.size());
             int count = 0;
             for (ServerConfig config : configs) {
-                Instance server = startup(bossGroup, workerGroup, config);
+                Instance server = startup(bossGroup, workerGroup, new ServerInitializationContext(config, context));
                 count += server.udp().isPresent() ? 2 : 1;
                 servers.add(server);
             }
@@ -73,37 +74,29 @@ public class Server {
             logger.error("Startup server failed", e);
             promise.completeExceptionally(e);
         } finally {
+            context.release();
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }
     }
 
-    private static Instance startup(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config)
+    private static Instance startup(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerInitializationContext context)
         throws InterruptedException {
-        if (Protocol.shadowsocks == config.getProtocol()) {
-            List<ServerUserConfig> user = config.getUser();
-            if (user != null) {
-                user.stream().map(ServerUser::from).forEach(ServerUserManager.DEFAULT::addUser);
-            }
-        }
-        Context context = Context.newCheckReplayInstance();
+        ServerConfig config = context.config();
         ServerSocketChannel tcp = (ServerSocketChannel) new ServerBootstrap()
             .group(bossGroup, workerGroup)
             .channel(NioServerSocketChannel.class)
-            .childHandler(new ServerInitializer(config, context))
-            .bind(config.getPort()).addListener(future -> {
-                if (!future.isSuccess()) {
-                    context.release();
-                }
-            })
+            .childHandler(new ServerInitializer(context))
+            .bind(config.getPort())
             .sync().addListener(future -> logger.info("Startup tcp server => {}", config))
-            .channel().closeFuture().addListener(future -> context.release()).channel();
+            .channel().closeFuture().channel();
         config.setPort(tcp.localAddress().getPort());
-        Optional<DatagramChannel> udp = startupUdp(bossGroup, workerGroup, config);
+        Optional<DatagramChannel> udp = startupUdp(bossGroup, workerGroup, context);
         return new Instance(tcp, udp);
     }
 
-    private static Optional<DatagramChannel> startupUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerConfig config) throws InterruptedException {
+    private static Optional<DatagramChannel> startupUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerInitializationContext context) throws InterruptedException {
+        ServerConfig config = context.config();
         if (Protocol.shadowsocks == config.getProtocol() && config.udpEnabled()) {
             Channel channel = new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
                 .option(ChannelOption.SO_BROADCAST, true)
@@ -111,7 +104,7 @@ public class Server {
                     @Override
                     protected void initChannel(Channel ch) {
                         ch.pipeline().addLast(
-                            new UdpRelayCodec(config, Mode.Server),
+                            new UdpRelayCodec(config, Mode.Server, context.userManager()),
                             new ServerUdpRelayHandler(config.getPacketEncoding(), workerGroup),
                             new ExceptionHandler(config)
                         );

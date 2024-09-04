@@ -11,9 +11,16 @@ import com.urbanspork.common.codec.shadowsocks.tcp.TcpRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.config.WebSocketSetting;
+import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -95,7 +102,7 @@ public interface ClientTcpRelayHandler {
                         buildSslHandler(outbound, config),
                         new ClientHeaderEncoder(config.getPassword(), address, SocksCmdType.CONNECT.byteValue())
                     );
-                    default -> outbound.pipeline().addLast(new TcpRelayCodec(new Context(), config, address, Mode.Client));
+                    default -> outbound.pipeline().addLast(new TcpRelayCodec(new Context(), config, address, Mode.Client, ServerUserManager.empty()));
                 }
             }
         };

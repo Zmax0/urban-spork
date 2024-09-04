@@ -45,13 +45,13 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
         CipherKind kind = CipherKind.aead2022_blake3_aes_128_gcm;
         int saltSize = 16;
         String password = TestDice.rollPassword(Protocol.shadowsocks, kind);
-        CipherMethod method = CipherMethods.AES_GCM.get();
+        CipherMethod method = CipherMethods.AES_128_GCM.get();
         ServerConfig config = new ServerConfig();
         config.setPassword(password);
         config.setCipher(kind);
         AeadCipherCodec codec = AeadCipherCodecs.get(config);
         ByteBuf msg = Unpooled.buffer();
-        codec.encode(new Session(Mode.Client, new Identity(kind), request, ServerUserManager.EMPTY, new Context()), Unpooled.wrappedBuffer(Dice.rollBytes(10)), msg);
+        codec.encode(new Session(Mode.Client, new Identity(kind), request, ServerUserManager.empty(), new Context()), Unpooled.wrappedBuffer(Dice.rollBytes(10)), msg);
         byte[] salt = new byte[saltSize];
         msg.readBytes(salt);
         byte[] passwordBytes = Base64.getDecoder().decode(password);
@@ -66,7 +66,7 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
         temp.writeBytes(encoder.auth().seal(header));
         temp.writeBytes(msg);
         ArrayList<Object> out = new ArrayList<>();
-        Session session = new Session(Mode.Server, new Identity(kind), request, ServerUserManager.EMPTY, new Context());
+        Session session = new Session(Mode.Server, new Identity(kind), request, ServerUserManager.empty(), new Context());
         codec.decode(session, msg, out);
         Assertions.assertThrows(DecoderException.class, () -> codec.decode(session, temp, out));
     }
@@ -81,14 +81,14 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
         InetSocketAddress request = InetSocketAddress.createUnresolved("localhost", 16800);
         ByteBuf msg1 = Unpooled.buffer();
         Identity identity = new Identity(kind);
-        Session clientSession = new Session(Mode.Client, identity, request, ServerUserManager.EMPTY, context);
+        Session clientSession = new Session(Mode.Client, identity, request, ServerUserManager.empty(), context);
         AeadCipherCodec clientCodec = AeadCipherCodecs.get(config);
         Assertions.assertDoesNotThrow(() -> clientCodec.encode(clientSession, Unpooled.wrappedBuffer(Dice.rollBytes(10)), msg1));
         ByteBuf msg2 = msg1.copy();
         Assertions.assertTrue(msg1.isReadable());
         Assertions.assertTrue(msg2.isReadable());
         ByteBuf tooShortMsg = Unpooled.wrappedBuffer(Dice.rollBytes(33));
-        Session serverSession = new Session(Mode.Server, identity, request, ServerUserManager.EMPTY, context);
+        Session serverSession = new Session(Mode.Server, identity, request, ServerUserManager.empty(), context);
         List<Object> out = new ArrayList<>();
         AeadCipherCodec serverCodec1 = AeadCipherCodecs.get(config);
         Assertions.assertThrows(TooShortHeaderException.class, () -> serverCodec1.decode(serverSession, tooShortMsg, out));

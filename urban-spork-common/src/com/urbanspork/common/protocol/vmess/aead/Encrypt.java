@@ -22,7 +22,7 @@ public class Encrypt {
         byte[] connectionNonce = Dice.rollBytes(8);
         byte[] aeadPayloadLengthSerializedByte = new byte[Short.BYTES];
         Unpooled.wrappedBuffer(aeadPayloadLengthSerializedByte).setShort(0, header.length);
-        CipherMethod cipher = CipherMethods.AES_GCM.get();
+        CipherMethod cipher = CipherMethods.AES_128_GCM.get();
         int nonceSize = cipher.nonceSize();
         byte[] payloadHeaderLengthAEADEncrypted = cipher.encrypt(
             KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY, generatedAuthID, connectionNonce),
@@ -43,7 +43,7 @@ public class Encrypt {
     }
 
     public static ByteBuf openVMessAEADHeader(byte[] key, ByteBuf in) throws InvalidCipherTextException {
-        CipherMethod cipher = CipherMethods.AES_GCM.get();
+        CipherMethod cipher = CipherMethods.AES_128_GCM.get();
         int tagSize = cipher.tagSize();
         if (in.readableBytes() < 16 + 2 + tagSize + 8 + tagSize) {
             return Unpooled.EMPTY_BUFFER;

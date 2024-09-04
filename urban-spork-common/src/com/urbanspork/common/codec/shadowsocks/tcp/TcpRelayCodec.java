@@ -20,12 +20,11 @@ public class TcpRelayCodec extends ByteToMessageCodec<ByteBuf> {
     private final Session session;
     private final AeadCipherCodec cipher;
 
-    public TcpRelayCodec(Context context, ServerConfig config, Mode mode) {
-        this(context, config, null, mode);
+    public TcpRelayCodec(Context context, ServerConfig config, Mode mode, ServerUserManager userManager) {
+        this(context, config, null, mode, userManager);
     }
 
-    public TcpRelayCodec(Context context, ServerConfig config, InetSocketAddress request, Mode mode) {
-        ServerUserManager userManager = Mode.Server == mode ? ServerUserManager.DEFAULT : ServerUserManager.EMPTY;
+    public TcpRelayCodec(Context context, ServerConfig config, InetSocketAddress request, Mode mode, ServerUserManager userManager) {
         Identity identity = new Identity(config.getCipher());
         this.session = new Session(mode, identity, request, userManager, context);
         this.cipher = AeadCipherCodecs.get(config);
