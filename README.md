@@ -13,11 +13,17 @@ A network tool for improved privacy and security
 
 ### Transport
 
-|               | Shadowsocks | VMess | Trojan |
-|:--------------|:-----------:|:-----:|:------:|
-| tcp           |      ✔      |   ✔   |   ✔    |
-| udp           |      ✔      |   ✔   |   ✔    |
-| ws(WebSocket) |      ✔      |   ✔   |        |
+| Local-Peer | Client-Server | Shadowsocks | VMess | Trojan |
+|:----------:|:-------------:|:-----------:|:-----:|:------:|
+|   `tcp`    |     `tcp`     |      ✔      |   ✔   |        |
+|   `tcp`    |     `tls`     |             |       |   ✔    |
+|   `tcp`    |     `ws`      |      ✔      |   ✔   |        |
+|   `tcp`    |     `wss`     |             |       |        |
+|   `udp`    |     `udp`     |      ✔      |       |        |
+|   `udp`    |     `tcp`     |             |   ✔   |        |
+|   `udp`    |     `tls`     |             |       |   ✔    |
+|   `udp`    |     `ws`      |             |   ✔   |        |
+|   `udp`    |     `wss`     |             |       |        |
 
 ### Ciphers
 
