@@ -64,7 +64,7 @@ public class AEADBodyCodec {
         if (SecurityType.CHACHA20_POLY1305 == security) {
             return CipherMethods.CHACHA20_POLY1305.get();
         } else {
-            return CipherMethods.AES_GCM.get();
+            return CipherMethods.AES_128_GCM.get();
         }
     }
 
@@ -77,7 +77,7 @@ public class AEADBodyCodec {
     }
 
     private static Authenticator newAEADAuthenticator(CipherMethod codec, byte[] key, byte[] nonce) {
-        return new Authenticator(codec, key, NonceGenerator.generateCountingNonce(nonce, codec.nonceSize()), BytesGenerator.generateEmptyBytes());
+        return new Authenticator(key, codec, NonceGenerator.generateCountingNonce(nonce, codec.nonceSize()), BytesGenerator.generateEmptyBytes());
     }
 
     private static ChunkSizeCodec newAEADChunkSizeCodec(CipherMethod codec, byte[] key, byte[] nonce) {

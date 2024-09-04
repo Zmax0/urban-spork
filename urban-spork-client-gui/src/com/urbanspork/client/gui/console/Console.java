@@ -9,7 +9,7 @@ import com.jfoenix.validation.RequiredFieldValidator;
 import com.urbanspork.client.gui.Resource;
 import com.urbanspork.client.gui.console.widget.*;
 import com.urbanspork.client.gui.i18n.I18N;
-import com.urbanspork.client.gui.traffic.TrafficCounterLineChartBuilder;
+import com.urbanspork.client.gui.traffic.TrafficCounterLineChartBackstage;
 import com.urbanspork.client.gui.tray.Tray;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.config.ClientConfig;
@@ -24,6 +24,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableObjectValue;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -46,6 +47,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public class Console extends Application {
     private static final Logger logger = LoggerFactory.getLogger(Console.class);
@@ -55,9 +57,11 @@ public class Console extends Application {
     Tray tray;
     Proxy proxy;
     final ObjectProperty<TrafficCounter> trafficCounter = new SimpleObjectProperty<>();
+    final TrafficCounterLineChartBackstage trafficCounterLineChartBackstage = new TrafficCounterLineChartBackstage(trafficCounter);
 
     private Stage primaryStage;
     private JFXTabPane root;
+    private Tab tab2;
     private TextArea logTextArea;
     private JFXListView<ServerConfig> serverConfigJFXListView;
     private Button newServerConfigButton;
@@ -97,6 +101,7 @@ public class Console extends Application {
         primaryStage.setTitle(I18N.getString(I18N.PROGRAM_TITLE));
         primaryStage.setOnCloseRequest(event -> primaryStage.hide());
         primaryStage.hide();
+        initTrafficCounterLineChart();
         launchProxy();
     }
 
@@ -304,7 +309,7 @@ public class Console extends Application {
         // tab1
         Tab tab1 = newSingleNodeTab(logTextArea, I18N.getString(I18N.CONSOLE_TAB1_TEXT));
         // tab2
-        Tab tab2 = initTrafficTab();
+        tab2 = initTrafficTab();
         // ====================
         // main tab pane
         // ====================
@@ -349,7 +354,6 @@ public class Console extends Application {
     private Tab initTrafficTab() {
         StackPane stackPane = new StackPane();
         stackPane.setAlignment(Pos.TOP_CENTER);
-        stackPane.getChildren().add(new TrafficCounterLineChartBuilder(trafficCounter).build());
         Tab tab = new Tab(I18N.getString(I18N.CONSOLE_TAB2_TEXT));
         tab.setContent(stackPane);
         tab.setClosable(false);
@@ -544,6 +548,20 @@ public class Console extends Application {
         dialog.setTitle(I18N.getString(I18N.CONSOLE_BUTTON_IMPORT));
         dialog.setHeaderText(null);
         dialog.showAndWait().map(URI::create).flatMap(ShareableServerConfig::fromUri).ifPresent(serverConfigObservableList::add);
+    }
+
+    private void initTrafficCounterLineChart() {
+        ObservableList<Node> children = ((StackPane) tab2.getContent()).getChildren();
+        primaryStage.setOnHidden(event -> {
+            children.clear();
+            trafficCounterLineChartBackstage.stop();
+        });
+        primaryStage.setOnShown(event -> {
+            if (children.isEmpty()) {
+                children.add(trafficCounterLineChartBackstage.newLineChart());
+            }
+            Optional.of(trafficCounter).map(ObservableObjectValue::get).ifPresent(trafficCounterLineChartBackstage::refresh);
+        });
     }
 
     private boolean validate() {

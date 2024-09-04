@@ -15,7 +15,8 @@ class ServerInitializerTest {
         ServerConfig config = ServerConfigTest.testConfig(0);
         config.setProtocol(Protocol.trojan);
         EmbeddedChannel channel = new EmbeddedChannel();
-        ServerInitializer initializer = new ServerInitializer(config, new Context());
+        ServerInitializationContext context = new ServerInitializationContext(config, new Context());
+        ServerInitializer initializer = new ServerInitializer(context);
         Assertions.assertThrows(IllegalArgumentException.class, () -> initializer.initChannel(channel));
         config.setSsl(SslUtil.getSslSetting());
         Assertions.assertDoesNotThrow(() -> initializer.initChannel(channel));

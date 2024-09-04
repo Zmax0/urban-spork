@@ -9,6 +9,8 @@ public interface CipherMethod {
 
     AEADCipher cipher();
 
+    int keySize();
+
     int macSize();
 
     int nonceSize();

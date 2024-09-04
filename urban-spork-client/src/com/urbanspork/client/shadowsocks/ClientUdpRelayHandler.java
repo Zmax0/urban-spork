@@ -5,6 +5,7 @@ import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.codec.shadowsocks.udp.UdpRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -31,7 +32,7 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
         super(config, Duration.ofMinutes(10));
         this.workerGroup = workerGroup;
         this.relay = new InetSocketAddress(config.getHost(), config.getPort());
-        this.codec = new UdpRelayCodec(config, Mode.Client);
+        this.codec = new UdpRelayCodec(config, Mode.Client, ServerUserManager.empty());
     }
 
     @Override

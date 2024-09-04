@@ -41,24 +41,23 @@ public class Client {
     public static void launch(ClientConfig config, CompletableFuture<Instance> promise) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        GlobalChannelTrafficShapingHandler trafficShapingHandler = new GlobalChannelTrafficShapingHandler(workerGroup);
-        ServerConfig current = config.getCurrent();
-        current.setTrafficShapingHandler(trafficShapingHandler);
+        GlobalChannelTrafficShapingHandler traffic = new GlobalChannelTrafficShapingHandler(workerGroup);
+        ClientInitializationContext context = new ClientInitializationContext(config, traffic);
         try {
             new ServerBootstrap().group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childOption(ChannelOption.SO_KEEPALIVE, true) // socks5 require
                 .childOption(ChannelOption.TCP_NODELAY, false)
                 .childOption(ChannelOption.SO_LINGER, 1)
-                .childHandler(new ClientInitializer(current))
+                .childHandler(new ClientInitializer(context))
                 .bind(InetAddress.getLoopbackAddress(), config.getPort()).sync().addListener((ChannelFutureListener) future -> {
                     ServerSocketChannel tcp = (ServerSocketChannel) future.channel();
                     InetSocketAddress tcpLocalAddress = tcp.localAddress();
                     int localPort = tcpLocalAddress.getPort();
                     config.setPort(localPort);
-                    DatagramChannel udp = launchUdp(bossGroup, workerGroup, config);
+                    DatagramChannel udp = launchUdp(bossGroup, workerGroup, context);
                     logger.info("Launch client => tcp{} udp{} ", tcpLocalAddress, udp.localAddress());
-                    Instance client = new Instance(tcp, udp, trafficShapingHandler.trafficCounter());
+                    Instance client = new Instance(tcp, udp, traffic.trafficCounter());
                     promise.complete(client);
                 });
             Instance client = promise.get();
@@ -72,13 +71,14 @@ public class Client {
             logger.error("Launch client failed", e);
             promise.completeExceptionally(e);
         } finally {
+            traffic.trafficCounter().stop();
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }
     }
 
-    private static DatagramChannel launchUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ClientConfig config) throws InterruptedException {
-        ServerConfig current = config.getCurrent();
+    private static DatagramChannel launchUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ClientInitializationContext context) throws InterruptedException {
+        ServerConfig current = context.config().getCurrent();
         ChannelHandler udpTransportHandler;
         if (Protocol.vmess == current.getProtocol()) {
             udpTransportHandler = new com.urbanspork.client.vmess.ClientUdpOverTcpHandler(current, workerGroup);
@@ -92,20 +92,19 @@ public class Client {
                 @Override
                 protected void initChannel(Channel ch) {
                     ch.pipeline().addLast(
-                        current.getTrafficShapingHandler(),
+                        context.traffic(),
                         new DatagramPacketEncoder(),
                         new DatagramPacketDecoder(),
                         udpTransportHandler
                     );
                 }
             })
-            .bind(InetAddress.getLoopbackAddress(), config.getPort()).sync().channel();
+            .bind(InetAddress.getLoopbackAddress(), context.config().getPort()).sync().channel();
     }
 
     public record Instance(ServerSocketChannel tcp, DatagramChannel udp, TrafficCounter traffic) implements Closeable {
         @Override
         public void close() {
-            traffic.stop();
             tcp.close().awaitUninterruptibly();
             udp.close().awaitUninterruptibly();
         }

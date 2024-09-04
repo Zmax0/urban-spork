@@ -51,7 +51,7 @@ class AeadCipherCodecsTest {
         int port = TestDice.rollPort();
         String host = TestDice.rollHost();
         InetSocketAddress address = InetSocketAddress.createUnresolved(host, port);
-        cipherTest(new Context(Mode.Client, new Control(kind), address, ServerUserManager.EMPTY), new Context(Mode.Server, new Control(kind), null, ServerUserManager.EMPTY));
+        cipherTest(new Context(Mode.Client, new Control(kind), address, ServerUserManager.empty()), new Context(Mode.Server, new Control(kind), null, ServerUserManager.empty()));
     }
 
     private void cipherTest(Context request, Context response) throws Exception {

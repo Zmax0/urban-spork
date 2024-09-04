@@ -2,6 +2,7 @@ package com.urbanspork.common.codec.shadowsocks.tcp;
 
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.config.ServerConfigTest;
+import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderException;
 import org.junit.jupiter.api.Assertions;
@@ -15,7 +16,7 @@ class TcpRelayCodecTest {
     }
 
     void testCaughtOtherException(Mode mode, Throwable throwable) {
-        TcpRelayCodec codec = new TcpRelayCodec(new Context(), ServerConfigTest.testConfig(0), mode);
+        TcpRelayCodec codec = new TcpRelayCodec(new Context(), ServerConfigTest.testConfig(0), mode, ServerUserManager.empty());
         EmbeddedChannel channel = new EmbeddedChannel(codec);
         codec.exceptionCaught(channel.pipeline().context(codec), throwable);
         Assertions.assertThrows(throwable.getClass(), channel::checkException);

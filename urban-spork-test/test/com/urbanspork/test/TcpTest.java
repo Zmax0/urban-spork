@@ -8,7 +8,6 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTest;
 import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.config.WebSocketSetting;
-import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.server.Server;
 import com.urbanspork.test.template.Parameter;
@@ -97,7 +96,6 @@ class TcpTest extends TcpTestTemplate {
         socksHandshakeAndSendBytes(clientAddress);
         checkHttpsHandshakeAndSendBytes(clientAddress);
         checkHttpSendBytes(clientAddress);
-        ServerUserManager.DEFAULT.clear();
         closeServer(server);
         client.close();
     }

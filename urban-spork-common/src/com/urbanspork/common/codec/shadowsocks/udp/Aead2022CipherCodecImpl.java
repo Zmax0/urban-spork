@@ -58,7 +58,7 @@ class Aead2022CipherCodecImpl implements AeadCipherCodec {
         if (requireEih) {
             byte[] sessionIdPacketId = new byte[16];
             temp.getBytes(nonceLength, sessionIdPacketId);
-            AEAD2022.UDP.withEih(keys.encKey(), identityKeys, sessionIdPacketId, temp);
+            AEAD2022.UDP.withEih(cipherKind, keys.encKey(), identityKeys, sessionIdPacketId, temp);
         }
         temp.writeByte(Mode.Client.getValue());
         temp.writeLong(AEAD2022.newTimestamp());

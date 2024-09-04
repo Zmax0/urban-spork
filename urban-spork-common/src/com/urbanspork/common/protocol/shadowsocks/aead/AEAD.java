@@ -41,13 +41,13 @@ public interface AEAD {
 
     interface TCP {
         static PayloadEncoder newPayloadEncoder(CipherMethod cipherMethod, byte[] key, byte[] salt) {
-            Authenticator auth = new Authenticator(cipherMethod, hkdfsha1(key, salt), NonceGenerator.generateInitialAEADNonce(), BytesGenerator.generateEmptyBytes());
+            Authenticator auth = new Authenticator(hkdfsha1(key, salt), cipherMethod, NonceGenerator.generateInitialAEADNonce(), BytesGenerator.generateEmptyBytes());
             AEADChunkSizeParser sizeCodec = new AEADChunkSizeParser(auth);
             return new PayloadEncoder(auth, sizeCodec, EmptyPaddingLengthGenerator.INSTANCE, 0x3fff);
         }
 
         static PayloadDecoder newPayloadDecoder(CipherMethod cipherMethod, byte[] key, byte[] salt) {
-            Authenticator auth = new Authenticator(cipherMethod, hkdfsha1(key, salt), NonceGenerator.generateInitialAEADNonce(), BytesGenerator.generateEmptyBytes());
+            Authenticator auth = new Authenticator(hkdfsha1(key, salt), cipherMethod, NonceGenerator.generateInitialAEADNonce(), BytesGenerator.generateEmptyBytes());
             AEADChunkSizeParser sizeCodec = new AEADChunkSizeParser(auth);
             return new PayloadDecoder(auth, sizeCodec, EmptyPaddingLengthGenerator.INSTANCE);
         }
@@ -55,12 +55,12 @@ public interface AEAD {
 
     interface UDP {
         static PayloadEncoder newPayloadEncoder(CipherMethod cipherMethod, byte[] key, byte[] salt) {
-            Authenticator auth = new Authenticator(cipherMethod, hkdfsha1(key, salt), NonceGenerator.generateInitialAEADNonce(), BytesGenerator.generateEmptyBytes());
+            Authenticator auth = new Authenticator(hkdfsha1(key, salt), cipherMethod, NonceGenerator.generateInitialAEADNonce(), BytesGenerator.generateEmptyBytes());
             return new PayloadEncoder(auth, EmptyChunkSizeParser.INSTANCE, EmptyPaddingLengthGenerator.INSTANCE, 0x3fff);
         }
 
         static PayloadDecoder newPayloadDecoder(CipherMethod cipherMethod, byte[] key, byte[] salt) {
-            Authenticator auth = new Authenticator(cipherMethod, hkdfsha1(key, salt), NonceGenerator.generateInitialAEADNonce(), BytesGenerator.generateEmptyBytes());
+            Authenticator auth = new Authenticator(hkdfsha1(key, salt), cipherMethod, NonceGenerator.generateInitialAEADNonce(), BytesGenerator.generateEmptyBytes());
             return new PayloadDecoder(auth, EmptyChunkSizeParser.INSTANCE, EmptyPaddingLengthGenerator.INSTANCE);
         }
     }
