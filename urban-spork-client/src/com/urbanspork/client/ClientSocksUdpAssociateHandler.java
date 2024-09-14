@@ -1,4 +1,4 @@
-package com.urbanspork.client.shadowsocks;
+package com.urbanspork.client;
 
 import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.config.ServerConfig;

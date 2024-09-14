@@ -1,6 +1,5 @@
 package com.urbanspork.client;
 
-import com.urbanspork.client.shadowsocks.ClientSocksUdpAssociateHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;

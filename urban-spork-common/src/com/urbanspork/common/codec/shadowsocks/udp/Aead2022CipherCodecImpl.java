@@ -138,7 +138,6 @@ class Aead2022CipherCodecImpl implements AeadCipherCodec {
         }
         Control control = context.control();
         control.setClientSessionId(clientSessionId);
-        control.setServerSessionId(0);
         control.setPacketId(packetId);
         InetSocketAddress address = Address.decode(packet);
         return new RelayingPacket<>(address, packet);

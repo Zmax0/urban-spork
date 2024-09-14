@@ -5,6 +5,7 @@ import com.urbanspork.common.codec.shadowsocks.Keys;
 import com.urbanspork.common.protocol.shadowsocks.aead.AEAD;
 import com.urbanspork.common.protocol.socks.Address;
 import com.urbanspork.common.transport.udp.RelayingPacket;
+import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -30,7 +31,7 @@ class AeadCipherCodecImpl implements AeadCipherCodec {
     @Override
     public void encode(Context context, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
         InetSocketAddress address = context.address();
-        byte[] salt = context.control().salt();
+        byte[] salt = Dice.rollBytes(cipherMethod.keySize());
         out.writeBytes(salt);
         ByteBuf temp = Unpooled.buffer(Address.getLength(address));
         Address.encode(address, temp);
@@ -40,7 +41,7 @@ class AeadCipherCodecImpl implements AeadCipherCodec {
 
     @Override
     public RelayingPacket<ByteBuf> decode(Context context, ByteBuf in) throws InvalidCipherTextException {
-        byte[] salt = context.control().salt();
+        byte[] salt = new byte[cipherMethod.keySize()];
         in.readBytes(salt);
         ByteBuf packet = AEAD.UDP.newPayloadDecoder(cipherMethod, keys.encKey(), salt).decodePacket(in);
         InetSocketAddress address = Address.decode(packet);

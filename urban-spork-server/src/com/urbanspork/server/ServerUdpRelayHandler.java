@@ -1,5 +1,6 @@
 package com.urbanspork.server;
 
+import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.common.transport.udp.PacketEncoding;
 import io.netty.bootstrap.Bootstrap;
@@ -22,9 +23,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramPacket> {
-
     private static final Logger logger = LoggerFactory.getLogger(ServerUdpRelayHandler.class);
-    private final Map<InetSocketAddress, Channel> workerChannels = new ConcurrentHashMap<>();
+    private final Map<Object, Channel> workerChannels = new ConcurrentHashMap<>();
     private final EventLoopGroup workerGroup;
     private final PacketEncoding packetEncoding;
 
@@ -39,7 +39,11 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
         Channel channel = ctx.channel();
         InetSocketAddress sender = msg.sender();
         InetSocketAddress recipient = msg.recipient();
-        Channel workerChannel = workerChannel(sender, channel);
+        Object key = channel.attr(AttributeKeys.SERVER_UDP_RELAY_WORKER).get();
+        if (key == null) {
+            key = sender;
+        }
+        Channel workerChannel = workerChannel(key, channel);
         logger.info("[udp][relay]{}→{}~{}→{}", sender, recipient, channel.localAddress(), workerChannel.localAddress());
         workerChannel.writeAndFlush(msg);
     }
@@ -51,14 +55,14 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
         }
     }
 
-    Channel workerChannel(InetSocketAddress key, Channel inboundChannel) {
+    Channel workerChannel(Object key, Channel inboundChannel) {
         if (PacketEncoding.Packet == packetEncoding) {
             key = PacketEncoding.Packet.seqPacketMagicAddress();
         }
         return workerChannels.computeIfAbsent(key, k -> newWorkerChannel(k, inboundChannel));
     }
 
-    private Channel newWorkerChannel(InetSocketAddress key, Channel channel) {
+    private Channel newWorkerChannel(Object key, Channel channel) {
         Channel workerChannel = new Bootstrap().group(workerGroup).channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {
                 @Override

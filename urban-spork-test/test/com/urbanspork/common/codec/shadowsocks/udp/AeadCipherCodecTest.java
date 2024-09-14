@@ -37,7 +37,7 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
     void testTooShortHeader() {
         AeadCipherCodec codec = newAEADCipherCodec();
         ByteBuf in = Unpooled.wrappedBuffer(Dice.rollBytes(3));
-        Context context = new Context(Mode.Client, new Control(TestDice.rollCipher()), null, ServerUserManager.empty());
+        Context context = new Context(Mode.Client, new Control(), null, ServerUserManager.empty());
         Assertions.assertThrows(DecoderException.class, () -> codec.decode(context, in));
     }
 
@@ -51,10 +51,9 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
         AeadCipherCodec codec = newAEADCipherCodec();
         InetSocketAddress address = InetSocketAddress.createUnresolved(TestDice.rollHost(), TestDice.rollPort());
         ByteBuf in = Unpooled.buffer();
-        CipherKind kind = TestDice.rollCipher();
-        codec.encode(new Context(from, new Control(kind), address, ServerUserManager.empty()), Unpooled.EMPTY_BUFFER, in);
+        codec.encode(new Context(from, new Control(), address, ServerUserManager.empty()), Unpooled.EMPTY_BUFFER, in);
         Assertions.assertTrue(in.isReadable());
-        RelayingPacket<ByteBuf> pocket = codec.decode(new Context(to, new Control(kind), address, ServerUserManager.empty()), in);
+        RelayingPacket<ByteBuf> pocket = codec.decode(new Context(to, new Control(), address, ServerUserManager.empty()), in);
         Assertions.assertFalse(in.isReadable());
         Assertions.assertNotNull(pocket);
     }
@@ -63,18 +62,18 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
     void testTooShortPacket() {
         AeadCipherCodec codec = newAEADCipherCodec();
         ByteBuf in = Unpooled.buffer();
-        Context c1 = new Context(Mode.Client, new Control(CipherKind.aead2022_blake3_aes_128_gcm), null, ServerUserManager.empty());
+        Context c1 = new Context(Mode.Client, new Control(), null, ServerUserManager.empty());
         Assertions.assertThrows(DecoderException.class, () -> codec.decode(c1, in));
-        Context c2 = new Context(Mode.Server, new Control(CipherKind.aead2022_blake3_aes_128_gcm), null, ServerUserManager.empty());
+        Context c2 = new Context(Mode.Server, new Control(), null, ServerUserManager.empty());
         Assertions.assertThrows(DecoderException.class, () -> codec.decode(c2, in));
     }
 
     @Test
     void testInvalidSocketType() throws InvalidCipherTextException {
         InetSocketAddress address = InetSocketAddress.createUnresolved(TestDice.rollHost(), TestDice.rollPort());
-        Context c1 = new Context(Mode.Client, new Control(CipherKind.aead2022_blake3_aes_128_gcm), address, ServerUserManager.empty());
+        Context c1 = new Context(Mode.Client, new Control(), address, ServerUserManager.empty());
         testInvalidSocketType(c1);
-        Context c2 = new Context(Mode.Server, new Control(CipherKind.aead2022_blake3_aes_128_gcm), address, ServerUserManager.empty());
+        Context c2 = new Context(Mode.Server, new Control(), address, ServerUserManager.empty());
         testInvalidSocketType(c2);
     }
 

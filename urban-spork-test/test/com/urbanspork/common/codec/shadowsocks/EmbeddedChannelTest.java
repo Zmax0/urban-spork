@@ -11,6 +11,7 @@ import com.urbanspork.common.transport.tcp.RelayingPayload;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
+import com.urbanspork.test.template.TraceLevelLoggerTestTemplate;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -23,7 +24,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
-class EmbeddedChannelTest {
+class EmbeddedChannelTest extends TraceLevelLoggerTestTemplate {
     @Test
     void testTcpRelayChannel() {
         int port = TestDice.rollPort();
@@ -108,5 +109,10 @@ class EmbeddedChannelTest {
         Assertions.assertNull(server.readInbound());
         client.close();
         server.close();
+    }
+
+    @Override
+    protected Class<?> loggerClass() {
+        return UdpRelayCodec.class;
     }
 }
