@@ -43,6 +43,10 @@ public class Client {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         GlobalChannelTrafficShapingHandler traffic = new GlobalChannelTrafficShapingHandler(workerGroup);
         ClientInitializationContext context = new ClientInitializationContext(config, traffic);
+        String host = config.getHost();
+        if (host == null) {
+            host = InetAddress.getLoopbackAddress().getHostName();
+        }
         try {
             new ServerBootstrap().group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
@@ -50,7 +54,7 @@ public class Client {
                 .childOption(ChannelOption.TCP_NODELAY, false)
                 .childOption(ChannelOption.SO_LINGER, 1)
                 .childHandler(new ClientInitializer(context))
-                .bind(InetAddress.getLoopbackAddress(), config.getPort()).sync().addListener((ChannelFutureListener) future -> {
+                .bind(host, config.getPort()).sync().addListener((ChannelFutureListener) future -> {
                     ServerSocketChannel tcp = (ServerSocketChannel) future.channel();
                     InetSocketAddress tcpLocalAddress = tcp.localAddress();
                     int localPort = tcpLocalAddress.getPort();

@@ -228,6 +228,9 @@ public interface AEAD2022 {
             if (CipherKind.aead2022_blake3_aes_128_gcm == kind || CipherKind.aead2022_blake3_aes_256_gcm == kind) {
                 return 0;
             }
+            if (CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
+                return 24;
+            }
             throw new IllegalArgumentException(kind + " is not an AEAD 2022 cipher");
         }
 
