@@ -91,6 +91,10 @@ public class Client {
         } else {
             udpTransportHandler = new ClientUdpRelayHandler(current, workerGroup);
         }
+        String host = context.config().getHost();
+        if (host == null) {
+            host = InetAddress.getLoopbackAddress().getHostName();
+        }
         return (DatagramChannel) new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {
                 @Override
@@ -103,7 +107,7 @@ public class Client {
                     );
                 }
             })
-            .bind(InetAddress.getLoopbackAddress(), context.config().getPort()).sync().channel();
+            .bind(host, context.config().getPort()).sync().channel();
     }
 
     public record Instance(ServerSocketChannel tcp, DatagramChannel udp, TrafficCounter traffic) implements Closeable {

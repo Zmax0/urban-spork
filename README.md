@@ -16,14 +16,14 @@ A network tool for improved privacy and security
 | Local-Peer | Client-Server | Shadowsocks | VMess | Trojan |
 |:----------:|:-------------:|:-----------:|:-----:|:------:|
 |   `tcp`    |     `tcp`     |      ✔      |   ✔   |        |
-|   `tcp`    |     `tls`     |             |       |   ✔    |
+|   `tcp`    |     `tls`     |      ✔      |   ✔   |   ✔    |
 |   `tcp`    |     `ws`      |      ✔      |   ✔   |        |
-|   `tcp`    |     `wss`     |             |       |        |
+|   `tcp`    |     `wss`     |      ✔      |   ✔   |   ✔    |
 |   `udp`    |     `udp`     |      ✔      |       |        |
 |   `udp`    |     `tcp`     |             |   ✔   |        |
-|   `udp`    |     `tls`     |             |       |   ✔    |
+|   `udp`    |     `tls`     |             |   ✔   |   ✔    |
 |   `udp`    |     `ws`      |             |   ✔   |        |
-|   `udp`    |     `wss`     |             |       |        |
+|   `udp`    |     `wss`     |             |   ✔   |   ✔    |
 
 ### Ciphers
 
@@ -53,8 +53,8 @@ put *config.json* file into the unpacked folder before running server
       "protocol": "shadowsocks",
       "packetEncoding": "None",
       "transport": [
-        "TCP",
-        "UDP"
+        "tcp",
+        "udp"
       ],
       "user": [
         {
@@ -83,7 +83,7 @@ put *config.json* file into the unpacked folder before running server
 
 > `cipher`: see *Ciphers*
 
-> `transport`: see *Transport*
+> `transport`: "udp" | "tcp"
 
 > `packetEncoding`: "None" | "Packet"
 

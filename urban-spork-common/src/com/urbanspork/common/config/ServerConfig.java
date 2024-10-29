@@ -5,6 +5,7 @@ import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.transport.Transport;
 import com.urbanspork.common.transport.udp.PacketEncoding;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class ServerConfig {
@@ -80,11 +81,11 @@ public class ServerConfig {
     }
 
     public Transport[] getTransport() {
-        return Transport.reverseToMap(transport);
+        return transport;
     }
 
     public void setTransport(Transport[] transports) {
-        this.transport = Transport.toMap(transports);
+        this.transport = transports;
     }
 
     public PacketEncoding getPacketEncoding() {
@@ -142,10 +143,6 @@ public class ServerConfig {
     }
 
     public boolean udpEnabled() {
-        return transport != null && transport.length != 0 && transport[Transport.UDP.index()] != null;
-    }
-
-    public boolean wsEnabled() {
-        return Protocol.trojan != protocol && transport != null && transport.length != 0 && transport[Transport.TCP.index()] == Transport.WS;
+        return transport != null && transport.length != 0 && Arrays.stream(transport).anyMatch(t -> Transport.UDP == t);
     }
 }

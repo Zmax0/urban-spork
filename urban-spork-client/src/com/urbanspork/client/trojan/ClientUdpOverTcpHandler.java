@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.List;
 
@@ -49,11 +50,10 @@ public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<Ine
         InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
         return new ChannelInitializer<>() {
             @Override
-            protected void initChannel(Channel ch) throws SSLException {
-                ch.pipeline().addLast(
-                    ClientTcpRelayHandler.buildSslHandler(ch, config),
-                    new ClientHeaderEncoder(config.getPassword(), serverAddress, SocksCmdType.UDP.byteValue())
-                );
+            protected void initChannel(Channel ch) throws SSLException, URISyntaxException {
+                ClientTcpRelayHandler.addSslHandler(ch, config);
+                addWebSocketHandler(ch);
+                ch.pipeline().addLast(new ClientHeaderEncoder(config.getPassword(), serverAddress, SocksCmdType.UDP.byteValue()));
             }
         };
     }
