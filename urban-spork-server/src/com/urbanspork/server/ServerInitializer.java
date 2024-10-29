@@ -6,6 +6,7 @@ import com.urbanspork.common.codec.shadowsocks.tcp.TcpRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.config.WebSocketSetting;
+import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.server.trojan.ServerHeaderDecoder;
 import com.urbanspork.server.vmess.ServerAeadCodec;
 import io.netty.buffer.ByteBuf;
@@ -34,29 +35,44 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
     }
 
     @Override
-    protected void initChannel(Channel c) throws SSLException {
+    protected void initChannel(Channel ch) throws SSLException {
         ServerConfig config = context.config();
-        if (config.wsEnabled()) {
-            enableWebSocket(c);
-        }
+        addSslHandler(ch, config);
+        addWebSocketHandlers(ch, config);
         switch (config.getProtocol()) {
-            case vmess -> c.pipeline().addLast(new ServerAeadCodec(config), new ExceptionHandler(config), new ServerRelayHandler(config));
-            case trojan -> {
-                String serverName = config.getHost();
-                SslSetting sslSetting = Optional.ofNullable(config.getSsl()).orElseThrow(() -> new IllegalArgumentException("required security setting not present"));
-                SslContext sslContext = SslContextBuilder.forServer(new File(sslSetting.getCertificateFile()), new File(sslSetting.getKeyFile()), sslSetting.getKeyPassword()).build();
-                if (sslSetting.getServerName() != null) {
-                    serverName = sslSetting.getServerName();
-                }
-                SslHandler sslHandler = sslContext.newHandler(c.alloc(), serverName, config.getPort());
-                c.pipeline().addLast(sslHandler, new ServerHeaderDecoder(config), new ExceptionHandler(config));
-            }
-            default -> c.pipeline().addLast(new TcpRelayCodec(context.context(), config, Mode.Server, context.userManager()), new ExceptionHandler(config), new ServerRelayHandler(config));
+            case vmess -> ch.pipeline().addLast(new ServerAeadCodec(config), new ExceptionHandler(config), new ServerRelayHandler(config));
+            case trojan -> ch.pipeline().addLast(new ServerHeaderDecoder(config), new ExceptionHandler(config));
+            default -> ch.pipeline().addLast(new TcpRelayCodec(context.context(), config, Mode.Server, context.userManager()), new ExceptionHandler(config), new ServerRelayHandler(config));
         }
     }
 
-    private void enableWebSocket(Channel channel) {
-        String path = Optional.ofNullable(context.config().getWs()).map(WebSocketSetting::getPath).orElseThrow(() -> new IllegalArgumentException("required path not present"));
+    private static void addSslHandler(Channel c, ServerConfig config) throws SSLException {
+        Optional<SslSetting> op = Optional.ofNullable(config.getSsl());
+        if (op.isPresent()) {
+            SslSetting sslSetting = op.get();
+            SslContext sslContext = SslContextBuilder.forServer(new File(sslSetting.getCertificateFile()), new File(sslSetting.getKeyFile()), sslSetting.getKeyPassword()).build();
+            String serverName = config.getHost();
+            if (sslSetting.getServerName() != null) {
+                serverName = sslSetting.getServerName();
+            }
+            SslHandler sslHandler = sslContext.newHandler(c.alloc(), serverName, config.getPort());
+            c.pipeline().addLast(sslHandler);
+            return;
+        }
+        if (Protocol.trojan == config.getProtocol()) {
+            throw new IllegalArgumentException("required security setting not present");
+        }
+    }
+
+    private static void addWebSocketHandlers(Channel channel, ServerConfig config) {
+        WebSocketSetting setting = config.getWs();
+        if (setting == null) {
+            return;
+        }
+        String path = setting.getPath();
+        if (path == null) {
+            throw new IllegalArgumentException("required path not present");
+        }
         channel.pipeline().addLast(
             new HttpServerCodec(),
             new WebSocketServerProtocolHandler(path, null, true, 0xfffff),

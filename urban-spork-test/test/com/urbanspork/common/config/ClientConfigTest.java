@@ -4,6 +4,7 @@ import com.urbanspork.test.TestDice;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -28,6 +29,7 @@ public class ClientConfigTest {
             throw new IllegalArgumentException("At least 2 ports");
         }
         ClientConfig config = new ClientConfig();
+        config.setHost(InetAddress.getLoopbackAddress().getHostName());
         config.setPort(ports[0]);
         config.setIndex(0);
         int[] serverPorts = Arrays.copyOfRange(ports, 1, ports.length);

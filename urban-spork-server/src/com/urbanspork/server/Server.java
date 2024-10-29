@@ -39,10 +39,6 @@ public class Server {
         if (configs.isEmpty()) {
             throw new IllegalArgumentException("Server config in the file is empty");
         }
-        configs = configs.stream().filter(config -> config.getHost().matches("localhost|127.*|[:1]|0.0.0.0|[:0]")).toList();
-        if (configs.isEmpty()) {
-            throw new IllegalArgumentException("None available server");
-        }
         launch(configs, new CompletableFuture<>());
     }
 
@@ -118,8 +114,8 @@ public class Server {
     public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp) implements Closeable {
         @Override
         public void close() {
-            tcp.close().awaitUninterruptibly();
             udp.ifPresent(c -> c.close().awaitUninterruptibly());
+            tcp.close().awaitUninterruptibly();
         }
     }
 }

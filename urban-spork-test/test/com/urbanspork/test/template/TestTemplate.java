@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 abstract class TestTemplate {
-    protected static final ExecutorService POOL = Executors.newVirtualThreadPerTaskExecutor();
+    protected static final ExecutorService POOL = Executors.newThreadPerTaskExecutor(Executors.defaultThreadFactory());
 
     protected static Client.Instance launchClient(ClientConfig config)
         throws InterruptedException, ExecutionException {
