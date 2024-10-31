@@ -61,6 +61,7 @@ class ClientTest {
     void testLaunchFailed() throws InterruptedException, ExecutionException {
         Client.Instance client = asyncLaunchClient(ClientConfigTest.testConfig(0, 0));
         ClientConfig config = ClientConfigTest.testConfig(client.tcp().localAddress().getPort(), 0);
+        config.setHost(null);
         Assertions.assertThrows(ExecutionException.class, () -> asyncLaunchClient(config));
         client.close();
     }

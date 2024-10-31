@@ -9,6 +9,10 @@
   <artifactId>urban-spork-common</artifactId>
   <dependencies>
     <dependency>
+      <groupId>urban-spork</groupId>
+      <artifactId>urban-spork-jni</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-codec-socks</artifactId>
     </dependency>
