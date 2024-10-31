@@ -52,6 +52,7 @@ class Aead2022CipherCodecImpl implements AeadCipherCodec {
         boolean requireEih = cipherKind.supportEih() && identityKeys.length > 0;
         int eihSize = requireEih ? identityKeys.length * 16 : 0;
         ByteBuf temp = Unpooled.buffer(nonceLength + 8 + 8 + eihSize + 1 + 8 + 2 + paddingLength + Address.getLength(address) + msg.readableBytes() + tagSize);
+        temp.writeBytes(Dice.rollBytes(nonceLength));
         // header fields
         temp.writeLong(control.getClientSessionId());
         temp.writeLong(control.getPacketId());
@@ -67,8 +68,8 @@ class Aead2022CipherCodecImpl implements AeadCipherCodec {
         Address.encode(address, temp);
         temp.writeBytes(msg);
         UdpCipher cipher = AEAD2022.UDP.getCipher(cipherKind, cipherMethod, keys.encKey(), control.getClientSessionId());
-        byte[] iPSK = identityKeys.length == 0 ? keys.encKey() : identityKeys[0];
-        AEAD2022.UDP.encodePacket(cipher, iPSK, eihSize, temp, out);
+        byte[] key = identityKeys.length == 0 ? keys.encKey() : identityKeys[0];
+        AEAD2022.UDP.encodePacket(cipherKind, cipher, key, eihSize, temp, out);
     }
 
     // Server -> Client
@@ -78,6 +79,7 @@ class Aead2022CipherCodecImpl implements AeadCipherCodec {
         int nonceLength = AEAD2022.UDP.getNonceLength(cipherKind);
         InetSocketAddress address = context.address();
         ByteBuf temp = Unpooled.buffer(nonceLength + 8 + 8 + 1 + 8 + 8 + 2 + paddingLength + Address.getLength(address) + msg.readableBytes() + cipherMethod.tagSize());
+        temp.writeBytes(Dice.rollBytes(nonceLength));
         // header fields
         temp.writeLong(control.getServerSessionId());
         temp.writeLong(control.getPacketId());
@@ -88,16 +90,16 @@ class Aead2022CipherCodecImpl implements AeadCipherCodec {
         temp.writeBytes(Dice.rollBytes(paddingLength));
         Address.encode(address, temp);
         temp.writeBytes(msg);
-        ServerUser user = control.getUser();
-        byte[] key;
-        if (user != null) {
-            key = user.key();
-            logger.trace("udp encrypt with {} identity", user);
-        } else {
-            key = keys.encKey();
+        byte[] key = keys.encKey();
+        if (cipherKind.supportEih()) {
+            ServerUser user = control.getUser();
+            if (user != null) {
+                key = user.key();
+                logger.trace("udp encrypt with {} identity", user);
+            }
         }
         UdpCipher cipher = AEAD2022.UDP.getCipher(cipherKind, cipherMethod, key, control.getServerSessionId());
-        AEAD2022.UDP.encodePacket(cipher, key, 0, temp, out);
+        AEAD2022.UDP.encodePacket(cipherKind, cipher, key, 0, temp, out);
     }
 
     @Override

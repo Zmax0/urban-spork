@@ -27,16 +27,18 @@ A network tool for improved privacy and security
 
 ### Ciphers
 
-|                                     | Shadowsocks |  VMess  |
-|:------------------------------------|:-----------:|:-------:|
-| aes-128-gcm                         |   `C` `S`   | `C` `S` |
-| aes-256-gcm                         |   `C` `S`   |         |
-| chacha20-poly1305                   |   `C` `S`   | `C` `S` |
-| 2022-blake3-aes-128-gcm             |   `C` `S`   |         |
-| 2022-blake3-aes-256-gcm             |   `C` `S`   |         |
-| 2022-blake3-chacha20-poly1305 (tcp) |   `C` `S`   |         |
+|                                   | Shadowsocks |  VMess  |
+|:----------------------------------|:-----------:|:-------:|
+| aes-128-gcm                       |   `C` `S`   | `C` `S` |
+| aes-256-gcm                       |   `C` `S`   |         |
+| chacha20-poly1305                 |   `C` `S`   | `C` `S` |
+| 2022-blake3-aes-128-gcm           |   `C` `S`   |         |
+| 2022-blake3-aes-256-gcm           |   `C` `S`   |         |
+| 2022-blake3-chacha20-poly1305 (*) |   `C` `S`   |         |
 
 `C` for client `S` for server
+
+`2022-blake3-chacha20-poly1305` UDP part, implemented via JNI, has only been tested on the amd64 arch
 
 ## Config
 

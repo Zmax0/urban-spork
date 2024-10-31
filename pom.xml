@@ -10,6 +10,7 @@
     <module>urban-spork-client</module>
     <module>urban-spork-client-gui</module>
     <module>urban-spork-server</module>
+    <module>urban-spork-jni</module>
     <module>urban-spork-test</module>
   </modules>
   <properties>
@@ -24,11 +25,17 @@
     <logback.version>1.5.6</logback.version>
     <netty.version>4.1.110.Final</netty.version>
     <bouncycastle.version>2.73.5</bouncycastle.version>
+    <jar-jni.version>1.2.0</jar-jni.version>
     <javafx.version>22.0.1</javafx.version>
     <jfoenix.version>9.0.10</jfoenix.version>
   </properties>
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>urban-spork</groupId>
+        <artifactId>urban-spork-jni</artifactId>
+        <version>${urban-spork.version}</version>
+      </dependency>
       <dependency>
         <groupId>urban-spork</groupId>
         <artifactId>urban-spork-common</artifactId>
@@ -89,6 +96,11 @@
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcprov-lts8on</artifactId>
         <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.questdb</groupId>
+        <artifactId>jar-jni</artifactId>
+        <version>${jar-jni.version}</version>
       </dependency>
       <dependency>
         <groupId>com.jfoenix</groupId>
