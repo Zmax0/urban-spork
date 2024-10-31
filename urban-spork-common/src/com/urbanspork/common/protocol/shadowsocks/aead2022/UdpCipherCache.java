@@ -19,7 +19,13 @@ public enum UdpCipherCache {
     public UdpCipher get(CipherKind kind, CipherMethod method, byte[] key, long sessionId) {
         return cache.computeIfAbsent(
             new Key(kind, key, sessionId),
-            k -> new UdpCipher(method, AEAD2022.UDP.sessionSubkey(key, sessionId))
+            k -> {
+                if (kind == CipherKind.aead2022_blake3_chacha20_poly1305) {
+                    return new UdpCipher(method, key);
+                } else {
+                    return new UdpCipher(method, AEAD2022.UDP.sessionSubkey(key, sessionId));
+                }
+            }
         );
     }
 

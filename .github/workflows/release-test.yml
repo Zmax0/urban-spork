@@ -1,0 +1,57 @@
+name: release
+on:
+  workflow_call
+jobs:
+  build-jni-on-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+          cache: maven
+      - name: Build urban-spork-jni
+        run: mvn package -B -pl urban-spork-jni -am -DskipTests
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: urban-spork-jni
+          path: urban-spork-jni/target/classes/native/
+          retention-days: 1
+          overwrite: true
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  build:
+    needs: build-jni-on-windows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+          cache: maven
+      - name: Download urban-spork-jni artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: urban-spork-jni
+          path: urban-spork-jni/target/classes/native/
+      - name: Build with Maven
+        run: mvn package -B -f pom.xml -Pwin -Plinux
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            urban-spork-client-gui/target/*.zip
+            urban-spork-server/target/*.zip
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
