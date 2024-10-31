@@ -1,11 +1,18 @@
-name: release
+name: release-test
 on:
-  workflow_call
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Define test branch'
+        default: master
+        required: true
 jobs:
   build-jni-on-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
       - name: Setup rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Setup JDK
