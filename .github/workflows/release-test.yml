@@ -1,18 +1,13 @@
 name: release-test
 on:
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Define test branch'
-        default: master
-        required: true
+  workflow_dispatch
 jobs:
   build-jni-on-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ github.ref }}
       - name: Setup rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Setup JDK
@@ -52,10 +47,14 @@ jobs:
           path: urban-spork-jni/target/classes/native/
       - name: Build with Maven
         run: mvn package -B -f pom.xml -Pwin -Plinux
+      - name: Tag
+        id: tag
+        run: |
+          echo "::set-output name=release_test_tag::PreRelease_$(date +"%Y.%m.%d_%H-%M")"
       - name: Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
+          tag_name: ${{ steps.tag.outputs.release_test_tag }}
           files: |
             urban-spork-client-gui/target/*.zip
             urban-spork-server/target/*.zip

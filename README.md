@@ -16,26 +16,29 @@ A network tool for improved privacy and security
 | Local-Peer | Client-Server | Shadowsocks | VMess | Trojan |
 |:----------:|:-------------:|:-----------:|:-----:|:------:|
 |   `tcp`    |     `tcp`     |      ✔      |   ✔   |        |
-|   `tcp`    |     `tls`     |             |       |   ✔    |
+|   `tcp`    |     `tls`     |      ✔      |   ✔   |   ✔    |
 |   `tcp`    |     `ws`      |      ✔      |   ✔   |        |
-|   `tcp`    |     `wss`     |             |       |        |
+|   `tcp`    |     `wss`     |      ✔      |   ✔   |   ✔    |
 |   `udp`    |     `udp`     |      ✔      |       |        |
 |   `udp`    |     `tcp`     |             |   ✔   |        |
-|   `udp`    |     `tls`     |             |       |   ✔    |
+|   `udp`    |     `tls`     |             |   ✔   |   ✔    |
 |   `udp`    |     `ws`      |             |   ✔   |        |
-|   `udp`    |     `wss`     |             |       |        |
+|   `udp`    |     `wss`     |             |   ✔   |   ✔    |
 
 ### Ciphers
 
-|                         | Shadowsocks |  VMess  |
-|:------------------------|:-----------:|:-------:|
-| aes-128-gcm             |   `C` `S`   | `C` `S` |
-| aes-256-gcm             |   `C` `S`   |         |
-| chacha20-poly1305       |   `C` `S`   | `C` `S` |
-| 2022-blake3-aes-128-gcm |   `C` `S`   |         |
-| 2022-blake3-aes-256-gcm |   `C` `S`   |         |
+|                                   | Shadowsocks |  VMess  |
+|:----------------------------------|:-----------:|:-------:|
+| aes-128-gcm                       |   `C` `S`   | `C` `S` |
+| aes-256-gcm                       |   `C` `S`   |         |
+| chacha20-poly1305                 |   `C` `S`   | `C` `S` |
+| 2022-blake3-aes-128-gcm           |   `C` `S`   |         |
+| 2022-blake3-aes-256-gcm           |   `C` `S`   |         |
+| 2022-blake3-chacha20-poly1305 (*) |   `C` `S`   |         |
 
 `C` for client `S` for server
+
+`2022-blake3-chacha20-poly1305` UDP part, implemented via JNI, has only been tested on the amd64 arch
 
 ## Config
 
@@ -52,8 +55,8 @@ put *config.json* file into the unpacked folder before running server
       "protocol": "shadowsocks",
       "packetEncoding": "None",
       "transport": [
-        "TCP",
-        "UDP"
+        "tcp",
+        "udp"
       ],
       "user": [
         {
@@ -82,7 +85,7 @@ put *config.json* file into the unpacked folder before running server
 
 > `cipher`: see *Ciphers*
 
-> `transport`: see *Transport*
+> `transport`: "udp" | "tcp"
 
 > `packetEncoding`: "None" | "Packet"
 

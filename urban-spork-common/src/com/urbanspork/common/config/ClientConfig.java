@@ -4,6 +4,8 @@ import java.util.List;
 
 public class ClientConfig {
 
+    private String host;
+
     private int port = 1080;
 
     private String language;
@@ -11,6 +13,14 @@ public class ClientConfig {
     private int index;
 
     private List<ServerConfig> servers;
+
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
 
     public int getPort() {
         return port;

@@ -96,8 +96,8 @@ class Aead2022Test extends TraceLevelLoggerTestTemplate {
         in.writeBytes(user.identityHash());
         in.writeCharSequence(msg, StandardCharsets.US_ASCII);
         ByteBuf out = Unpooled.buffer();
-        AEAD2022.UDP.encodePacket(AEAD2022.UDP.getCipher(kind, method, iPSK, sessionId), iPSK, 16, in, out);
-        Control control = new Control(kind);
+        AEAD2022.UDP.encodePacket(kind, AEAD2022.UDP.getCipher(kind, method, iPSK, sessionId), iPSK, 16, in, out);
+        Control control = new Control();
         Assertions.assertThrows(DecoderException.class, () -> AEAD2022.UDP.decodePacket(kind, method, control, userManager, iPSK, out));
         userManager.removeUserByHash(user.identityHash());
     }

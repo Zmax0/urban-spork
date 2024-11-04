@@ -12,6 +12,7 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
+import com.urbanspork.common.protocol.Protocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -64,7 +65,7 @@ public interface ClientTcpRelayHandler {
 
     default void connect(Channel inbound, InetSocketAddress dstAddress) {
         ServerConfig config = inbound.attr(AttributeKeys.SERVER_CONFIG).get();
-        boolean autoResponse = !config.wsEnabled();
+        boolean autoResponse = config.getWs() == null;
         InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
         new Bootstrap()
             .group(inbound.eventLoop())
@@ -93,29 +94,18 @@ public interface ClientTcpRelayHandler {
         return new ChannelInitializer<>() {
             @Override
             protected void initChannel(Channel outbound) throws Exception {
-                if (config.wsEnabled()) {
-                    enableWebSocket(inbound, outbound, config);
+                addSslHandler(outbound, config);
+                if (addWebSocketHandlers(outbound, config)) {
+                    outbound.pipeline().addLast(new WebSocketCodec(inbound, config, inboundWriter(), outboundWriter()));
+                    inbound.closeFuture().addListener(future -> outbound.writeAndFlush(new CloseWebSocketFrame()));
                 }
                 switch (config.getProtocol()) {
                     case vmess -> outbound.pipeline().addLast(new ClientAeadCodec(config.getCipher(), address, config.getPassword()));
-                    case trojan -> outbound.pipeline().addLast(
-                        buildSslHandler(outbound, config),
-                        new ClientHeaderEncoder(config.getPassword(), address, SocksCmdType.CONNECT.byteValue())
-                    );
+                    case trojan -> outbound.pipeline().addLast(new ClientHeaderEncoder(config.getPassword(), address, SocksCmdType.CONNECT.byteValue()));
                     default -> outbound.pipeline().addLast(new TcpRelayCodec(new Context(), config, address, Mode.Client, ServerUserManager.empty()));
                 }
             }
         };
-    }
-
-    private void enableWebSocket(Channel inbound, Channel outbound, ServerConfig config) throws URISyntaxException {
-        outbound.pipeline().addLast(
-            new HttpClientCodec(),
-            new HttpObjectAggregator(0xfffff),
-            buildWebSocketHandler(config),
-            new WebSocketCodec(inbound, config, inboundWriter(), outboundWriter())
-        );
-        inbound.closeFuture().addListener(future -> outbound.writeAndFlush(new CloseWebSocketFrame()));
     }
 
     record InboundWriter(Consumer<Channel> success, Consumer<Channel> failure) {}
@@ -164,32 +154,43 @@ public interface ClientTcpRelayHandler {
         }
     }
 
-    static SslHandler buildSslHandler(Channel ch, ServerConfig config) throws SSLException {
-        String serverName = config.getHost();
+    static void addSslHandler(Channel ch, ServerConfig config) throws SSLException {
+        SslSetting sslSetting = config.getSsl();
+        if (sslSetting == null) {
+            if (Protocol.trojan == config.getProtocol()) {
+                throw new IllegalArgumentException("required security setting not present");
+            } else {
+                return;
+            }
+        }
         SslContextBuilder sslContextBuilder = SslContextBuilder.forClient();
-        boolean verifyHostname = true;
-        if (config.getSsl() != null) {
-            SslSetting ssl = config.getSsl();
-            if (ssl.getCertificateFile() != null) {
-                sslContextBuilder.trustManager(new File(ssl.getCertificateFile()));
-            }
-            if (ssl.getServerName() != null) {
-                serverName = ssl.getServerName(); // override
-            }
-            verifyHostname = ssl.isVerifyHostname();
+        String serverName = config.getHost();
+        if (sslSetting.getCertificateFile() != null) {
+            sslContextBuilder.trustManager(new File(sslSetting.getCertificateFile()));
+        }
+        if (sslSetting.getServerName() != null) {
+            serverName = sslSetting.getServerName(); // override
         }
         SslContext sslContext = sslContextBuilder.build();
         SslHandler sslHandler = sslContext.newHandler(ch.alloc(), serverName, config.getPort());
-        if (verifyHostname) {
+        if (sslSetting.isVerifyHostname()) {
             SSLEngine sslEngine = sslHandler.engine();
             SSLParameters sslParameters = sslEngine.getSSLParameters();
             sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
             sslEngine.setSSLParameters(sslParameters);
         }
-        return sslHandler;
+        ch.pipeline().addLast(sslHandler);
     }
 
-    static WebSocketClientProtocolHandler buildWebSocketHandler(ServerConfig config) throws URISyntaxException {
+    static boolean addWebSocketHandlers(Channel ch, ServerConfig config) throws URISyntaxException {
+        if (config.getWs() != null) {
+            ch.pipeline().addLast(new HttpClientCodec(), new HttpObjectAggregator(0xfffff), buildWebSocketHandler(config));
+            return true;
+        }
+        return false;
+    }
+
+    private static WebSocketClientProtocolHandler buildWebSocketHandler(ServerConfig config) throws URISyntaxException {
         Optional<WebSocketSetting> ws = Optional.ofNullable(config.getWs());
         String path = ws.map(WebSocketSetting::getPath).orElseThrow(() -> new IllegalArgumentException("required path not present"));
         WebSocketClientProtocolConfig.Builder builder = WebSocketClientProtocolConfig.newBuilder()

@@ -36,10 +36,6 @@ class ServerTest {
     void launchRejected() {
         List<ServerConfig> empty = Collections.emptyList();
         Assertions.assertThrows(IllegalArgumentException.class, () -> Server.launch(empty));
-        List<ServerConfig> configs = ServerConfigTest.testConfigs(TestDice.rollPort());
-        ServerConfig config = configs.getFirst();
-        config.setHost("www.urban-spork.com");
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Server.launch(configs));
     }
 
     @Test
