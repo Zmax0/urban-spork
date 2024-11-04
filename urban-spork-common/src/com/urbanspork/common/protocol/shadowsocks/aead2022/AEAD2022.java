@@ -228,6 +228,9 @@ public interface AEAD2022 {
             if (CipherKind.aead2022_blake3_aes_128_gcm == kind || CipherKind.aead2022_blake3_aes_256_gcm == kind) {
                 return 0;
             }
+            if (CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
+                return 24;
+            }
             throw new IllegalArgumentException(kind + " is not an AEAD 2022 cipher");
         }
 
@@ -235,55 +238,75 @@ public interface AEAD2022 {
             return UdpCipherCache.INSTANCE.get(kind, method, key, sessionId);
         }
 
-        static void encodePacket(UdpCipher cipher, byte[] iPSK, int eihLength, ByteBuf in, ByteBuf out) throws InvalidCipherTextException {
-            byte[] header = new byte[16];
-            in.readBytes(header);
-            byte[] nonce = Arrays.copyOfRange(header, 4, 16);
-            AES.encrypt(iPSK, header, cipher.method().keySize(), header);
-            out.writeBytes(header);
-            if (eihLength > 0) {
-                in.readBytes(out, eihLength);
+        static void encodePacket(CipherKind kind, UdpCipher cipher, byte[] key, int eihLength, ByteBuf in, ByteBuf out) throws InvalidCipherTextException {
+            if (CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
+                byte[] nonce = new byte[getNonceLength(kind)];
+                in.readBytes(nonce);
+                byte[] encrypting = new byte[in.readableBytes()];
+                in.readBytes(encrypting);
+                out.writeBytes(nonce);
+                out.writeBytes(cipher.seal(encrypting, nonce));
+            } else {
+                byte[] header = new byte[16];
+                in.readBytes(header);
+                byte[] nonce = Arrays.copyOfRange(header, 4, 16);
+                AES.encrypt(key, header, cipher.method().keySize(), header);
+                out.writeBytes(header);
+                if (eihLength > 0) {
+                    in.readBytes(out, eihLength);
+                }
+                byte[] encrypting = new byte[in.readableBytes()];
+                in.readBytes(encrypting);
+                out.writeBytes(cipher.seal(encrypting, nonce));
             }
-            byte[] encrypting = new byte[in.readableBytes()];
-            in.readBytes(encrypting);
-            out.writeBytes(cipher.seal(encrypting, nonce));
         }
 
         static ByteBuf decodePacket(CipherKind kind, CipherMethod method, Control control, ServerUserManager userManager, byte[] key, ByteBuf in) throws InvalidCipherTextException {
-            byte[] header = new byte[16];
-            in.readBytes(header);
-            AES.decrypt(key, header, method.keySize(), header);
-            ByteBuf headerBuffer = Unpooled.wrappedBuffer(header);
-            long sessionId = headerBuffer.getLong(0);
-            UdpCipher cipher;
-            byte[] eih;
-            if (kind.supportEih() && userManager.userCount() > 0) {
-                eih = new byte[16];
-                in.readBytes(eih);
-                if (logger.isTraceEnabled()) {
-                    logger.trace("server EIH {}, session_id_packet_id: {},{}", ByteString.valueOf(eih), sessionId, headerBuffer.getLong(Long.BYTES));
-                }
-                AES.decrypt(key, eih, method.keySize(), eih);
-                for (int i = 0; i < eih.length; i++) {
-                    eih[i] ^= header[i];
-                }
-                ServerUser user = userManager.getUserByHash(eih);
-                if (user == null) {
-                    throw new DecoderException("user with identity " + ByteString.valueOf(eih) + " not found");
-                } else {
-                    logger.trace("{} chosen by EIH", user);
-                    cipher = getCipher(kind, method, user.key(), sessionId);
-                    control.setUser(user);
-                }
+            if (CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
+                byte[] nonce = new byte[getNonceLength(kind)];
+                in.readBytes(nonce);
+                long sessionId = in.getLong(0);
+                UdpCipher cipher = getCipher(kind, method, key, sessionId);
+                byte[] decrypting = new byte[in.readableBytes()];
+                in.readBytes(decrypting);
+                byte[] decrypted = cipher.open(decrypting, nonce);
+                return Unpooled.wrappedBuffer(decrypted);
             } else {
-                eih = new byte[0];
-                cipher = getCipher(kind, method, key, sessionId);
+                byte[] header = new byte[16];
+                in.readBytes(header);
+                AES.decrypt(key, header, method.keySize(), header);
+                ByteBuf headerBuffer = Unpooled.wrappedBuffer(header);
+                long sessionId = headerBuffer.getLong(0);
+                UdpCipher cipher;
+                byte[] eih;
+                if (kind.supportEih() && userManager.userCount() > 0) {
+                    eih = new byte[16];
+                    in.readBytes(eih);
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("server EIH {}, session_id_packet_id: {},{}", ByteString.valueOf(eih), sessionId, headerBuffer.getLong(Long.BYTES));
+                    }
+                    AES.decrypt(key, eih, method.keySize(), eih);
+                    for (int i = 0; i < eih.length; i++) {
+                        eih[i] ^= header[i];
+                    }
+                    ServerUser user = userManager.getUserByHash(eih);
+                    if (user == null) {
+                        throw new DecoderException("user with identity " + ByteString.valueOf(eih) + " not found");
+                    } else {
+                        logger.trace("{} chosen by EIH", user);
+                        cipher = getCipher(kind, method, user.key(), sessionId);
+                        control.setUser(user);
+                    }
+                } else {
+                    eih = new byte[0];
+                    cipher = getCipher(kind, method, key, sessionId);
+                }
+                byte[] nonce = new byte[12];
+                headerBuffer.getBytes(4, nonce);
+                byte[] decrypting = new byte[in.readableBytes()];
+                in.readBytes(decrypting);
+                return Unpooled.wrappedBuffer(header, eih, cipher.open(decrypting, nonce));
             }
-            byte[] nonce = new byte[12];
-            headerBuffer.getBytes(4, nonce);
-            byte[] decrypting = new byte[in.readableBytes()];
-            in.readBytes(decrypting);
-            return Unpooled.wrappedBuffer(header, eih, cipher.open(decrypting, nonce));
         }
 
         static byte[] sessionSubkey(byte[] key, long sessionId) {

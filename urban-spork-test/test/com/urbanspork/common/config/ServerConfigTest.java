@@ -26,13 +26,6 @@ public class ServerConfigTest {
     }
 
     @Test
-    void testWsEnable() {
-        ServerConfig config = testConfig(TestDice.rollPort());
-        config.setTransport(new Transport[]{});
-        Assertions.assertFalse(config.wsEnabled());
-    }
-
-    @Test
     void testToString() {
         ServerConfig config = testConfig(TestDice.rollPort());
         String string = config.toString();

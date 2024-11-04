@@ -7,8 +7,8 @@ import com.urbanspork.common.config.ClientConfigTest;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTest;
 import com.urbanspork.common.config.ServerUserConfig;
-import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.protocol.Protocol;
+import com.urbanspork.common.transport.Transport;
 import com.urbanspork.server.Server;
 import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.TcpTestTemplate;
@@ -37,15 +37,9 @@ class TcpTest extends TcpTestTemplate {
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
         serverConfig.setPassword(parameter.serverPassword());
-        serverConfig.setTransport(parameter.transport());
-        if (protocol == Protocol.trojan) {
-            serverConfig.setSsl(SslUtil.getSslSetting());
-        }
-        if (serverConfig.wsEnabled()) {
-            WebSocketSetting webSocketSetting = new WebSocketSetting();
-            webSocketSetting.setPath("/ws");
-            serverConfig.setWs(webSocketSetting);
-        }
+        serverConfig.setTransport(new Transport[]{Transport.TCP});
+        serverConfig.setSsl(parameter.sslSetting());
+        serverConfig.setWs(parameter.wsSetting());
         List<Server.Instance> server = launchServer(config.getServers());
         Client.Instance client = launchClient(config);
         InetSocketAddress clientAddress = client.tcp().localAddress();

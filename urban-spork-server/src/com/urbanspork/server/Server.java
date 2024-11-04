@@ -11,7 +11,6 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
@@ -39,10 +38,6 @@ public class Server {
     public static void launch(List<ServerConfig> configs) {
         if (configs.isEmpty()) {
             throw new IllegalArgumentException("Server config in the file is empty");
-        }
-        configs = configs.stream().filter(config -> config.getHost().matches("localhost|127.*|[:1]|0.0.0.0|[:0]")).toList();
-        if (configs.isEmpty()) {
-            throw new IllegalArgumentException("None available server");
         }
         launch(configs, new CompletableFuture<>());
     }
@@ -74,9 +69,9 @@ public class Server {
             logger.error("Startup server failed", e);
             promise.completeExceptionally(e);
         } finally {
-            context.release();
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
+            context.release();
         }
     }
 
@@ -99,7 +94,6 @@ public class Server {
         ServerConfig config = context.config();
         if (Protocol.shadowsocks == config.getProtocol() && config.udpEnabled()) {
             Channel channel = new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
-                .option(ChannelOption.SO_BROADCAST, true)
                 .handler(new ChannelInitializer<>() {
                     @Override
                     protected void initChannel(Channel ch) {
@@ -120,8 +114,8 @@ public class Server {
     public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp) implements Closeable {
         @Override
         public void close() {
-            tcp.close().awaitUninterruptibly();
             udp.ifPresent(c -> c.close().awaitUninterruptibly());
+            tcp.close().awaitUninterruptibly();
         }
     }
 }
