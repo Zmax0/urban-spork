@@ -250,7 +250,7 @@ public interface AEAD2022 {
                 byte[] header = new byte[16];
                 in.readBytes(header);
                 byte[] nonce = Arrays.copyOfRange(header, 4, 16);
-                AES.encrypt(key, header, cipher.method().keySize(), header);
+                AES.encrypt(key, header, kind.keySize(), header);
                 out.writeBytes(header);
                 if (eihLength > 0) {
                     in.readBytes(out, eihLength);
@@ -274,7 +274,7 @@ public interface AEAD2022 {
             } else {
                 byte[] header = new byte[16];
                 in.readBytes(header);
-                AES.decrypt(key, header, method.keySize(), header);
+                AES.decrypt(key, header, kind.keySize(), header);
                 ByteBuf headerBuffer = Unpooled.wrappedBuffer(header);
                 long sessionId = headerBuffer.getLong(0);
                 UdpCipher cipher;
@@ -285,7 +285,7 @@ public interface AEAD2022 {
                     if (logger.isTraceEnabled()) {
                         logger.trace("server EIH {}, session_id_packet_id: {},{}", ByteString.valueOf(eih), sessionId, headerBuffer.getLong(Long.BYTES));
                     }
-                    AES.decrypt(key, eih, method.keySize(), eih);
+                    AES.decrypt(key, eih, kind.keySize(), eih);
                     for (int i = 0; i < eih.length; i++) {
                         eih[i] ^= header[i];
                     }
