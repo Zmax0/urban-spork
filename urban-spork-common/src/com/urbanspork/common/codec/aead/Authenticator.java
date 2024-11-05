@@ -6,13 +6,9 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 
 import java.util.Arrays;
 
-public record Authenticator(byte[] key, CipherMethod method, NonceGenerator nonceGenerator, BytesGenerator associatedTextGenerator) {
+public record Authenticator(CipherMethod method, CipherInstance instance, NonceGenerator nonceGenerator, BytesGenerator associatedTextGenerator) {
     public Authenticator(byte[] key, CipherMethod method, NonceGenerator nonceGenerator, BytesGenerator associatedTextGenerator) {
-        int keySize = method.keySize();
-        this.key = keySize == key.length ? key : Arrays.copyOf(key, keySize);
-        this.method = method;
-        this.nonceGenerator = nonceGenerator;
-        this.associatedTextGenerator = associatedTextGenerator;
+        this(method, method.init(method.keySize() == key.length ? key : Arrays.copyOf(key, method.keySize())), nonceGenerator, associatedTextGenerator);
     }
 
     public int overhead() {
@@ -20,10 +16,10 @@ public record Authenticator(byte[] key, CipherMethod method, NonceGenerator nonc
     }
 
     public byte[] seal(byte[] in) throws InvalidCipherTextException {
-        return method.encrypt(key, nonceGenerator.generate(), associatedTextGenerator.generate(), in);
+        return instance.encrypt(nonceGenerator.generate(), associatedTextGenerator.generate(), in);
     }
 
     public byte[] open(byte[] in) throws InvalidCipherTextException {
-        return method.decrypt(key, nonceGenerator.generate(), associatedTextGenerator.generate(), in);
+        return instance.decrypt(nonceGenerator.generate(), associatedTextGenerator.generate(), in);
     }
 }

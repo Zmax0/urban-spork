@@ -1,7 +1,7 @@
 package com.urbanspork.common.codec.shadowsocks.tcp;
 
 import com.urbanspork.common.codec.CipherKind;
-import com.urbanspork.common.codec.aead.CipherMethods;
+import com.urbanspork.common.codec.aead.CipherMethod;
 import com.urbanspork.common.codec.shadowsocks.Keys;
 import com.urbanspork.common.config.ServerConfig;
 
@@ -12,12 +12,12 @@ class AeadCipherCodecs {
     static AeadCipherCodec get(ServerConfig config) {
         CipherKind kind = config.getCipher();
         Keys keys = Keys.from(kind, config.getPassword());
-        CipherMethods methods;
+        CipherMethod method;
         switch (kind) {
-            case aes_128_gcm, aead2022_blake3_aes_128_gcm -> methods = CipherMethods.AES_128_GCM;
-            case chacha20_poly1305, aead2022_blake3_chacha20_poly1305 -> methods = CipherMethods.CHACHA20_POLY1305;
-            default -> methods = CipherMethods.AES_265_GCM;
+            case aes_128_gcm, aead2022_blake3_aes_128_gcm -> method = CipherMethod.AES_128_GCM;
+            case chacha20_poly1305, aead2022_blake3_chacha20_poly1305 -> method = CipherMethod.CHACHA20_POLY1305;
+            default -> method = CipherMethod.AES_265_GCM;
         }
-        return new AeadCipherCodec(kind, methods.get(), keys);
+        return new AeadCipherCodec(kind, method, keys);
     }
 }
