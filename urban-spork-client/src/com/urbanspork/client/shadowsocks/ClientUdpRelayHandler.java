@@ -26,13 +26,15 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
     private static final Logger logger = LoggerFactory.getLogger(ClientUdpRelayHandler.class);
     private final EventLoopGroup workerGroup;
     private final InetSocketAddress relay;
-    private final UdpRelayCodec codec;
+    private final UdpRelayCodec codec; // used by outbound (client-server) channel and its lifetime controlled by inbound (local-client) channel
 
     public ClientUdpRelayHandler(ServerConfig config, EventLoopGroup workerGroup) {
         super(config, Duration.ofMinutes(10));
         this.workerGroup = workerGroup;
         this.relay = new InetSocketAddress(config.getHost(), config.getPort());
-        this.codec = new UdpRelayCodec(config, Mode.Client, ServerUserManager.empty());
+        UdpRelayCodec codec = new UdpRelayCodec(config, Mode.Client, ServerUserManager.empty());
+        codec.setAutoRelease(false);
+        this.codec = codec;
     }
 
     @Override
@@ -64,7 +66,7 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) {
         super.handlerRemoved(ctx);
-        codec.handlerRemoved(ctx);
+        codec.release();
     }
 
     private static class InboundHandler extends SimpleChannelInboundHandler<DatagramPacket> {
