@@ -53,19 +53,17 @@ import java.util.function.Consumer;
 public interface ClientTcpRelayHandler {
     Logger logger = LoggerFactory.getLogger(ClientTcpRelayHandler.class);
 
-    ChannelHandler inboundHandler();
-
-    default InboundWriter inboundWriter() {
-        return new InboundWriter(channel -> {}, channel -> {});
+    default Consumer<Channel> outboundReady(Channel inbound) {
+        return channel -> {};
     }
 
-    default Consumer<Channel> outboundWriter() {
-        return channel -> {};
+    default InboundReady inboundReady() {
+        return new InboundReady(channel -> {}, channel -> {});
     }
 
     default void connect(Channel inbound, InetSocketAddress dstAddress) {
         ServerConfig config = inbound.attr(AttributeKeys.SERVER_CONFIG).get();
-        boolean autoResponse = config.getWs() == null;
+        boolean isReadyOnceConnected = config.getWs() == null;
         InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
         new Bootstrap()
             .group(inbound.eventLoop())
@@ -76,15 +74,14 @@ public interface ClientTcpRelayHandler {
                 if (future.isSuccess()) {
                     Channel outbound = future.channel();
                     outbound.pipeline().addLast(new DefaultChannelInboundHandler(inbound)); // R → L
-                    inbound.pipeline().remove(inboundHandler());
-                    if (autoResponse) {
+                    if (isReadyOnceConnected) {
                         inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
-                        inboundWriter().success().accept(inbound);
-                        outboundWriter().accept(outbound);
+                        inboundReady().success().accept(inbound);
+                        outboundReady(inbound).accept(outbound);
                     }
                 } else {
                     logger.error("Connect proxy server {} failed", serverAddress);
-                    inboundWriter().failure().accept(inbound);
+                    inboundReady().failure().accept(inbound);
                     ChannelCloseUtils.closeOnFlush(inbound);
                 }
             });
@@ -96,7 +93,7 @@ public interface ClientTcpRelayHandler {
             protected void initChannel(Channel outbound) throws Exception {
                 addSslHandler(outbound, config);
                 if (addWebSocketHandlers(outbound, config)) {
-                    outbound.pipeline().addLast(new WebSocketCodec(inbound, config, inboundWriter(), outboundWriter()));
+                    outbound.pipeline().addLast(new WebSocketCodec(inbound, config, ClientTcpRelayHandler.this));
                     inbound.closeFuture().addListener(future -> outbound.writeAndFlush(new CloseWebSocketFrame()));
                 }
                 switch (config.getProtocol()) {
@@ -108,19 +105,17 @@ public interface ClientTcpRelayHandler {
         };
     }
 
-    record InboundWriter(Consumer<Channel> success, Consumer<Channel> failure) {}
+    record InboundReady(Consumer<Channel> success, Consumer<Channel> failure) {}
 
     class WebSocketCodec extends MessageToMessageCodec<BinaryWebSocketFrame, ByteBuf> {
         private final Channel inbound;
         private final ServerConfig config;
-        private final InboundWriter inboundWriter;
-        private final Consumer<Channel> outboundWriter;
+        private final ClientTcpRelayHandler relayHandler;
 
-        public WebSocketCodec(Channel inbound, ServerConfig config, InboundWriter inboundWriter, Consumer<Channel> outboundWriter) {
+        public WebSocketCodec(Channel inbound, ServerConfig config, ClientTcpRelayHandler relayHandler) {
             this.inbound = inbound;
             this.config = config;
-            this.inboundWriter = inboundWriter;
-            this.outboundWriter = outboundWriter;
+            this.relayHandler = relayHandler;
         }
 
         @Override
@@ -142,12 +137,12 @@ public interface ClientTcpRelayHandler {
                         ctx.channel().writeAndFlush(msg);
                     }
                 }); // L → R
-                inboundWriter.success().accept(inbound);
-                outboundWriter.accept(ctx.channel());
+                relayHandler.inboundReady().success().accept(inbound);
+                relayHandler.outboundReady(inbound).accept(ctx.channel());
             }
             if (evt == WebSocketClientProtocolHandler.ClientHandshakeStateEvent.HANDSHAKE_TIMEOUT) {
                 logger.error("Connect proxy websocket server {}:{} time out", config.getHost(), config.getPort());
-                inboundWriter.failure().accept(inbound);
+                relayHandler.inboundReady().failure().accept(inbound);
                 ChannelCloseUtils.closeOnFlush(inbound);
             }
             ctx.fireUserEventTriggered(evt);
