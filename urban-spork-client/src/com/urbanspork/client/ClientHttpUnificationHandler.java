@@ -9,6 +9,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.util.concurrent.Promise;
 
 import java.net.InetSocketAddress;
 import java.util.function.Consumer;
@@ -31,19 +32,32 @@ class ClientHttpUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> 
         if (HttpMethod.CONNECT == option.method()) {
             new HttpsRelayHandler().connect(ctx.channel(), dstAddress);
         } else {
-            new HttpRelayHandler(msg.retain()).connect(ctx.channel(), dstAddress);
+            ctx.pipeline().remove(this).addLast(new HttpRelayHandler(ctx.channel(), dstAddress)).fireChannelRead(msg.retain());
         }
     }
 
-    private record HttpRelayHandler(ByteBuf msg) implements ClientTcpRelayHandler {
+    private static class HttpRelayHandler extends SimpleChannelInboundHandler<ByteBuf> {
+        private Promise<Channel> promise;
+
         @Override
-        public ChannelHandler inboundHandler() {
-            return INSTANCE;
+        public void handlerAdded(ChannelHandlerContext ctx) {
+            promise = ctx.executor().newPromise();
+        }
+
+        HttpRelayHandler(Channel channel, InetSocketAddress dstAddress) {
+            super(false);
+            new ClientTcpRelayHandler() {
+                @Override
+                public Consumer<Channel> outboundReady(Channel inbound) {
+                    inbound.pipeline().remove(HttpRelayHandler.this);
+                    return c -> promise.setSuccess(c);
+                }
+            }.connect(channel, dstAddress);
         }
 
         @Override
-        public Consumer<Channel> outboundWriter() {
-            return channel -> channel.writeAndFlush(msg);
+        protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
+            promise.addListener(f -> ((Channel) f.get()).writeAndFlush(msg));
         }
     }
 
@@ -52,13 +66,14 @@ class ClientHttpUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> 
         private static final byte[] FAILED = "HTTP/1.1 500 Internal Server Error\r\n\r\n".getBytes();
 
         @Override
-        public ChannelHandler inboundHandler() {
-            return INSTANCE;
+        public Consumer<Channel> outboundReady(Channel inbound) {
+            inbound.pipeline().remove(INSTANCE);
+            return channel -> {};
         }
 
         @Override
-        public InboundWriter inboundWriter() {
-            return new InboundWriter(
+        public InboundReady inboundReady() {
+            return new InboundReady(
                 channel -> channel.writeAndFlush(Unpooled.wrappedBuffer(SUCCESS)),
                 channel -> channel.writeAndFlush(Unpooled.wrappedBuffer(FAILED))
             );
