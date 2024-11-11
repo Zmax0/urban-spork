@@ -118,6 +118,8 @@ Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-
 
 Java 21+
 
+Rust 1.69+
+
 ### Build Output
 
 server
