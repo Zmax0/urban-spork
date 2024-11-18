@@ -228,7 +228,7 @@ public interface AEAD2022 {
             if (CipherKind.aead2022_blake3_aes_128_gcm == kind || CipherKind.aead2022_blake3_aes_256_gcm == kind) {
                 return 0;
             }
-            if (CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
+            if (CipherKind.aead2022_blake3_chacha8_poly1305 == kind || CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
                 return 24;
             }
             throw new IllegalArgumentException(kind + " is not an AEAD 2022 cipher");
@@ -239,7 +239,7 @@ public interface AEAD2022 {
         }
 
         static void encodePacket(CipherKind kind, UdpCipher cipher, byte[] key, int eihLength, ByteBuf in, ByteBuf out) throws InvalidCipherTextException {
-            if (CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
+            if (CipherKind.aead2022_blake3_chacha8_poly1305 == kind || CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
                 byte[] nonce = new byte[getNonceLength(kind)];
                 in.readBytes(nonce);
                 byte[] encrypting = new byte[in.readableBytes()];
@@ -262,7 +262,7 @@ public interface AEAD2022 {
         }
 
         static ByteBuf decodePacket(CipherKind kind, CipherMethod method, Control control, ServerUserManager userManager, byte[] key, ByteBuf in) throws InvalidCipherTextException {
-            if (CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
+            if (CipherKind.aead2022_blake3_chacha8_poly1305 == kind || CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
                 byte[] nonce = new byte[getNonceLength(kind)];
                 in.readBytes(nonce);
                 long sessionId = in.getLong(0);

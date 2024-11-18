@@ -1,6 +1,6 @@
 package com.urbanspork.common.codec.aead;
 
-import com.urbanspork.jni.xchacha20poly1305.Cipher;
+import com.urbanspork.jni.AeadCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.AEADCipher;
@@ -14,8 +14,11 @@ import java.util.Arrays;
 public enum CipherMethod {
     AES_128_GCM(16, 12, 16),
     AES_265_GCM(32, 12, 16),
+    CHACHA8_POLY1305(32, 12, 16),
     CHACHA20_POLY1305(32, 12, 16),
-    XCHACHA20_POLY1305(32, 24, 16);
+    XCHACHA8_POLY1305(32, 24, 16),
+    XCHACHA20_POLY1305(32, 24, 16),
+    ;
 
     private final int keySize;
     private final int nonceSize;
@@ -40,32 +43,13 @@ public enum CipherMethod {
     }
 
     public CipherInstance init(byte[] key) {
-        switch (this) {
-            case AES_128_GCM, AES_265_GCM -> {
-                return new BouncyCastleCipherInstance(GCMBlockCipher.newInstance(AESEngine.newInstance()), key);
-            }
-            case XCHACHA20_POLY1305 -> {
-                return new CipherInstance() {
-                    private final Cipher cipher = Cipher.init(key);
-
-                    @Override
-                    public byte[] encrypt(byte[] nonce, byte[] aad, byte[] in) {
-                        byte[] out = Arrays.copyOf(in, in.length + tagSize);
-                        cipher.encrypt(nonce, aad, out);
-                        return out;
-                    }
-
-                    @Override
-                    public byte[] decrypt(byte[] nonce, byte[] aad, byte[] in) {
-                        cipher.decrypt(nonce, aad, in);
-                        return Arrays.copyOfRange(in, 0, in.length - tagSize);
-                    }
-                };
-            }
-            default -> {
-                return new BouncyCastleCipherInstance(new ChaCha20Poly1305(), key);
-            }
-        }
+        return switch (this) {
+            case AES_128_GCM, AES_265_GCM -> new BouncyCastleCipherInstance(GCMBlockCipher.newInstance(AESEngine.newInstance()), key);
+            case CHACHA8_POLY1305 -> new JniCipherInstance(com.urbanspork.jni.chacha8poly1305.Cipher.init(key), tagSize);
+            case XCHACHA8_POLY1305 -> new JniCipherInstance(com.urbanspork.jni.xchacha8poly1305.Cipher.init(key), tagSize);
+            case XCHACHA20_POLY1305 -> new JniCipherInstance(com.urbanspork.jni.xchacha20poly1305.Cipher.init(key), tagSize);
+            default -> new BouncyCastleCipherInstance(new ChaCha20Poly1305(), key);
+        };
     }
 
     private static class BouncyCastleCipherInstance implements CipherInstance {
@@ -91,6 +75,21 @@ public enum CipherMethod {
             byte[] out = new byte[cipher.getOutputSize(in.length)];
             cipher.doFinal(out, cipher.processBytes(in, 0, in.length, out, 0));
             return out;
+        }
+    }
+
+    private record JniCipherInstance(AeadCipher cipher, int tagSize) implements CipherInstance {
+        @Override
+        public byte[] encrypt(byte[] nonce, byte[] aad, byte[] in) {
+            byte[] out = Arrays.copyOf(in, in.length + tagSize);
+            cipher.encrypt(nonce, aad, out);
+            return out;
+        }
+
+        @Override
+        public byte[] decrypt(byte[] nonce, byte[] aad, byte[] in) {
+            cipher.decrypt(nonce, aad, in);
+            return Arrays.copyOfRange(in, 0, in.length - tagSize);
         }
     }
 }

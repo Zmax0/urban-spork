@@ -10,7 +10,7 @@ public class UdpCipher {
     private final CipherInstance cache;
 
     public UdpCipher(CipherMethod method, byte[] key) {
-        if (CipherMethod.XCHACHA20_POLY1305 == method) {
+        if (CipherMethod.XCHACHA8_POLY1305 == method || CipherMethod.XCHACHA20_POLY1305 == method) {
             this.method = null;
             this.key = null;
             this.cache = method.init(key);
