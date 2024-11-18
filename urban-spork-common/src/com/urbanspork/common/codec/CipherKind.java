@@ -12,6 +12,7 @@ public enum CipherKind {
     chacha20_poly1305(32),
     aead2022_blake3_aes_128_gcm("2022-blake3-aes-128-gcm", 16, true, true),
     aead2022_blake3_aes_256_gcm("2022-blake3-aes-256-gcm", 32, true, true),
+    aead2022_blake3_chacha8_poly1305("2022-blake3-chacha8-poly1305", 32, true, false),
     aead2022_blake3_chacha20_poly1305("2022-blake3-chacha20-poly1305", 32, true, false),
     ;
 

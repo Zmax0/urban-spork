@@ -1,4 +1,4 @@
-package com.urbanspork.jni.xchacha20poly1305;
+package com.urbanspork.jni.chacha8poly1305;
 
 import com.urbanspork.jni.CipherLoader;
 

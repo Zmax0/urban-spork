@@ -34,9 +34,12 @@ A network tool for improved privacy and security
 | chacha20-poly1305                 |   `C` `S`   | `C` `S` |
 | 2022-blake3-aes-128-gcm           |   `C` `S`   |         |
 | 2022-blake3-aes-256-gcm           |   `C` `S`   |         |
+| 2022-blake3-chacha8-poly1305 (*)  |   `C` `S`   |         |
 | 2022-blake3-chacha20-poly1305 (*) |   `C` `S`   |         |
 
 `C` for client `S` for server
+
+`2022-blake3-chacha8-poly1305` implemented via JNI, has only been tested on the amd64 arch
 
 `2022-blake3-chacha20-poly1305` UDP part, implemented via JNI, has only been tested on the amd64 arch
 

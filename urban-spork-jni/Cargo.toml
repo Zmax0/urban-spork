@@ -6,10 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "xchacha20poly1305"
+name = "ciphers"
 crate-type = ["cdylib"]
-path = "src/xchacha20poly1305.rs"
+path = "src/ciphers.rs"
 
 [dependencies]
 jni = "0.21.1"
-chacha20poly1305 = "0.10.1"
+chacha20poly1305 = { version = "0.10.1", features = ["reduced-round"] }
