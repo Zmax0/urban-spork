@@ -228,7 +228,7 @@ public interface AEAD2022 {
             if (CipherKind.aead2022_blake3_aes_128_gcm == kind || CipherKind.aead2022_blake3_aes_256_gcm == kind) {
                 return 0;
             }
-            if (CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
+            if (CipherKind.aead2022_blake3_chacha8_poly1305 == kind || CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
                 return 24;
             }
             throw new IllegalArgumentException(kind + " is not an AEAD 2022 cipher");
@@ -239,7 +239,7 @@ public interface AEAD2022 {
         }
 
         static void encodePacket(CipherKind kind, UdpCipher cipher, byte[] key, int eihLength, ByteBuf in, ByteBuf out) throws InvalidCipherTextException {
-            if (CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
+            if (CipherKind.aead2022_blake3_chacha8_poly1305 == kind || CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
                 byte[] nonce = new byte[getNonceLength(kind)];
                 in.readBytes(nonce);
                 byte[] encrypting = new byte[in.readableBytes()];
@@ -250,7 +250,7 @@ public interface AEAD2022 {
                 byte[] header = new byte[16];
                 in.readBytes(header);
                 byte[] nonce = Arrays.copyOfRange(header, 4, 16);
-                AES.encrypt(key, header, cipher.method().keySize(), header);
+                AES.encrypt(key, header, kind.keySize(), header);
                 out.writeBytes(header);
                 if (eihLength > 0) {
                     in.readBytes(out, eihLength);
@@ -262,7 +262,7 @@ public interface AEAD2022 {
         }
 
         static ByteBuf decodePacket(CipherKind kind, CipherMethod method, Control control, ServerUserManager userManager, byte[] key, ByteBuf in) throws InvalidCipherTextException {
-            if (CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
+            if (CipherKind.aead2022_blake3_chacha8_poly1305 == kind || CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
                 byte[] nonce = new byte[getNonceLength(kind)];
                 in.readBytes(nonce);
                 long sessionId = in.getLong(0);
@@ -274,7 +274,7 @@ public interface AEAD2022 {
             } else {
                 byte[] header = new byte[16];
                 in.readBytes(header);
-                AES.decrypt(key, header, method.keySize(), header);
+                AES.decrypt(key, header, kind.keySize(), header);
                 ByteBuf headerBuffer = Unpooled.wrappedBuffer(header);
                 long sessionId = headerBuffer.getLong(0);
                 UdpCipher cipher;
@@ -285,7 +285,7 @@ public interface AEAD2022 {
                     if (logger.isTraceEnabled()) {
                         logger.trace("server EIH {}, session_id_packet_id: {},{}", ByteString.valueOf(eih), sessionId, headerBuffer.getLong(Long.BYTES));
                     }
-                    AES.decrypt(key, eih, method.keySize(), eih);
+                    AES.decrypt(key, eih, kind.keySize(), eih);
                     for (int i = 0; i < eih.length; i++) {
                         eih[i] ^= header[i];
                     }

@@ -1,7 +1,6 @@
 package com.urbanspork.common.protocol.vmess.aead;
 
 import com.urbanspork.common.codec.aead.CipherMethod;
-import com.urbanspork.common.codec.aead.CipherMethods;
 import com.urbanspork.common.protocol.vmess.VMess;
 import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
@@ -9,7 +8,6 @@ import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
 public class Encrypt {
-
     private static final byte[] KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY = "VMess Header AEAD Key_Length".getBytes();
     private static final byte[] KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_IV = "VMess Header AEAD Nonce_Length".getBytes();
     private static final byte[] KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_KEY = "VMess Header AEAD Key".getBytes();
@@ -22,16 +20,14 @@ public class Encrypt {
         byte[] connectionNonce = Dice.rollBytes(8);
         byte[] aeadPayloadLengthSerializedByte = new byte[Short.BYTES];
         Unpooled.wrappedBuffer(aeadPayloadLengthSerializedByte).setShort(0, header.length);
-        CipherMethod cipher = CipherMethods.AES_128_GCM.get();
-        int nonceSize = cipher.nonceSize();
-        byte[] payloadHeaderLengthAEADEncrypted = cipher.encrypt(
-            KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY, generatedAuthID, connectionNonce),
+        CipherMethod method = CipherMethod.AES_128_GCM;
+        int nonceSize = method.nonceSize();
+        byte[] payloadHeaderLengthAEADEncrypted = method.init(KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY, generatedAuthID, connectionNonce)).encrypt(
             KDF.kdf(key, nonceSize, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_IV, generatedAuthID, connectionNonce),
             generatedAuthID,
             aeadPayloadLengthSerializedByte
         );
-        byte[] payloadHeaderAEADEncrypted = cipher.encrypt(
-            KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_KEY, generatedAuthID, connectionNonce),
+        byte[] payloadHeaderAEADEncrypted = method.init(KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_KEY, generatedAuthID, connectionNonce)).encrypt(
             KDF.kdf(key, nonceSize, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_IV, generatedAuthID, connectionNonce),
             generatedAuthID,
             header
@@ -43,8 +39,8 @@ public class Encrypt {
     }
 
     public static ByteBuf openVMessAEADHeader(byte[] key, ByteBuf in) throws InvalidCipherTextException {
-        CipherMethod cipher = CipherMethods.AES_128_GCM.get();
-        int tagSize = cipher.tagSize();
+        CipherMethod method = CipherMethod.AES_128_GCM;
+        int tagSize = method.tagSize();
         if (in.readableBytes() < 16 + 2 + tagSize + 8 + tagSize) {
             return Unpooled.EMPTY_BUFFER;
         }
@@ -55,9 +51,8 @@ public class Encrypt {
         in.readBytes(authid);
         in.readBytes(payloadHeaderLengthAEADEncrypted);
         in.readBytes(nonce);
-        int nonceSize = cipher.nonceSize();
-        byte[] decryptedAEADHeaderLengthPayloadResult = cipher.decrypt(
-            KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY, authid, nonce),
+        int nonceSize = method.nonceSize();
+        byte[] decryptedAEADHeaderLengthPayloadResult = method.init(KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY, authid, nonce)).decrypt(
             KDF.kdf(key, nonceSize, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_IV, authid, nonce),
             authid,
             payloadHeaderLengthAEADEncrypted
@@ -69,8 +64,7 @@ public class Encrypt {
         }
         byte[] payloadHeaderAEADEncrypted = new byte[length + tagSize];
         in.readBytes(payloadHeaderAEADEncrypted);
-        byte[] decryptedAEADHeaderPayloadR = cipher.decrypt(
-            KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_KEY, authid, nonce),
+        byte[] decryptedAEADHeaderPayloadR = method.init(KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_KEY, authid, nonce)).decrypt(
             KDF.kdf(key, nonceSize, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_IV, authid, nonce),
             authid,
             payloadHeaderAEADEncrypted

@@ -36,6 +36,7 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Datagra
     private final AeadCipherCodec cipher;
     private final LruCache<SocketAddress, Control> netMap;
     private final LruCache<Long, Filter> filterMap = new LruCache<>(10240, Duration.ofMinutes(5), (k, v) -> logger.trace("filter map {} expire", k));
+    private boolean autoRelease = true;
 
     public UdpRelayCodec(ServerConfig config, Mode mode, ServerUserManager userManager) {
         this.mode = mode;
@@ -46,6 +47,10 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Datagra
         } else {
             netMap = null;
         }
+    }
+
+    public void setAutoRelease(boolean autoRelease) {
+        this.autoRelease = autoRelease;
     }
 
     @Override
@@ -102,6 +107,12 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Datagra
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) {
+        if (autoRelease) {
+            release();
+        }
+    }
+
+    public void release() {
         filterMap.release();
         if (netMap != null) {
             netMap.release();

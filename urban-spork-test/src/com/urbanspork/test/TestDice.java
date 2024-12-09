@@ -49,7 +49,7 @@ public interface TestDice {
     private static String rollAEAD2022Password(CipherKind kind) {
         return switch (kind) {
             case aead2022_blake3_aes_128_gcm -> Base64.getEncoder().encodeToString(Dice.rollBytes(16));
-            case aead2022_blake3_aes_256_gcm, aead2022_blake3_chacha20_poly1305 -> Base64.getEncoder().encodeToString(Dice.rollBytes(32));
+            case aead2022_blake3_aes_256_gcm, aead2022_blake3_chacha8_poly1305, aead2022_blake3_chacha20_poly1305 -> Base64.getEncoder().encodeToString(Dice.rollBytes(32));
             default -> throw new UnsupportedOperationException();
         };
     }
