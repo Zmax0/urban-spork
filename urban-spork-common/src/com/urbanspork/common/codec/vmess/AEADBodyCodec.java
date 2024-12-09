@@ -62,9 +62,9 @@ public class AEADBodyCodec {
 
     private static CipherMethod getAEADCipherCodec(SecurityType security) {
         if (SecurityType.CHACHA20_POLY1305 == security) {
-            return CipherMethods.CHACHA20_POLY1305.get();
+            return CipherMethod.CHACHA20_POLY1305;
         } else {
-            return CipherMethods.AES_128_GCM.get();
+            return CipherMethod.AES_128_GCM;
         }
     }
 

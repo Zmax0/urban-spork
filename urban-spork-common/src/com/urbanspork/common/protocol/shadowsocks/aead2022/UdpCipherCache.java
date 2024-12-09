@@ -20,7 +20,7 @@ public enum UdpCipherCache {
         return cache.computeIfAbsent(
             new Key(kind, key, sessionId),
             k -> {
-                if (kind == CipherKind.aead2022_blake3_chacha20_poly1305) {
+                if (kind == CipherKind.aead2022_blake3_chacha8_poly1305 || kind == CipherKind.aead2022_blake3_chacha20_poly1305) {
                     return new UdpCipher(method, key);
                 } else {
                     return new UdpCipher(method, AEAD2022.UDP.sessionSubkey(key, sessionId));
