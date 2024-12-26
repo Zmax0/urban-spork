@@ -39,7 +39,8 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
 
     @Override
     protected Object convertToWrite(DatagramPacketWrapper msg) {
-        return new DatagramPacketWrapper(new DatagramPacket(msg.packet().content(), msg.proxy()), relay);
+        DatagramPacket packet = msg.packet();
+        return new DatagramPacketWrapper(new DatagramPacket(packet.content(), msg.proxy(), packet.sender()), relay);
     }
 
     @Override
