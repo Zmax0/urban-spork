@@ -6,10 +6,12 @@ import com.urbanspork.common.codec.shadowsocks.tcp.Context;
 import com.urbanspork.common.codec.shadowsocks.udp.UdpRelayCodec;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.protocol.Protocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -17,15 +19,20 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.incubator.codec.quic.QuicServerCodecBuilder;
+import io.netty.incubator.codec.quic.QuicSslContext;
+import io.netty.incubator.codec.quic.QuicSslContextBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class Server {
 
@@ -106,9 +113,45 @@ public class Server {
                 })
                 .bind(config.getPort()).sync().addListener(future -> logger.info("Startup upd server => {}", config)).channel();
             return Optional.of((DatagramChannel) channel);
+        } else if (config.quicEnabled()) {
+            return startupQuic(bossGroup, context);
         } else {
             return Optional.empty();
         }
+    }
+
+    private static Optional<DatagramChannel> startupQuic(EventLoopGroup boosGroup, ServerInitializationContext context) throws InterruptedException {
+        ServerConfig config = context.config();
+        SslSetting sslSetting = config.getSsl();
+        if (sslSetting == null) {
+            return Optional.empty();
+        }
+        QuicSslContext quicSslContext = QuicSslContextBuilder.forServer(new File(sslSetting.getKeyFile()), sslSetting.getKeyPassword(), new File(sslSetting.getCertificateFile()))
+            .applicationProtocols("http/1.1").build();
+        ChannelHandler codec = new QuicServerCodecBuilder()
+            .sslContext(quicSslContext)
+            .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
+            .initialMaxData(0xfffff)
+            .initialMaxStreamDataBidirectionalLocal(0xfffff)
+            .initialMaxStreamDataBidirectionalRemote(0xfffff)
+            .initialMaxStreamsBidirectional(100)
+            .initialMaxStreamsUnidirectional(100)
+            .activeMigration(true)
+            .streamHandler(new ChannelInitializer<>() {
+                @Override
+                protected void initChannel(Channel ch) {
+                    ServerInitializer.addProtocolHandlers(ch, context);
+                }
+            })
+            .build();
+        DatagramChannel channel = (DatagramChannel) new Bootstrap()
+            .group(boosGroup)
+            .channel(NioDatagramChannel.class)
+            .handler(codec)
+            .bind(config.getPort())
+            .sync()
+            .channel();
+        return Optional.of(channel);
     }
 
     public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp) implements Closeable {

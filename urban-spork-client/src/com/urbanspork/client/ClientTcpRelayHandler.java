@@ -22,6 +22,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -35,6 +36,11 @@ import io.netty.handler.codec.socks.SocksCmdType;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.incubator.codec.quic.QuicChannel;
+import io.netty.incubator.codec.quic.QuicClientCodecBuilder;
+import io.netty.incubator.codec.quic.QuicSslContext;
+import io.netty.incubator.codec.quic.QuicSslContextBuilder;
+import io.netty.incubator.codec.quic.QuicStreamChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +54,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public interface ClientTcpRelayHandler {
@@ -63,13 +70,21 @@ public interface ClientTcpRelayHandler {
 
     default void connect(Channel inbound, InetSocketAddress dstAddress) {
         ServerConfig config = inbound.attr(AttributeKeys.SERVER_CONFIG).get();
+        if (config.quicEnabled()) {
+            quic(inbound, dstAddress, config);
+        } else {
+            tcp(inbound, dstAddress, config);
+        }
+    }
+
+    private void tcp(Channel inbound, InetSocketAddress dst, ServerConfig config) {
         boolean isReadyOnceConnected = config.getWs() == null;
         InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
         new Bootstrap()
             .group(inbound.eventLoop())
             .channel(inbound.getClass())
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
-            .handler(getOutboundChannelHandler(inbound, dstAddress, config))
+            .handler(getOutboundChannelHandler(inbound, dst, config))
             .connect(serverAddress).addListener((ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
                     Channel outbound = future.channel();
@@ -80,11 +95,55 @@ public interface ClientTcpRelayHandler {
                         outboundReady(inbound).accept(outbound);
                     }
                 } else {
-                    logger.error("Connect proxy server {} failed", serverAddress);
-                    inboundReady().failure().accept(inbound);
-                    ChannelCloseUtils.closeOnFlush(inbound);
+                    logger.error("connect proxy server {} failed", serverAddress, future.cause());
+                    handleFailure(inbound);
                 }
             });
+    }
+
+    private void quic(Channel inbound, InetSocketAddress dst, ServerConfig config) {
+        SslSetting sslSetting = config.getSsl();
+        QuicSslContext context = QuicSslContextBuilder.forClient().trustManager(new File(sslSetting.getCertificateFile())).applicationProtocols().applicationProtocols("http/1.1").build();
+        ChannelHandler codec = new QuicClientCodecBuilder()
+            .sslContext(context)
+            .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
+            .initialMaxData(0xfffff)
+            .initialMaxStreamDataBidirectionalLocal(0xfffff)
+            .build();
+        new Bootstrap().group(inbound.eventLoop()).channel(NioDatagramChannel.class).handler(codec).bind(0).addListener((ChannelFutureListener) f0 -> {
+            InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
+            Channel ch0 = f0.channel();
+            QuicChannel.newBootstrap(ch0).remoteAddress(serverAddress).streamHandler(new ChannelInboundHandlerAdapter() {}).connect().addListener(f1 -> {
+                    if (f1.isSuccess()) {
+                        QuicChannel quicChannel = (QuicChannel) f1.get();
+                        quicChannel.newStreamBootstrap().handler(
+                            new ChannelInitializer<>() {
+                                @Override
+                                protected void initChannel(Channel ch) {
+                                    addOutboundProtocolHandler(dst, config, ch);
+                                }
+                            }
+                        ).create().addListener(f2 -> {
+                            if (f2.isSuccess()) {
+                                QuicStreamChannel outbound = (QuicStreamChannel) f2.get();
+                                outbound.pipeline().addLast(new DefaultChannelInboundHandler(inbound)); // R → L
+                                inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
+                                inboundReady().success().accept(inbound);
+                                outboundReady(inbound).accept(outbound);
+                            } else {
+                                logger.error("create quic stream failed", f2.cause());
+                                quicChannel.close();
+                                handleFailure(inbound);
+                            }
+                        });
+                    } else {
+                        logger.error("connect proxy server {} failed", serverAddress, f1.cause());
+                        ch0.close();
+                        handleFailure(inbound);
+                    }
+                }
+            );
+        });
     }
 
     private ChannelHandler getOutboundChannelHandler(Channel inbound, InetSocketAddress address, ServerConfig config) {
@@ -96,13 +155,22 @@ public interface ClientTcpRelayHandler {
                     outbound.pipeline().addLast(new WebSocketCodec(inbound, config, ClientTcpRelayHandler.this));
                     inbound.closeFuture().addListener(future -> outbound.writeAndFlush(new CloseWebSocketFrame()));
                 }
-                switch (config.getProtocol()) {
-                    case vmess -> outbound.pipeline().addLast(new ClientAeadCodec(config.getCipher(), address, config.getPassword()));
-                    case trojan -> outbound.pipeline().addLast(new ClientHeaderEncoder(config.getPassword(), address, SocksCmdType.CONNECT.byteValue()));
-                    default -> outbound.pipeline().addLast(new TcpRelayCodec(new Context(), config, address, Mode.Client, ServerUserManager.empty()));
-                }
+                addOutboundProtocolHandler(address, config, outbound);
             }
         };
+    }
+
+    private static void addOutboundProtocolHandler(InetSocketAddress dstAddress, ServerConfig config, Channel outbound) {
+        switch (config.getProtocol()) {
+            case vmess -> outbound.pipeline().addLast(new ClientAeadCodec(config.getCipher(), dstAddress, config.getPassword()));
+            case trojan -> outbound.pipeline().addLast(new ClientHeaderEncoder(config.getPassword(), dstAddress, SocksCmdType.CONNECT.byteValue()));
+            default -> outbound.pipeline().addLast(new TcpRelayCodec(new Context(), config, dstAddress, Mode.Client, ServerUserManager.empty()));
+        }
+    }
+
+    private void handleFailure(Channel inbound) {
+        inboundReady().failure().accept(inbound);
+        ChannelCloseUtils.closeOnFlush(inbound);
     }
 
     record InboundReady(Consumer<Channel> success, Consumer<Channel> failure) {}

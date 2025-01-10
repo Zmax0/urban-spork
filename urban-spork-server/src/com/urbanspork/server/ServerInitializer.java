@@ -39,6 +39,11 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
         ServerConfig config = context.config();
         addSslHandler(ch, config);
         addWebSocketHandlers(ch, config);
+        addProtocolHandlers(ch, context);
+    }
+
+    static void addProtocolHandlers(Channel ch, ServerInitializationContext context) {
+        ServerConfig config = context.config();
         switch (config.getProtocol()) {
             case vmess -> ch.pipeline().addLast(new ServerAeadCodec(config), new ExceptionHandler(config), new ServerRelayHandler(config));
             case trojan -> ch.pipeline().addLast(new ServerHeaderDecoder(config), new ExceptionHandler(config));

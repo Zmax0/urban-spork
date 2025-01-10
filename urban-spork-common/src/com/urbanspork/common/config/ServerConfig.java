@@ -145,4 +145,8 @@ public class ServerConfig {
     public boolean udpEnabled() {
         return transport != null && transport.length != 0 && Arrays.stream(transport).anyMatch(t -> Transport.UDP == t);
     }
+
+    public boolean quicEnabled() {
+        return transport != null && transport.length != 0 && Arrays.stream(transport).anyMatch(t -> Transport.QUIC == t);
+    }
 }
