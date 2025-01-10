@@ -8,7 +8,7 @@ A network tool for improved privacy and security
 
 ### Local
 
-- http
+- http(s)
 - socks5
 
 ### Transport
@@ -19,11 +19,22 @@ A network tool for improved privacy and security
 |   `tcp`    |     `tls`     |      ✔      |   ✔   |   ✔    |
 |   `tcp`    |     `ws`      |      ✔      |   ✔   |        |
 |   `tcp`    |     `wss`     |      ✔      |   ✔   |   ✔    |
+|   `tcp`    |    `quic`     |      ✔      |   ✔   |   ✔    |
 |   `udp`    |     `udp`     |      ✔      |       |        |
 |   `udp`    |     `tcp`     |             |   ✔   |        |
 |   `udp`    |     `tls`     |             |   ✔   |   ✔    |
 |   `udp`    |     `ws`      |             |   ✔   |        |
 |   `udp`    |     `wss`     |             |   ✔   |   ✔    |
+
+#### Priority
+
+client
+
+- `quic` > `tcp` | `tls` | `ws` | `wss`
+
+server
+
+- `shadowsocks`: `udp` > `quic`
 
 ### Ciphers
 
@@ -88,7 +99,7 @@ put *config.json* file into the unpacked folder before running server
 
 > `cipher`: see *Ciphers*
 
-> `transport`: "udp" | "tcp"
+> `transport`: "udp" | "tcp" | "quic"
 
 > `packetEncoding`: "None" | "Packet"
 
@@ -112,6 +123,14 @@ Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-
 > > `header`: the header to be sent in HTTP request, should be key-value pairs in clear-text string format
 
 > > `path`: the HTTP path for the websocket request
+
+> `quic`: (OPTIONAL) QUIC specific configurations
+
+> > `certificateFile`: certificate file
+
+> > `keyFile`: private key file for encryption
+
+> > `keyPassword`: password of the private key file
 
 ## Build
 

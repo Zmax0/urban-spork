@@ -43,10 +43,7 @@ public class Client {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         GlobalChannelTrafficShapingHandler traffic = new GlobalChannelTrafficShapingHandler(workerGroup);
         ClientInitializationContext context = new ClientInitializationContext(config, traffic);
-        String host = config.getHost();
-        if (host == null) {
-            host = InetAddress.getLoopbackAddress().getHostName();
-        }
+        String host = config.getHost() == null ? InetAddress.getLoopbackAddress().getHostName() : config.getHost();
         try {
             new ServerBootstrap().group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
@@ -72,7 +69,7 @@ public class Client {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
-            logger.error("Launch client failed", e);
+            logger.error("Launch client failed {}:{}", host, config.getPort(), e);
             promise.completeExceptionally(e);
         } finally {
             traffic.trafficCounter().stop();
@@ -82,7 +79,8 @@ public class Client {
     }
 
     private static DatagramChannel launchUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ClientInitializationContext context) throws InterruptedException {
-        ServerConfig current = context.config().getCurrent();
+        ClientConfig config = context.config();
+        ServerConfig current = config.getCurrent();
         ChannelHandler udpTransportHandler;
         if (Protocol.vmess == current.getProtocol()) {
             udpTransportHandler = new com.urbanspork.client.vmess.ClientUdpOverTcpHandler(current, workerGroup);
@@ -91,10 +89,7 @@ public class Client {
         } else {
             udpTransportHandler = new ClientUdpRelayHandler(current, workerGroup);
         }
-        String host = context.config().getHost();
-        if (host == null) {
-            host = InetAddress.getLoopbackAddress().getHostName();
-        }
+        String host = config.getHost() == null ? InetAddress.getLoopbackAddress().getHostName() : config.getHost();
         return (DatagramChannel) new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {
                 @Override
@@ -107,7 +102,7 @@ public class Client {
                     );
                 }
             })
-            .bind(host, context.config().getPort()).sync().channel();
+            .bind(host, config.getPort()).sync().channel();
     }
 
     public record Instance(ServerSocketChannel tcp, DatagramChannel udp, TrafficCounter traffic) implements Closeable {

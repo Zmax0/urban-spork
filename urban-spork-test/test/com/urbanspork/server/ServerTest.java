@@ -2,6 +2,7 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTest;
+import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.transport.Transport;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
@@ -45,6 +46,20 @@ class ServerTest {
         CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
         Server.launch(configs, promise);
         Assertions.assertTrue(promise.isCompletedExceptionally());
+    }
+
+    @Test
+    void launchEmptyQUIC() throws ExecutionException, InterruptedException, TimeoutException {
+        ServerConfig quic = ServerConfigTest.testConfig(0);
+        quic.setProtocol(Protocol.trojan);
+        quic.setTransport(new Transport[]{Transport.QUIC});
+        CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
+        try (ExecutorService service = Executors.newSingleThreadExecutor()) {
+            Future<?> future = service.submit(() -> Server.launch(Collections.singletonList(quic), promise));
+            List<Server.Instance> res = promise.get(1, TimeUnit.SECONDS);
+            Assertions.assertEquals(1, res.size());
+            future.cancel(true);
+        }
     }
 
     @Test
