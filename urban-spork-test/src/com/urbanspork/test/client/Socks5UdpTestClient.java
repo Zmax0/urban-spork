@@ -39,8 +39,8 @@ public class Socks5UdpTestClient extends TestClientTemplate {
 
     private void launch() throws InterruptedException, ExecutionException, IOException {
         InetSocketAddress proxyAddress = new InetSocketAddress(proxyHost, proxyPort);
-        InetSocketAddress dstAddress1 = new InetSocketAddress(hostname, SimpleEchoTestServer.PORT);
-        InetSocketAddress dstAddress2 = new InetSocketAddress(hostname, DelayedEchoTestServer.PORT);
+        InetSocketAddress dstAddress1 = new InetSocketAddress(dstAddress, SimpleEchoTestServer.PORT);
+        InetSocketAddress dstAddress2 = new InetSocketAddress(dstAddress, DelayedEchoTestServer.PORT);
         EventLoopGroup group = new NioEventLoopGroup();
         HandshakeResult<Socks5CommandResponse> result1 = Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress1).await().get();
         HandshakeResult<Socks5CommandResponse> result2 = Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress2).await().get();
