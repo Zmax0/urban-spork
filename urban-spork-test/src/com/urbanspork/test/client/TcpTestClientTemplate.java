@@ -28,7 +28,7 @@ abstract class TcpTestClientTemplate<T> extends TestClientTemplate {
 
     protected void launch() throws IOException, ExecutionException, InterruptedException {
         InetSocketAddress proxyAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), proxyPort);
-        InetSocketAddress dstAddress = new InetSocketAddress(hostname, HttpTestServer.PORT);
+        InetSocketAddress dstAddress = new InetSocketAddress(this.dstAddress, HttpTestServer.PORT);
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         logger.info("Enter text (quit to end)");
         for (; ; ) {
