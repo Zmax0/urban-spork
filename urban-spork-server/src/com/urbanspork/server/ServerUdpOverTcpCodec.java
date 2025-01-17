@@ -2,6 +2,7 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.MessageToMessageCodec;
@@ -25,7 +26,11 @@ class ServerUdpOverTcpCodec extends MessageToMessageCodec<ByteBuf, DatagramPacke
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
-        InetSocketAddress sender = (InetSocketAddress) ctx.channel().remoteAddress();
-        out.add(new DatagramPacket(msg.retain(), address, sender));
+        Channel channel = ctx.channel();
+        if (channel.remoteAddress() instanceof InetSocketAddress sender) {
+            out.add(new DatagramPacket(msg.retain(), address, sender));
+        } else {
+            out.add(new DatagramPacket(msg.retain(), address));
+        }
     }
 }

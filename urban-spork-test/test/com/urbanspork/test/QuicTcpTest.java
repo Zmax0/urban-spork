@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-class QuicTest extends TcpTestTemplate {
+class QuicTcpTest extends TcpTestTemplate {
     private static final Transport[] TRANSPORTS = new Transport[]{Transport.QUIC};
 
     @ParameterizedTest

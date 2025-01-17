@@ -21,8 +21,8 @@ class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks5Comman
             }
 
             @Override
-            public InboundReady inboundReady() {
-                return new InboundReady(
+            public ClientRelayHandler.InboundReady inboundReady() {
+                return new ClientRelayHandler.InboundReady(
                     c -> c.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, request.dstAddrType(), request.dstAddr(), request.dstPort())),
                     c -> c.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()))
                 );

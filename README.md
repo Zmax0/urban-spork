@@ -19,12 +19,15 @@ A network tool for improved privacy and security
 |   `tcp`    |     `tls`     |      ✔      |   ✔   |   ✔    |
 |   `tcp`    |     `ws`      |      ✔      |   ✔   |        |
 |   `tcp`    |     `wss`     |      ✔      |   ✔   |   ✔    |
-|   `tcp`    |    `quic`     |      ✔      |   ✔   |   ✔    |
+|   `tcp`    |    `quic`     |    ✔(*)     |   ✔   |   ✔    |
 |   `udp`    |     `udp`     |      ✔      |       |        |
 |   `udp`    |     `tcp`     |             |   ✔   |        |
 |   `udp`    |     `tls`     |             |   ✔   |   ✔    |
 |   `udp`    |     `ws`      |             |   ✔   |        |
 |   `udp`    |     `wss`     |             |   ✔   |   ✔    |
+|   `udp`    |    `quic`     |             |   ✔   |   ✔    |
+
+`*` starting the shadowsocks quic server will bind udp socket but process tcp payload
 
 #### Priority
 
@@ -56,7 +59,7 @@ server
 
 ## Config
 
-put *config.json* file into the unpacked folder before running server
+put *config.json* file into the unpacked folder before running a server
 
 ```json5
 {

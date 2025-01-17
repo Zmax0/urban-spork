@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramPacket> {
@@ -94,7 +95,7 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
 
         @Override
         protected void encode(ChannelHandlerContext ctx, DatagramPacket msg, List<Object> out) {
-            callbackMap.put(msg.recipient(), msg.sender());
+            Optional.ofNullable(msg.sender()).ifPresent(sender -> callbackMap.put(msg.recipient(), sender));
             out.add(msg.retain());
         }
 
@@ -102,12 +103,8 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
         protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List<Object> out) {
             InetSocketAddress callback = msg.sender(); // reverse naming
             InetSocketAddress sender = this.callbackMap.get(callback);
-            if (sender != null) {
-                logger.info("[udp][relay]{}←{}~{}←{}", sender, callback, inboundChannel.localAddress(), ctx.channel().localAddress());
-                inboundChannel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(msg.retain().content(), callback), sender));
-            } else {
-                logger.error("None callback of sender => {}", msg.sender());
-            }
+            logger.info("[udp][relay]{}←{}~{}←{}", sender, callback, inboundChannel.localAddress(), ctx.channel().localAddress());
+            inboundChannel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(msg.retain().content(), callback), sender));
         }
 
         @Override

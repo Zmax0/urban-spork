@@ -80,15 +80,7 @@ public class Client {
 
     private static DatagramChannel launchUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ClientInitializationContext context) throws InterruptedException {
         ClientConfig config = context.config();
-        ServerConfig current = config.getCurrent();
-        ChannelHandler udpTransportHandler;
-        if (Protocol.vmess == current.getProtocol()) {
-            udpTransportHandler = new com.urbanspork.client.vmess.ClientUdpOverTcpHandler(current, workerGroup);
-        } else if (Protocol.trojan == current.getProtocol()) {
-            udpTransportHandler = new com.urbanspork.client.trojan.ClientUdpOverTcpHandler(current, workerGroup);
-        } else {
-            udpTransportHandler = new ClientUdpRelayHandler(current, workerGroup);
-        }
+        ChannelHandler udpTransportHandler = getUdpReplayHandler(workerGroup, config.getCurrent());
         String host = config.getHost() == null ? InetAddress.getLoopbackAddress().getHostName() : config.getHost();
         return (DatagramChannel) new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {
@@ -103,6 +95,22 @@ public class Client {
                 }
             })
             .bind(host, config.getPort()).sync().channel();
+    }
+
+    private static ChannelHandler getUdpReplayHandler(EventLoopGroup workerGroup, ServerConfig current) {
+        if (Protocol.vmess == current.getProtocol()) {
+            if (current.quicEnabled()) {
+                return new com.urbanspork.client.vmess.ClientUdpOverQuicHandler(current, workerGroup);
+            }
+            return new com.urbanspork.client.vmess.ClientUdpOverTcpHandler(current, workerGroup);
+        } else if (Protocol.trojan == current.getProtocol()) {
+            if (current.quicEnabled()) {
+                return new com.urbanspork.client.trojan.ClientUdpOverQuicHandler(current, workerGroup);
+            }
+            return new com.urbanspork.client.trojan.ClientUdpOverTcpHandler(current, workerGroup);
+        } else {
+            return new ClientUdpRelayHandler(current, workerGroup);
+        }
     }
 
     public record Instance(ServerSocketChannel tcp, DatagramChannel udp, TrafficCounter traffic) implements Closeable {

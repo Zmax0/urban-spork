@@ -1,14 +1,18 @@
 package com.urbanspork.client.trojan;
 
 import com.urbanspork.client.AbstractClientUdpOverTcpHandler;
-import com.urbanspork.client.ClientTcpRelayHandler;
+import com.urbanspork.client.ClientRelayHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.socks.Address;
 import com.urbanspork.common.protocol.trojan.Trojan;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.socks.SocksCmdType;
@@ -51,7 +55,7 @@ public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<Ine
         return new ChannelInitializer<>() {
             @Override
             protected void initChannel(Channel ch) throws SSLException, URISyntaxException {
-                ClientTcpRelayHandler.addSslHandler(ch, config);
+                ClientRelayHandler.addSslHandler(ch, config);
                 addWebSocketHandler(ch);
                 ch.pipeline().addLast(new ClientHeaderEncoder(config.getPassword(), serverAddress, SocksCmdType.UDP.byteValue()));
             }
