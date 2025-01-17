@@ -12,7 +12,10 @@ import com.urbanspork.common.transport.Transport;
 import com.urbanspork.server.Server;
 import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.UdpTestTemplate;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import java.net.InetSocketAddress;
@@ -20,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
 
 class UdpTest extends UdpTestTemplate {
     @ParameterizedTest
@@ -70,5 +74,40 @@ class UdpTest extends UdpTestTemplate {
         handshakeAndSendBytes(clientLocalAddress);
         closeServer(server);
         client.close();
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(QuicProvider.class)
+    void testQuicByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
+        Protocol protocol = parameter.protocol();
+        CipherKind cipher = parameter.cipher();
+        ServerConfig serverConfig = ServerConfigTest.testConfig(0);
+        serverConfig.setTransport(new Transport[]{Transport.QUIC});
+        serverConfig.setProtocol(protocol);
+        serverConfig.setCipher(cipher);
+        serverConfig.setPassword(parameter.serverPassword());
+        serverConfig.setSsl(parameter.sslSetting());
+        serverConfig.setWs(parameter.wsSetting());
+        List<Server.Instance> server = launchServer(List.of(serverConfig));
+        ClientConfig clientConfig = ClientConfigTest.testConfig(0, serverConfig.getPort());
+        ServerConfig current = clientConfig.getCurrent();
+        current.setCipher(cipher);
+        current.setTransport(new Transport[]{Transport.UDP, Transport.QUIC});
+        current.setProtocol(protocol);
+        current.setSsl(parameter.sslSetting());
+        current.setPassword(parameter.serverPassword());
+        Client.Instance client = launchClient(clientConfig);
+        InetSocketAddress clientLocalAddress = client.tcp().localAddress();
+        handshakeAndSendBytes(clientLocalAddress);
+        closeServer(server);
+        client.close();
+    }
+
+    static class QuicProvider implements ArgumentsProvider {
+        @Override
+        public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
+            return new Parameter.QuicProvider().provideArguments(extensionContext).flatMap(e -> Stream.of(e.get())).map(Parameter.class::cast)
+                .filter(p -> p.protocol() != Protocol.shadowsocks).map(Arguments::of);
+        }
     }
 }

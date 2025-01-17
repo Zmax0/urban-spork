@@ -72,8 +72,8 @@ class ClientHttpUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> 
         }
 
         @Override
-        public InboundReady inboundReady() {
-            return new InboundReady(
+        public ClientRelayHandler.InboundReady inboundReady() {
+            return new ClientRelayHandler.InboundReady(
                 channel -> channel.writeAndFlush(Unpooled.wrappedBuffer(SUCCESS)),
                 channel -> channel.writeAndFlush(Unpooled.wrappedBuffer(FAILED))
             );

@@ -1,12 +1,17 @@
 package com.urbanspork.client.vmess;
 
 import com.urbanspork.client.AbstractClientUdpOverTcpHandler;
-import com.urbanspork.client.ClientTcpRelayHandler;
+import com.urbanspork.client.ClientRelayHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.vmess.header.RequestCommand;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +44,7 @@ public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<Cli
         return new ChannelInitializer<>() {
             @Override
             protected void initChannel(Channel ch) throws URISyntaxException, SSLException {
-                ClientTcpRelayHandler.addSslHandler(ch, config);
+                ClientRelayHandler.addSslHandler(ch, config);
                 addWebSocketHandler(ch);
                 ch.pipeline().addLast(new ClientAeadCodec(config.getCipher(), RequestCommand.UDP, key.recipient, config.getPassword()));
             }
