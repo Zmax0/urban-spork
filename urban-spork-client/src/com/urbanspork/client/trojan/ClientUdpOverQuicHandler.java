@@ -1,48 +1,46 @@
 package com.urbanspork.client.trojan;
 
-import com.urbanspork.client.ClientRelayHandler;
-import com.urbanspork.common.channel.DefaultChannelInboundHandler;
+import com.urbanspork.client.AbstractClientUdpOverQuicHandler;
 import com.urbanspork.common.config.ServerConfig;
+import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.socks.SocksCmdType;
-import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
 
-public class ClientUdpOverQuicHandler extends ClientUdpOverTcpHandler {
-    private final Channel endpoint;
-
+public class ClientUdpOverQuicHandler extends AbstractClientUdpOverQuicHandler<InetSocketAddress> implements ClientUdpOverTcp {
     public ClientUdpOverQuicHandler(ServerConfig config, EventLoopGroup workerGroup) {
-        super(config, workerGroup);
-        endpoint = ClientRelayHandler.quicEndpoint(config.getSsl(), workerGroup).syncUninterruptibly().channel();
+        super(config, Duration.ofMinutes(10), workerGroup);
     }
 
     @Override
-    protected Channel newBindingChannel(Channel inbound, InetSocketAddress key) {
-        InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
-        QuicChannel quicChannel = QuicChannel.newBootstrap(endpoint).remoteAddress(serverAddress).streamHandler(new ChannelInboundHandlerAdapter() {}).connect().syncUninterruptibly().getNow();
-        return quicChannel.newStreamBootstrap().handler(
-            new ChannelInitializer<>() {
-                @Override
-                protected void initChannel(Channel ch) {
-                    ch.pipeline().addLast(new ClientHeaderEncoder(config.getPassword(), serverAddress, SocksCmdType.UDP.byteValue()));
-                }
+    public Object convertToWrite(DatagramPacketWrapper msg) {
+        return ClientUdpOverTcp.super.convertToWrite(msg);
+    }
+
+    @Override
+    public InetSocketAddress getKey(DatagramPacketWrapper msg) {
+        return ClientUdpOverTcp.super.getKey(msg);
+    }
+
+
+    @Override
+    protected ChannelInitializer<Channel> newOutboundInitializer(InetSocketAddress ignore) {
+        return new ChannelInitializer<>() {
+            @Override
+            protected void initChannel(Channel ch) {
+                InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
+                ch.pipeline().addLast(new ClientHeaderEncoder(config.getPassword(), serverAddress, SocksCmdType.UDP.byteValue()));
             }
-        ).create().addListener(f2 -> {
-            QuicStreamChannel outbound = (QuicStreamChannel) f2.get();
-            outbound.pipeline().addLast(newInboundHandler(inbound, key)); // R → L
-            inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
-        }).syncUninterruptibly().getNow();
+        };
     }
 
     @Override
-    public void handlerRemoved(ChannelHandlerContext ctx) {
-        super.handlerRemoved(ctx);
-        endpoint.close();
+    protected ChannelHandler newInboundHandler(Channel inbound, InetSocketAddress address) {
+        return new ClientUdpOverTcp.InboundHandler(inbound, address);
     }
 }
