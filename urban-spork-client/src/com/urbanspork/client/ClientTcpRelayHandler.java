@@ -65,14 +65,14 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
         ClientRelayHandler.quicEndpoint(config.getSsl(), inbound.eventLoop()).addListener((ChannelFutureListener) f0 -> {
             InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
             Channel c0 = f0.channel();
-            QuicChannel.newBootstrap(c0).remoteAddress(serverAddress).streamHandler(new ChannelInboundHandlerAdapter() {}).connect().addListener(f1 -> {
+            QuicChannel.newBootstrap(c0).remoteAddress(serverAddress).streamHandler(new ChannelInboundHandlerAdapter()).connect().addListener(f1 -> {
                     if (f1.isSuccess()) {
                         QuicChannel quicChannel = (QuicChannel) f1.get();
                         quicChannel.newStreamBootstrap().handler(
                             new ChannelInitializer<>() {
                                 @Override
                                 protected void initChannel(Channel ch) {
-                                    addOutboundProtocolHandler(dstAddress, config, ch);
+                                    addProtocolHandler(dstAddress, config, ch);
                                 }
                             }
                         ).create().addListener(f2 -> {
@@ -101,12 +101,12 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
                     outbound.pipeline().addLast(new WebSocketCodec(inbound, config, ClientTcpRelayHandler.this));
                     inbound.closeFuture().addListener(future -> outbound.writeAndFlush(new CloseWebSocketFrame()));
                 }
-                addOutboundProtocolHandler(address, config, outbound);
+                addProtocolHandler(address, config, outbound);
             }
         };
     }
 
-    private static void addOutboundProtocolHandler(InetSocketAddress address, ServerConfig config, Channel outbound) {
+    private static void addProtocolHandler(InetSocketAddress address, ServerConfig config, Channel outbound) {
         switch (config.getProtocol()) {
             case vmess -> outbound.pipeline().addLast(new ClientAeadCodec(config.getCipher(), address, config.getPassword()));
             case trojan -> outbound.pipeline().addLast(new ClientHeaderEncoder(config.getPassword(), address, SocksCmdType.CONNECT.byteValue()));
