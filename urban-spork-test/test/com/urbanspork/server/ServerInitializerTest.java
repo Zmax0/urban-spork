@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 class ServerInitializerTest {
     @Test
-    void initSslChanelFailed() {
+    void outboundSslChanelFailed() {
         ServerConfig config = ServerConfigTest.testConfig(0);
         config.setProtocol(Protocol.trojan);
         EmbeddedChannel channel = new EmbeddedChannel();
@@ -27,7 +27,7 @@ class ServerInitializerTest {
     }
 
     @Test
-    void initWsChannelFailed() {
+    void outboundWsChannelFailed() {
         ServerConfig config = ServerConfigTest.testConfig(0);
         config.setWs(new WebSocketSetting());
         EmbeddedChannel channel = new EmbeddedChannel();
