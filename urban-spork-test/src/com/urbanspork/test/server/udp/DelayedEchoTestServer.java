@@ -26,7 +26,7 @@ public class DelayedEchoTestServer {
         Logger logger = Logger.getGlobal();
         try (ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor(); DatagramSocket socket = new DatagramSocket(port)) {
             future.complete(socket);
-            String startupInfo = MessageFormat.format("UDP test server startup [{0}]", socket.getLocalSocketAddress());
+            String startupInfo = MessageFormat.format("UDP test server start [{0}]", socket.getLocalSocketAddress());
             logger.info(startupInfo);
             for (; ; ) {
                 byte[] data = new byte[1024];

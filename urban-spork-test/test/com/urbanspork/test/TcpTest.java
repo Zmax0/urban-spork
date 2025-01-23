@@ -24,6 +24,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 class TcpTest extends TcpTestTemplate {
+    private static final Transport[] TRANSPORTS = new Transport[]{Transport.TCP};
+
     @ParameterizedTest
     @ArgumentsSource(Parameter.Provider.class)
     void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
@@ -37,7 +39,7 @@ class TcpTest extends TcpTestTemplate {
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
         serverConfig.setPassword(parameter.serverPassword());
-        serverConfig.setTransport(new Transport[]{Transport.TCP});
+        serverConfig.setTransport(TRANSPORTS);
         serverConfig.setSsl(parameter.sslSetting());
         serverConfig.setWs(parameter.wsSetting());
         List<Server.Instance> server = launchServer(config.getServers());
@@ -76,6 +78,7 @@ class TcpTest extends TcpTestTemplate {
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
         serverConfig.setPassword(parameter.serverPassword());
+        serverConfig.setTransport(TRANSPORTS);
         List<ServerUserConfig> user = new ArrayList<>();
         user.add(new ServerUserConfig(TestDice.rollString(10), parameter.clientPassword()));
         serverConfig.setUser(user);

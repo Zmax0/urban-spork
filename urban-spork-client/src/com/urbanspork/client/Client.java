@@ -43,10 +43,7 @@ public class Client {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         GlobalChannelTrafficShapingHandler traffic = new GlobalChannelTrafficShapingHandler(workerGroup);
         ClientInitializationContext context = new ClientInitializationContext(config, traffic);
-        String host = config.getHost();
-        if (host == null) {
-            host = InetAddress.getLoopbackAddress().getHostName();
-        }
+        String host = config.getHost() == null ? InetAddress.getLoopbackAddress().getHostName() : config.getHost();
         try {
             new ServerBootstrap().group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
@@ -72,7 +69,7 @@ public class Client {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
-            logger.error("Launch client failed", e);
+            logger.error("Launch client failed {}:{}", host, config.getPort(), e);
             promise.completeExceptionally(e);
         } finally {
             traffic.trafficCounter().stop();
@@ -82,19 +79,9 @@ public class Client {
     }
 
     private static DatagramChannel launchUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ClientInitializationContext context) throws InterruptedException {
-        ServerConfig current = context.config().getCurrent();
-        ChannelHandler udpTransportHandler;
-        if (Protocol.vmess == current.getProtocol()) {
-            udpTransportHandler = new com.urbanspork.client.vmess.ClientUdpOverTcpHandler(current, workerGroup);
-        } else if (Protocol.trojan == current.getProtocol()) {
-            udpTransportHandler = new com.urbanspork.client.trojan.ClientUdpOverTcpHandler(current, workerGroup);
-        } else {
-            udpTransportHandler = new ClientUdpRelayHandler(current, workerGroup);
-        }
-        String host = context.config().getHost();
-        if (host == null) {
-            host = InetAddress.getLoopbackAddress().getHostName();
-        }
+        ClientConfig config = context.config();
+        ChannelHandler udpTransportHandler = getUdpReplayHandler(workerGroup, config.getCurrent());
+        String host = config.getHost() == null ? InetAddress.getLoopbackAddress().getHostName() : config.getHost();
         return (DatagramChannel) new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {
                 @Override
@@ -107,7 +94,23 @@ public class Client {
                     );
                 }
             })
-            .bind(host, context.config().getPort()).sync().channel();
+            .bind(host, config.getPort()).sync().channel();
+    }
+
+    private static ChannelHandler getUdpReplayHandler(EventLoopGroup workerGroup, ServerConfig current) {
+        if (Protocol.vmess == current.getProtocol()) {
+            if (current.quicEnabled()) {
+                return new com.urbanspork.client.vmess.ClientUdpOverQuicHandler(current, workerGroup);
+            }
+            return new com.urbanspork.client.vmess.ClientUdpOverTcpHandler(current, workerGroup);
+        } else if (Protocol.trojan == current.getProtocol()) {
+            if (current.quicEnabled()) {
+                return new com.urbanspork.client.trojan.ClientUdpOverQuicHandler(current, workerGroup);
+            }
+            return new com.urbanspork.client.trojan.ClientUdpOverTcpHandler(current, workerGroup);
+        } else {
+            return new ClientUdpRelayHandler(current, workerGroup);
+        }
     }
 
     public record Instance(ServerSocketChannel tcp, DatagramChannel udp, TrafficCounter traffic) implements Closeable {

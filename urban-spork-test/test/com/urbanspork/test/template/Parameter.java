@@ -59,4 +59,30 @@ public record Parameter(Protocol protocol, CipherKind cipher, String clientPassw
             return parameters.stream().map(Arguments::of);
         }
     }
+
+    public static class QuicProvider implements ArgumentsProvider {
+        @Override
+        public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
+            SslSetting sslSetting = SslUtil.getSslSetting();
+            List<Parameter> parameters = new ArrayList<>();
+            parameters.add(new Parameter(
+                Protocol.shadowsocks,
+                CipherKind.aead2022_blake3_aes_256_gcm,
+                TestDice.rollPassword(Protocol.shadowsocks, CipherKind.aead2022_blake3_aes_256_gcm),
+                TestDice.rollPassword(Protocol.shadowsocks, CipherKind.aead2022_blake3_aes_256_gcm),
+                null,
+                sslSetting
+            ));
+            parameters.add(new Parameter(
+                Protocol.vmess,
+                CipherKind.aes_256_gcm,
+                TestDice.rollPassword(Protocol.vmess, CipherKind.aes_256_gcm),
+                TestDice.rollPassword(Protocol.vmess, CipherKind.aes_256_gcm),
+                null,
+                sslSetting
+            ));
+            parameters.add(new Parameter(Protocol.trojan, null, TestDice.rollString(), TestDice.rollString(), null, sslSetting));
+            return parameters.stream().map(Arguments::of);
+        }
+    }
 }

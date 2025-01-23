@@ -39,7 +39,7 @@ public class TcpCapture {
     public TcpCapture(int remotePort, boolean block) {
         this.remotePort = remotePort;
         this.block = block;
-        this.localChannel = startup();
+        this.localChannel = start();
         this.outboundPromise = bossGroup.next().newPromise();
     }
 
@@ -65,7 +65,7 @@ public class TcpCapture {
             .sync().channel();
     }
 
-    private ServerSocketChannel startup() {
+    private ServerSocketChannel start() {
         return (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
             .channel(NioServerSocketChannel.class)
             .childHandler(new ChannelInboundHandlerAdapter() {

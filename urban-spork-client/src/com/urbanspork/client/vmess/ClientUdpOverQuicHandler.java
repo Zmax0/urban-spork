@@ -1,7 +1,6 @@
 package com.urbanspork.client.vmess;
 
-import com.urbanspork.client.AbstractClientUdpOverTcpHandler;
-import com.urbanspork.client.ClientRelayHandler;
+import com.urbanspork.client.AbstractClientUdpOverQuicHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.vmess.header.RequestCommand;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
@@ -10,13 +9,10 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 
-import javax.net.ssl.SSLException;
-import java.net.URISyntaxException;
 import java.time.Duration;
 
-public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<Key> implements ClientUdpOverTcp {
-
-    public ClientUdpOverTcpHandler(ServerConfig config, EventLoopGroup workerGroup) {
+public class ClientUdpOverQuicHandler extends AbstractClientUdpOverQuicHandler<Key> implements ClientUdpOverTcp {
+    public ClientUdpOverQuicHandler(ServerConfig config, EventLoopGroup workerGroup) {
         super(config, Duration.ofMinutes(10), workerGroup);
     }
 
@@ -34,16 +30,14 @@ public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<Key
     protected ChannelInitializer<Channel> newOutboundInitializer(Key key) {
         return new ChannelInitializer<>() {
             @Override
-            protected void initChannel(Channel ch) throws URISyntaxException, SSLException {
-                ClientRelayHandler.addSslHandler(ch, config);
-                addWebSocketHandler(ch);
+            protected void initChannel(Channel ch) {
                 ch.pipeline().addLast(new ClientAeadCodec(config.getCipher(), RequestCommand.UDP, key.recipient(), config.getPassword()));
             }
         };
     }
 
     @Override
-    protected ChannelHandler newInboundHandler(Channel inboundChannel, Key key) {
-        return new ClientUdpOverTcp.InboundHandler(inboundChannel, key.recipient(), key.sender());
+    protected ChannelHandler newInboundHandler(Channel inbound, Key key) {
+        return new ClientUdpOverTcp.InboundHandler(inbound, key.recipient(), key.sender());
     }
 }

@@ -2,7 +2,6 @@ package com.urbanspork.client;
 
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -35,10 +34,6 @@ public abstract class AbstractClientUdpOverTcpHandler<K> extends AbstractClientU
         this.workerGroup = workerGroup;
     }
 
-    protected abstract Object convertToWrite(DatagramPacketWrapper msg);
-
-    protected abstract K getKey(DatagramPacketWrapper msg);
-
     protected abstract ChannelInitializer<Channel> newOutboundInitializer(K key);
 
     protected abstract ChannelHandler newInboundHandler(Channel inboundChannel, K key);
@@ -57,13 +52,13 @@ public abstract class AbstractClientUdpOverTcpHandler<K> extends AbstractClientU
                     outbound.pipeline().addLast(newInboundHandler(inboundChannel, key)); // R → L
                     inboundChannel.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
                 } else {
-                    logger.error("Connect relay server {} failed", serverAddress);
+                    logger.error("connect relay server {} failed", serverAddress);
                 }
             }).syncUninterruptibly().channel();
     }
 
     protected void addWebSocketHandler(Channel channel) throws URISyntaxException {
-        if (ClientTcpRelayHandler.addWebSocketHandlers(channel, config)) {
+        if (ClientRelayHandler.addWebSocketHandlers(channel, config)) {
             channel.pipeline().addLast(new WebSocketCodec());
         }
     }

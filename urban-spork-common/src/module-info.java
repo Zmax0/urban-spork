@@ -9,6 +9,7 @@ module com.urbanspork.common {
     requires io.netty.codec;
     requires io.netty.common;
     requires io.netty.handler;
+    requires io.netty.incubator.codec.classes.quic;
     requires io.netty.transport;
     requires jdk.unsupported;
     requires org.bouncycastle.lts.prov;
