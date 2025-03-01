@@ -39,7 +39,8 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
 
     private void tcp(Channel inbound, InetSocketAddress dst, ServerConfig config) {
         boolean isReadyOnceConnected = config.getWs() == null;
-        InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
+        String host = ClientRelayHandler.resolveHost(inbound.eventLoop().parent(), config);
+        InetSocketAddress serverAddress = new InetSocketAddress(host, config.getPort());
         new Bootstrap()
             .group(inbound.eventLoop())
             .channel(inbound.getClass())

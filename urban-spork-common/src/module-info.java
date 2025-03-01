@@ -29,6 +29,7 @@ module com.urbanspork.common {
     exports com.urbanspork.common.crypto;
     exports com.urbanspork.common.lang;
     exports com.urbanspork.common.manage.shadowsocks;
+    exports com.urbanspork.common.protocol.dns;
     exports com.urbanspork.common.protocol.socks;
     exports com.urbanspork.common.protocol.trojan;
     exports com.urbanspork.common.protocol.vmess.aead;
