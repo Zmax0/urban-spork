@@ -109,6 +109,10 @@ put *config.json* file into the unpacked folder before running a server
 > `user`: (OPTIONAL for shadowsocks) support multiple users with [*Shadowsocks 2022 Extensible Identity
 Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-shadowsocks-2022-extensible-identity-headers.md)
 
+> `dns`: (OPTIONAL) DNS specific configurations
+
+> > `nameServer`: The DNS name server address is expected to be in the DoH (DNS over HTTPS) format
+
 > `ssl`: (OPTIONAL) SSL specific configurations
 
 > > `certificateFile`: certificate file

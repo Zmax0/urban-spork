@@ -1,11 +1,13 @@
 package com.urbanspork.client;
 
+import com.urbanspork.common.config.DnsSetting;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTest;
 import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.protocol.Protocol;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.channel.nio.NioEventLoopGroup;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -35,5 +37,17 @@ class ClientRelayHandlerTest {
         webSocket.setPath("/ws");
         webSocket.setHeader(Map.of("Host", "localhost"));
         Assertions.assertDoesNotThrow(() -> ClientRelayHandler.addWebSocketHandlers(channel, config));
+    }
+
+    @Test
+    void testResolveHost() {
+        DnsSetting dns = new DnsSetting();
+        dns.setNameServer("https://1.1.1.1/dns-query");
+        ServerConfig config = ServerConfigTest.testConfig(0);
+        config.setHost("www.example.com");
+        config.setDns(dns);
+        String host = ClientRelayHandler.resolveHost(new NioEventLoopGroup(), config);
+        Assertions.assertNotNull(host);
+        Assertions.assertNotEquals(host, config.getHost());
     }
 }

@@ -1,10 +1,13 @@
 package com.urbanspork.client;
 
 import com.urbanspork.common.channel.ChannelCloseUtils;
+import com.urbanspork.common.config.DnsSetting;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.protocol.Protocol;
+import com.urbanspork.common.protocol.dns.Cache;
+import com.urbanspork.common.util.DoH;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -28,6 +31,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.incubator.codec.quic.QuicClientCodecBuilder;
 import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.incubator.codec.quic.QuicSslContextBuilder;
+import io.netty.util.NetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +39,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
 import java.io.File;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -45,6 +50,7 @@ import java.util.function.Consumer;
 
 public interface ClientRelayHandler {
     Logger logger = LoggerFactory.getLogger(ClientRelayHandler.class);
+    Cache CACHE = new Cache(10);
 
     record InboundReady(Consumer<Channel> success, Consumer<Channel> failure) {}
 
@@ -164,5 +170,25 @@ public interface ClientRelayHandler {
             .initialMaxStreamDataBidirectionalLocal(0xfffff)
             .build();
         return new Bootstrap().group(group).channel(NioDatagramChannel.class).handler(codec).bind(0);
+    }
+
+    static String resolveHost(EventLoopGroup group, ServerConfig config) {
+        String host = config.getHost();
+        DnsSetting dns = config.getDns();
+        if (dns != null && !InetAddress.getLoopbackAddress().getHostName().equals(host) && !NetUtil.isValidIpV4Address(host) && !NetUtil.isValidIpV6Address(host)) {
+            String cached = CACHE.get(host);
+            if (cached != null) {
+                return cached;
+            }
+            try {
+                String resolved = DoH.lookup(group, dns.getNameServer(), host).get(10, TimeUnit.SECONDS);
+                logger.info("Resolved host {} -> {}", host, resolved);
+                CACHE.put(host, resolved);
+                return resolved;
+            } catch (Exception e) {
+                logger.error("Resolve server host {} failed", host, e);
+            }
+        }
+        return host;
     }
 }
