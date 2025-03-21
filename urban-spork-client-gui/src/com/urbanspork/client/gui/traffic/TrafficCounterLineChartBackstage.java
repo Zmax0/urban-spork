@@ -119,7 +119,16 @@ public class TrafficCounterLineChartBackstage {
                     points[i] = new Point2D(lineTo.getX(), lineTo.getY());
                 }
             }
-            Point2D[] interpolate = new CatmullRom(0.5).interpolate(points, 32);
+            double alpha = 0.5;
+            for (int i = 1; i < points.length; i++) {
+                double yDiff = Math.abs(points[i].getY() - points[i - 1].getY());
+                double yAvg = (points[i].getY() + points[i - 1].getY()) / 2;
+                if (yAvg > 0 && yDiff / yAvg > 1.5) {
+                    alpha = 0.2;
+                    break;
+                }
+            }
+            Point2D[] interpolate = new CatmullRom(alpha).interpolate(points, 32);
             // update
             for (int i = 1; i < size; i++) {
                 PathElement e = elements.get(i);
