@@ -7,7 +7,7 @@ import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.dns.Cache;
-import com.urbanspork.common.util.DoH;
+import com.urbanspork.common.util.Doh;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -50,7 +50,7 @@ import java.util.function.Consumer;
 
 public interface ClientRelayHandler {
     Logger logger = LoggerFactory.getLogger(ClientRelayHandler.class);
-    Cache CACHE = new Cache(10);
+    Cache SERVER_CACHE = new Cache(10);
 
     record InboundReady(Consumer<Channel> success, Consumer<Channel> failure) {}
 
@@ -126,6 +126,7 @@ public interface ClientRelayHandler {
         if (sslSetting.getServerName() != null) {
             serverName = sslSetting.getServerName(); // override
         }
+
         SslContext sslContext = sslContextBuilder.build();
         SslHandler sslHandler = sslContext.newHandler(ch.alloc(), serverName, config.getPort());
         if (sslSetting.isVerifyHostname()) {
@@ -172,23 +173,27 @@ public interface ClientRelayHandler {
         return new Bootstrap().group(group).channel(NioDatagramChannel.class).handler(codec).bind(0);
     }
 
-    static String resolveHost(EventLoopGroup group, ServerConfig config) {
+    static String resolveServerHost(EventLoopGroup group, ServerConfig config) {
         String host = config.getHost();
         DnsSetting dns = config.getDns();
-        if (dns != null && !InetAddress.getLoopbackAddress().getHostName().equals(host) && !NetUtil.isValidIpV4Address(host) && !NetUtil.isValidIpV6Address(host)) {
-            String cached = CACHE.get(host);
+        if (dns != null && canResolve(host)) {
+            String cached = SERVER_CACHE.get(host);
             if (cached != null) {
                 return cached;
             }
             try {
-                String resolved = DoH.lookup(group, dns.getNameServer(), host).get(10, TimeUnit.SECONDS);
-                logger.info("Resolved host {} -> {}", host, resolved);
-                CACHE.put(host, resolved);
+                String resolved = Doh.query(group, dns.getNameServer(), host).get(10, TimeUnit.SECONDS);
+                logger.info("resolved host {} -> {}", host, resolved);
+                SERVER_CACHE.put(host, resolved);
                 return resolved;
             } catch (Exception e) {
-                logger.error("Resolve server host {} failed", host, e);
+                logger.error("resolve server host {} failed", host, e);
             }
         }
         return host;
+    }
+
+    static boolean canResolve(String host) {
+        return !InetAddress.getLoopbackAddress().getHostName().equals(host) && !NetUtil.isValidIpV4Address(host) && !NetUtil.isValidIpV6Address(host);
     }
 }

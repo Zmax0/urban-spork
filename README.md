@@ -13,19 +13,19 @@ A network tool for improved privacy and security
 
 ### Transport
 
-| Local-Peer | Client-Server | Shadowsocks | VMess | Trojan |
-|:----------:|:-------------:|:-----------:|:-----:|:------:|
-|   `tcp`    |     `tcp`     |      ✔      |   ✔   |        |
-|   `tcp`    |     `tls`     |      ✔      |   ✔   |   ✔    |
-|   `tcp`    |     `ws`      |      ✔      |   ✔   |        |
-|   `tcp`    |     `wss`     |      ✔      |   ✔   |   ✔    |
-|   `tcp`    |    `quic`     |    ✔(*)     |   ✔   |   ✔    |
-|   `udp`    |     `udp`     |      ✔      |       |        |
-|   `udp`    |     `tcp`     |             |   ✔   |        |
-|   `udp`    |     `tls`     |             |   ✔   |   ✔    |
-|   `udp`    |     `ws`      |             |   ✔   |        |
-|   `udp`    |     `wss`     |             |   ✔   |   ✔    |
-|   `udp`    |    `quic`     |             |   ✔   |   ✔    |
+| Local-Peer | Client-Server | Peer DoH | Shadowsocks | VMess | Trojan |
+|:----------:|:-------------:|:--------:|:-----------:|:-----:|:------:|
+|   `tcp`    |     `tcp`     |    ✔     |      ✔      |   ✔   |        |
+|   `tcp`    |     `tls`     |    ✔     |      ✔      |   ✔   |   ✔    |
+|   `tcp`    |     `ws`      |    ✔     |      ✔      |   ✔   |        |
+|   `tcp`    |     `wss`     |    ✔     |      ✔      |   ✔   |   ✔    |
+|   `tcp`    |    `quic`     |          |    ✔(*)     |   ✔   |   ✔    |
+|   `udp`    |     `udp`     |          |      ✔      |       |        |
+|   `udp`    |     `tcp`     |          |             |   ✔   |        |
+|   `udp`    |     `tls`     |          |             |   ✔   |   ✔    |
+|   `udp`    |     `ws`      |          |             |   ✔   |        |
+|   `udp`    |     `wss`     |          |             |   ✔   |   ✔    |
+|   `udp`    |    `quic`     |          |             |   ✔   |   ✔    |
 
 `*` starting the shadowsocks quic server will bind udp socket but process tcp payload
 

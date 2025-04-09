@@ -67,8 +67,7 @@ public class HttpPostMultipartTestServer {
                         promise.setFailure(future.cause());
                     }
                 }).sync().channel().closeFuture().sync();
-        } catch (
-            InterruptedException e) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
     }

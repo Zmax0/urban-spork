@@ -9,17 +9,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-class DoHTest {
+class DohTest {
     private final static NioEventLoopGroup GROUP = new NioEventLoopGroup();
 
     @ParameterizedTest
     @ValueSource(strings = {
-        "https://1.1.1.1/dns-query",
-        "https://1.1.1.1:443/dns-query?name=",
+        "https://dns.google/resolve",
+        "https://dns.google:443/resolve?name=",
     })
-    public void testLookup(String nameServer) throws InterruptedException, ExecutionException {
+    public void testQuery(String nameServer) throws InterruptedException, ExecutionException {
         try {
-            DoH.lookup(GROUP, nameServer, "www.example.com").get(5, TimeUnit.SECONDS);
+            Doh.query(GROUP, nameServer, "www.example.com").get(5, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             // skip
         }

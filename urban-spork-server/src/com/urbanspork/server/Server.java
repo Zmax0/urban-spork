@@ -90,8 +90,8 @@ public class Server {
             .channel(NioServerSocketChannel.class)
             .childHandler(new ServerInitializer(context))
             .bind(config.getPort())
-            .sync().addListener(future -> logger.info("Running a tcp server => {}", config))
-            .channel().closeFuture().channel();
+            .sync().channel();
+        logger.info("Running a tcp server => {}", config);
         config.setPort(tcp.localAddress().getPort());
         Optional<DatagramChannel> udp = startUdp(bossGroup, workerGroup, context);
         return new Instance(tcp, udp);
@@ -111,7 +111,8 @@ public class Server {
                         );
                     }
                 })
-                .bind(config.getPort()).sync().addListener(future -> logger.info("Running a udp server => {}", config)).channel();
+                .bind(config.getPort()).sync().channel();
+            logger.info("Running a udp server => {}", config);
             return Optional.of((DatagramChannel) channel);
         } else if (config.quicEnabled()) {
             return startQuic(bossGroup, context);
@@ -158,8 +159,8 @@ public class Server {
     public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp) implements Closeable {
         @Override
         public void close() {
-            udp.ifPresent(c -> c.close().awaitUninterruptibly());
-            tcp.close().awaitUninterruptibly();
+            udp.ifPresent(c -> c.close().syncUninterruptibly());
+            tcp.close().syncUninterruptibly();
         }
     }
 }

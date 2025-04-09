@@ -45,6 +45,7 @@ import java.util.function.ToIntFunction;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TcpTestTemplate extends TestTemplate {
     final EventLoopGroup group = new NioEventLoopGroup();
+    protected ServerSocketChannel echoTestServer;
     protected InetSocketAddress dstAddress;
     protected int serverPort;
     protected int clientPort;
@@ -59,7 +60,8 @@ public abstract class TcpTestTemplate extends TestTemplate {
     private void launchEchoTestServer() throws InterruptedException, ExecutionException {
         CompletableFuture<ServerSocketChannel> promise = new CompletableFuture<>();
         POOL.submit(() -> EchoTestServer.launch(0, promise));
-        dstAddress = promise.get().localAddress();
+        echoTestServer = promise.get();
+        dstAddress = echoTestServer.localAddress();
     }
 
     private int getPortOrDefault(String key, ToIntFunction<String> converter) {
@@ -152,6 +154,7 @@ public abstract class TcpTestTemplate extends TestTemplate {
 
     @AfterAll
     protected void afterAll() {
+        echoTestServer.close().syncUninterruptibly();
         group.shutdownGracefully();
     }
 }

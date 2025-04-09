@@ -1,7 +1,7 @@
 package com.urbanspork.common.protocol.dns;
 
 
-public class DoHRecord {
+public class DohRecord {
     private String name;
     private int type;
     private int ttl;
