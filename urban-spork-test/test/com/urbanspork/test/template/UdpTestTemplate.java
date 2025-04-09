@@ -45,7 +45,6 @@ import java.util.function.Consumer;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class UdpTestTemplate extends TestTemplate {
-
     private static final Logger logger = LoggerFactory.getLogger(UdpTestTemplate.class);
     private final List<InetSocketAddress> dstAddress = new ArrayList<>();
     private final EventLoopGroup group = new NioEventLoopGroup();
@@ -124,8 +123,8 @@ public abstract class UdpTestTemplate extends TestTemplate {
     }
 
     void handshakeAndSendBytes(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) throws InterruptedException, ExecutionException, TimeoutException {
-        HandshakeResult<Socks5CommandResponse> result = Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).await().get();
-        result.channel().close();
+        HandshakeResult<Socks5CommandResponse> result = Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).get();
+        result.channel().close().sync();
         Socks5CommandResponse response = result.response();
         Assertions.assertEquals(Socks5CommandStatus.SUCCESS, response.status());
         CompletableFuture<Void> promise = new CompletableFuture<>();

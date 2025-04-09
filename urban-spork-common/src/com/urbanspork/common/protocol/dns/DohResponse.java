@@ -2,15 +2,14 @@ package com.urbanspork.common.protocol.dns;
 
 import java.util.List;
 
-public class DoHResponse {
+public class DohResponse {
     private int status;
     private String TC;
     private String RD;
     private String RA;
     private String AD;
     private String CD;
-    private List<DoHRecord> question;
-    private List<DoHRecord> answer;
+    private List<DohRecord> answer;
 
     public int getStatus() {
         return status;
@@ -60,19 +59,11 @@ public class DoHResponse {
         this.CD = CD;
     }
 
-    public List<DoHRecord> getQuestion() {
-        return question;
-    }
-
-    public void setQuestion(List<DoHRecord> question) {
-        this.question = question;
-    }
-
-    public List<DoHRecord> getAnswer() {
+    public List<DohRecord> getAnswer() {
         return answer;
     }
 
-    public void setAnswer(List<DoHRecord> answer) {
+    public void setAnswer(List<DohRecord> answer) {
         this.answer = answer;
     }
 }

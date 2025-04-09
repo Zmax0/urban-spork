@@ -10,7 +10,6 @@ import com.urbanspork.common.protocol.Protocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -45,23 +44,20 @@ public class Client {
         ClientInitializationContext context = new ClientInitializationContext(config, traffic);
         String host = config.getHost() == null ? InetAddress.getLoopbackAddress().getHostName() : config.getHost();
         try {
-            new ServerBootstrap().group(bossGroup, workerGroup)
+            ServerSocketChannel tcp = (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childOption(ChannelOption.SO_KEEPALIVE, true) // socks5 require
                 .childOption(ChannelOption.TCP_NODELAY, false)
                 .childOption(ChannelOption.SO_LINGER, 1)
                 .childHandler(new ClientInitializer(context))
-                .bind(host, config.getPort()).sync().addListener((ChannelFutureListener) future -> {
-                    ServerSocketChannel tcp = (ServerSocketChannel) future.channel();
-                    InetSocketAddress tcpLocalAddress = tcp.localAddress();
-                    int localPort = tcpLocalAddress.getPort();
-                    config.setPort(localPort);
-                    DatagramChannel udp = launchUdp(bossGroup, workerGroup, context);
-                    logger.info("Launch client => tcp{} udp{} ", tcpLocalAddress, udp.localAddress());
-                    Instance client = new Instance(tcp, udp, traffic.trafficCounter());
-                    promise.complete(client);
-                });
-            Instance client = promise.get();
+                .bind(host, config.getPort()).sync().channel();
+            InetSocketAddress tcpLocalAddress = tcp.localAddress();
+            int localPort = tcpLocalAddress.getPort();
+            config.setPort(localPort);
+            DatagramChannel udp = launchUdp(bossGroup, workerGroup, context);
+            logger.info("Launch client => tcp{} udp{} ", tcpLocalAddress, udp.localAddress());
+            Instance client = new Instance(tcp, udp, traffic.trafficCounter());
+            promise.complete(client);
             CompletableFuture.allOf(
                 CompletableFuture.supplyAsync(() -> client.tcp().closeFuture().syncUninterruptibly()),
                 CompletableFuture.supplyAsync(() -> client.udp().closeFuture().syncUninterruptibly())
@@ -116,8 +112,8 @@ public class Client {
     public record Instance(ServerSocketChannel tcp, DatagramChannel udp, TrafficCounter traffic) implements Closeable {
         @Override
         public void close() {
-            tcp.close().awaitUninterruptibly();
-            udp.close().awaitUninterruptibly();
+            tcp.close().syncUninterruptibly();
+            udp.close().syncUninterruptibly();
         }
     }
 }

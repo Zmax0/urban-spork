@@ -9,6 +9,7 @@ import com.urbanspork.common.protocol.Protocol;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -39,15 +40,23 @@ class ClientRelayHandlerTest {
         Assertions.assertDoesNotThrow(() -> ClientRelayHandler.addWebSocketHandlers(channel, config));
     }
 
-    @Test
-    void testResolveHost() {
+    @RepeatedTest(2)
+    void testResolveServerHost() {
         DnsSetting dns = new DnsSetting();
-        dns.setNameServer("https://1.1.1.1/dns-query");
+        dns.setNameServer("https://dns.google/resolve");
         ServerConfig config = ServerConfigTest.testConfig(0);
         config.setHost("www.example.com");
         config.setDns(dns);
-        String host = ClientRelayHandler.resolveHost(new NioEventLoopGroup(), config);
+        String host = ClientRelayHandler.resolveServerHost(new NioEventLoopGroup(), config);
         Assertions.assertNotNull(host);
         Assertions.assertNotEquals(host, config.getHost());
+    }
+
+    @Test
+    void testCanResolve() {
+        Assertions.assertFalse(ClientRelayHandler.canResolve("192.168.89.9"));
+        Assertions.assertFalse(ClientRelayHandler.canResolve("localhost"));
+        Assertions.assertFalse(ClientRelayHandler.canResolve("abcd:ef01:2345:6789:abcd:ef01:2345:6789"));
+        Assertions.assertTrue(ClientRelayHandler.canResolve("www.example.com"));
     }
 }
