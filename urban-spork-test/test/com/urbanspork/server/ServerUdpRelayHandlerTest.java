@@ -7,8 +7,10 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.embedded.EmbeddedChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.junit.jupiter.api.Assertions;
@@ -21,7 +23,7 @@ class ServerUdpRelayHandlerTest {
     @ParameterizedTest
     @EnumSource(PacketEncoding.class)
     void testWorkAndIdle(PacketEncoding packetEncoding) throws Exception {
-        NioEventLoopGroup group = new NioEventLoopGroup();
+        EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         ServerUdpRelayHandler handler = new ServerUdpRelayHandler(packetEncoding, group);
         handler.workerChannel(new InetSocketAddress(TestDice.rollPort()), new EmbeddedChannel(handler));
         InetSocketAddress recipient = new InetSocketAddress(TestDice.rollPort());

@@ -12,8 +12,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.FixedLengthFrameDecoder;
@@ -44,7 +45,7 @@ import java.util.function.ToIntFunction;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TcpTestTemplate extends TestTemplate {
-    final EventLoopGroup group = new NioEventLoopGroup();
+    final EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
     protected ServerSocketChannel echoTestServer;
     protected InetSocketAddress dstAddress;
     protected int serverPort;

@@ -5,7 +5,6 @@ public class SslSetting {
     private String keyFile;
     private String keyPassword;
     private String serverName;
-    private boolean verifyHostname = true;
 
     public String getCertificateFile() {
         return certificateFile;
@@ -37,13 +36,5 @@ public class SslSetting {
 
     public void setServerName(String serverName) {
         this.serverName = serverName;
-    }
-
-    public boolean isVerifyHostname() {
-        return verifyHostname;
-    }
-
-    public void setVerifyHostname(boolean verifyHostname) {
-        this.verifyHostname = verifyHostname;
     }
 }

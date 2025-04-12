@@ -3,13 +3,14 @@ package com.urbanspork.client;
 import com.urbanspork.common.config.DnsSetting;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTest;
-import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.protocol.Protocol;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.embedded.EmbeddedChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -22,10 +23,6 @@ class ClientRelayHandlerTest {
         Assertions.assertDoesNotThrow(() -> ClientRelayHandler.addSslHandler(channel, config));
         config.setProtocol(Protocol.trojan);
         Assertions.assertThrows(IllegalArgumentException.class, () -> ClientRelayHandler.addSslHandler(channel, config));
-        SslSetting ssl = new SslSetting();
-        ssl.setVerifyHostname(false);
-        config.setSsl(ssl);
-        Assertions.assertDoesNotThrow(() -> ClientRelayHandler.addSslHandler(channel, config));
     }
 
     @Test
@@ -40,6 +37,7 @@ class ClientRelayHandlerTest {
         Assertions.assertDoesNotThrow(() -> ClientRelayHandler.addWebSocketHandlers(channel, config));
     }
 
+    @Tag("networking")
     @RepeatedTest(2)
     void testResolveServerHost() {
         DnsSetting dns = new DnsSetting();
@@ -47,7 +45,7 @@ class ClientRelayHandlerTest {
         ServerConfig config = ServerConfigTest.testConfig(0);
         config.setHost("www.example.com");
         config.setDns(dns);
-        String host = ClientRelayHandler.resolveServerHost(new NioEventLoopGroup(), config);
+        String host = ClientRelayHandler.resolveServerHost(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()), config);
         Assertions.assertNotNull(host);
         Assertions.assertNotEquals(host, config.getHost());
     }
