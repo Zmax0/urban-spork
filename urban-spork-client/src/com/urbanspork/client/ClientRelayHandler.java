@@ -35,9 +35,7 @@ import io.netty.util.NetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLParameters;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.URI;
@@ -129,12 +127,6 @@ public interface ClientRelayHandler {
 
         SslContext sslContext = sslContextBuilder.build();
         SslHandler sslHandler = sslContext.newHandler(ch.alloc(), serverName, config.getPort());
-        if (sslSetting.isVerifyHostname()) {
-            SSLEngine sslEngine = sslHandler.engine();
-            SSLParameters sslParameters = sslEngine.getSSLParameters();
-            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-            sslEngine.setSSLParameters(sslParameters);
-        }
         ch.pipeline().addLast(sslHandler);
     }
 

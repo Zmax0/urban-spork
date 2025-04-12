@@ -6,7 +6,8 @@ import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.socks.Handshake;
 import com.urbanspork.test.TestDice;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -19,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ClientSocksHandshakeTest {
-    private final EventLoopGroup group = new NioEventLoopGroup();
+    private final EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
 
     @Test
     void testUdpEnable() throws InterruptedException, ExecutionException {

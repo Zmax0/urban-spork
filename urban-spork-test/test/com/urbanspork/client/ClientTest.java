@@ -5,7 +5,8 @@ import com.urbanspork.common.config.ClientConfigTest;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.protocol.socks.Handshake;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
@@ -34,7 +35,7 @@ import java.util.stream.Stream;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ClientTest {
     private static final ExecutorService SERVICE = Executors.newVirtualThreadPerTaskExecutor();
-    private final EventLoopGroup group = new NioEventLoopGroup();
+    private final EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
 
     @Test
     @Order(1)
@@ -62,7 +63,10 @@ class ClientTest {
         Client.Instance client = asyncLaunchClient(ClientConfigTest.testConfig(0, 0));
         ClientConfig config = ClientConfigTest.testConfig(client.tcp().localAddress().getPort(), 0);
         config.setHost(null);
-        Assertions.assertThrows(ExecutionException.class, () -> asyncLaunchClient(config));
+        Assertions.assertThrows(ExecutionException.class, () -> {
+            Client.Instance client2 = asyncLaunchClient(config);
+            client2.close();
+        });
         client.close();
     }
 
