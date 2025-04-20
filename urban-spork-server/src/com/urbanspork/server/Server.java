@@ -92,8 +92,8 @@ public class Server {
             .childHandler(new ServerInitializer(context))
             .bind(config.getPort())
             .sync().channel();
-        logger.info("Running a tcp server => {}", config);
         config.setPort(tcp.localAddress().getPort());
+        logger.info("Running a tcp server => {}", config);
         Optional<DatagramChannel> udp = startUdp(bossGroup, workerGroup, context);
         return new Instance(tcp, udp);
     }
@@ -152,8 +152,8 @@ public class Server {
             .handler(codec)
             .bind(config.getPort())
             .sync()
-            .addListener(future -> logger.info("Running a quic server => {}", config))
             .channel();
+        logger.info("Running a quic server => {}", config);
         return Optional.of(channel);
     }
 

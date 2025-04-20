@@ -62,19 +62,19 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
         if (dnsSetting != null && ClientRelayHandler.canResolve(dstHost)) {
             if (PEER_CACHE.containsKey(dstHost)) {
                 ChannelHandler handler = getOutboundChannelHandler(inbound, InetSocketAddress.createUnresolved(PEER_CACHE.get(dstHost), dst.getPort()), config);
-                connect(inbound, handler, serverAddress, isReadyOnceConnected);
+                connectTcp(inbound, handler, serverAddress, isReadyOnceConnected);
             } else {
                 Promise<String> promise = inbound.eventLoop().parent().next().newPromise();
                 promise.addListener((GenericFutureListener<Future<String>>) f1 -> {
                     ChannelHandler handler;
                     if (f1.isSuccess()) {
                         String resolved = f1.get();
-                        logger.info("resolved host (on peer side) {} -> {}", dstHost, resolved);
+                        logger.info("[tcp]resolve host (on peer side) {} -> {}", dstHost, resolved);
                         PEER_CACHE.put(dstHost, resolved);
                         handler = getOutboundChannelHandler(inbound, InetSocketAddress.createUnresolved(resolved, dst.getPort()), config);
-                        connect(inbound, handler, serverAddress, isReadyOnceConnected);
+                        connectTcp(inbound, handler, serverAddress, isReadyOnceConnected);
                     } else {
-                        logger.info("resolve host {} (on peer side) failed", dstHost, f1.cause());
+                        logger.info("[tcp]resolve host {} (on peer side) failed", dstHost, f1.cause());
                         handleFailure(inbound);
                     }
                 });
@@ -93,11 +93,11 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
             }
         } else {
             ChannelHandler handler = getOutboundChannelHandler(inbound, dst, config);
-            connect(inbound, handler, serverAddress, isReadyOnceConnected);
+            connectTcp(inbound, handler, serverAddress, isReadyOnceConnected);
         }
     }
 
-    private void connect(Channel inbound, ChannelHandler handler, InetSocketAddress serverAddress, boolean isReadyOnceConnected) {
+    private void connectTcp(Channel inbound, ChannelHandler handler, InetSocketAddress serverAddress, boolean isReadyOnceConnected) {
         newOutboundChannel(inbound, handler, serverAddress).addListener(
             (ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
@@ -135,20 +135,37 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
             QuicChannel.newBootstrap(c0).remoteAddress(serverAddress).streamHandler(new ChannelInboundHandlerAdapter()).connect().addListener(f1 -> {
                     if (f1.isSuccess()) {
                         QuicChannel quicChannel = (QuicChannel) f1.get();
-                        quicChannel.newStreamBootstrap().handler(
-                            new ChannelInitializer<>() {
-                                @Override
-                                protected void initChannel(Channel ch) {
-                                    addProtocolHandler(dstAddress, config, ch);
-                                }
+                        inbound.closeFuture().addListener(f -> quicChannel.close());
+                        DnsSetting dnsSetting = config.getDns();
+                        String dstHost = dstAddress.getHostString();
+                        if (dnsSetting != null && ClientRelayHandler.canResolve(dstHost)) {
+                            if (PEER_CACHE.containsKey(dstHost)) {
+                                connectQuicStream(inbound, quicChannel, InetSocketAddress.createUnresolved(PEER_CACHE.get(dstHost), dstAddress.getPort()), config);
+                            } else {
+                                DnsRequest<FullHttpRequest> dohRequest = Doh.getRequest(dnsSetting.getNameServer(), dstHost, dnsSetting.getSsl());
+                                createQuicStreamChannel(quicChannel, dohRequest.address(), config).addListener(f2 -> {
+                                    QuicStreamChannel outbound = (QuicStreamChannel) f2.get();
+                                    Promise<String> promise = inbound.eventLoop().parent().next().newPromise();
+                                    promise.addListener((GenericFutureListener<Future<String>>) f3 -> {
+                                        if (f3.isSuccess()) {
+                                            String resolved = f3.get();
+                                            logger.info("[quic]resolve host (on peer side) {} -> {}", dstHost, resolved);
+                                            PEER_CACHE.put(dstHost, resolved);
+                                            connectQuicStream(inbound, quicChannel, InetSocketAddress.createUnresolved(resolved, dstAddress.getPort()), config);
+                                        } else {
+                                            logger.info("[quic]resolve host {} (on peer side) failed", dstHost, f1.cause());
+                                            outbound.close();
+                                            quicChannel.close();
+                                            c0.close();
+                                            handleFailure(inbound);
+                                        }
+                                    });
+                                    Doh.query(outbound, dohRequest, promise);
+                                });
                             }
-                        ).create().addListener(f2 -> {
-                            QuicStreamChannel outbound = (QuicStreamChannel) f2.get();
-                            outbound.pipeline().addLast(new DefaultChannelInboundHandler(inbound)); // R → L
-                            inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
-                            inboundReady().success().accept(inbound);
-                            outboundReady(inbound).accept(outbound);
-                        });
+                        } else {
+                            connectQuicStream(inbound, quicChannel, dstAddress, config);
+                        }
                     } else {
                         logger.error("connect relay server {} failed", serverAddress, f1.cause());
                         c0.close();
@@ -157,6 +174,28 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
                 }
             );
         });
+    }
+
+    private void connectQuicStream(Channel inbound, QuicChannel quicChannel, InetSocketAddress dstAddress, ServerConfig config) {
+        createQuicStreamChannel(quicChannel, dstAddress, config).addListener(f2 -> quicOutboundReady(inbound, (QuicStreamChannel) f2.get()));
+    }
+
+    private static Future<QuicStreamChannel> createQuicStreamChannel(QuicChannel quicChannel, InetSocketAddress dstAddress, ServerConfig config) {
+        return quicChannel.newStreamBootstrap().handler(
+            new ChannelInitializer<>() {
+                @Override
+                protected void initChannel(Channel ch) {
+                    addProtocolHandler(dstAddress, config, ch);
+                }
+            }
+        ).create();
+    }
+
+    private void quicOutboundReady(Channel inbound, QuicStreamChannel outbound) {
+        outbound.pipeline().addLast(new DefaultChannelInboundHandler(inbound)); // R → L
+        inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
+        inboundReady().success().accept(inbound);
+        outboundReady(inbound).accept(outbound);
     }
 
     private ChannelHandler getDohRequestHandler(DnsRequest<FullHttpRequest> request, Promise<String> promise, ServerConfig config) {

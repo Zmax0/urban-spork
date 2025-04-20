@@ -1,5 +1,7 @@
 package com.urbanspork.test.template;
 
+import com.urbanspork.common.config.ClientConfig;
+import com.urbanspork.common.config.ClientConfigTest;
 import com.urbanspork.common.protocol.HandshakeResult;
 import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.server.tcp.EchoTestServer;
@@ -68,6 +70,10 @@ public abstract class TcpTestTemplate extends TestTemplate {
     private int getPortOrDefault(String key, ToIntFunction<String> converter) {
         String property = System.getProperty(key);
         return property == null ? 0 : converter.applyAsInt(property);
+    }
+
+    protected ClientConfig clientConfig() {
+        return ClientConfigTest.testConfig(clientPort, serverPort);
     }
 
     protected Channel connect(InetSocketAddress address) throws InterruptedException {
