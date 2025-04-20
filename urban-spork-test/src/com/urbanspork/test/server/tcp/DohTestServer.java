@@ -9,6 +9,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioIoHandler;
+import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -42,7 +43,7 @@ public class DohTestServer {
         launch(PORT, new DefaultPromise<>() {});
     }
 
-    public static void launch(int port, Promise<Channel> promise) {
+    public static void launch(int port, Promise<ServerSocketChannel> promise) {
         URL crt = Objects.requireNonNull(DohTestServer.class.getResource("/localhost.crt"));
         URL key = Objects.requireNonNull(DohTestServer.class.getResource("/localhost.key"));
         try (EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
@@ -95,7 +96,7 @@ public class DohTestServer {
                 })
                 .bind(port).addListener((ChannelFutureListener) future -> {
                     if (future.isSuccess()) {
-                        Channel channel = future.channel();
+                        ServerSocketChannel channel = (ServerSocketChannel) future.channel();
                         logger.info("Launch echo test server => {}", channel.localAddress());
                         promise.setSuccess(channel);
                     } else {

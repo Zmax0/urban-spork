@@ -19,7 +19,7 @@ A network tool for improved privacy and security
 |   `tcp`    |     `tls`     |    ✔     |      ✔      |   ✔   |   ✔    |
 |   `tcp`    |     `ws`      |    ✔     |      ✔      |   ✔   |        |
 |   `tcp`    |     `wss`     |    ✔     |      ✔      |   ✔   |   ✔    |
-|   `tcp`    |    `quic`     |          |    ✔(*)     |   ✔   |   ✔    |
+|   `tcp`    |    `quic`     |    ✔     |    ✔(*)     |   ✔   |   ✔    |
 |   `udp`    |     `udp`     |          |      ✔      |       |        |
 |   `udp`    |     `tcp`     |          |             |   ✔   |        |
 |   `udp`    |     `tls`     |          |             |   ✔   |   ✔    |

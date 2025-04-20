@@ -12,7 +12,7 @@ import com.urbanspork.common.transport.Transport;
 import com.urbanspork.server.Server;
 import com.urbanspork.test.server.tcp.DohTestServer;
 import com.urbanspork.test.template.TcpTestTemplate;
-import io.netty.channel.Channel;
+import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.util.concurrent.DefaultPromise;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ import java.util.concurrent.TimeoutException;
 class ClientDnsTest extends TcpTestTemplate {
     @Test
     void test() throws ExecutionException, InterruptedException, TimeoutException {
-        Channel dohServer = launchDohTestServer();
+        ServerSocketChannel dohServer = launchDohTestServer();
         Protocol protocol = Protocol.trojan;
         String password = TestDice.rollPassword(protocol, null);
         WebSocketSetting wsSetting = new WebSocketSetting();
@@ -35,9 +35,9 @@ class ClientDnsTest extends TcpTestTemplate {
         SslSetting sslSetting = SslUtil.getSslSetting();
         DnsSetting dnsSetting = new DnsSetting();
         dnsSetting.setSsl(sslSetting);
-        InetSocketAddress resolved = this.dstAddress;
-        this.dstAddress = new InetSocketAddress("test1.urbanspork.com", resolved.getPort());
-        dnsSetting.setNameServer(String.format("https://localhost:%d?&resolved=%s&name=", ((InetSocketAddress) dohServer.localAddress()).getPort(), resolved.getHostString()));
+        InetSocketAddress echoServerAddress = echoTestServer.localAddress();
+        this.dstAddress = new InetSocketAddress(TestDice.rollHost(), echoServerAddress.getPort());
+        dnsSetting.setNameServer(String.format("https://localhost:%d?&resolved=%s&name=", dohServer.localAddress().getPort(), echoServerAddress.getHostString()));
         ClientConfig config = ClientConfigTest.testConfig(0, 0);
         ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setProtocol(protocol);
@@ -71,7 +71,7 @@ class ClientDnsTest extends TcpTestTemplate {
         serverConfig.setDns(dnsSetting);
         List<Server.Instance> server = launchServer(config.getServers());
         Client.Instance client = launchClient(config);
-        this.dstAddress = InetSocketAddress.createUnresolved("test2.urbanspork.com", dstAddress.getPort());
+        this.dstAddress = InetSocketAddress.createUnresolved(TestDice.rollHost(), dstAddress.getPort());
         dnsSetting.setNameServer(String.format("https://localhost:%d?&&name=", echoTestServer.localAddress().getPort()));
         InetSocketAddress clientTcpAddress = client.tcp().localAddress();
         Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientTcpAddress));
@@ -79,8 +79,8 @@ class ClientDnsTest extends TcpTestTemplate {
         client.close();
     }
 
-    private Channel launchDohTestServer() throws ExecutionException, InterruptedException {
-        DefaultPromise<Channel> promise = new DefaultPromise<>() {};
+    static ServerSocketChannel launchDohTestServer() throws ExecutionException, InterruptedException {
+        DefaultPromise<ServerSocketChannel> promise = new DefaultPromise<>() {};
         POOL.submit(() -> DohTestServer.launch(0, promise));
         return promise.get();
     }
