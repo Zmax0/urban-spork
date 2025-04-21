@@ -74,7 +74,7 @@ class ShadowsocksTcpTest extends TcpTestTemplate {
     }
 
     void setUp(boolean block) throws ExecutionException, InterruptedException {
-        ServerConfig serverConfig = ServerConfigTest.testConfig(serverPort);
+        ServerConfig serverConfig = ServerConfigTest.testConfig(SERVER_PORT);
         Protocol protocol = Protocol.shadowsocks;
         CipherKind cipher = CipherKind.aead2022_blake3_aes_256_gcm;
         serverConfig.setProtocol(protocol);
@@ -87,7 +87,7 @@ class ShadowsocksTcpTest extends TcpTestTemplate {
         serverConfig.setUser(user);
         server = launchServer(List.of(serverConfig));
         capture = new TcpCapture(serverConfig.getPort(), block);
-        ClientConfig config = ClientConfigTest.testConfig(clientPort, capture.getLocalChannel().localAddress().getPort());
+        ClientConfig config = ClientConfigTest.testConfig(CLIENT_PORT, capture.getLocalChannel().localAddress().getPort());
         ServerConfig current = config.getCurrent();
         current.setCipher(serverConfig.getCipher());
         current.setProtocol(serverConfig.getProtocol());

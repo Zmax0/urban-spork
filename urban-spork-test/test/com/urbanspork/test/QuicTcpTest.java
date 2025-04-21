@@ -34,7 +34,7 @@ class QuicTcpTest extends TcpTestTemplate {
     @ArgumentsSource(Parameter.QuicProvider.class)
     void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
         CipherKind cipher = parameter.cipher();
-        ClientConfig config = clientConfig();
+        ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setProtocol(parameter.protocol());
         serverConfig.setCipher(cipher);
@@ -57,7 +57,7 @@ class QuicTcpTest extends TcpTestTemplate {
     void testClientDnsByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
         ServerSocketChannel dohServer = ClientDnsTest.launchDohTestServer();
         CipherKind cipher = parameter.cipher();
-        ClientConfig config = clientConfig();
+        ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setProtocol(parameter.protocol());
         serverConfig.setCipher(cipher);
@@ -86,7 +86,7 @@ class QuicTcpTest extends TcpTestTemplate {
         String password = TestDice.rollPassword(protocol, null);
         SslSetting sslSetting = SslUtil.getSslSetting();
         DnsSetting dnsSetting = new DnsSetting();
-        ClientConfig config = clientConfig();
+        ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setProtocol(protocol);
         serverConfig.setPassword(password);
