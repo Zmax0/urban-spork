@@ -2,7 +2,6 @@ package com.urbanspork.test;
 
 import com.urbanspork.client.Client;
 import com.urbanspork.common.config.ClientConfig;
-import com.urbanspork.common.config.ClientConfigTest;
 import com.urbanspork.common.config.DnsSetting;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.SslSetting;
@@ -38,7 +37,7 @@ class ClientDnsTest extends TcpTestTemplate {
         InetSocketAddress echoServerAddress = echoTestServer.localAddress();
         this.dstAddress = new InetSocketAddress(TestDice.rollHost(), echoServerAddress.getPort());
         dnsSetting.setNameServer(String.format("https://localhost:%d?&resolved=%s&name=", dohServer.localAddress().getPort(), echoServerAddress.getHostString()));
-        ClientConfig config = ClientConfigTest.testConfig(0, 0);
+        ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setProtocol(protocol);
         serverConfig.setPassword(password);
@@ -62,7 +61,7 @@ class ClientDnsTest extends TcpTestTemplate {
         String password = TestDice.rollPassword(protocol, null);
         SslSetting sslSetting = SslUtil.getSslSetting();
         DnsSetting dnsSetting = new DnsSetting();
-        ClientConfig config = ClientConfigTest.testConfig(0, 0);
+        ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setProtocol(protocol);
         serverConfig.setPassword(password);

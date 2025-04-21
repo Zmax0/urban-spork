@@ -63,6 +63,7 @@ public class Client {
                 CompletableFuture.supplyAsync(() -> client.tcp().closeFuture().syncUninterruptibly()),
                 CompletableFuture.supplyAsync(() -> client.udp().closeFuture().syncUninterruptibly())
             ).get();
+            logger.info("Client is terminated");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
