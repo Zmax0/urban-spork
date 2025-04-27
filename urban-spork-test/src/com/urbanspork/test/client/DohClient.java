@@ -13,8 +13,12 @@ import java.util.concurrent.TimeoutException;
 public class DohClient {
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
         EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-        Promise<String> promise = Doh.query(group, "https://1.1.1.1/dns-query", "www.example.com");
-        System.out.println(promise.get(10, TimeUnit.SECONDS));
-        group.shutdownGracefully();
+        try {
+            Promise<String> promise = Doh.query(group, "https://8.8.8.8/dns-query", ".example.com");
+            String result = promise.get(10, TimeUnit.SECONDS);
+            System.out.println(result);
+        } finally {
+            group.shutdownGracefully();
+        }
     }
 }

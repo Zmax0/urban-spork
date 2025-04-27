@@ -4,7 +4,10 @@ module com.urbanspork.common {
     requires com.fasterxml.jackson.core;
     requires com.fasterxml.jackson.databind;
     requires io.netty.buffer;
+    requires io.netty.codec.compression;
+    requires io.netty.codec.dns;
     requires io.netty.codec.http;
+    requires io.netty.codec.http2;
     requires io.netty.codec.socks;
     requires io.netty.codec;
     requires io.netty.common;

@@ -12,6 +12,7 @@ import com.urbanspork.server.Server;
 import com.urbanspork.test.server.tcp.DohTestServer;
 import com.urbanspork.test.template.TcpTestTemplate;
 import io.netty.channel.socket.ServerSocketChannel;
+import io.netty.util.NetUtil;
 import io.netty.util.concurrent.DefaultPromise;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ class ClientDnsTest extends TcpTestTemplate {
         dnsSetting.setSsl(sslSetting);
         InetSocketAddress echoServerAddress = echoTestServer.localAddress();
         this.dstAddress = new InetSocketAddress(TestDice.rollHost(), echoServerAddress.getPort());
-        dnsSetting.setNameServer(String.format("https://localhost:%d?&resolved=%s&name=", dohServer.localAddress().getPort(), echoServerAddress.getHostString()));
+        dnsSetting.setNameServer(String.format("https://localhost:%d/dns-query?resolved=%s", dohServer.localAddress().getPort(), NetUtil.toAddressString(echoServerAddress.getAddress())));
         ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setProtocol(protocol);
@@ -71,7 +72,7 @@ class ClientDnsTest extends TcpTestTemplate {
         List<Server.Instance> server = launchServer(config.getServers());
         Client.Instance client = launchClient(config);
         this.dstAddress = InetSocketAddress.createUnresolved(TestDice.rollHost(), dstAddress.getPort());
-        dnsSetting.setNameServer(String.format("https://localhost:%d?&&name=", echoTestServer.localAddress().getPort()));
+        dnsSetting.setNameServer(String.format("https://localhost:%d/dns-query", echoTestServer.localAddress().getPort()));
         InetSocketAddress clientTcpAddress = client.tcp().localAddress();
         Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientTcpAddress));
         closeServer(server);

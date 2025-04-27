@@ -1,14 +1,11 @@
 package com.urbanspork.common.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.urbanspork.common.config.SslSetting;
+import com.urbanspork.common.protocol.dns.DnsQueryEncoder;
 import com.urbanspork.common.protocol.dns.DnsRequest;
-import com.urbanspork.common.protocol.dns.DohRecord;
-import com.urbanspork.common.protocol.dns.DohResponse;
+import com.urbanspork.common.protocol.dns.DnsResponseDecoder;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
@@ -16,16 +13,35 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.dns.DefaultDnsQuery;
+import io.netty.handler.codec.dns.DefaultDnsQuestion;
+import io.netty.handler.codec.dns.DnsRawRecord;
+import io.netty.handler.codec.dns.DnsRecord;
+import io.netty.handler.codec.dns.DnsRecordType;
+import io.netty.handler.codec.dns.DnsResponse;
+import io.netty.handler.codec.dns.DnsResponseCode;
+import io.netty.handler.codec.dns.DnsSection;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.QueryStringEncoder;
+import io.netty.handler.codec.http2.DefaultHttp2Connection;
+import io.netty.handler.codec.http2.DelegatingDecompressorFrameListener;
+import io.netty.handler.codec.http2.Http2Connection;
+import io.netty.handler.codec.http2.Http2SecurityUtil;
+import io.netty.handler.codec.http2.HttpToHttp2ConnectionHandler;
+import io.netty.handler.codec.http2.HttpToHttp2ConnectionHandlerBuilder;
+import io.netty.handler.codec.http2.InboundHttp2ToHttpAdapterBuilder;
+import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.ssl.SupportedCipherSuiteFilter;
+import io.netty.util.NetUtil;
 import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,9 +50,10 @@ import javax.net.ssl.SSLException;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.Optional;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Doh {
     private static final Logger logger = LoggerFactory.getLogger(Doh.class);
@@ -57,7 +74,15 @@ public class Doh {
         try {
             InetSocketAddress address = request.address();
             String serverName = address.getHostString();
-            SslContextBuilder sslContextBuilder = SslContextBuilder.forClient();
+            SslContextBuilder sslContextBuilder = SslContextBuilder.forClient()
+                .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
+                .applicationProtocolConfig(new ApplicationProtocolConfig(
+                    ApplicationProtocolConfig.Protocol.ALPN,
+                    ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+                    ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+                    ApplicationProtocolNames.HTTP_2,
+                    ApplicationProtocolNames.HTTP_1_1
+                ));
             SslSetting sslSetting = request.ssl();
             if (sslSetting != null) {
                 if (sslSetting.getCertificateFile() != null) {
@@ -72,33 +97,37 @@ public class Doh {
             promise.setFailure(e);
             return;
         }
-        HttpClientCodec httpClient = new HttpClientCodec();
-        HttpObjectAggregator httpAggregator = new HttpObjectAggregator(0xffff);
+        Http2Connection connection = new DefaultHttp2Connection(false);
+        HttpToHttp2ConnectionHandler connectionHandler = new HttpToHttp2ConnectionHandlerBuilder()
+            .frameListener(new DelegatingDecompressorFrameListener(
+                connection,
+                new InboundHttp2ToHttpAdapterBuilder(connection).maxContentLength(0xffff).build()
+            ))
+            .connection(connection).build();
         channel.pipeline().addLast(
-            ssl, httpClient, httpAggregator,
+            ssl, connectionHandler,
             new SimpleChannelInboundHandler<FullHttpResponse>(false) {
                 @Override
-                protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) {
-                    logger.debug("received doh response: {}", msg);
+                protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) throws Exception {
+                    logger.debug("received DoH response: {}", msg);
                     ChannelPipeline pipeline = ctx.pipeline();
                     pipeline.remove(ssl);
-                    pipeline.remove(httpClient);
-                    pipeline.remove(httpAggregator);
+                    pipeline.remove(connectionHandler);
                     pipeline.remove(this);
-                    JsonMapper mapper = JsonMapper.builder()
-                        .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
-                        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                        .build();
-                    DohResponse response;
-                    try {
-                        response = mapper.readValue(msg.content().toString(StandardCharsets.UTF_8), DohResponse.class);
-                    } catch (JsonProcessingException e) {
-                        promise.setFailure(e);
+                    DnsResponse dnsResponse = DnsResponseDecoder.decode(msg.content());
+                    if (dnsResponse.code() != DnsResponseCode.NOERROR) {
+                        promise.setFailure(new IllegalStateException("DoH response code is " + dnsResponse.code()));
                         return;
                     }
-                    Optional.ofNullable(response.getAnswer()).orElse(Collections.emptyList()).stream().filter(a -> a.getType() == 1).findFirst().map(DohRecord::getData).ifPresentOrElse(
-                        promise::setSuccess, () -> promise.setFailure(new IllegalStateException("no fitting doh answer found"))
-                    );
+                    for (int i = 0; i < dnsResponse.count(DnsSection.ANSWER); i++) {
+                        DnsRecord record = dnsResponse.recordAt(DnsSection.ANSWER, i);
+                        if (record.type() == DnsRecordType.A) {
+                            DnsRawRecord rawRecord = (DnsRawRecord) record;
+                            String ipAddress = NetUtil.bytesToIpAddress(ByteBufUtil.getBytes(rawRecord.content()));
+                            promise.setSuccess(ipAddress);
+                            return;
+                        }
+                    }
                 }
 
                 @Override
@@ -111,19 +140,34 @@ public class Doh {
     }
 
     public static DnsRequest<FullHttpRequest> getRequest(String nameServer, String domain, SslSetting ssl) {
+        short tid = (short) ThreadLocalRandom.current().nextInt(); // unsigned short
+        DefaultDnsQuery dnsQuery = new DefaultDnsQuery(tid);
+        DefaultDnsQuestion question = new DefaultDnsQuestion(domain, DnsRecordType.A);
+        dnsQuery.addRecord(DnsSection.QUESTION, question);
+        domain = Base64.getUrlEncoder().withoutPadding().encodeToString(DnsQueryEncoder.encode(dnsQuery));
         URI uri = URI.create(nameServer);
+        Map<String, List<String>> queryParams;
         if (uri.getQuery() == null) {
-            uri = URI.create(nameServer + "?name=" + domain);
+            uri = URI.create(nameServer + "?dns=" + domain);
+        } else if ((queryParams = QueryStringDecoder.builder().build(uri).parameters()).containsKey("dns")) {
+            List<String> dns = queryParams.get("dns");
+            dns.clear();
+            dns.add(domain);
+            QueryStringEncoder encoder = new QueryStringEncoder(nameServer.replace("?" + uri.getQuery(), ""));
+            for (Map.Entry<String, List<String>> entry : queryParams.entrySet()) {
+                encoder.addParam(entry.getKey(), entry.getValue().getFirst());
+            }
+            uri = URI.create(encoder.toString());
         } else {
-            uri = URI.create(nameServer + domain);
+            uri = URI.create(nameServer + "&dns=" + domain);
         }
         int port = uri.getPort();
         if (port == -1) {
             port = uri.getScheme().equals("https") ? 443 : 80;
         }
         String host = uri.getHost();
-        FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri.toString());
-        request.headers().set(HttpHeaderNames.ACCEPT, "application/dns-json").set(HttpHeaderNames.HOST, host);
-        return new DnsRequest<>(InetSocketAddress.createUnresolved(host, port), ssl, request);
+        FullHttpRequest msg = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri.toString());
+        msg.headers().set(HttpHeaderNames.ACCEPT, "application/dns-message").set(HttpHeaderNames.CONTENT_TYPE, "application/dns-message");
+        return new DnsRequest<>(InetSocketAddress.createUnresolved(host, port), ssl, msg);
     }
 }
