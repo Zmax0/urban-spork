@@ -10,13 +10,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 class HttpProxyUtilTest {
     @ParameterizedTest
     @ValueSource(strings = {"""
-        CONNECT www.example.com:443 HTTP/1.1
+        CONNECT .example.com:443 HTTP/1.1
         Proxy-Connection: keep-alive
         """, """
-        POST http://www.example.com:8080/?a=b&c=d HTTP/1.1
+        POST http://.example.com:8080/?a=b&c=d HTTP/1.1
         Connection: keep-alive
         """, """
-        GET http://www.example.com/?a=b&c=d HTTP/1.1
+        GET http://.example.com/?a=b&c=d HTTP/1.1
         Connection: keep-alive
         """, """
         PUT http://[::1] HTTP/1.1
@@ -33,7 +33,7 @@ class HttpProxyUtilTest {
 
     @Test
     void testParseIllegalInitialLine() {
-        String str = "GET " + (char) 10 + "http://www.example.com HTTP/1.1\r\nConnection: keep-alive\r\n\r\n";
+        String str = "GET " + (char) 10 + "http://.example.com HTTP/1.1\r\nConnection: keep-alive\r\n\r\n";
         ByteBuf msg = Unpooled.wrappedBuffer(str.getBytes());
         Assertions.assertThrows(IllegalArgumentException.class, () -> HttpProxyUtil.parseOption(msg));
         ByteBuf msg2 = Unpooled.wrappedBuffer("GET".getBytes());

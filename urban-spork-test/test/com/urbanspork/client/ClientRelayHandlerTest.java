@@ -1,16 +1,15 @@
 package com.urbanspork.client;
 
-import com.urbanspork.common.config.DnsSetting;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTest;
 import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.protocol.Protocol;
+import com.urbanspork.test.DnsUtil;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.nio.NioIoHandler;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -37,14 +36,11 @@ class ClientRelayHandlerTest {
         Assertions.assertDoesNotThrow(() -> ClientRelayHandler.addWebSocketHandlers(channel, config));
     }
 
-    @Tag("networking")
     @RepeatedTest(2)
     void testResolveServerHost() {
-        DnsSetting dns = new DnsSetting();
-        dns.setNameServer("https://dns.google/resolve");
         ServerConfig config = ServerConfigTest.testConfig(0);
-        config.setHost("www.example.com");
-        config.setDns(dns);
+        config.setHost("example.com");
+        config.setDns(DnsUtil.getDnsSetting());
         String host = ClientRelayHandler.resolveServerHost(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()), config);
         Assertions.assertNotNull(host);
         Assertions.assertNotEquals(host, config.getHost());
@@ -55,6 +51,6 @@ class ClientRelayHandlerTest {
         Assertions.assertFalse(ClientRelayHandler.canResolve("192.168.89.9"));
         Assertions.assertFalse(ClientRelayHandler.canResolve("localhost"));
         Assertions.assertFalse(ClientRelayHandler.canResolve("abcd:ef01:2345:6789:abcd:ef01:2345:6789"));
-        Assertions.assertTrue(ClientRelayHandler.canResolve("www.example.com"));
+        Assertions.assertTrue(ClientRelayHandler.canResolve("example.com"));
     }
 }

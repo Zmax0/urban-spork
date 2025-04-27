@@ -12,6 +12,7 @@ import com.urbanspork.server.Server;
 import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.TcpTestTemplate;
 import io.netty.channel.socket.ServerSocketChannel;
+import io.netty.util.NetUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -68,7 +69,7 @@ class QuicTcpTest extends TcpTestTemplate {
         dnsSetting.setSsl(parameter.sslSetting());
         InetSocketAddress echoServerAddress = echoTestServer.localAddress();
         this.dstAddress = new InetSocketAddress(TestDice.rollHost(), echoServerAddress.getPort());
-        dnsSetting.setNameServer(String.format("https://localhost:%d?&resolved=%s&name=", dohServer.localAddress().getPort(), echoServerAddress.getHostString()));
+        dnsSetting.setNameServer(String.format("https://localhost:%d?&resolved=%s&name=", dohServer.localAddress().getPort(), NetUtil.toAddressString(echoServerAddress.getAddress())));
         serverConfig.setDns(dnsSetting);
         List<Server.Instance> server = launchServer(config.getServers());
         Client.Instance client = launchClient(config);

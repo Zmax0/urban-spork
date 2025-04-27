@@ -111,7 +111,7 @@ Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-
 
 > `dns`: (OPTIONAL) DNS specific configurations
 
-> > `nameServer`: The DNS name server address is expected to be in the DoH (DNS over HTTPS) format
+> > `nameServer`: The DoH (DNS over HTTPS - [RFC 8484](https://datatracker.ietf.org/doc/html/rfc8484)) resolver endpoint URL
 
 > `ssl`: (OPTIONAL) SSL specific configurations
 
