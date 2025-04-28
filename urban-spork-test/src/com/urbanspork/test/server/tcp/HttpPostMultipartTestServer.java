@@ -6,8 +6,9 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
@@ -33,8 +34,8 @@ public class HttpPostMultipartTestServer {
     }
 
     public static void launch(int port, Promise<Channel> promise) {
-        try (EventLoopGroup bossGroup = new NioEventLoopGroup();
-             EventLoopGroup workerGroup = new NioEventLoopGroup()) {
+        try (EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+             EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory())) {
             new ServerBootstrap().group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new ChannelInitializer<>() {
@@ -67,8 +68,7 @@ public class HttpPostMultipartTestServer {
                         promise.setFailure(future.cause());
                     }
                 }).sync().channel().closeFuture().sync();
-        } catch (
-            InterruptedException e) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
     }
