@@ -12,8 +12,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.FixedLengthFrameDecoder;
@@ -40,31 +41,23 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.ToIntFunction;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TcpTestTemplate extends TestTemplate {
-    final EventLoopGroup group = new NioEventLoopGroup();
+    final EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+    protected ServerSocketChannel echoTestServer;
     protected InetSocketAddress dstAddress;
-    protected int serverPort;
-    protected int clientPort;
 
     @BeforeAll
     protected void beforeAll() throws ExecutionException, InterruptedException {
         launchEchoTestServer();
-        serverPort = getPortOrDefault("com.urbanspork.test.server.port", Integer::parseInt);
-        clientPort = getPortOrDefault("com.urbanspork.test.client.port", Integer::parseInt);
     }
 
     private void launchEchoTestServer() throws InterruptedException, ExecutionException {
         CompletableFuture<ServerSocketChannel> promise = new CompletableFuture<>();
         POOL.submit(() -> EchoTestServer.launch(0, promise));
-        dstAddress = promise.get().localAddress();
-    }
-
-    private int getPortOrDefault(String key, ToIntFunction<String> converter) {
-        String property = System.getProperty(key);
-        return property == null ? 0 : converter.applyAsInt(property);
+        echoTestServer = promise.get();
+        dstAddress = echoTestServer.localAddress();
     }
 
     protected Channel connect(InetSocketAddress address) throws InterruptedException {
@@ -152,6 +145,7 @@ public abstract class TcpTestTemplate extends TestTemplate {
 
     @AfterAll
     protected void afterAll() {
+        echoTestServer.close().syncUninterruptibly();
         group.shutdownGracefully();
     }
 }

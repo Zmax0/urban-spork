@@ -34,7 +34,7 @@ class UdpTest extends UdpTestTemplate {
         if (protocol == Protocol.shadowsocks && cipher.isAead2022() && cipher.supportEih()) {
             testShadowsocksAEAD2022EihByParameter(parameter);
         }
-        ClientConfig config = ClientConfigTest.testConfig(0, 0);
+        ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setTransport(new Transport[]{Transport.UDP});
         serverConfig.setProtocol(protocol);
@@ -54,7 +54,7 @@ class UdpTest extends UdpTestTemplate {
         CipherKind cipher = parameter.cipher();
         Protocol protocol = parameter.protocol();
         Transport[] transports = {Transport.TCP, Transport.UDP};
-        ServerConfig serverConfig = ServerConfigTest.testConfig(0);
+        ServerConfig serverConfig = ServerConfigTest.testConfig(SERVER_PORT);
         serverConfig.setTransport(transports);
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
@@ -63,7 +63,7 @@ class UdpTest extends UdpTestTemplate {
         user.add(new ServerUserConfig(TestDice.rollString(10), parameter.clientPassword()));
         serverConfig.setUser(user);
         List<Server.Instance> server = launchServer(List.of(serverConfig));
-        ClientConfig clientConfig = ClientConfigTest.testConfig(0, serverConfig.getPort());
+        ClientConfig clientConfig = ClientConfigTest.testConfig(CLIENT_PORT, serverConfig.getPort());
         ServerConfig current = clientConfig.getCurrent();
         current.setCipher(cipher);
         current.setTransport(transports);
@@ -81,7 +81,7 @@ class UdpTest extends UdpTestTemplate {
     void testQuicByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
         Protocol protocol = parameter.protocol();
         CipherKind cipher = parameter.cipher();
-        ServerConfig serverConfig = ServerConfigTest.testConfig(0);
+        ServerConfig serverConfig = ServerConfigTest.testConfig(SERVER_PORT);
         serverConfig.setTransport(new Transport[]{Transport.QUIC});
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
@@ -89,7 +89,7 @@ class UdpTest extends UdpTestTemplate {
         serverConfig.setSsl(parameter.sslSetting());
         serverConfig.setWs(parameter.wsSetting());
         List<Server.Instance> server = launchServer(List.of(serverConfig));
-        ClientConfig clientConfig = ClientConfigTest.testConfig(0, serverConfig.getPort());
+        ClientConfig clientConfig = ClientConfigTest.testConfig(CLIENT_PORT, serverConfig.getPort());
         ServerConfig current = clientConfig.getCurrent();
         current.setCipher(cipher);
         current.setTransport(new Transport[]{Transport.UDP, Transport.QUIC});

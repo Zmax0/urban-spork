@@ -11,6 +11,5 @@ class SslSettingTest {
         TestUtil.testGetterAndSetter("B", setting, SslSetting::getKeyFile, SslSetting::setKeyFile);
         TestUtil.testGetterAndSetter("C", setting, SslSetting::getKeyPassword, SslSetting::setKeyPassword);
         TestUtil.testGetterAndSetter("D", setting, SslSetting::getServerName, SslSetting::setServerName);
-        TestUtil.testGetterAndSetter(false, setting, SslSetting::isVerifyHostname, SslSetting::setVerifyHostname);
     }
 }

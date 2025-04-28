@@ -13,19 +13,19 @@ A network tool for improved privacy and security
 
 ### Transport
 
-| Local-Peer | Client-Server | Shadowsocks | VMess | Trojan |
-|:----------:|:-------------:|:-----------:|:-----:|:------:|
-|   `tcp`    |     `tcp`     |      ✔      |   ✔   |        |
-|   `tcp`    |     `tls`     |      ✔      |   ✔   |   ✔    |
-|   `tcp`    |     `ws`      |      ✔      |   ✔   |        |
-|   `tcp`    |     `wss`     |      ✔      |   ✔   |   ✔    |
-|   `tcp`    |    `quic`     |    ✔(*)     |   ✔   |   ✔    |
-|   `udp`    |     `udp`     |      ✔      |       |        |
-|   `udp`    |     `tcp`     |             |   ✔   |        |
-|   `udp`    |     `tls`     |             |   ✔   |   ✔    |
-|   `udp`    |     `ws`      |             |   ✔   |        |
-|   `udp`    |     `wss`     |             |   ✔   |   ✔    |
-|   `udp`    |    `quic`     |             |   ✔   |   ✔    |
+| Local-Peer | Client-Server | Peer DoH | Shadowsocks | VMess | Trojan |
+|:----------:|:-------------:|:--------:|:-----------:|:-----:|:------:|
+|   `tcp`    |     `tcp`     |    ✔     |      ✔      |   ✔   |        |
+|   `tcp`    |     `tls`     |    ✔     |      ✔      |   ✔   |   ✔    |
+|   `tcp`    |     `ws`      |    ✔     |      ✔      |   ✔   |        |
+|   `tcp`    |     `wss`     |    ✔     |      ✔      |   ✔   |   ✔    |
+|   `tcp`    |    `quic`     |    ✔     |    ✔(*)     |   ✔   |   ✔    |
+|   `udp`    |     `udp`     |          |      ✔      |       |        |
+|   `udp`    |     `tcp`     |          |             |   ✔   |        |
+|   `udp`    |     `tls`     |          |             |   ✔   |   ✔    |
+|   `udp`    |     `ws`      |          |             |   ✔   |        |
+|   `udp`    |     `wss`     |          |             |   ✔   |   ✔    |
+|   `udp`    |    `quic`     |          |             |   ✔   |   ✔    |
 
 `*` starting the shadowsocks quic server will bind udp socket but process tcp payload
 
@@ -108,6 +108,10 @@ put *config.json* file into the unpacked folder before running a server
 
 > `user`: (OPTIONAL for shadowsocks) support multiple users with [*Shadowsocks 2022 Extensible Identity
 Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-shadowsocks-2022-extensible-identity-headers.md)
+
+> `dns`: (OPTIONAL) DNS specific configurations
+
+> > `nameServer`: The DoH (DNS over HTTPS - [RFC 8484](https://datatracker.ietf.org/doc/html/rfc8484)) resolver endpoint URL
 
 > `ssl`: (OPTIONAL) SSL specific configurations
 

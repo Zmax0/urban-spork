@@ -34,7 +34,7 @@ class TcpTest extends TcpTestTemplate {
         if (protocol == Protocol.shadowsocks && cipher.isAead2022() && cipher.supportEih()) {
             testShadowsocksAEAD2022EihByParameter(parameter);
         }
-        ClientConfig config = ClientConfigTest.testConfig(0, 0);
+        ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
@@ -54,15 +54,16 @@ class TcpTest extends TcpTestTemplate {
 
     @Test
     void testHttpBadRequest() throws ExecutionException, InterruptedException {
-        ClientConfig config = ClientConfigTest.testConfig(0, 0);
+        ClientConfig config = testConfig();
         Client.Instance client = launchClient(config);
         InetSocketAddress proxyAddress = client.udp().localAddress();
         Assertions.assertThrows(ExecutionException.class, () -> checkHttpSendBytes(proxyAddress, proxyAddress));
+        client.close();
     }
 
     @Test
     void testConnectServerFailed() throws ExecutionException, InterruptedException {
-        ClientConfig config = ClientConfigTest.testConfig(0, TestDice.rollPort());
+        ClientConfig config = ClientConfigTest.testConfig(CLIENT_PORT, TestDice.rollPort());
         Client.Instance client = launchClient(config);
         InetSocketAddress clientAddress = client.tcp().localAddress();
         Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientAddress));

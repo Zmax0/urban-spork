@@ -13,17 +13,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class Proxy {
+class Proxy {
     private static final ClientConfig config = Resource.config();
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Tray tray;
     private Client.Instance client;
 
-    public Proxy(Tray tray) {
+    Proxy(Tray tray) {
         this.tray = tray;
     }
 
-    public Optional<Client.Instance> launch() {
+    Optional<Client.Instance> launch() {
         ServerConfig current = config.getCurrent();
         if (current == null) {
             tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
@@ -47,7 +47,7 @@ public class Proxy {
         return client == null ? Optional.empty() : Optional.of(client);
     }
 
-    public void exit() {
+    void exit() {
         Optional.ofNullable(client).ifPresent(Client.Instance::close);
         executor.shutdown();
     }

@@ -2,6 +2,7 @@ package com.urbanspork.test.template;
 
 import com.urbanspork.client.Client;
 import com.urbanspork.common.config.ClientConfig;
+import com.urbanspork.common.config.ClientConfigTest;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.server.Server;
 
@@ -10,9 +11,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.ToIntFunction;
 
 abstract class TestTemplate {
     protected static final ExecutorService POOL = Executors.newThreadPerTaskExecutor(Executors.defaultThreadFactory());
+    protected static int SERVER_PORT = getPortOrDefault("com.urbanspork.test.server.port", Integer::parseInt);
+    protected static int CLIENT_PORT = getPortOrDefault("com.urbanspork.test.client.port", Integer::parseInt);
 
     protected static Client.Instance launchClient(ClientConfig config)
         throws InterruptedException, ExecutionException {
@@ -32,5 +36,14 @@ abstract class TestTemplate {
         for (Server.Instance server : servers) {
             server.close();
         }
+    }
+
+    private static int getPortOrDefault(String key, ToIntFunction<String> converter) {
+        String property = System.getProperty(key);
+        return property == null ? 0 : converter.applyAsInt(property);
+    }
+
+    protected static ClientConfig testConfig() {
+        return ClientConfigTest.testConfig(CLIENT_PORT, SERVER_PORT);
     }
 }

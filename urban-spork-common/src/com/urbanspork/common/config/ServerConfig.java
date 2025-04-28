@@ -32,6 +32,8 @@ public class ServerConfig {
 
     private WebSocketSetting ws;
 
+    private DnsSetting dns;
+
     public String getHost() {
         return host;
     }
@@ -118,6 +120,14 @@ public class ServerConfig {
 
     public void setWs(WebSocketSetting ws) {
         this.ws = ws;
+    }
+
+    public DnsSetting getDns() {
+        return dns;
+    }
+
+    public void setDns(DnsSetting dns) {
+        this.dns = dns;
     }
 
     @Override

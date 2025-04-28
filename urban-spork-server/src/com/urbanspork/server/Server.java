@@ -14,7 +14,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
@@ -51,8 +52,8 @@ public class Server {
 
     public static void launch(List<ServerConfig> configs, CompletableFuture<List<Instance>> promise) {
         Context context = Context.newCheckReplayInstance();
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+        EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         try {
             List<Instance> servers = new ArrayList<>(configs.size());
             int count = 0;
@@ -90,9 +91,9 @@ public class Server {
             .channel(NioServerSocketChannel.class)
             .childHandler(new ServerInitializer(context))
             .bind(config.getPort())
-            .sync().addListener(future -> logger.info("Running a tcp server => {}", config))
-            .channel().closeFuture().channel();
+            .sync().channel();
         config.setPort(tcp.localAddress().getPort());
+        logger.info("Running a tcp server => {}", config);
         Optional<DatagramChannel> udp = startUdp(bossGroup, workerGroup, context);
         return new Instance(tcp, udp);
     }
@@ -111,7 +112,8 @@ public class Server {
                         );
                     }
                 })
-                .bind(config.getPort()).sync().addListener(future -> logger.info("Running a udp server => {}", config)).channel();
+                .bind(config.getPort()).sync().channel();
+            logger.info("Running a udp server => {}", config);
             return Optional.of((DatagramChannel) channel);
         } else if (config.quicEnabled()) {
             return startQuic(bossGroup, context);
@@ -150,16 +152,16 @@ public class Server {
             .handler(codec)
             .bind(config.getPort())
             .sync()
-            .addListener(future -> logger.info("Running a quic server => {}", config))
             .channel();
+        logger.info("Running a quic server => {}", config);
         return Optional.of(channel);
     }
 
     public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp) implements Closeable {
         @Override
         public void close() {
-            udp.ifPresent(c -> c.close().awaitUninterruptibly());
-            tcp.close().awaitUninterruptibly();
+            udp.ifPresent(c -> c.close().syncUninterruptibly());
+            tcp.close().syncUninterruptibly();
         }
     }
 }

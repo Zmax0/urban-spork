@@ -10,12 +10,12 @@ import com.urbanspork.common.protocol.Protocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
@@ -39,33 +39,31 @@ public class Client {
     }
 
     public static void launch(ClientConfig config, CompletableFuture<Instance> promise) {
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+        EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         GlobalChannelTrafficShapingHandler traffic = new GlobalChannelTrafficShapingHandler(workerGroup);
         ClientInitializationContext context = new ClientInitializationContext(config, traffic);
         String host = config.getHost() == null ? InetAddress.getLoopbackAddress().getHostName() : config.getHost();
         try {
-            new ServerBootstrap().group(bossGroup, workerGroup)
+            ServerSocketChannel tcp = (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childOption(ChannelOption.SO_KEEPALIVE, true) // socks5 require
                 .childOption(ChannelOption.TCP_NODELAY, false)
                 .childOption(ChannelOption.SO_LINGER, 1)
                 .childHandler(new ClientInitializer(context))
-                .bind(host, config.getPort()).sync().addListener((ChannelFutureListener) future -> {
-                    ServerSocketChannel tcp = (ServerSocketChannel) future.channel();
-                    InetSocketAddress tcpLocalAddress = tcp.localAddress();
-                    int localPort = tcpLocalAddress.getPort();
-                    config.setPort(localPort);
-                    DatagramChannel udp = launchUdp(bossGroup, workerGroup, context);
-                    logger.info("Launch client => tcp{} udp{} ", tcpLocalAddress, udp.localAddress());
-                    Instance client = new Instance(tcp, udp, traffic.trafficCounter());
-                    promise.complete(client);
-                });
-            Instance client = promise.get();
+                .bind(host, config.getPort()).sync().channel();
+            InetSocketAddress tcpLocalAddress = tcp.localAddress();
+            int localPort = tcpLocalAddress.getPort();
+            config.setPort(localPort);
+            DatagramChannel udp = launchUdp(bossGroup, workerGroup, context);
+            logger.info("Launch client => tcp{} udp{} ", tcpLocalAddress, udp.localAddress());
+            Instance client = new Instance(tcp, udp, traffic.trafficCounter());
+            promise.complete(client);
             CompletableFuture.allOf(
                 CompletableFuture.supplyAsync(() -> client.tcp().closeFuture().syncUninterruptibly()),
                 CompletableFuture.supplyAsync(() -> client.udp().closeFuture().syncUninterruptibly())
             ).get();
+            logger.info("Client is terminated");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
@@ -116,8 +114,8 @@ public class Client {
     public record Instance(ServerSocketChannel tcp, DatagramChannel udp, TrafficCounter traffic) implements Closeable {
         @Override
         public void close() {
-            tcp.close().awaitUninterruptibly();
-            udp.close().awaitUninterruptibly();
+            tcp.close().syncUninterruptibly();
+            udp.close().syncUninterruptibly();
         }
     }
 }

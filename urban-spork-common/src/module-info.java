@@ -4,7 +4,10 @@ module com.urbanspork.common {
     requires com.fasterxml.jackson.core;
     requires com.fasterxml.jackson.databind;
     requires io.netty.buffer;
+    requires io.netty.codec.compression;
+    requires io.netty.codec.dns;
     requires io.netty.codec.http;
+    requires io.netty.codec.http2;
     requires io.netty.codec.socks;
     requires io.netty.codec;
     requires io.netty.common;
@@ -29,6 +32,7 @@ module com.urbanspork.common {
     exports com.urbanspork.common.crypto;
     exports com.urbanspork.common.lang;
     exports com.urbanspork.common.manage.shadowsocks;
+    exports com.urbanspork.common.protocol.dns;
     exports com.urbanspork.common.protocol.socks;
     exports com.urbanspork.common.protocol.trojan;
     exports com.urbanspork.common.protocol.vmess.aead;

@@ -10,7 +10,8 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -87,7 +88,7 @@ class ServerTest {
             service.submit(() -> Server.launch(List.of(config), promise));
             List<Server.Instance> servers = promise.get();
             InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
-            Channel channel = new Bootstrap().group(new NioEventLoopGroup())
+            Channel channel = new Bootstrap().group(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()))
                 .channel(NioDatagramChannel.class)
                 .handler(new LoggingHandler())
                 .bind(0).syncUninterruptibly().channel();
@@ -107,7 +108,7 @@ class ServerTest {
             CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
             Future<?> server = service.submit(() -> Server.launch(List.of(config), promise));
             promise.get();
-            Channel channel = new Bootstrap().group(new NioEventLoopGroup())
+            Channel channel = new Bootstrap().group(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()))
                 .channel(NioSocketChannel.class)
                 .handler(new LoggingHandler())
                 .connect(new InetSocketAddress(config.getHost(), config.getPort())).syncUninterruptibly().channel();
