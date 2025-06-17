@@ -128,6 +128,7 @@ public class Doh {
                             return;
                         }
                     }
+                    promise.setFailure(new IllegalStateException("No type-a answer found"));
                 }
 
                 @Override

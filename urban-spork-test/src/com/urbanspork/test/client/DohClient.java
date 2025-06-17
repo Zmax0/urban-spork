@@ -14,7 +14,7 @@ public class DohClient {
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
         EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         try {
-            Promise<String> promise = Doh.query(group, "https://8.8.8.8/dns-query", ".example.com");
+            Promise<String> promise = Doh.query(group, "https://8.8.8.8/dns-query", "example.com");
             String result = promise.get(10, TimeUnit.SECONDS);
             System.out.println(result);
         } finally {
