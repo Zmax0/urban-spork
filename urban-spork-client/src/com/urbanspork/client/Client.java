@@ -56,14 +56,15 @@ public class Client {
             int localPort = tcpLocalAddress.getPort();
             config.setPort(localPort);
             DatagramChannel udp = launchUdp(bossGroup, workerGroup, context);
-            logger.info("Launch client => tcp{} udp{} ", tcpLocalAddress, udp.localAddress());
             Instance client = new Instance(tcp, udp, traffic.trafficCounter());
+            int clientId = System.identityHashCode(client);
+            logger.info("Launch client [id:{}] => tcp{} udp{} ", clientId, tcpLocalAddress, udp.localAddress());
             promise.complete(client);
             CompletableFuture.allOf(
                 CompletableFuture.supplyAsync(() -> client.tcp().closeFuture().syncUninterruptibly()),
                 CompletableFuture.supplyAsync(() -> client.udp().closeFuture().syncUninterruptibly())
             ).get();
-            logger.info("Client is terminated");
+            logger.info("Client [id:{}] is terminated", clientId);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
