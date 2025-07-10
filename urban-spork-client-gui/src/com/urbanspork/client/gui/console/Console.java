@@ -112,21 +112,17 @@ public class Console extends Application {
     }
 
     public void hide() {
-        if (primaryStage != null) {
-            primaryStage.hide();
-        }
+        primaryStage.hide();
     }
 
     public void show() {
-        if (primaryStage != null) {
-            if (primaryStage.isIconified()) {
-                primaryStage.setIconified(false);
-            }
-            if (!primaryStage.isShowing()) {
-                primaryStage.show();
-            } else {
-                primaryStage.toFront();
-            }
+        if (primaryStage.isIconified()) {
+            primaryStage.setIconified(false);
+        }
+        if (!primaryStage.isShowing()) {
+            primaryStage.show();
+        } else {
+            primaryStage.toFront();
         }
     }
 
