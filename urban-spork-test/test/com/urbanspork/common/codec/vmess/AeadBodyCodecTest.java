@@ -22,6 +22,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.support.ParameterDeclarations;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,14 +95,14 @@ class AeadBodyCodecTest {
 
     private static class RequestCommandProvider implements ArgumentsProvider {
         @Override
-        public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+        public Stream<? extends Arguments> provideArguments(ParameterDeclarations parameters, ExtensionContext context) {
             return Arrays.stream(new RequestCommand[]{RequestCommand.TCP, RequestCommand.UDP}).map(Arguments::of);
         }
     }
 
     private static class RequestOptionProvider implements ArgumentsProvider {
         @Override
-        public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+        public Stream<? extends Arguments> provideArguments(ParameterDeclarations parameters, ExtensionContext context) {
             int option1 = RequestOption.ChunkStream.getValue();
             int option2 = RequestOption.ChunkStream.getValue() | RequestOption.ChunkMasking.getValue();
             int option3 = RequestOption.ChunkStream.getValue() | RequestOption.GlobalPadding.getValue();

@@ -12,6 +12,7 @@ import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.dns.Cache;
 import com.urbanspork.common.protocol.dns.DnsRequest;
+import com.urbanspork.common.protocol.dns.IpResponse;
 import com.urbanspork.common.util.Doh;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -38,7 +39,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 public interface ClientTcpRelayHandler extends ClientRelayHandler {
     Logger logger = LoggerFactory.getLogger(ClientTcpRelayHandler.class);
@@ -60,18 +63,19 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
         DnsSetting dnsSetting = config.getDns();
         String dstHost = dst.getHostString();
         if (dnsSetting != null && ClientRelayHandler.canResolve(dstHost)) {
-            if (PEER_CACHE.containsKey(dstHost)) {
-                ChannelHandler handler = getOutboundChannelHandler(inbound, InetSocketAddress.createUnresolved(PEER_CACHE.get(dstHost), dst.getPort()), config);
+            Optional<String> dstHostCache = PEER_CACHE.get(dstHost, Instant.now());
+            if (dstHostCache.isPresent()) {
+                ChannelHandler handler = getOutboundChannelHandler(inbound, InetSocketAddress.createUnresolved(dstHostCache.get(), dst.getPort()), config);
                 connectTcp(inbound, handler, serverAddress, isReadyOnceConnected);
             } else {
-                Promise<String> promise = inbound.eventLoop().parent().next().newPromise();
-                promise.addListener((GenericFutureListener<Future<String>>) f1 -> {
+                Promise<IpResponse> promise = inbound.eventLoop().parent().next().newPromise();
+                promise.addListener((GenericFutureListener<Future<IpResponse>>) f1 -> {
                     ChannelHandler handler;
                     if (f1.isSuccess()) {
-                        String resolved = f1.get();
+                        IpResponse resolved = f1.get();
                         logger.info("[tcp]resolve host (on peer side) {} -> {}", dstHost, resolved);
-                        PEER_CACHE.put(dstHost, resolved);
-                        handler = getOutboundChannelHandler(inbound, InetSocketAddress.createUnresolved(resolved, dst.getPort()), config);
+                        PEER_CACHE.put(dstHost, resolved.ip(), resolved.ttl(), Instant.now());
+                        handler = getOutboundChannelHandler(inbound, InetSocketAddress.createUnresolved(resolved.ip(), dst.getPort()), config);
                         connectTcp(inbound, handler, serverAddress, isReadyOnceConnected);
                     } else {
                         logger.info("[tcp]resolve host {} (on peer side) failed", dstHost, f1.cause());
@@ -139,19 +143,20 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
                         DnsSetting dnsSetting = config.getDns();
                         String dstHost = dstAddress.getHostString();
                         if (dnsSetting != null && ClientRelayHandler.canResolve(dstHost)) {
-                            if (PEER_CACHE.containsKey(dstHost)) {
-                                connectQuicStream(inbound, quicChannel, InetSocketAddress.createUnresolved(PEER_CACHE.get(dstHost), dstAddress.getPort()), config);
+                            Optional<String> cacheDstHost = PEER_CACHE.get(dstHost, Instant.now());
+                            if (cacheDstHost.isPresent()) {
+                                connectQuicStream(inbound, quicChannel, InetSocketAddress.createUnresolved(cacheDstHost.get(), dstAddress.getPort()), config);
                             } else {
                                 DnsRequest<FullHttpRequest> dohRequest = Doh.getRequest(dnsSetting.getNameServer(), dstHost, dnsSetting.getSsl());
                                 createQuicStreamChannel(quicChannel, dohRequest.address(), config).addListener(f2 -> {
                                     QuicStreamChannel outbound = (QuicStreamChannel) f2.get();
-                                    Promise<String> promise = inbound.eventLoop().parent().next().newPromise();
-                                    promise.addListener((GenericFutureListener<Future<String>>) f3 -> {
+                                    Promise<IpResponse> promise = inbound.eventLoop().parent().next().newPromise();
+                                    promise.addListener((GenericFutureListener<Future<IpResponse>>) f3 -> {
                                         if (f3.isSuccess()) {
-                                            String resolved = f3.get();
+                                            IpResponse resolved = f3.get();
                                             logger.info("[quic]resolve host (on peer side) {} -> {}", dstHost, resolved);
-                                            PEER_CACHE.put(dstHost, resolved);
-                                            connectQuicStream(inbound, quicChannel, InetSocketAddress.createUnresolved(resolved, dstAddress.getPort()), config);
+                                            PEER_CACHE.put(dstHost, resolved.ip(), resolved.ttl(), Instant.now());
+                                            connectQuicStream(inbound, quicChannel, InetSocketAddress.createUnresolved(resolved.ip(), dstAddress.getPort()), config);
                                         } else {
                                             logger.info("[quic]resolve host {} (on peer side) failed", dstHost, f1.cause());
                                             outbound.close();
@@ -198,7 +203,7 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
         outboundReady(inbound).accept(outbound);
     }
 
-    private ChannelHandler getDohRequestHandler(DnsRequest<FullHttpRequest> request, Promise<String> promise, ServerConfig config) {
+    private ChannelHandler getDohRequestHandler(DnsRequest<FullHttpRequest> request, Promise<IpResponse> promise, ServerConfig config) {
         return new ChannelInitializer<>() {
             @Override
             protected void initChannel(Channel outbound) throws Exception {
@@ -227,9 +232,9 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
 
     class DohRequestWebSocketCodec extends MessageToMessageCodec<BinaryWebSocketFrame, ByteBuf> {
         private final DnsRequest<FullHttpRequest> request;
-        private final Promise<String> promise;
+        private final Promise<IpResponse> promise;
 
-        public DohRequestWebSocketCodec(DnsRequest<FullHttpRequest> request, Promise<String> promise) {
+        public DohRequestWebSocketCodec(DnsRequest<FullHttpRequest> request, Promise<IpResponse> promise) {
             this.request = request;
             this.promise = promise;
         }

@@ -52,6 +52,10 @@
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <finalName>${project.artifactId}-${project.version}</finalName>

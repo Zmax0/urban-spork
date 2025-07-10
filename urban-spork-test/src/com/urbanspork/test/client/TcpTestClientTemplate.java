@@ -6,8 +6,9 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
@@ -24,7 +25,7 @@ import java.util.concurrent.ExecutionException;
 abstract class TcpTestClientTemplate<T> extends TestClientTemplate {
     protected static final Logger logger = LoggerFactory.getLogger(TcpTestClientTemplate.class);
     protected Channel channel;
-    protected final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+    protected final EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
 
     protected void launch() throws IOException, ExecutionException, InterruptedException {
         InetSocketAddress proxyAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), proxyPort);

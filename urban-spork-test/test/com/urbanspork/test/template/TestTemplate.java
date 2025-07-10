@@ -15,8 +15,8 @@ import java.util.function.ToIntFunction;
 
 abstract class TestTemplate {
     protected static final ExecutorService POOL = Executors.newThreadPerTaskExecutor(Executors.defaultThreadFactory());
-    protected static int SERVER_PORT = getPortOrDefault("com.urbanspork.test.server.port", Integer::parseInt);
-    protected static int CLIENT_PORT = getPortOrDefault("com.urbanspork.test.client.port", Integer::parseInt);
+    protected static final int SERVER_PORT = getPortOrDefault("com.urbanspork.test.server.port", Integer::parseInt);
+    protected static final int CLIENT_PORT = getPortOrDefault("com.urbanspork.test.client.port", Integer::parseInt);
 
     protected static Client.Instance launchClient(ClientConfig config)
         throws InterruptedException, ExecutionException {

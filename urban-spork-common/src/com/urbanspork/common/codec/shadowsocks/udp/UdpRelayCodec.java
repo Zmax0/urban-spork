@@ -125,7 +125,7 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Datagra
     }
 
     private static class Filter {
-        PacketWindowFilter filter;
+        final PacketWindowFilter filter;
         long packetId;
 
         Filter(PacketWindowFilter filter, long packetId) {
