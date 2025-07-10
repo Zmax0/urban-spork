@@ -7,6 +7,7 @@ import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.dns.Cache;
+import com.urbanspork.common.protocol.dns.IpResponse;
 import com.urbanspork.common.util.Doh;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -40,6 +41,7 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,7 +50,7 @@ import java.util.function.Consumer;
 
 public interface ClientRelayHandler {
     Logger logger = LoggerFactory.getLogger(ClientRelayHandler.class);
-    Cache SERVER_CACHE = new Cache(10);
+    Cache SERVER_CACHE = new Cache(256);
 
     record InboundReady(Consumer<Channel> success, Consumer<Channel> failure) {}
 
@@ -169,15 +171,15 @@ public interface ClientRelayHandler {
         String host = config.getHost();
         DnsSetting dns = config.getDns();
         if (dns != null && canResolve(host)) {
-            String cached = SERVER_CACHE.get(host);
-            if (cached != null) {
-                return cached;
+            Optional<String> cached = SERVER_CACHE.get(host, Instant.now());
+            if (cached.isPresent()) {
+                return cached.get();
             }
             try {
-                String resolved = Doh.query(group, dns.getNameServer(), host).get(10, TimeUnit.SECONDS);
+                IpResponse resolved = Doh.query(group, dns.getNameServer(), host).get(10, TimeUnit.SECONDS);
                 logger.info("resolved host {} -> {}", host, resolved);
-                SERVER_CACHE.put(host, resolved);
-                return resolved;
+                SERVER_CACHE.put(host, resolved.ip(), resolved.ttl(), Instant.now());
+                return resolved.ip();
             } catch (Exception e) {
                 logger.error("resolve server host {} failed", host, e);
             }

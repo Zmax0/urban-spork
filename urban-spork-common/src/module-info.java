@@ -17,6 +17,8 @@ module com.urbanspork.common {
     requires jdk.unsupported;
     requires org.bouncycastle.lts.prov;
     requires org.slf4j;
+    requires com.github.benmanes.caffeine;
+    requires org.jspecify;
 
     exports com.urbanspork.common.channel;
     exports com.urbanspork.common.codec.aead;

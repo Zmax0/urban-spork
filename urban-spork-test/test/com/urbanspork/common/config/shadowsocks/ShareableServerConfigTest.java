@@ -9,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.support.ParameterDeclarations;
 
 import java.net.URI;
 import java.util.Optional;
@@ -40,8 +41,13 @@ class ShareableServerConfigTest {
 
     static class IllegalUriProvider implements ArgumentsProvider {
         @Override
-        public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
-            return Stream.of("file://2022-blake3-aes-128-gcm:5mOQSa20Kt6ay2LXruBoHQ%3D%3D@example.com:443/#name", "ss://unknown:5mOQSa20Kt6ay2LXruBoHQ%3D%3D@example.com:443/#name", "ss://unknown@example.com:443/#name", "ss://example.com:443/#name").map(URI::create).map(Arguments::of);
+        public Stream<? extends Arguments> provideArguments(ParameterDeclarations parameters, ExtensionContext extensionContext) {
+            return Stream.of(
+                "file://2022-blake3-aes-128-gcm:5mOQSa20Kt6ay2LXruBoHQ%3D%3D@example.com:443/#name",
+                "ss://unknown:5mOQSa20Kt6ay2LXruBoHQ%3D%3D@example.com:443/#name",
+                "ss://unknown@example.com:443/#name",
+                "ss://example.com:443/#name"
+            ).map(URI::create).map(Arguments::of);
         }
     }
 }

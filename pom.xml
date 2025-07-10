@@ -28,6 +28,7 @@
     <jar-jni.version>1.2.0</jar-jni.version>
     <javafx.version>21.0.7</javafx.version>
     <jfoenix.version>9.0.10</jfoenix.version>
+    <caffeine.version>3.2.1</caffeine.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -71,6 +72,11 @@
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
         <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.ben-manes.caffeine</groupId>
+        <artifactId>caffeine</artifactId>
+        <version>${caffeine.version}</version>
       </dependency>
       <dependency>
         <groupId>io.netty</groupId>

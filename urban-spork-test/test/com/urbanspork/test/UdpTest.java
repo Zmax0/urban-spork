@@ -17,6 +17,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.support.ParameterDeclarations;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -105,8 +106,8 @@ class UdpTest extends UdpTestTemplate {
 
     static class QuicProvider implements ArgumentsProvider {
         @Override
-        public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
-            return new Parameter.QuicProvider().provideArguments(extensionContext).flatMap(e -> Stream.of(e.get())).map(Parameter.class::cast)
+        public Stream<? extends Arguments> provideArguments(ParameterDeclarations parameters, ExtensionContext extensionContext) {
+            return new Parameter.QuicProvider().provideArguments(parameters, extensionContext).flatMap(e -> Stream.of(e.get())).map(Parameter.class::cast)
                 .filter(p -> p.protocol() != Protocol.shadowsocks).map(Arguments::of);
         }
     }
