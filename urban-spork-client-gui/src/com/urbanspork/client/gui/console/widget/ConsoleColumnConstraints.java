@@ -6,7 +6,7 @@ import javafx.scene.layout.Priority;
 public class ConsoleColumnConstraints extends ColumnConstraints {
 
     public ConsoleColumnConstraints(double width) {
-        setHgrow(Priority.NEVER);
+        setHgrow(Priority.ALWAYS);
         setMinWidth(width);
     }
 

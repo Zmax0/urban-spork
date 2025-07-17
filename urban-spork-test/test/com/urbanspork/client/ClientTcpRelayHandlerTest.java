@@ -1,6 +1,5 @@
 package com.urbanspork.client;
 
-import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTest;
 import com.urbanspork.common.transport.Transport;
@@ -26,7 +25,7 @@ class ClientTcpRelayHandlerTest {
         ServerConfig config = ServerConfigTest.testConfig(0);
         config.setSsl(SslUtil.getSslSetting());
         config.setTransport(new Transport[]{Transport.QUIC});
-        inbound.attr(AttributeKeys.SERVER_CONFIG).set(config);
+        inbound.attr(ClientChannelContext.KEY).set(new ClientChannelContext(config, null, null));
         Promise<Boolean> promise = group.next().newPromise();
         ClientRelayHandler.InboundReady inboundReady = new ClientRelayHandler.InboundReady(
             c -> promise.setSuccess(true), c -> promise.setSuccess(false)

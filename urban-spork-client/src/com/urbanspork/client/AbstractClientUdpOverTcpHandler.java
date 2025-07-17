@@ -29,8 +29,8 @@ public abstract class AbstractClientUdpOverTcpHandler<K> extends AbstractClientU
     private static final Logger logger = LoggerFactory.getLogger(AbstractClientUdpOverTcpHandler.class);
     private final EventLoopGroup workerGroup;
 
-    protected AbstractClientUdpOverTcpHandler(ServerConfig config, Duration keepAlive, EventLoopGroup workerGroup) {
-        super(config, keepAlive);
+    protected AbstractClientUdpOverTcpHandler(ClientChannelContext context, Duration keepAlive, EventLoopGroup workerGroup) {
+        super(context, keepAlive);
         this.workerGroup = workerGroup;
     }
 
@@ -40,6 +40,7 @@ public abstract class AbstractClientUdpOverTcpHandler<K> extends AbstractClientU
 
     @Override
     protected Channel newBindingChannel(Channel inboundChannel, K key) {
+        ServerConfig config = context.config();
         InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
         return new Bootstrap()
             .group(workerGroup)
@@ -58,7 +59,7 @@ public abstract class AbstractClientUdpOverTcpHandler<K> extends AbstractClientU
     }
 
     protected void addWebSocketHandler(Channel channel) throws URISyntaxException {
-        if (ClientRelayHandler.addWebSocketHandlers(channel, config)) {
+        if (ClientRelayHandler.addWebSocketHandlers(channel, context)) {
             channel.pipeline().addLast(new WebSocketCodec());
         }
     }

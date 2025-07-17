@@ -1,5 +1,6 @@
 package com.urbanspork.client.vmess;
 
+import com.urbanspork.client.ClientChannelContext;
 import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTest;
@@ -25,7 +26,7 @@ class ClientUdpOverTcpHandlerTest {
         config.setProtocol(Protocol.vmess);
         config.setPassword(TestDice.rollPassword(Protocol.vmess, CipherKind.chacha20_poly1305));
         EventLoopGroup executor = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-        EmbeddedChannel channel = new EmbeddedChannel(new ClientUdpOverTcpHandler(config, executor));
+        EmbeddedChannel channel = new EmbeddedChannel(new ClientUdpOverTcpHandler(new ClientChannelContext(config, null, null), executor));
         DatagramPacketWrapper packet = new DatagramPacketWrapper(new DatagramPacket(Unpooled.EMPTY_BUFFER, new InetSocketAddress(TestDice.rollPort())), new InetSocketAddress(0));
         Assertions.assertThrows(ConnectException.class, () -> channel.writeInbound(packet));
         channel.close();

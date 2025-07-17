@@ -6,7 +6,6 @@ import com.urbanspork.common.config.ConfigHandler;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.MissingResourceException;
 import java.util.Objects;
 import java.util.ResourceBundle;
 
@@ -16,7 +15,6 @@ public class Resource {
     private static final String PROGRAM_ICON_NAME = "picon.png";
     private static final String CONSOLE_CSS_NAME = "console.css";
     private static final ClientConfig CONFIG;
-    private static final ResourceBundle LANGUAGE;
 
     public static final URL PROGRAM_ICON;
     public static final URL TRAY_ICON;
@@ -35,21 +33,11 @@ public class Resource {
             config.setServers(new ArrayList<>());
         }
         String language = config.getLanguage();
-        ResourceBundle bundle;
-        String baseName = "resource.locales.console";
-        try {
-            if (language == null) {
-                Locale locale = Locale.getDefault();
-                bundle = ResourceBundle.getBundle(baseName, locale);
-                config.setLanguage(locale.getLanguage());
-            } else {
-                bundle = ResourceBundle.getBundle(baseName, Locale.of(language));
-            }
-        } catch (MissingResourceException e) {
-            bundle = ResourceBundle.getBundle(baseName, Locale.ENGLISH);
+        if (language == null) {
+            Locale locale = Locale.getDefault();
+            config.setLanguage(locale.getLanguage());
         }
         CONFIG = config;
-        LANGUAGE = bundle;
     }
 
     private Resource() {}
@@ -59,7 +47,7 @@ public class Resource {
     }
 
     public static ResourceBundle language() {
-        return LANGUAGE;
+        return ResourceBundle.getBundle("resource.locales.console", Locale.of(CONFIG.getLanguage()));
     }
 
     public static ResourceBundle application() {

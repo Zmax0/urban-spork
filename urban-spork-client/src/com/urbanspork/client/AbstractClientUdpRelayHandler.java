@@ -1,6 +1,5 @@
 package com.urbanspork.client;
 
-import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.common.util.LruCache;
 import io.netty.channel.Channel;
@@ -15,12 +14,12 @@ import java.time.Duration;
 public abstract class AbstractClientUdpRelayHandler<K> extends SimpleChannelInboundHandler<DatagramPacketWrapper> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractClientUdpRelayHandler.class);
-    protected final ServerConfig config;
+    protected final ClientChannelContext context;
     protected final LruCache<K, Channel> binding;
 
-    protected AbstractClientUdpRelayHandler(ServerConfig config, Duration keepAlive) {
+    protected AbstractClientUdpRelayHandler(ClientChannelContext context, Duration keepAlive) {
         super(false);
-        this.config = config;
+        this.context = context;
         this.binding = new LruCache<>(1024, keepAlive, (k, channel) -> {
             logger.info("[udp][binding][expire]{} != {}", k, channel.localAddress());
             channel.close();
@@ -38,7 +37,7 @@ public abstract class AbstractClientUdpRelayHandler<K> extends SimpleChannelInbo
         DatagramPacket packet = msg.packet();
         Channel inbound = ctx.channel();
         Channel outbound = getBindingChannel(inbound, getKey(msg));
-        logger.info("[udp][{}]{}→{}~{}→{}", config.getProtocol(), packet.sender(), msg.proxy(), inbound.localAddress(), outbound.localAddress());
+        logger.info("[udp][{}]{}→{}~{}→{}", context.config().getProtocol(), packet.sender(), msg.proxy(), inbound.localAddress(), outbound.localAddress());
         outbound.writeAndFlush(convertToWrite(msg));
     }
 

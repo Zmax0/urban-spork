@@ -14,10 +14,11 @@ import javafx.application.Platform;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.TrayIcon.MessageType;
+import java.beans.PropertyChangeSupport;
 
 public final class ConsoleTray implements Tray {
-
     private final JPopupMenu menu = new JPopupMenu();
+    private final PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
     private final TrayIcon trayIcon;
     private final Console console;
 
@@ -25,6 +26,11 @@ public final class ConsoleTray implements Tray {
         this.console = console;
         this.trayIcon = new TrayIcon(new ImageIcon(Resource.TRAY_ICON).getImage(), I18N.getString(I18N.PROGRAM_TITLE), () -> Platform.runLater(console::show), menu);
         start();
+    }
+
+    @Override
+    public PropertyChangeSupport changeSupport() {
+        return changeSupport;
     }
 
     @Override
@@ -70,10 +76,10 @@ public final class ConsoleTray implements Tray {
         SwingUtilities.updateComponentTreeUI(menu);
         menu.add(new ServersMenuItem(console, this).build());
         menu.addSeparator();
-        menu.add(new ConsoleMenuItem(console).build());
+        menu.add(new ConsoleMenuItem(console, changeSupport).build());
         menu.addSeparator();
         menu.add(new LanguageMenuItem(this).build());
         menu.addSeparator();
-        menu.add(new ExitMenuItem().build());
+        menu.add(new ExitMenuItem(changeSupport).build());
     }
 }
