@@ -108,7 +108,7 @@ public class Doh {
             .connection(connection).build();
         channel.pipeline().addLast(
             ssl, connectionHandler,
-            new SimpleChannelInboundHandler<FullHttpResponse>(false) {
+            new SimpleChannelInboundHandler<FullHttpResponse>() {
                 @Override
                 protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) throws Exception {
                     logger.debug("received DoH response: {}", msg);

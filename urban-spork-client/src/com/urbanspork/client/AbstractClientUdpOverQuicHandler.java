@@ -17,9 +17,9 @@ import java.time.Duration;
 public abstract class AbstractClientUdpOverQuicHandler<K> extends AbstractClientUdpRelayHandler<K> {
     private final Channel endpoint;
 
-    protected AbstractClientUdpOverQuicHandler(ServerConfig config, Duration keepAlive, EventLoopGroup workerGroup) {
-        super(config, keepAlive);
-        endpoint = ClientRelayHandler.quicEndpoint(config.getSsl(), workerGroup).syncUninterruptibly().channel();
+    protected AbstractClientUdpOverQuicHandler(ClientChannelContext context, Duration keepAlive, EventLoopGroup workerGroup) {
+        super(context, keepAlive);
+        endpoint = ClientRelayHandler.quicEndpoint(context.config().getSsl(), workerGroup).syncUninterruptibly().channel();
     }
 
     protected abstract ChannelInitializer<Channel> newOutboundInitializer(K k);
@@ -27,6 +27,7 @@ public abstract class AbstractClientUdpOverQuicHandler<K> extends AbstractClient
     protected abstract ChannelHandler newInboundHandler(Channel inbound, K k);
 
     protected Channel newBindingChannel(Channel inbound, K k) {
+        ServerConfig config = context.config();
         InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
         QuicChannel quicChannel = QuicChannel.newBootstrap(endpoint).remoteAddress(serverAddress).streamHandler(new ChannelInboundHandlerAdapter()).connect().syncUninterruptibly().getNow();
         return quicChannel.newStreamBootstrap().handler(newOutboundInitializer(k)).create().addListener(f2 -> {

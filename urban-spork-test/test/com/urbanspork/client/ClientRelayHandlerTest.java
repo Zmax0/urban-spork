@@ -19,9 +19,10 @@ class ClientRelayHandlerTest {
     void testAddSslHandler() {
         EmbeddedChannel channel = new EmbeddedChannel();
         ServerConfig config = ServerConfigTest.testConfig(0);
-        Assertions.assertDoesNotThrow(() -> ClientRelayHandler.addSslHandler(channel, config));
+        ClientChannelContext context = new ClientChannelContext(config, null, null);
+        Assertions.assertDoesNotThrow(() -> ClientRelayHandler.addSslHandler(channel, context));
         config.setProtocol(Protocol.trojan);
-        Assertions.assertThrows(IllegalArgumentException.class, () -> ClientRelayHandler.addSslHandler(channel, config));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ClientRelayHandler.addSslHandler(channel, context));
     }
 
     @Test
@@ -29,11 +30,12 @@ class ClientRelayHandlerTest {
         EmbeddedChannel channel = new EmbeddedChannel();
         WebSocketSetting webSocket = new WebSocketSetting();
         ServerConfig config = ServerConfigTest.testConfig(0);
+        ClientChannelContext context = new ClientChannelContext(config, null, null);
         config.setWs(webSocket);
-        Assertions.assertThrows(IllegalArgumentException.class, () -> ClientRelayHandler.addWebSocketHandlers(channel, config));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ClientRelayHandler.addWebSocketHandlers(channel, context));
         webSocket.setPath("/ws");
         webSocket.setHeader(Map.of("Host", "localhost"));
-        Assertions.assertDoesNotThrow(() -> ClientRelayHandler.addWebSocketHandlers(channel, config));
+        Assertions.assertDoesNotThrow(() -> ClientRelayHandler.addWebSocketHandlers(channel, context));
     }
 
     @RepeatedTest(2)

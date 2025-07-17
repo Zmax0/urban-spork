@@ -1,6 +1,7 @@
 package com.urbanspork.client.vmess;
 
 import com.urbanspork.client.AbstractClientUdpOverTcpHandler;
+import com.urbanspork.client.ClientChannelContext;
 import com.urbanspork.client.ClientRelayHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.vmess.header.RequestCommand;
@@ -16,8 +17,8 @@ import java.time.Duration;
 
 public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<Key> implements ClientUdpOverTcp {
 
-    public ClientUdpOverTcpHandler(ServerConfig config, EventLoopGroup workerGroup) {
-        super(config, Duration.ofMinutes(10), workerGroup);
+    public ClientUdpOverTcpHandler(ClientChannelContext context, EventLoopGroup workerGroup) {
+        super(context, Duration.ofMinutes(10), workerGroup);
     }
 
     @Override
@@ -35,8 +36,9 @@ public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<Key
         return new ChannelInitializer<>() {
             @Override
             protected void initChannel(Channel ch) throws URISyntaxException, SSLException {
-                ClientRelayHandler.addSslHandler(ch, config);
+                ClientRelayHandler.addSslHandler(ch, context);
                 addWebSocketHandler(ch);
+                ServerConfig config = context.config();
                 ch.pipeline().addLast(new ClientAeadCodec(config.getCipher(), RequestCommand.UDP, key.recipient(), config.getPassword()));
             }
         };
