@@ -25,7 +25,7 @@
     <logback.version>1.5.13</logback.version>
     <netty.version>4.2.0.Final</netty.version>
     <netty.http3.version>0.0.29.Final</netty.http3.version>
-    <bouncycastle.version>2.73.5</bouncycastle.version>
+    <bouncycastle.version>2.73.6</bouncycastle.version>
     <jar-jni.version>1.2.0</jar-jni.version>
     <javafx.version>22.0.1</javafx.version>
     <jfoenix.version>9.0.10</jfoenix.version>
