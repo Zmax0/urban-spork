@@ -153,6 +153,8 @@ GridPane {
 
 .chart {
   -fx-max-height: 250;
+  -fx-min-height: 250;
+  -fx-pref-height: 250;
 }
 
 .chart-legend {
@@ -189,4 +191,15 @@ GridPane {
   -fx-background-color: #ff9f0a;
   -fx-shape: "M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z";
   -fx-padding: 8;
+}
+
+.table-view .placeholder {
+  -fx-background-image: url('image/empty-nest.png');
+  -fx-background-position: 50% 50%;
+  -fx-background-size: 50;
+  -fx-background-repeat: no-repeat;
+}
+
+.table-view .column-header-background .label{
+  -fx-alignment: center;
 }

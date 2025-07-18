@@ -10,7 +10,7 @@ class RequestCommandTest {
     @Test
     void testEquals() {
         RequestCommand tcp = RequestCommand.TCP;
-        Assertions.assertNotEquals(tcp, new Object());
+        Assertions.assertNotEquals(new Object(), tcp);
         Assertions.assertEquals(tcp, new RequestCommand(tcp.value()));
     }
 

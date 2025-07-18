@@ -7,6 +7,7 @@ import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.dns.Cache;
+import com.urbanspork.common.protocol.dns.IpResponse;
 import com.urbanspork.common.util.Doh;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -25,12 +26,12 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolConfig;
 import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler;
+import io.netty.handler.codec.quic.QuicClientCodecBuilder;
+import io.netty.handler.codec.quic.QuicSslContext;
+import io.netty.handler.codec.quic.QuicSslContextBuilder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.incubator.codec.quic.QuicClientCodecBuilder;
-import io.netty.incubator.codec.quic.QuicSslContext;
-import io.netty.incubator.codec.quic.QuicSslContextBuilder;
 import io.netty.util.NetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,8 +39,10 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.SSLException;
 import java.io.File;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,9 +51,19 @@ import java.util.function.Consumer;
 
 public interface ClientRelayHandler {
     Logger logger = LoggerFactory.getLogger(ClientRelayHandler.class);
-    Cache SERVER_CACHE = new Cache(10);
+    Cache SERVER_CACHE = new Cache(256);
 
     record InboundReady(Consumer<Channel> success, Consumer<Channel> failure) {}
+
+    record MaybeResolved(InetSocketAddress peer, InetSocketAddress resolved) {
+        public MaybeResolved(InetSocketAddress peer) {
+            this(peer, null);
+        }
+
+        public InetSocketAddress address() {
+            return resolved == null ? peer : resolved;
+        }
+    }
 
     default Consumer<Channel> outboundReady(Channel ignore) {
         return channel -> {};
@@ -107,7 +120,8 @@ public interface ClientRelayHandler {
         }
     }
 
-    static void addSslHandler(Channel ch, ServerConfig config) throws SSLException {
+    static void addSslHandler(Channel ch, ClientChannelContext context) throws SSLException {
+        ServerConfig config = context.config();
         SslSetting sslSetting = config.getSsl();
         if (sslSetting == null) {
             if (Protocol.trojan == config.getProtocol()) {
@@ -130,15 +144,22 @@ public interface ClientRelayHandler {
         ch.pipeline().addLast(sslHandler);
     }
 
-    static boolean addWebSocketHandlers(Channel ch, ServerConfig config) throws URISyntaxException {
-        if (config.getWs() != null) {
-            ch.pipeline().addLast(new HttpClientCodec(), new HttpObjectAggregator(0xfffff), buildWebSocketHandler(config));
+    static boolean addWebSocketHandlers(Channel ch, ClientChannelContext context) throws URISyntaxException {
+        if (context.config().getWs() != null) {
+            ch.pipeline().addLast(new HttpClientCodec(), new HttpObjectAggregator(0xfffff), buildWebSocketHandler(context));
             return true;
         }
         return false;
     }
 
-    private static WebSocketClientProtocolHandler buildWebSocketHandler(ServerConfig config) throws URISyntaxException {
+    static void addChannelTrafficHandler(Channel outbound, MaybeResolved address, ClientChannelContext context) {
+        ClientChannelTrafficHandler trafficHandler = context.channelTraffic()
+            .computeIfAbsent(outbound.id().asShortText(), k -> new ClientChannelTrafficHandler(address.peer().getHostString(), address.peer().getPort(), context));
+        outbound.pipeline().addLast(trafficHandler);
+    }
+
+    private static WebSocketClientProtocolHandler buildWebSocketHandler(ClientChannelContext context) throws URISyntaxException {
+        ServerConfig config = context.config();
         Optional<WebSocketSetting> ws = Optional.ofNullable(config.getWs());
         String path = ws.map(WebSocketSetting::getPath).orElseThrow(() -> new IllegalArgumentException("required path not present"));
         WebSocketClientProtocolConfig.Builder builder = WebSocketClientProtocolConfig.newBuilder()
@@ -169,15 +190,15 @@ public interface ClientRelayHandler {
         String host = config.getHost();
         DnsSetting dns = config.getDns();
         if (dns != null && canResolve(host)) {
-            String cached = SERVER_CACHE.get(host);
-            if (cached != null) {
-                return cached;
+            Optional<String> cached = SERVER_CACHE.get(host, Instant.now());
+            if (cached.isPresent()) {
+                return cached.get();
             }
             try {
-                String resolved = Doh.query(group, dns.getNameServer(), host).get(10, TimeUnit.SECONDS);
+                IpResponse resolved = Doh.query(group, dns.getNameServer(), host).get(10, TimeUnit.SECONDS);
                 logger.info("resolved host {} -> {}", host, resolved);
-                SERVER_CACHE.put(host, resolved);
-                return resolved;
+                SERVER_CACHE.put(host, resolved.ip(), resolved.ttl(), Instant.now());
+                return resolved.ip();
             } catch (Exception e) {
                 logger.error("resolve server host {} failed", host, e);
             }
@@ -188,4 +209,5 @@ public interface ClientRelayHandler {
     static boolean canResolve(String host) {
         return !InetAddress.getLoopbackAddress().getHostName().equals(host) && !NetUtil.isValidIpV4Address(host) && !NetUtil.isValidIpV6Address(host);
     }
+
 }

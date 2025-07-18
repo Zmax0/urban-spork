@@ -24,7 +24,8 @@ class AbstractClientUdpRelayHandlerTest {
         EmbeddedChannel outbound = new EmbeddedChannel();
         EmbeddedChannel inbound = new EmbeddedChannel();
         ServerConfig config = ServerConfigTest.testConfig(0);
-        inbound.pipeline().addLast(new TestClientUdpRelayHandler(config, outbound));
+        ClientChannelContext context = new ClientChannelContext(config, null, null);
+        inbound.pipeline().addLast(new TestClientUdpRelayHandler(context, outbound));
         InetSocketAddress recipient = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         DatagramPacketWrapper msg = new DatagramPacketWrapper(new DatagramPacket(Unpooled.wrappedBuffer(TestDice.rollString(10).getBytes()), recipient), recipient);
         Assertions.assertFalse(inbound.writeInbound(msg));
@@ -36,8 +37,8 @@ class AbstractClientUdpRelayHandlerTest {
     private static class TestClientUdpRelayHandler extends AbstractClientUdpRelayHandler<String> {
         private final Channel outbound;
 
-        protected TestClientUdpRelayHandler(ServerConfig config, Channel outbound) {
-            super(config, Duration.ofSeconds(1));
+        protected TestClientUdpRelayHandler(ClientChannelContext context, Channel outbound) {
+            super(context, Duration.ofSeconds(1));
             this.outbound = outbound;
         }
 

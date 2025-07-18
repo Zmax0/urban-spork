@@ -1,6 +1,7 @@
 package com.urbanspork.client.trojan;
 
 import com.urbanspork.client.AbstractClientUdpOverTcpHandler;
+import com.urbanspork.client.ClientChannelContext;
 import com.urbanspork.client.ClientRelayHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
@@ -16,8 +17,8 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 
 public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<InetSocketAddress> implements ClientUdpOverTcp {
-    public ClientUdpOverTcpHandler(ServerConfig config, EventLoopGroup workerGroup) {
-        super(config, Duration.ofMinutes(10), workerGroup);
+    public ClientUdpOverTcpHandler(ClientChannelContext context, EventLoopGroup workerGroup) {
+        super(context, Duration.ofMinutes(10), workerGroup);
     }
 
     @Override
@@ -35,7 +36,8 @@ public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<Ine
         return new ChannelInitializer<>() {
             @Override
             protected void initChannel(Channel ch) throws SSLException, URISyntaxException {
-                ClientRelayHandler.addSslHandler(ch, config);
+                ClientRelayHandler.addSslHandler(ch, context);
+                ServerConfig config = context.config();
                 addWebSocketHandler(ch);
                 InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
                 ch.pipeline().addLast(new ClientHeaderEncoder(config.getPassword(), serverAddress, SocksCmdType.UDP.byteValue()));

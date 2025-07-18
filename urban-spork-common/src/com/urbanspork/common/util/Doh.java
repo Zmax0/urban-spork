@@ -4,6 +4,7 @@ import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.protocol.dns.DnsQueryEncoder;
 import com.urbanspork.common.protocol.dns.DnsRequest;
 import com.urbanspork.common.protocol.dns.DnsResponseDecoder;
+import com.urbanspork.common.protocol.dns.IpResponse;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
@@ -58,9 +59,9 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Doh {
     private static final Logger logger = LoggerFactory.getLogger(Doh.class);
 
-    public static Promise<String> query(EventLoopGroup group, String nameServer, String domain) throws InterruptedException {
+    public static Promise<IpResponse> query(EventLoopGroup group, String nameServer, String domain) throws InterruptedException {
         DnsRequest<FullHttpRequest> quest = getRequest(nameServer, domain, null);
-        Promise<String> promise = group.next().newPromise();
+        Promise<IpResponse> promise = group.next().newPromise();
         Channel channel = new Bootstrap().group(group).channel(NioSocketChannel.class)
             .handler(new ChannelHandlerAdapter() {})
             .connect(quest.address()).sync()
@@ -69,7 +70,7 @@ public class Doh {
         return promise;
     }
 
-    public static void query(Channel channel, DnsRequest<FullHttpRequest> request, Promise<String> promise) {
+    public static void query(Channel channel, DnsRequest<FullHttpRequest> request, Promise<IpResponse> promise) {
         SslHandler ssl;
         try {
             InetSocketAddress address = request.address();
@@ -101,12 +102,13 @@ public class Doh {
         HttpToHttp2ConnectionHandler connectionHandler = new HttpToHttp2ConnectionHandlerBuilder()
             .frameListener(new DelegatingDecompressorFrameListener(
                 connection,
-                new InboundHttp2ToHttpAdapterBuilder(connection).maxContentLength(0xffff).build()
+                new InboundHttp2ToHttpAdapterBuilder(connection).maxContentLength(0xffff).build(),
+                0
             ))
             .connection(connection).build();
         channel.pipeline().addLast(
             ssl, connectionHandler,
-            new SimpleChannelInboundHandler<FullHttpResponse>(false) {
+            new SimpleChannelInboundHandler<FullHttpResponse>() {
                 @Override
                 protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) throws Exception {
                     logger.debug("received DoH response: {}", msg);
@@ -123,11 +125,12 @@ public class Doh {
                         DnsRecord record = dnsResponse.recordAt(DnsSection.ANSWER, i);
                         if (record.type() == DnsRecordType.A) {
                             DnsRawRecord rawRecord = (DnsRawRecord) record;
-                            String ipAddress = NetUtil.bytesToIpAddress(ByteBufUtil.getBytes(rawRecord.content()));
-                            promise.setSuccess(ipAddress);
+                            String ip = NetUtil.bytesToIpAddress(ByteBufUtil.getBytes(rawRecord.content()));
+                            promise.setSuccess(new IpResponse(ip, record.timeToLive()));
                             return;
                         }
                     }
+                    promise.setFailure(new IllegalStateException("No type-a answer found"));
                 }
 
                 @Override

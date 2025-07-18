@@ -20,9 +20,9 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.incubator.codec.quic.QuicServerCodecBuilder;
-import io.netty.incubator.codec.quic.QuicSslContext;
-import io.netty.incubator.codec.quic.QuicSslContextBuilder;
+import io.netty.handler.codec.quic.QuicServerCodecBuilder;
+import io.netty.handler.codec.quic.QuicSslContext;
+import io.netty.handler.codec.quic.QuicSslContextBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

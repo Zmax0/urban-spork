@@ -1,6 +1,7 @@
 package com.urbanspork.client.trojan;
 
 import com.urbanspork.client.AbstractClientUdpOverQuicHandler;
+import com.urbanspork.client.ClientChannelContext;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.channel.Channel;
@@ -13,8 +14,8 @@ import java.net.InetSocketAddress;
 import java.time.Duration;
 
 public class ClientUdpOverQuicHandler extends AbstractClientUdpOverQuicHandler<InetSocketAddress> implements ClientUdpOverTcp {
-    public ClientUdpOverQuicHandler(ServerConfig config, EventLoopGroup workerGroup) {
-        super(config, Duration.ofMinutes(10), workerGroup);
+    public ClientUdpOverQuicHandler(ClientChannelContext context, EventLoopGroup workerGroup) {
+        super(context, Duration.ofMinutes(10), workerGroup);
     }
 
     @Override
@@ -33,6 +34,7 @@ public class ClientUdpOverQuicHandler extends AbstractClientUdpOverQuicHandler<I
         return new ChannelInitializer<>() {
             @Override
             protected void initChannel(Channel ch) {
+                ServerConfig config = context.config();
                 InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
                 ch.pipeline().addLast(new ClientHeaderEncoder(config.getPassword(), serverAddress, SocksCmdType.UDP.byteValue()));
             }

@@ -5,10 +5,13 @@ import com.urbanspork.client.gui.i18n.I18N;
 import com.urbanspork.client.gui.tray.Tray;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ConfigHandler;
+import javafx.application.Platform;
 
 import javax.swing.*;
 import java.awt.TrayIcon.MessageType;
+import java.beans.PropertyChangeEvent;
 import java.util.Locale;
+import java.util.ResourceBundle;
 
 public class LanguageMenuItem {
     private final Tray tray;
@@ -18,7 +21,7 @@ public class LanguageMenuItem {
     }
 
     public JMenuItem build() {
-        JMenu menu = new JMenu(getLabel());
+        JMenu menu = new JMenu(I18N.getString(I18N.TRAY_MENU_LANGUAGE));
         ClientConfig config = Resource.config();
         String language = config.getLanguage();
         final Locale configLanguage = Locale.of(language);
@@ -33,23 +36,24 @@ public class LanguageMenuItem {
             }
             item.addActionListener(evt -> {
                 if (item.isSelected()) {
-                    config.setLanguage(item.getName());
+                    String lang = item.getName();
+                    config.setLanguage(lang);
                     try {
                         ConfigHandler.DEFAULT.save(config);
                     } catch (Exception e) {
                         tray.displayMessage("Error", "Save file error, cause: " + e.getMessage(), MessageType.ERROR);
                         return;
                     }
-                    tray.displayMessage("Config is saved", "Take effect after restart", MessageType.INFO);
+                    Platform.runLater(() -> {
+                        I18N.LANGUAGE.set(ResourceBundle.getBundle("resource.locales.console", Locale.of(lang)));
+                        tray.changeSupport().firePropertyChange(new PropertyChangeEvent(this, null, null, null));
+                        menu.setText(I18N.getString(I18N.TRAY_MENU_LANGUAGE));
+                    });
                 }
             });
             group.add(item);
             menu.add(item);
         }
         return menu;
-    }
-
-    private String getLabel() {
-        return I18N.getString(I18N.TRAY_MENU_LANGUAGE);
     }
 }

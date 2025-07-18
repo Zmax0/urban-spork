@@ -8,7 +8,7 @@ public record RequestCommand(byte value) {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof RequestCommand command && value == command.value;
+        return obj instanceof RequestCommand(byte command) && value == command;
     }
 
     @Override

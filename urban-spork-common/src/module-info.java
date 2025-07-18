@@ -12,11 +12,13 @@ module com.urbanspork.common {
     requires io.netty.codec;
     requires io.netty.common;
     requires io.netty.handler;
-    requires io.netty.incubator.codec.classes.quic;
+    requires io.netty.codec.classes.quic;
     requires io.netty.transport;
     requires jdk.unsupported;
     requires org.bouncycastle.lts.prov;
     requires org.slf4j;
+    requires com.github.benmanes.caffeine;
+    requires org.jspecify;
 
     exports com.urbanspork.common.channel;
     exports com.urbanspork.common.codec.aead;

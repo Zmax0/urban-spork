@@ -2,6 +2,7 @@ package com.urbanspork.test.client;
 
 import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.protocol.dns.DnsRequest;
+import com.urbanspork.common.protocol.dns.IpResponse;
 import com.urbanspork.common.util.Doh;
 import com.urbanspork.test.server.tcp.DohTestServer;
 import io.netty.bootstrap.Bootstrap;
@@ -28,7 +29,7 @@ public class DohTestClient {
         sslSetting.setServerName("localhost");
         EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         DnsRequest<FullHttpRequest> quest = Doh.getRequest("https://localhost:" + DohTestServer.PORT + "/dns-query", ".example.com", sslSetting);
-        Promise<String> promise = group.next().newPromise();
+        Promise<IpResponse> promise = group.next().newPromise();
         Channel channel = new Bootstrap().group(group).channel(NioSocketChannel.class)
             .handler(new ChannelHandlerAdapter() {})
             .connect(quest.address()).sync()

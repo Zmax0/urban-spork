@@ -6,7 +6,7 @@ import javafx.scene.layout.RowConstraints;
 public class ConsoleRowConstraints extends RowConstraints {
 
     public ConsoleRowConstraints(double height) {
-        setVgrow(Priority.NEVER);
+        setVgrow(Priority.ALWAYS);
         setMinHeight(height);
     }
 

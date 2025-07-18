@@ -44,7 +44,7 @@ class Proxy {
             tray.displayMessage("Error", message, MessageType.ERROR);
             tray.setToolTip(message);
         }
-        return client == null ? Optional.empty() : Optional.of(client);
+        return Optional.ofNullable(client);
     }
 
     void exit() {
