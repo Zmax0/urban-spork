@@ -1,6 +1,7 @@
 package com.urbanspork.client.shadowsocks;
 
 import com.urbanspork.client.AbstractClientUdpRelayHandler;
+import com.urbanspork.client.ClientChannelContext;
 import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.codec.shadowsocks.udp.UdpRelayCodec;
@@ -28,9 +29,10 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
     private final InetSocketAddress relay;
     private final UdpRelayCodec codec; // used by outbound (client-server) channel and its lifetime controlled by inbound (local-client) channel
 
-    public ClientUdpRelayHandler(ServerConfig config, EventLoopGroup workerGroup) {
-        super(config, Duration.ofMinutes(10));
+    public ClientUdpRelayHandler(ClientChannelContext context, EventLoopGroup workerGroup) {
+        super(context, Duration.ofMinutes(10));
         this.workerGroup = workerGroup;
+        ServerConfig config = context.config();
         this.relay = new InetSocketAddress(config.getHost(), config.getPort());
         UdpRelayCodec codec = new UdpRelayCodec(config, Mode.Client, ServerUserManager.empty());
         codec.setAutoRelease(false);
@@ -57,7 +59,7 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
                     ch.pipeline().addLast(
                         codec,
                         new InboundHandler(inboundChannel, sender),// server->client->sender
-                        new ExceptionHandler(config)
+                        new ExceptionHandler(context.config())
                     );
                 }
             }).bind(0) // automatically assigned port now, may have security implications

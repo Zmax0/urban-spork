@@ -1,6 +1,7 @@
 package com.urbanspork.client.gui.traffic;
 
 import com.urbanspork.client.gui.spine.CatmullRom;
+import com.urbanspork.client.gui.util.HumanReadable;
 import io.netty.handler.traffic.TrafficCounter;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -66,10 +67,10 @@ public class TrafficCounterLineChartBackstage {
         ObservableList<KeyFrame> keyFrames = timeline.getKeyFrames();
         keyFrames.clear();
         keyFrames.add(new KeyFrame(Duration.millis(counter.checkInterval()), event -> {
-            long writeBytes = counter.lastWrittenBytes() / 1024;
-            long readBytes = counter.lastReadBytes() / 1024;
-            writeSeries.setName(writeBytes + " KB/s");
-            readSeries.setName(readBytes + " KB/s");
+            long writeBytes = counter.lastWrittenBytes();
+            long readBytes = counter.lastReadBytes();
+            writeSeries.setName(HumanReadable.byteCountSI(writeBytes));
+            readSeries.setName(HumanReadable.byteCountSI(readBytes));
             scroll(write, writeBytes);
             scroll(read, readBytes);
         }));

@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>urban-spork</groupId>
   <artifactId>urban-spork</artifactId>
-  <version>2.5.7</version>
+  <version>2.5.8</version>
   <packaging>pom</packaging>
   <modules>
     <module>urban-spork-common</module>
@@ -15,20 +15,20 @@
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <urban-spork.version>2.5.7</urban-spork.version>
-    <maven-surefire-plugin.versioin>3.2.5</maven-surefire-plugin.versioin>
+    <urban-spork.version>2.5.8</urban-spork.version>
+    <maven-surefire-plugin.versioin>3.5.3</maven-surefire-plugin.versioin>
     <maven-jar-plugin.version>3.4.1</maven-jar-plugin.version>
-    <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
-    <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
-    <junit.jupiter.version>5.10.2</junit.jupiter.version>
-    <jackson.version>2.17.1</jackson.version>
-    <logback.version>1.5.13</logback.version>
-    <netty.version>4.2.0.Final</netty.version>
-    <netty.http3.version>0.0.29.Final</netty.http3.version>
-    <bouncycastle.version>2.73.6</bouncycastle.version>
+    <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
+    <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
+    <junit.jupiter.version>5.13.1</junit.jupiter.version>
+    <jackson.version>2.19.0</jackson.version>
+    <logback.version>1.5.18</logback.version>
+    <netty.version>4.2.2.Final</netty.version>
+    <bouncycastle.version>2.73.7</bouncycastle.version>
     <jar-jni.version>1.2.0</jar-jni.version>
-    <javafx.version>22.0.1</javafx.version>
+    <javafx.version>21.0.7</javafx.version>
     <jfoenix.version>9.0.10</jfoenix.version>
+    <caffeine.version>3.2.1</caffeine.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -74,6 +74,11 @@
         <version>${jackson.version}</version>
       </dependency>
       <dependency>
+        <groupId>com.github.ben-manes.caffeine</groupId>
+        <artifactId>caffeine</artifactId>
+        <version>${caffeine.version}</version>
+      </dependency>
+      <dependency>
         <groupId>io.netty</groupId>
         <artifactId>netty-handler</artifactId>
         <version>${netty.version}</version>
@@ -99,27 +104,9 @@
         <version>${netty.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-codec-http3</artifactId>
-        <version>${netty.http3.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-buffer</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-codec</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-common</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-transport</artifactId>
-          </exclusion>
-        </exclusions>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-codec-http3</artifactId>
+        <version>${netty.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bouncycastle</groupId>

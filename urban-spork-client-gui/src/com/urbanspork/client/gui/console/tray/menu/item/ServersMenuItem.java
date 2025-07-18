@@ -24,7 +24,7 @@ public class ServersMenuItem {
     }
 
     public JMenuItem build() {
-        JMenu menu = new JMenu(getLabel());
+        JMenu menu = new JMenu(I18N.getString(I18N.TRAY_MENU_SERVERS));
         ClientConfig config = Resource.config();
         List<ServerConfig> servers = config.getServers();
         ButtonGroup group = new ButtonGroup();
@@ -41,6 +41,7 @@ public class ServersMenuItem {
                 menu.add(item);
             }
         }
+        tray.changeSupport().addPropertyChangeListener(e -> menu.setText(I18N.getString(I18N.TRAY_MENU_SERVERS)));
         return menu;
     }
 
@@ -62,10 +63,6 @@ public class ServersMenuItem {
                 console.launchProxy();
             }
         };
-    }
-
-    private String getLabel() {
-        return I18N.getString(I18N.TRAY_MENU_SERVERS);
     }
 
     private String getLabel(ServerConfig config) {

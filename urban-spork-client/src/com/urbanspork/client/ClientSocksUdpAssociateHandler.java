@@ -1,6 +1,5 @@
 package com.urbanspork.client;
 
-import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.protocol.socks.Socks5;
@@ -32,7 +31,7 @@ public class ClientSocksUdpAssociateHandler extends ChannelInboundHandlerAdapter
 
     private void channelRead0(ChannelHandlerContext ctx, Socks5CommandRequest request) {
         Channel channel = ctx.channel();
-        ServerConfig config = channel.attr(AttributeKeys.SERVER_CONFIG).get();
+        ServerConfig config = channel.attr(ClientChannelContext.KEY).get().config();
         if (Protocol.vmess == config.getProtocol() && !config.udpEnabled()) {
             logger.error("UDP is not enabled");
             channel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()));

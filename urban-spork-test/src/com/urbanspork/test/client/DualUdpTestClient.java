@@ -9,8 +9,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.slf4j.Logger;
@@ -28,7 +29,7 @@ public class DualUdpTestClient {
     private static final Logger logger = LoggerFactory.getLogger(DualUdpTestClient.class);
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
         Channel channel = new Bootstrap().group(bossGroup)
             .channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {

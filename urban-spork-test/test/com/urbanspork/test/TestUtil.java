@@ -24,7 +24,7 @@ public class TestUtil {
         map.put(t1, t2);
         map.remove(t2);
         Assertions.assertNotEquals(t1, map.get(t2));
-        Assertions.assertNotEquals(t1, new Object());
+        Assertions.assertNotEquals(new Object(), t1);
     }
 
     public static <T, U, R> void testGetterAndSetter(U u, T t, Function<T, R> getter, BiConsumer<T, U> setter) {

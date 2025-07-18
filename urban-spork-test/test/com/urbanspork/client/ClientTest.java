@@ -19,6 +19,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.support.ParameterDeclarations;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -63,10 +64,12 @@ class ClientTest {
         Client.Instance client = asyncLaunchClient(ClientConfigTest.testConfig(0, 0));
         ClientConfig config = ClientConfigTest.testConfig(client.tcp().localAddress().getPort(), 0);
         config.setHost(null);
-        Assertions.assertThrows(ExecutionException.class, () -> {
-            Client.Instance client2 = asyncLaunchClient(config);
-            client2.close();
-        });
+        Assertions.assertThrows(
+            ExecutionException.class, () -> {
+                Client.Instance client2 = asyncLaunchClient(config);
+                client2.close();
+            }
+        );
         client.close();
     }
 
@@ -87,7 +90,7 @@ class ClientTest {
 
     private static class Socks5CommandTypeProvider implements ArgumentsProvider {
         @Override
-        public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
+        public Stream<? extends Arguments> provideArguments(ParameterDeclarations parameters, ExtensionContext extensionContext) {
             Socks5CommandType[] types = {Socks5CommandType.CONNECT, Socks5CommandType.BIND};
             return Arrays.stream(types).map(Arguments::of);
         }

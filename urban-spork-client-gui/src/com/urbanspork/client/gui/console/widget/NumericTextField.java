@@ -6,7 +6,7 @@ public class NumericTextField extends JFXTextField {
 
     public NumericTextField() {
         textProperty().addListener((o, oldValue, newValue) -> {
-            if (newValue.isEmpty() || newValue.isBlank()) {
+            if (newValue.isBlank()) {
                 validate();
             }
             if (!newValue.matches("\\d*")) {

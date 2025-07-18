@@ -1,10 +1,17 @@
 package com.urbanspork.client.gui.i18n;
 
 import com.urbanspork.client.gui.Resource;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.StringBinding;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 
 import java.util.Locale;
+import java.util.ResourceBundle;
 
 public interface I18N {
+    ObjectProperty<ResourceBundle> LANGUAGE = new SimpleObjectProperty<>(Resource.language());
+
     String PROGRAM_TITLE = "program.title";
     String TRAY_TOOLTIP = "tray.tooltip";
     String TRAY_EXIT = "tray.exit";
@@ -31,12 +38,21 @@ public interface I18N {
     String CONSOLE_LABEL_REMARK = "console.label.remark";
     String CONSOLE_LABEL_PROXY_PORT = "console.label.proxy.port";
     String CONSOLE_VALIDATOR_REQUIRED_FIELD_MESSAGE = "console.validator.required.field.message";
+    String CHANNEL_TRAFFIC_TABLEVIEW_COLUMN_0_LABEL = "channel.traffic.tableview.column.0.label";
+    String CHANNEL_TRAFFIC_TABLEVIEW_COLUMN_1_LABEL = "channel.traffic.tableview.column.1.label";
+    String CHANNEL_TRAFFIC_TABLEVIEW_COLUMN_2_LABEL = "channel.traffic.tableview.column.2.label";
+    String CHANNEL_TRAFFIC_TABLEVIEW_COLUMN_3_LABEL = "channel.traffic.tableview.column.3.label";
+    String CHANNEL_TRAFFIC_TABLEVIEW_COLUMN_4_LABEL = "channel.traffic.tableview.column.4.label";
 
     static Locale[] languages() {
         return new Locale[]{Locale.CHINESE, Locale.ENGLISH};
     }
 
     static String getString(String key) {
-        return Resource.language().getString(key);
+        return LANGUAGE.get().getString(key);
+    }
+
+    static StringBinding binding(String key) {
+        return Bindings.createStringBinding(() -> getString(key), LANGUAGE);
     }
 }

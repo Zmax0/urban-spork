@@ -1,6 +1,7 @@
 package com.urbanspork.client.vmess;
 
 import com.urbanspork.client.AbstractClientUdpOverQuicHandler;
+import com.urbanspork.client.ClientChannelContext;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.vmess.header.RequestCommand;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
@@ -12,8 +13,8 @@ import io.netty.channel.EventLoopGroup;
 import java.time.Duration;
 
 public class ClientUdpOverQuicHandler extends AbstractClientUdpOverQuicHandler<Key> implements ClientUdpOverTcp {
-    public ClientUdpOverQuicHandler(ServerConfig config, EventLoopGroup workerGroup) {
-        super(config, Duration.ofMinutes(10), workerGroup);
+    public ClientUdpOverQuicHandler(ClientChannelContext context, EventLoopGroup workerGroup) {
+        super(context, Duration.ofMinutes(10), workerGroup);
     }
 
     @Override
@@ -31,6 +32,7 @@ public class ClientUdpOverQuicHandler extends AbstractClientUdpOverQuicHandler<K
         return new ChannelInitializer<>() {
             @Override
             protected void initChannel(Channel ch) {
+                ServerConfig config = context.config();
                 ch.pipeline().addLast(new ClientAeadCodec(config.getCipher(), RequestCommand.UDP, key.recipient(), config.getPassword()));
             }
         };
