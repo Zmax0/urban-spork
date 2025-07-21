@@ -46,7 +46,7 @@ class ServerTest {
         List<ServerConfig> configs = ServerConfigTest.testConfigs(port, port);
         CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
         Server.launch(configs, promise);
-        Assertions.assertTrue(promise.isCompletedExceptionally());
+        Assertions.assertEquals(java.net.BindException.class, promise.exceptionNow().getClass());
     }
 
     @Test
@@ -56,10 +56,10 @@ class ServerTest {
         quic.setTransport(new Transport[]{Transport.QUIC});
         CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
         try (ExecutorService service = Executors.newSingleThreadExecutor()) {
-            Future<?> future = service.submit(() -> Server.launch(Collections.singletonList(quic), promise));
+            service.submit(() -> Server.launch(Collections.singletonList(quic), promise));
             List<Server.Instance> res = promise.get(1, TimeUnit.SECONDS);
             Assertions.assertEquals(1, res.size());
-            future.cancel(true);
+            closeServer(res);
         }
     }
 
@@ -95,9 +95,7 @@ class ServerTest {
             ChannelFuture future = channel.writeAndFlush(new DatagramPacket(Unpooled.wrappedBuffer(Dice.rollBytes(512)), serverAddress)).sync();
             future.get();
             Assertions.assertTrue(future.isDone());
-            for (Server.Instance server : servers) {
-                server.close();
-            }
+            closeServer(servers);
         }
     }
 
@@ -106,8 +104,8 @@ class ServerTest {
         ServerConfig config = ServerConfigTest.testConfig(0);
         try (ExecutorService service = Executors.newVirtualThreadPerTaskExecutor()) {
             CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
-            Future<?> server = service.submit(() -> Server.launch(List.of(config), promise));
-            promise.get();
+            service.submit(() -> Server.launch(List.of(config), promise));
+            List<Server.Instance> servers = promise.get();
             Channel channel = new Bootstrap().group(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()))
                 .channel(NioSocketChannel.class)
                 .handler(new LoggingHandler())
@@ -115,7 +113,15 @@ class ServerTest {
             ChannelFuture future = channel.writeAndFlush(Unpooled.wrappedBuffer(Dice.rollBytes(512))).sync();
             future.get();
             Assertions.assertTrue(future.isDone());
-            server.cancel(true);
+            for (Server.Instance server : servers) {
+                server.close();
+            }
+        }
+    }
+
+    private static void closeServer(List<Server.Instance> servers) {
+        for (Server.Instance server : servers) {
+            server.close();
         }
     }
 }

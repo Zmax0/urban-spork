@@ -54,8 +54,8 @@ public class Server {
         Context context = Context.newCheckReplayInstance();
         EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+        List<Instance> servers = new ArrayList<>(configs.size());
         try {
-            List<Instance> servers = new ArrayList<>(configs.size());
             int count = 0;
             for (ServerConfig config : configs) {
                 Instance server = start(bossGroup, workerGroup, new ServerInitializationContext(config, context));
@@ -73,12 +73,15 @@ public class Server {
         } catch (InterruptedException e) {
             logger.warn("Interrupt main launch thread");
             Thread.currentThread().interrupt();
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            for (Instance server : servers) {
+                server.close();
+            }
             logger.error("Launch server failed", e);
             promise.completeExceptionally(e);
         } finally {
-            workerGroup.shutdownGracefully();
-            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully().syncUninterruptibly();
+            bossGroup.shutdownGracefully().syncUninterruptibly();
             context.release();
         }
     }
