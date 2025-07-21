@@ -71,13 +71,13 @@ public class Client {
             logger.info("Client [id:{}] is terminated", clientId);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.error("Launch client failed {}:{}", host, port, e);
             promise.completeExceptionally(e);
         } finally {
             context.traffic().release();
-            workerGroup.shutdownGracefully();
-            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully().syncUninterruptibly();
+            bossGroup.shutdownGracefully().syncUninterruptibly();
         }
     }
 
