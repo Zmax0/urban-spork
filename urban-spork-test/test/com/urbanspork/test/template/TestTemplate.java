@@ -14,7 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.function.ToIntFunction;
 
 abstract class TestTemplate {
-    protected static final ExecutorService POOL = Executors.newThreadPerTaskExecutor(Executors.defaultThreadFactory());
+    protected static final ExecutorService POOL = Executors.newVirtualThreadPerTaskExecutor();
     protected static final int SERVER_PORT = getPortOrDefault("com.urbanspork.test.server.port", Integer::parseInt);
     protected static final int CLIENT_PORT = getPortOrDefault("com.urbanspork.test.client.port", Integer::parseInt);
 

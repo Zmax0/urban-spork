@@ -14,7 +14,9 @@ import javafx.scene.control.TableView;
 import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ClientChannelTrafficTableView extends TableView<ClientChannelTrafficTableView.Row> {
@@ -65,10 +67,10 @@ public class ClientChannelTrafficTableView extends TableView<ClientChannelTraffi
     }
 
     private static Map<String, Row> convert(ObjectProperty<Map<String, ClientChannelTrafficHandler>> channelTraffic) {
-        return channelTraffic.getValue().values().stream().collect(Collectors.toMap(
+        return Optional.ofNullable(channelTraffic.getValue()).map(m -> m.values().stream().collect(Collectors.toMap(
             ClientChannelTrafficHandler::getHost, Row::new,
             (a, b) -> new Row(a.host, a.downloaded + b.downloaded, a.uploaded + b.downloaded, a.dlSpeed + b.dlSpeed, a.ulSpeed + b.ulSpeed)
-        ));
+        ))).orElse(Collections.emptyMap());
     }
 
     record Row(String host, long downloaded, long uploaded, long dlSpeed, long ulSpeed) {
