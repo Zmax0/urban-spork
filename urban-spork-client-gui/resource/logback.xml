@@ -2,7 +2,7 @@
   <property resource="application.properties" />
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%level [%thread] %logger{5} - %msg%n</pattern>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss} %highlight(%level) [%thread] %logger{5} - %msg%n</pattern>
     </encoder>
   </appender>
 
