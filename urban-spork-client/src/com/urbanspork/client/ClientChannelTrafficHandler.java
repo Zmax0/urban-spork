@@ -38,7 +38,8 @@ public class ClientChannelTrafficHandler extends ChannelTrafficShapingHandler {
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-        this.channelId = ctx.channel().id().asShortText();
+        channelId = ctx.channel().id().asShortText();
+        context.channelTraffic().putIfAbsent(channelId, this);
         super.handlerAdded(ctx);
     }
 

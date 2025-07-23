@@ -153,9 +153,7 @@ public interface ClientRelayHandler {
     }
 
     static void addChannelTrafficHandler(Channel outbound, MaybeResolved address, ClientChannelContext context) {
-        ClientChannelTrafficHandler trafficHandler = context.channelTraffic()
-            .computeIfAbsent(outbound.id().asShortText(), k -> new ClientChannelTrafficHandler(address.peer().getHostString(), address.peer().getPort(), context));
-        outbound.pipeline().addLast(trafficHandler);
+        outbound.pipeline().addLast(new ClientChannelTrafficHandler(address.peer().getHostString(), address.peer().getPort(), context));
     }
 
     private static WebSocketClientProtocolHandler buildWebSocketHandler(ClientChannelContext context) throws URISyntaxException {

@@ -106,7 +106,7 @@ public class Console extends Application {
         primaryStage.titleProperty().bind(I18N.binding(I18N.PROGRAM_TITLE));
         primaryStage.setOnCloseRequest(event -> primaryStage.hide());
         primaryStage.hide();
-        initTrafficCounterLineChart();
+        initTrafficComponents();
         launchProxy();
     }
 
@@ -554,18 +554,20 @@ public class Console extends Application {
         dialog.showAndWait().map(URI::create).flatMap(ShareableServerConfig::fromUri).ifPresent(serverConfigObservableList::add);
     }
 
-    private void initTrafficCounterLineChart() {
+    private void initTrafficComponents() {
         ObservableList<Node> children = ((VBox) tab2.getContent()).getChildren();
+        ClientChannelTrafficTableView tableView = new ClientChannelTrafficTableView(channelTraffic);
         primaryStage.setOnHidden(event -> {
             children.clear();
             trafficCounterLineChartBackstage.stop();
+            tableView.stop();
         });
         primaryStage.setOnShown(event -> {
             if (children.isEmpty()) {
-                ClientChannelTrafficTableView tableView = new ClientChannelTrafficTableView(channelTraffic);
                 children.add(trafficCounterLineChartBackstage.newLineChart());
                 children.add(tableView);
                 VBox.setVgrow(tableView, Priority.SOMETIMES);
+                tableView.play();
             }
             Optional.of(trafficCounter).map(ObservableObjectValue::get).ifPresent(trafficCounterLineChartBackstage::refresh);
         });
