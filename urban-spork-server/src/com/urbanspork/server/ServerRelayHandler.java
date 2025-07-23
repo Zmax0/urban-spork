@@ -58,11 +58,16 @@ public class ServerRelayHandler extends ChannelInboundHandlerAdapter {
             .addListener((ChannelFutureListener) f -> {
                 if (f.isSuccess()) {
                     Channel remoteChannel = f.channel();
-                    localChannel.pipeline().addLast(new DefaultChannelInboundHandler(remoteChannel)).remove(ServerRelayHandler.class);
-                    logger.info("[tcp][{}][{}→{}]", config.getProtocol(), localChannel.localAddress(), remoteChannel.remoteAddress());
-                    remoteChannel.writeAndFlush(relayingPayload.content());
+                    if (localChannel.isActive()) {
+                        localChannel.pipeline().addLast(new DefaultChannelInboundHandler(remoteChannel)).remove(ServerRelayHandler.class);
+                        logger.info("[tcp][{}][{}→{}]", config.getProtocol(), localChannel.localAddress(), remoteChannel.remoteAddress());
+                        remoteChannel.writeAndFlush(relayingPayload.content());
+                    } else {
+                        logger.error("[tcp][{}][{}→{}] client close", config.getProtocol(), localChannel.localAddress(), relayingPayload.address());
+                        remoteChannel.close();
+                    }
                 } else {
-                    logger.error("[tcp][{}][{}→{}]", config.getProtocol(), localChannel.localAddress(), relayingPayload.address());
+                    logger.error("[tcp][{}][{}→{}] connect peer failed", config.getProtocol(), localChannel.localAddress(), relayingPayload.address());
                     localChannel.close();
                 }
             });
