@@ -12,6 +12,16 @@ pub unsafe extern "C" fn Java_com_urbanspork_jni_chacha8poly1305_Cipher_init<'lo
 
 /// # Safety
 #[unsafe(no_mangle)]
+pub unsafe extern "C" fn Java_com_urbanspork_jni_chacha8poly1305_Cipher_dispose<'local>(
+    env: JNIEnv<'local>,
+    _: JClass,
+    ptr: jlong,
+) {
+    unsafe { dispose::<ChaCha8Poly1305>(env, ptr) }
+}
+
+/// # Safety
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn Java_com_urbanspork_jni_chacha8poly1305_Cipher_encrypt<'local>(
     env: JNIEnv<'local>,
     this: JObject<'local>,
