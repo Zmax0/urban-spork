@@ -13,21 +13,21 @@ class AeadCipherTest {
 
     @Test
     void testChaCha8Poly1305() {
-        com.urbanspork.jni.chacha8poly1305.Cipher cipher = com.urbanspork.jni.chacha8poly1305.Cipher.init(KEY);
+        com.urbanspork.jni.chacha8poly1305.Cipher cipher = com.urbanspork.jni.chacha8poly1305.Cipher.newInstance(KEY);
         testEncrypt(cipher, 12, "DvAxs1hCeM+VySozlDhrdGewiF/WHljuRA==");
         testDecrypt(cipher, 12, "HfUgslNEadKZLZkH8tfHEif6qmmM54Pv6l4=");
     }
 
     @Test
     void testXChaCha8Poly1305() {
-        com.urbanspork.jni.xchacha8poly1305.Cipher cipher = com.urbanspork.jni.xchacha8poly1305.Cipher.init(KEY);
+        com.urbanspork.jni.xchacha8poly1305.Cipher cipher = com.urbanspork.jni.xchacha8poly1305.Cipher.newInstance(KEY);
         testEncrypt(cipher, 24, "W1eIELrnJAOWgI2ab/A3tOewRWpeOzr4KA==");
         testDecrypt(cipher, 24, "SFKZEbHhNR6afVbK5ydKTg3cmPY9j5LQlqg=");
     }
 
     @Test
     void testXChaCha20Poly1305() {
-        com.urbanspork.jni.xchacha20poly1305.Cipher cipher = com.urbanspork.jni.xchacha20poly1305.Cipher.init(KEY);
+        com.urbanspork.jni.xchacha20poly1305.Cipher cipher = com.urbanspork.jni.xchacha20poly1305.Cipher.newInstance(KEY);
         testEncrypt(cipher, 24, "K3qamUguu+ZoQ7SDEaYLRD8wHoeiIs58qA==");
         testDecrypt(cipher, 24, "OH+LmEMoqvtkQXzVc6bDnFV1xKzo7nLKKEs=");
     }
