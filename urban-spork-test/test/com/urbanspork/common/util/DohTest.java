@@ -39,8 +39,7 @@ class DohTest {
     private static class Provider implements ArgumentsProvider {
         @Override
         public Stream<? extends Arguments> provideArguments(ParameterDeclarations parameters, ExtensionContext context) {
-            String nameServer = DnsUtil.getDnsSetting().getNameServer();
-            URI uri = URI.create(nameServer);
+            URI uri = URI.create(DnsUtil.getDnsSetting().nameServer());
             String host = uri.getHost();
             return Stream.of(
                 "https://" + host + "/dns-query",

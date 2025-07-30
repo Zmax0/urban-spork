@@ -148,6 +148,7 @@ public class Doh {
         DefaultDnsQuestion question = new DefaultDnsQuestion(domain, DnsRecordType.A);
         dnsQuery.addRecord(DnsSection.QUESTION, question);
         domain = Base64.getUrlEncoder().withoutPadding().encodeToString(DnsQueryEncoder.encode(dnsQuery));
+        dnsQuery.release();
         URI uri = URI.create(nameServer);
         Map<String, List<String>> queryParams;
         if (uri.getQuery() == null) {

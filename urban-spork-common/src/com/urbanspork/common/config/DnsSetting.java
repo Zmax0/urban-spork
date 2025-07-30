@@ -1,22 +1,20 @@
 package com.urbanspork.common.config;
 
-public class DnsSetting {
-    private String nameServer;
-    private SslSetting ssl;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.urbanspork.common.protocol.dns.Cache;
 
-    public String getNameServer() {
-        return nameServer;
+import java.util.Optional;
+
+public record DnsSetting(String nameServer, SslSetting ssl, Cache cache) {
+    private static final int DEFAULT_CACHE_SIZE = 256;
+
+    @JsonCreator
+    public DnsSetting(@JsonProperty(value = "nameServer", required = true) String nameServer, @JsonProperty(value = "ssl") SslSetting ssl, @JsonProperty(value = "cacheSize") Integer cacheSize) {
+        this(nameServer, ssl, new Cache(Optional.ofNullable(cacheSize).orElse(DEFAULT_CACHE_SIZE)));
     }
 
-    public void setNameServer(String nameServer) {
-        this.nameServer = nameServer;
-    }
-
-    public SslSetting getSsl() {
-        return ssl;
-    }
-
-    public void setSsl(SslSetting ssl) {
-        this.ssl = ssl;
+    public DnsSetting(String nameServer, SslSetting ssl) {
+        this(nameServer, ssl, new Cache(DEFAULT_CACHE_SIZE));
     }
 }
