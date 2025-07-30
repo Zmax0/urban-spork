@@ -65,11 +65,10 @@ class QuicTcpTest extends TcpTestTemplate {
         serverConfig.setPassword(parameter.serverPassword());
         serverConfig.setTransport(TRANSPORTS);
         serverConfig.setSsl(parameter.sslSetting());
-        DnsSetting dnsSetting = new DnsSetting();
-        dnsSetting.setSsl(parameter.sslSetting());
         InetSocketAddress echoServerAddress = echoTestServer.localAddress();
+        String nameServer = String.format("https://localhost:%d?&resolved=%s&name=", dohServer.localAddress().getPort(), NetUtil.toAddressString(echoServerAddress.getAddress()));
+        DnsSetting dnsSetting = new DnsSetting(nameServer, parameter.sslSetting());
         this.dstAddress = new InetSocketAddress(TestDice.rollHost(), echoServerAddress.getPort());
-        dnsSetting.setNameServer(String.format("https://localhost:%d?&resolved=%s&name=", dohServer.localAddress().getPort(), NetUtil.toAddressString(echoServerAddress.getAddress())));
         serverConfig.setDns(dnsSetting);
         List<Server.Instance> server = launchServer(config.getServers());
         Client.Instance client = launchClient(config);
@@ -86,7 +85,8 @@ class QuicTcpTest extends TcpTestTemplate {
         Protocol protocol = Protocol.trojan;
         String password = TestDice.rollPassword(protocol, null);
         SslSetting sslSetting = SslUtil.getSslSetting();
-        DnsSetting dnsSetting = new DnsSetting();
+        String nameServer = String.format("https://localhost:%d?&&name=", dstAddress.getPort());
+        DnsSetting dnsSetting = new DnsSetting(nameServer, null);
         ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setProtocol(protocol);
@@ -97,7 +97,6 @@ class QuicTcpTest extends TcpTestTemplate {
         List<Server.Instance> server = launchServer(config.getServers());
         Client.Instance client = launchClient(config);
         this.dstAddress = InetSocketAddress.createUnresolved(TestDice.rollHost(), echoTestServer.localAddress().getPort());
-        dnsSetting.setNameServer(String.format("https://localhost:%d?&&name=", dstAddress.getPort()));
         InetSocketAddress clientTcpAddress = client.tcp().localAddress();
         Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientTcpAddress));
         closeServer(server);

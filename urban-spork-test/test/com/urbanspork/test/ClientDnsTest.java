@@ -33,11 +33,10 @@ class ClientDnsTest extends TcpTestTemplate {
         WebSocketSetting wsSetting = new WebSocketSetting();
         wsSetting.setPath("/ws");
         SslSetting sslSetting = SslUtil.getSslSetting();
-        DnsSetting dnsSetting = new DnsSetting();
-        dnsSetting.setSsl(sslSetting);
         InetSocketAddress echoServerAddress = echoTestServer.localAddress();
         this.dstAddress = new InetSocketAddress(TestDice.rollHost(), echoServerAddress.getPort());
-        dnsSetting.setNameServer(String.format("https://localhost:%d/dns-query?resolved=%s", dohServer.localAddress().getPort(), NetUtil.toAddressString(echoServerAddress.getAddress())));
+        String nameServer = String.format("https://localhost:%d/dns-query?resolved=%s", dohServer.localAddress().getPort(), NetUtil.toAddressString(echoServerAddress.getAddress()));
+        DnsSetting dnsSetting = new DnsSetting(nameServer, sslSetting);
         ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setProtocol(protocol);
@@ -61,7 +60,8 @@ class ClientDnsTest extends TcpTestTemplate {
         Protocol protocol = Protocol.trojan;
         String password = TestDice.rollPassword(protocol, null);
         SslSetting sslSetting = SslUtil.getSslSetting();
-        DnsSetting dnsSetting = new DnsSetting();
+        String nameServer = String.format("https://localhost:%d/dns-query", echoTestServer.localAddress().getPort());
+        DnsSetting dnsSetting = new DnsSetting(nameServer, null);
         ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setProtocol(protocol);
@@ -72,7 +72,6 @@ class ClientDnsTest extends TcpTestTemplate {
         List<Server.Instance> server = launchServer(config.getServers());
         Client.Instance client = launchClient(config);
         this.dstAddress = InetSocketAddress.createUnresolved(TestDice.rollHost(), dstAddress.getPort());
-        dnsSetting.setNameServer(String.format("https://localhost:%d/dns-query", echoTestServer.localAddress().getPort()));
         InetSocketAddress clientTcpAddress = client.tcp().localAddress();
         Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientTcpAddress));
         closeServer(server);
