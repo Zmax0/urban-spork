@@ -144,7 +144,7 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
                         inbound.closeFuture().addListener(f -> quicChannel.close());
                         connectQuic(inbound, dstAddress, context, quicChannel, quicEndpoint);
                     } else {
-                        logger.error("connect relay server {} failed", serverAddress, f1.cause());
+                        logger.error("[quic] create endpoint channel failed, relay server {}", serverAddress, f1.cause());
                         quicEndpoint.close();
                         handleFailure(inbound);
                     }
@@ -193,7 +193,13 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
     }
 
     private void connectQuic0(Channel inbound, QuicChannel quicChannel, MaybeResolved dstAddress, ClientChannelContext context) {
-        createQuicStreamChannel(quicChannel, dstAddress, context).addListener(f2 -> quicOutboundReady(inbound, (QuicStreamChannel) f2.get()));
+        createQuicStreamChannel(quicChannel, dstAddress, context).addListener(f2 -> {
+            if (f2.isSuccess()) {
+                quicOutboundReady(inbound, (QuicStreamChannel) f2.get());
+            } else {
+                logger.error("[quic][{}] create stream channel failed", quicChannel);
+            }
+        });
     }
 
     private static Future<QuicStreamChannel> createQuicStreamChannel(QuicChannel quicChannel, MaybeResolved dstAddress, ClientChannelContext context) {
