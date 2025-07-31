@@ -117,20 +117,24 @@ public class Doh {
                     pipeline.remove(connectionHandler);
                     pipeline.remove(this);
                     DnsResponse dnsResponse = DnsResponseDecoder.decode(msg.content());
-                    if (dnsResponse.code() != DnsResponseCode.NOERROR) {
-                        promise.setFailure(new IllegalStateException("DoH response code is " + dnsResponse.code()));
-                        return;
-                    }
-                    for (int i = 0; i < dnsResponse.count(DnsSection.ANSWER); i++) {
-                        DnsRecord record = dnsResponse.recordAt(DnsSection.ANSWER, i);
-                        if (record.type() == DnsRecordType.A) {
-                            DnsRawRecord rawRecord = (DnsRawRecord) record;
-                            String ip = NetUtil.bytesToIpAddress(ByteBufUtil.getBytes(rawRecord.content()));
-                            promise.setSuccess(new IpResponse(ip, record.timeToLive()));
+                    try {
+                        if (dnsResponse.code() != DnsResponseCode.NOERROR) {
+                            promise.setFailure(new IllegalStateException("DoH response code is " + dnsResponse.code()));
                             return;
                         }
+                        for (int i = 0; i < dnsResponse.count(DnsSection.ANSWER); i++) {
+                            DnsRecord record = dnsResponse.recordAt(DnsSection.ANSWER, i);
+                            if (record.type() == DnsRecordType.A) {
+                                DnsRawRecord rawRecord = (DnsRawRecord) record;
+                                String ip = NetUtil.bytesToIpAddress(ByteBufUtil.getBytes(rawRecord.content()));
+                                promise.setSuccess(new IpResponse(ip, record.timeToLive()));
+                                return;
+                            }
+                        }
+                        promise.setFailure(new IllegalStateException("No type-a answer found"));
+                    } finally {
+                        dnsResponse.release();
                     }
-                    promise.setFailure(new IllegalStateException("No type-a answer found"));
                 }
 
                 @Override
