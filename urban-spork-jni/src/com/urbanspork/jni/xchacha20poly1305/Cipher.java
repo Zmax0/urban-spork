@@ -16,7 +16,9 @@ public class Cipher extends CipherLoader {
 
     static native void dispose(long ptr);
 
+    @Override
     public native void encrypt(byte[] nonce, byte[] aad, byte[] plaintext);
 
+    @Override
     public native void decrypt(byte[] nonce, byte[] aad, byte[] ciphertext);
 }

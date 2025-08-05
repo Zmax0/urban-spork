@@ -19,17 +19,22 @@ public interface Address {
         }
         buf.writeShort(address.getPort());
         InetAddress ip = address.getAddress();
-        if (ip instanceof Inet4Address ipv4) {
-            buf.writeByte(AddressType.IPV4.getValue());
-            buf.writeBytes(ipv4.getAddress());
-        } else if (ip instanceof Inet6Address ipv6) {
-            buf.writeByte(AddressType.IPV6.getValue());
-            buf.writeBytes(ipv6.getAddress());
-        } else { // port[2] + type[1] + domain_len[1] + domain_bytes[n]
-            byte[] domain = address.getHostString().getBytes();
-            buf.writeByte(AddressType.DOMAIN.getValue());
-            buf.writeByte(domain.length);
-            buf.writeBytes(domain);
+        switch (ip) {
+            case Inet4Address ipv4 -> {
+                buf.writeByte(AddressType.IPV4.getValue());
+                buf.writeBytes(ipv4.getAddress());
+            }
+            case Inet6Address ipv6 -> {
+                buf.writeByte(AddressType.IPV6.getValue());
+                buf.writeBytes(ipv6.getAddress());
+            }
+            case null, default -> {
+                // port[2] + type[1] + domain_len[1] + domain_bytes[n]
+                byte[] domain = address.getHostString().getBytes();
+                buf.writeByte(AddressType.DOMAIN.getValue());
+                buf.writeByte(domain.length);
+                buf.writeBytes(domain);
+            }
         }
     }
 
@@ -41,7 +46,7 @@ public interface Address {
             buf.readBytes(bytes);
             try {
                 return new InetSocketAddress(InetAddress.getByAddress(bytes), port);
-            } catch (UnknownHostException ignore) {
+            } catch (UnknownHostException _) {
                 // should never be caught
             }
         } else if (AddressType.IPV6 == addressType) {
@@ -49,7 +54,7 @@ public interface Address {
             buf.readBytes(bytes);
             try {
                 return new InetSocketAddress(InetAddress.getByAddress(bytes), port);
-            } catch (UnknownHostException ignore) {
+            } catch (UnknownHostException _) {
                 // should never be caught
             }
         }

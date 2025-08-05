@@ -1,10 +1,12 @@
 package com.urbanspork.common.util;
 
+import com.urbanspork.common.protocol.dns.IpResponse;
 import com.urbanspork.test.DnsUtil;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -19,20 +21,21 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 class DohTest {
-    private final static EventLoopGroup GROUP = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+    private static final EventLoopGroup GROUP = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
 
     @ParameterizedTest
     @ArgumentsSource(Provider.class)
-    public void testQuery(String nameServer) throws InterruptedException, ExecutionException {
+    void testQuery(String nameServer) throws InterruptedException, ExecutionException {
         try {
-            Doh.query(GROUP, nameServer, "example.com").get(5, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
+            IpResponse ipResponse = Doh.query(GROUP, nameServer, "example.com").get(5, TimeUnit.SECONDS);
+            Assertions.assertNotNull(ipResponse);
+        } catch (TimeoutException _) {
             // skip
         }
     }
 
     @AfterAll
-    public static void afterAll() {
+    static void afterAll() {
         GROUP.shutdownGracefully();
     }
 

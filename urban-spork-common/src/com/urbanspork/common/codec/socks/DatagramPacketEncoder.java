@@ -17,6 +17,6 @@ public class DatagramPacketEncoder extends MessageToMessageEncoder<DatagramPacke
         DatagramPacket data = msg.packet();
         Address.encode(data.recipient(), buffer);
         buffer.writeBytes(data.content());
-        out.add(new DatagramPacket(buffer, msg.proxy(), data.sender()));
+        out.add(new DatagramPacket(buffer, msg.server(), data.sender()));
     }
 }

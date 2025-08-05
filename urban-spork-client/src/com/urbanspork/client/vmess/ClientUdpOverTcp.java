@@ -17,7 +17,7 @@ interface ClientUdpOverTcp {
     }
 
     default Key getKey(DatagramPacketWrapper msg) {
-        return new Key(msg.packet().sender(), msg.proxy() /* recipient */);
+        return new Key(msg.packet().sender(), msg.server() /* recipient */);
     }
 
     class InboundHandler extends SimpleChannelInboundHandler<ByteBuf> {

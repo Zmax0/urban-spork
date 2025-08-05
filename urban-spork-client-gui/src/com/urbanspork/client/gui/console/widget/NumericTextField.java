@@ -5,7 +5,7 @@ import com.jfoenix.controls.JFXTextField;
 public class NumericTextField extends JFXTextField {
 
     public NumericTextField() {
-        textProperty().addListener((o, oldValue, newValue) -> {
+        textProperty().addListener((_, _, newValue) -> {
             if (newValue.isBlank()) {
                 validate();
             }

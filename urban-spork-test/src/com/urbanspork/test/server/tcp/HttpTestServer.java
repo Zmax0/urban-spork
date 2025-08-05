@@ -14,8 +14,7 @@ public class HttpTestServer {
 
     public static void main(String[] args) throws IOException {
         Logger logger = Logger.getLogger("HttpTestServer");
-        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-        try (ServerSocket server = new ServerSocket(PORT)) {
+        try (ServerSocket server = new ServerSocket(PORT); ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
             logger.info("Listening on " + server.getLocalSocketAddress());
             while (!executor.isShutdown()) {
                 Socket inbound = server.accept();

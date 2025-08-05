@@ -11,9 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ServerUserManager {
-
-    private final Map<BytesKey, ServerUser> users;
+public record ServerUserManager(Map<BytesKey, ServerUser> users) {
 
     public static ServerUserManager from(ServerConfig config) {
         ServerUserManager manager = new ServerUserManager(new ConcurrentHashMap<>());
@@ -26,10 +24,6 @@ public class ServerUserManager {
 
     public static ServerUserManager empty() {
         return new ServerUserManager(Collections.emptyMap());
-    }
-
-    private ServerUserManager(Map<BytesKey, ServerUser> users) {
-        this.users = users;
     }
 
     public void addUser(ServerUser user) {

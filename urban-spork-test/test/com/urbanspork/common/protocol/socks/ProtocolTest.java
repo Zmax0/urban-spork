@@ -58,7 +58,7 @@ class ProtocolTest {
 
     @Test
     void testFailedAddressing() {
-        DefaultSocks5CommandRequest r1 = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.valueOf((byte) -1), "192.168.89.9", 80);
+        DefaultSocks5CommandRequest r1 = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.valueOf((byte) -1), "192.168.89.1", 80);
         DefaultSocks5CommandRequest r2 = new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.IPv4, "192.168.89.9", 80);
         ByteBuf out = Unpooled.buffer();
         Assertions.assertThrows(EncoderException.class, () -> Address.encode(r1, out));

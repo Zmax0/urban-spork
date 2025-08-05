@@ -59,6 +59,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Doh {
     private static final Logger logger = LoggerFactory.getLogger(Doh.class);
 
+    private Doh() {}
+
     public static Promise<IpResponse> query(EventLoopGroup group, String nameServer, String domain) throws InterruptedException {
         DnsRequest<FullHttpRequest> quest = getRequest(nameServer, domain, null);
         Promise<IpResponse> promise = group.next().newPromise();
@@ -123,11 +125,11 @@ public class Doh {
                             return;
                         }
                         for (int i = 0; i < dnsResponse.count(DnsSection.ANSWER); i++) {
-                            DnsRecord record = dnsResponse.recordAt(DnsSection.ANSWER, i);
-                            if (record.type() == DnsRecordType.A) {
-                                DnsRawRecord rawRecord = (DnsRawRecord) record;
+                            DnsRecord dnsRecord = dnsResponse.recordAt(DnsSection.ANSWER, i);
+                            if (dnsRecord.type() == DnsRecordType.A) {
+                                DnsRawRecord rawRecord = (DnsRawRecord) dnsRecord;
                                 String ip = NetUtil.bytesToIpAddress(ByteBufUtil.getBytes(rawRecord.content()));
-                                promise.setSuccess(new IpResponse(ip, record.timeToLive()));
+                                promise.setSuccess(new IpResponse(ip, dnsRecord.timeToLive()));
                                 return;
                             }
                         }

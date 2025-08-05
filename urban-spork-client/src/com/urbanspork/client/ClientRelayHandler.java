@@ -65,11 +65,11 @@ public interface ClientRelayHandler {
     }
 
     default Consumer<Channel> outboundReady(Channel ignore) {
-        return channel -> {};
+        return _ -> {};
     }
 
     default InboundReady inboundReady() {
-        return new InboundReady(channel -> {}, channel -> {});
+        return new InboundReady(_ -> {}, _ -> {});
     }
 
     default void handleFailure(Channel inbound) {
@@ -198,6 +198,8 @@ public interface ClientRelayHandler {
             logger.info("resolved host {} -> {}", host, resolved);
             dns.cache().put(host, resolved.ip(), resolved.ttl(), Instant.now());
             return Optional.of(resolved.ip());
+        } catch (InterruptedException _) {
+            return Optional.empty();
         } catch (Exception e) {
             logger.error("resolve server host {} failed", host, e);
             return Optional.empty();

@@ -77,9 +77,9 @@ public abstract class UdpTestTemplate extends TestTemplate {
             int localPort = simpleEchoTestUdpServer.getLocalPort();
             simpleEchoTestTcpServer = new ServerSocket(localPort); // bind tcp at same time
             dstAddress.add(new InetSocketAddress(InetAddress.getLoopbackAddress(), localPort));
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
-        } catch (Exception e) {
+        } catch (Exception _) {
             Assertions.fail("launch test server failed");
         }
         CompletableFuture<DatagramSocket> f2 = new CompletableFuture<>();
@@ -95,9 +95,9 @@ public abstract class UdpTestTemplate extends TestTemplate {
             int localPort = delayedEchoTestUdpServer.getLocalPort();
             delayedEchoTestTcpServer = new ServerSocket(localPort);  // bind tcp at same time
             dstAddress.add(new InetSocketAddress(InetAddress.getLoopbackAddress(), localPort));
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
-        } catch (Exception e) {
+        } catch (Exception _) {
             Assertions.fail("launch test server failed");
         }
     }
@@ -137,7 +137,7 @@ public abstract class UdpTestTemplate extends TestTemplate {
         Assertions.assertEquals(Socks5CommandStatus.SUCCESS, response.status());
         CompletableFuture<Void> promise = new CompletableFuture<>();
         consumer = msg -> {
-            if (dstAddress.equals(msg.proxy())) {
+            if (dstAddress.equals(msg.server())) {
                 promise.complete(null);
             } else {
                 promise.completeExceptionally(AssertionFailureBuilder.assertionFailure().message("Not equals").build());
@@ -148,7 +148,7 @@ public abstract class UdpTestTemplate extends TestTemplate {
         DatagramPacketWrapper msg = new DatagramPacketWrapper(data, proxyAddress);
         logger.info("Send msg {}", msg);
         channel.writeAndFlush(msg);
-        promise.get(DelayedEchoTestServer.MAX_DELAYED_SECOND + 3, TimeUnit.SECONDS);
+        promise.get(DelayedEchoTestServer.MAX_DELAYED_SECOND + 3L, TimeUnit.SECONDS);
         Assertions.assertTrue(promise.isDone());
     }
 

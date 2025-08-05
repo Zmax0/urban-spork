@@ -37,7 +37,7 @@ class DatagramPacketTest {
         Assertions.assertThrows(DecoderException.class, () -> channel.writeInbound(outbound3));
         channel.writeInbound(outbound);
         DatagramPacketWrapper inbound = channel.readInbound();
-        Assertions.assertEquals(dstAddress, inbound.proxy());
+        Assertions.assertEquals(dstAddress, inbound.server());
         Assertions.assertEquals(socksAddress, inbound.packet().recipient());
         ByteBuf content = inbound.packet().content();
         Assertions.assertEquals(str, content.readCharSequence(content.readableBytes(), StandardCharsets.UTF_8));

@@ -37,7 +37,7 @@ class Proxy {
             String message = current.toString();
             tray.displayMessage("Proxy is running", message, MessageType.INFO);
             tray.setToolTip(message);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         } catch (ExecutionException e) {
             String message = e.getMessage();

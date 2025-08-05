@@ -54,7 +54,7 @@ public class EchoTestServer {
                         promise.completeExceptionally(future.cause());
                     }
                 }).sync().channel().closeFuture().sync();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         } finally {
             bossGroup.shutdownGracefully();

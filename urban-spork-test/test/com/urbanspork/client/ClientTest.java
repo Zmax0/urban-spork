@@ -47,12 +47,10 @@ class ClientTest {
             Future<?> future = pool.submit(() -> Client.main(null));
             try {
                 future.get(2, TimeUnit.SECONDS);
+            } catch (TimeoutException | InterruptedException _) {
+                future.cancel(true);
             } catch (Exception e) {
-                if (e instanceof TimeoutException) {
-                    future.cancel(true);
-                } else {
-                    throw new RuntimeException(e);
-                }
+                throw new RuntimeException(e);
             }
             Assertions.assertTrue(future.isCancelled());
         }

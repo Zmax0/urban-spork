@@ -58,8 +58,4 @@ class FileConfigHolder implements ConfigHolder {
     public void delete() throws IOException {
         Files.deleteIfExists(PATH);
     }
-
-    static Path path() {
-        return PATH;
-    }
 }

@@ -35,7 +35,7 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Datagra
     private final ServerUserManager userManager;
     private final AeadCipherCodec cipher;
     private final LruCache<SocketAddress, Control> netMap;
-    private final LruCache<Long, Filter> filterMap = new LruCache<>(10240, Duration.ofMinutes(5), (k, v) -> logger.trace("filter map {} expire", k));
+    private final LruCache<Long, Filter> filterMap = new LruCache<>(10240, Duration.ofMinutes(5), (k, _) -> logger.trace("filter map {} expire", k));
     private boolean autoRelease = true;
 
     public UdpRelayCodec(ServerConfig config, Mode mode, ServerUserManager userManager) {
@@ -43,7 +43,7 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Datagra
         this.userManager = userManager;
         this.cipher = AeadCipherCodecs.get(config);
         if (mode == Mode.Client) {
-            netMap = new LruCache<>(1024, Duration.ofMinutes(5), (k, v) -> logger.trace("net map {} expire", k));
+            netMap = new LruCache<>(1024, Duration.ofMinutes(5), (k, _) -> logger.trace("net map {} expire", k));
         } else {
             netMap = null;
         }
@@ -55,7 +55,7 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Datagra
 
     @Override
     protected void encode(ChannelHandlerContext ctx, DatagramPacketWrapper msg, List<Object> out) throws Exception {
-        InetSocketAddress proxy = msg.proxy();
+        InetSocketAddress proxy = msg.server();
         if (proxy == null) {
             throw new EncoderException("Relay address is null");
         }
@@ -67,7 +67,7 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Datagra
             Filter filter = filterMap.get(control.getClientSessionId());
             control.setPacketId(filter.increasePacketId(1));
         } else {
-            control = netMap.computeIfAbsent(data.sender(), k -> new Control());
+            control = netMap.computeIfAbsent(data.sender(), _ -> new Control());
             control.increasePacketId(1);
         }
         logger.trace("[udp][{}][encode]{}|{}", mode, proxy, control);
@@ -87,18 +87,18 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Datagra
         long packetId;
         if (mode == Mode.Server) {
             channel.attr(AttributeKeys.SERVER_UDP_RELAY_WORKER).set(clientSessionId);
-            filter = filterMap.computeIfAbsent(clientSessionId, k -> {
+            filter = filterMap.computeIfAbsent(clientSessionId, _ -> {
                 control.setServerSessionId(ThreadLocalRandom.current().nextLong());
                 channel.attr(CONTROL).set(control);
                 return new Filter(new PacketWindowFilter(), 0);
             });
             packetId = control.getPacketId();
         } else {
-            filter = filterMap.computeIfAbsent(clientSessionId, k -> new Filter(new PacketWindowFilter(), control.getPacketId()));
+            filter = filterMap.computeIfAbsent(clientSessionId, _ -> new Filter(new PacketWindowFilter(), control.getPacketId()));
             filter.packetId = control.getPacketId();
             packetId = filter.packetId;
         }
-        if (cipher instanceof Aead2022CipherCodecImpl && !filter.filter.validatePacketId(packetId, Long.MAX_VALUE)) {
+        if (cipher instanceof Aead2022CipherCodecImpl && !filter.inner.validatePacketId(packetId, Long.MAX_VALUE)) {
             logger.error("packet id out of window, {}→{}|{}", msg.sender(), packet.address(), control);
             return;
         }
@@ -125,11 +125,11 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Datagra
     }
 
     private static class Filter {
-        final PacketWindowFilter filter;
+        final PacketWindowFilter inner;
         long packetId;
 
-        Filter(PacketWindowFilter filter, long packetId) {
-            this.filter = filter;
+        Filter(PacketWindowFilter inner, long packetId) {
+            this.inner = inner;
             this.packetId = packetId;
         }
 

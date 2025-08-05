@@ -67,7 +67,7 @@ public class WebSocketTestClient {
             sendMsg(channel);
             logger.info("Sending close frame");
             channel.writeAndFlush(new CloseWebSocketFrame()).sync();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         } finally {
             group.shutdownGracefully();

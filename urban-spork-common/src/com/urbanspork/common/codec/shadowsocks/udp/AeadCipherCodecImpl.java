@@ -18,15 +18,7 @@ import java.net.InetSocketAddress;
  * @author Zmax0
  * @see <a href=https://shadowsocks.org/doc/aead.html">AEAD ciphers</a>
  */
-class AeadCipherCodecImpl implements AeadCipherCodec {
-
-    private final Keys keys;
-    private final CipherMethod cipherMethod;
-
-    public AeadCipherCodecImpl(CipherMethod cipherMethod, Keys keys) {
-        this.keys = keys;
-        this.cipherMethod = cipherMethod;
-    }
+record AeadCipherCodecImpl(CipherMethod cipherMethod, Keys keys) implements AeadCipherCodec {
 
     @Override
     public void encode(Context context, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {

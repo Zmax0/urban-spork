@@ -23,7 +23,7 @@ class ClientSocksConnectHandlerTest {
         webSocket.setPath("/ws");
         webSocket.setHeader(Map.of("Host", "localhost"));
         config.setWs(webSocket);
-        ClientTcpRelayHandler.WebSocketCodec codec = getWebSocketCodec(channel, config);
+        ClientRelayHandler.WebSocketCodec codec = getWebSocketCodec(channel, config);
         ChannelPipeline pipeline = channel.pipeline();
         pipeline.addLast(codec);
         codec.userEventTriggered(pipeline.context(codec), WebSocketClientProtocolHandler.ClientHandshakeStateEvent.HANDSHAKE_TIMEOUT);
@@ -32,11 +32,11 @@ class ClientSocksConnectHandlerTest {
         Assertions.assertFalse(response.status().isSuccess());
     }
 
-    private static ClientTcpRelayHandler.WebSocketCodec getWebSocketCodec(EmbeddedChannel channel, ServerConfig config) {
+    private static ClientRelayHandler.WebSocketCodec getWebSocketCodec(EmbeddedChannel channel, ServerConfig config) {
         ClientTcpRelayHandler clientTcpRelayHandler = new ClientTcpRelayHandler() {
             @Override
             public InboundReady inboundReady() {
-                return new InboundReady(c -> {}, c -> c.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, new Socks5AddressType(-1))));
+                return new InboundReady(_ -> {}, c -> c.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, new Socks5AddressType(-1))));
             }
         };
         return new ClientTcpRelayHandler.WebSocketCodec(channel, config, clientTcpRelayHandler);

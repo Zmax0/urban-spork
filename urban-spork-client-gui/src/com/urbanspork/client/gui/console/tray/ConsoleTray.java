@@ -70,7 +70,7 @@ public final class ConsoleTray implements Tray {
         // ==============================
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ignore) {
+        } catch (Exception _) {
             // ignore
         }
         SwingUtilities.updateComponentTreeUI(menu);

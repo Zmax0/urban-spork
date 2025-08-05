@@ -52,7 +52,7 @@ public interface Address {
             InetAddress addr = null;
             try {
                 addr = InetAddress.getByAddress(bytes);
-            } catch (UnknownHostException ignore) {
+            } catch (UnknownHostException _) {
                 // should never be caught
             }
             int port = in.readUnsignedShort();
@@ -63,7 +63,7 @@ public interface Address {
             InetAddress addr = null;
             try {
                 addr = InetAddress.getByAddress(bytes);
-            } catch (UnknownHostException ignore) {
+            } catch (UnknownHostException _) {
                 // should never be caught
             }
             int port = in.readUnsignedShort();

@@ -5,13 +5,13 @@ import io.netty.util.ReferenceCounted;
 
 import java.net.InetSocketAddress;
 
-public record DatagramPacketWrapper(DatagramPacket packet, InetSocketAddress proxy) implements ReferenceCounted {
+public record DatagramPacketWrapper(DatagramPacket packet, InetSocketAddress server) implements ReferenceCounted {
     @Override
     public String toString() {
         if (packet.sender() != null) {
-            return String.format("%s → %s ~ %s", packet.sender(), packet.recipient(), proxy);
+            return String.format("%s → %s ~ %s", packet.sender(), packet.recipient(), server);
         } else {
-            return String.format("/unknown → %s ~ %s", packet.recipient(), proxy);
+            return String.format("/unknown → %s ~ %s", packet.recipient(), server);
         }
     }
 

@@ -6,12 +6,7 @@ import javafx.application.Platform;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeSupport;
 
-public class ExitMenuItem implements TrayMenuItemBuilder {
-    private final PropertyChangeSupport changeSupport;
-
-    public ExitMenuItem(PropertyChangeSupport changeSupport) {
-        this.changeSupport = changeSupport;
-    }
+public record ExitMenuItem(PropertyChangeSupport changeSupport) implements TrayMenuItemBuilder {
 
     @Override
     public String getTextKey() {
@@ -20,7 +15,7 @@ public class ExitMenuItem implements TrayMenuItemBuilder {
 
     @Override
     public ActionListener getActionListener() {
-        return e -> Platform.exit();
+        return _ -> Platform.exit();
     }
 
     @Override
