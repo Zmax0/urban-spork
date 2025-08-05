@@ -7,7 +7,7 @@ import com.urbanspork.common.config.ServerConfig;
 public class ServerConfigListView extends JFXListView<ServerConfig> {
 
     public ServerConfigListView() {
-        this.setCellFactory(param -> new JFXListCell<>() {
+        this.setCellFactory(_ -> new JFXListCell<>() {
             @Override
             protected void updateItem(ServerConfig item, boolean empty) {
                 super.updateItem(item, empty);

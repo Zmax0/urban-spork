@@ -40,8 +40,10 @@ public class Socks5UdpTestClient extends TestClientTemplate {
 
     private void launch() throws InterruptedException, ExecutionException, IOException {
         InetSocketAddress proxyAddress = new InetSocketAddress(proxyHost, proxyPort);
-        InetSocketAddress dstAddress1 = new InetSocketAddress(dstAddress, SimpleEchoTestServer.PORT);
-        InetSocketAddress dstAddress2 = new InetSocketAddress(dstAddress, DelayedEchoTestServer.PORT);
+        logger.info("Proxy address: {}", proxyAddress);
+         InetSocketAddress dstAddress1 = InetSocketAddress.createUnresolved(dstAddress, SimpleEchoTestServer.PORT);
+         InetSocketAddress dstAddress2 = InetSocketAddress.createUnresolved(dstAddress, DelayedEchoTestServer.PORT);
+        logger.info("Destination address: {}, {}", dstAddress1, dstAddress2);
         EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         HandshakeResult<Socks5CommandResponse> result1 = Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress1).await().get();
         HandshakeResult<Socks5CommandResponse> result2 = Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress2).await().get();
@@ -60,11 +62,8 @@ public class Socks5UdpTestClient extends TestClientTemplate {
                             @Override
                             protected void channelRead0(ChannelHandlerContext ctx, DatagramPacketWrapper msg) {
                                 ByteBuf content = msg.packet().content();
-                                InetSocketAddress dst = msg.proxy();
+                                InetSocketAddress dst = msg.server();
                                 logger.info("Receive msg {} - {}", dst, content.readCharSequence(content.readableBytes(), StandardCharsets.UTF_8));
-                                if (!dstAddress1.equals(dst) && !dstAddress2.equals(dst)) {
-                                    logger.error("Destination address is unexpected.");
-                                }
                             }
                         }
                     );

@@ -28,7 +28,7 @@ class ClientTcpRelayHandlerTest {
         inbound.attr(ClientChannelContext.KEY).set(new ClientChannelContext(config, null, null));
         Promise<Boolean> promise = group.next().newPromise();
         ClientRelayHandler.InboundReady inboundReady = new ClientRelayHandler.InboundReady(
-            c -> promise.setSuccess(true), c -> promise.setSuccess(false)
+            _ -> promise.setSuccess(true), _ -> promise.setSuccess(false)
         );
         ClientTcpRelayHandler testHandler = new ClientTcpRelayHandler() {
             @Override

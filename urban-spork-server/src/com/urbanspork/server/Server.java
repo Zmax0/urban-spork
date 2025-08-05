@@ -40,7 +40,7 @@ public class Server {
 
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
-    public static void main(String[] args) {
+    public static void main() {
         launch(ConfigHandler.DEFAULT.read().getServers());
     }
 
@@ -65,13 +65,13 @@ public class Server {
             }
             CountDownLatch latch = new CountDownLatch(count);
             for (Instance server : servers) {
-                server.tcp().closeFuture().addListener(future -> latch.countDown());
-                server.udp().ifPresent(v -> v.closeFuture().addListener(future -> latch.countDown()));
+                server.tcp().closeFuture().addListener(_ -> latch.countDown());
+                server.udp().ifPresent(v -> v.closeFuture().addListener(_ -> latch.countDown()));
             }
             promise.complete(servers);
             latch.await(); // main thread is waiting here
             logger.info("Server is terminated");
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             logger.warn("Interrupt main launch thread");
             Thread.currentThread().interrupt();
         } catch (Throwable e) {

@@ -43,8 +43,7 @@ public class TcpRelayCodec extends ByteToMessageCodec<ByteBuf> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         switch (cause) {
-            case TooShortHeaderException ignore -> exceptionCaught0(ctx, cause);
-            case RepeatedNonceException ignore -> exceptionCaught0(ctx, cause);
+            case TooShortHeaderException _, RepeatedNonceException _ -> exceptionCaught0(ctx, cause);
             default -> ctx.fireExceptionCaught(cause);
         }
     }

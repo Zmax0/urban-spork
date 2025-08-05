@@ -36,7 +36,7 @@ public class Client {
 
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
-    public static void main(String[] args) {
+    public static void main() {
         launch(ConfigHandler.DEFAULT.read(), new CompletableFuture<>());
     }
 
@@ -69,7 +69,7 @@ public class Client {
                 CompletableFuture.supplyAsync(() -> client.udp().closeFuture().syncUninterruptibly())
             ).get();
             logger.info("Client [id:{}] is terminated", clientId);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         } catch (Throwable e) {
             logger.error("Launch client failed {}:{}", host, port, e);

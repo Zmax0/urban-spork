@@ -106,7 +106,7 @@ public class DohJsonTestServer {
                     }
                 }).sync().channel().closeFuture().sync();
             logger.info("Doh json test server close");
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         }
     }

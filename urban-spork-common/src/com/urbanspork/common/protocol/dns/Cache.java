@@ -7,7 +7,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
-public class Cache {
+public record Cache(com.github.benmanes.caffeine.cache.Cache<String, Value> cache) {
     private static final Expiry<String, Value> EXPIRY = new Expiry<>() {
         @Override
         public long expireAfterCreate(String key, Value value, long createAtNanos) {
@@ -25,10 +25,8 @@ public class Cache {
         }
     };
 
-    private final com.github.benmanes.caffeine.cache.Cache<String, Value> cache;
-
-    public Cache(int size) {
-        this.cache = Caffeine.newBuilder().maximumSize(size).expireAfter(EXPIRY).build();
+    public Cache(int cache) {
+        this(Caffeine.newBuilder().maximumSize(cache).expireAfter(EXPIRY).build());
     }
 
     public void put(String key, String value, long ttl, Instant now) {

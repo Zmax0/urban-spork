@@ -17,7 +17,7 @@ class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks5Comman
             @Override
             public Consumer<Channel> outboundReady(Channel inbound) {
                 inbound.pipeline().remove(ClientSocksConnectHandler.class);
-                return channel -> {};
+                return _ -> {};
             }
 
             @Override

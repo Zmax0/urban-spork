@@ -37,7 +37,7 @@ public abstract class AbstractClientUdpRelayHandler<K> extends SimpleChannelInbo
         DatagramPacket packet = msg.packet();
         Channel inbound = ctx.channel();
         Channel outbound = getBindingChannel(inbound, getKey(msg));
-        logger.info("[udp][{}]{}→{}~{}→{}", context.config().getProtocol(), packet.sender(), msg.proxy(), inbound.localAddress(), outbound.localAddress());
+        logger.info("[udp][{}]{}→{}~{}→{}", context.config().getProtocol(), packet.sender(), msg.server(), inbound.localAddress(), outbound.localAddress());
         outbound.writeAndFlush(convertToWrite(msg));
     }
 
@@ -48,9 +48,9 @@ public abstract class AbstractClientUdpRelayHandler<K> extends SimpleChannelInbo
     }
 
     private Channel getBindingChannel(Channel inboundChannel, K key) {
-        return binding.computeIfAbsent(key, k -> {
+        return binding.computeIfAbsent(key, _ -> {
             Channel channel = newBindingChannel(inboundChannel, key);
-            channel.closeFuture().addListener(future -> {
+            channel.closeFuture().addListener(_ -> {
                 Channel removed = binding.remove(key);
                 if (removed != null) {
                     logger.info("[udp][binding][close]{} != {}", key, removed.localAddress());

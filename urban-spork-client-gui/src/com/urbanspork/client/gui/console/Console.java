@@ -104,7 +104,7 @@ public class Console extends Application {
         primaryStage.setMinHeight(555);
         primaryStage.getIcons().add(new Image(Resource.PROGRAM_ICON.toString()));
         primaryStage.titleProperty().bind(I18N.binding(I18N.PROGRAM_TITLE));
-        primaryStage.setOnCloseRequest(event -> primaryStage.hide());
+        primaryStage.setOnCloseRequest(_ -> primaryStage.hide());
         primaryStage.hide();
         initTrafficComponents();
         launchProxy();
@@ -227,21 +227,21 @@ public class Console extends Application {
     private void initWidget() {
         serverConfigJFXListView = new ServerConfigListView();
         logTextArea = initLogTextArea();
-        newServerConfigButton = new ConsoleButton(I18N.binding(I18N.CONSOLE_BUTTON_NEW), event -> newServerConfig());
-        delServerConfigButton = new ConsoleButton(I18N.binding(I18N.CONSOLE_BUTTON_DEL), event -> deleteServerConfig());
-        copyServerConfigButton = new ConsoleButton(I18N.binding(I18N.CONSOLE_BUTTON_COPY), event -> copyServerConfig());
-        importServerConfigButton = new ConsoleButton(I18N.binding(I18N.CONSOLE_BUTTON_IMPORT), event -> importServerConfig());
-        shareServerConfigButton = new ConsoleButton(I18N.binding(I18N.CONSOLE_BUTTON_SHARE), event -> shareServerConfig());
-        moveUpServerConfigButton = new ConsoleLiteButton(I18N.binding(I18N.CONSOLE_BUTTON_UP), event -> moveUpServerConfig());
-        moveDownServerConfigButton = new ConsoleLiteButton(I18N.binding(I18N.CONSOLE_BUTTON_DOWN), event -> moveDownServerConfig());
-        confirmServerConfigButton = new ConsoleButton(I18N.binding(I18N.CONSOLE_BUTTON_CONFIRM), event -> confirmServerConfig());
-        cancelServerConfigButton = new ConsoleButton(I18N.binding(I18N.CONSOLE_BUTTON_CANCEL), event -> hide());
+        newServerConfigButton = new ConsoleButton(I18N.binding(I18N.CONSOLE_BUTTON_NEW), _ -> newServerConfig());
+        delServerConfigButton = new ConsoleButton(I18N.binding(I18N.CONSOLE_BUTTON_DEL), _ -> deleteServerConfig());
+        copyServerConfigButton = new ConsoleButton(I18N.binding(I18N.CONSOLE_BUTTON_COPY), _ -> copyServerConfig());
+        importServerConfigButton = new ConsoleButton(I18N.binding(I18N.CONSOLE_BUTTON_IMPORT), _ -> importServerConfig());
+        shareServerConfigButton = new ConsoleButton(I18N.binding(I18N.CONSOLE_BUTTON_SHARE), _ -> shareServerConfig());
+        moveUpServerConfigButton = new ConsoleLiteButton(I18N.binding(I18N.CONSOLE_BUTTON_UP), _ -> moveUpServerConfig());
+        moveDownServerConfigButton = new ConsoleLiteButton(I18N.binding(I18N.CONSOLE_BUTTON_DOWN), _ -> moveDownServerConfig());
+        confirmServerConfigButton = new ConsoleButton(I18N.binding(I18N.CONSOLE_BUTTON_CONFIRM), _ -> confirmServerConfig());
+        cancelServerConfigButton = new ConsoleButton(I18N.binding(I18N.CONSOLE_BUTTON_CANCEL), _ -> hide());
         currentConfigHostTextField = new ConsoleTextField();
         currentConfigPortTextField = new NumericTextField();
         currentConfigPasswordPasswordField = new JFXPasswordField();
         currentConfigPasswordTextField = new ConsolePasswordTextField();
         currentConfigRemarkTextField = new ConsoleTextField();
-        currentConfigPasswordToggleButton = new CurrentConfigPasswordToggleButton(event -> showCurrentConfigPassword());
+        currentConfigPasswordToggleButton = new CurrentConfigPasswordToggleButton(_ -> showCurrentConfigPassword());
         currentConfigCipherChoiceBox = new CurrentConfigCipherChoiceBox();
         currentConfigProtocolChoiceBox = new CurrentConfigProtocolChoiceBox();
         clientConfigPortTextField = new NumericTextField();
@@ -421,7 +421,7 @@ public class Console extends Application {
 
     private void initClientConfigPortTextField() {
         clientConfigPortTextField.getValidators().add(requiredFieldValidator);
-        clientConfigPortTextField.textProperty().addListener((o, oldValue, newValue) -> {
+        clientConfigPortTextField.textProperty().addListener((_, _, _) -> {
             clientConfigPortTextField.validate();
             int port = clientConfigPortTextField.getIntValue();
             if (CLIENT_CONFIG.getPort() != port) {
@@ -434,7 +434,7 @@ public class Console extends Application {
 
     private void initCurrentConfigPasswordPasswordField() {
         currentConfigPasswordPasswordField.getValidators().add(requiredFieldValidator);
-        currentConfigPasswordPasswordField.focusedProperty().addListener((o, oldValue, newValue) -> {
+        currentConfigPasswordPasswordField.focusedProperty().addListener((_, oldValue, newValue) -> {
             if (Boolean.TRUE.equals(oldValue) && Boolean.FALSE.equals(newValue)) {
                 currentConfigPasswordPasswordField.validate();
             }
@@ -444,7 +444,7 @@ public class Console extends Application {
 
     private void initCurrentConfigPasswordTextField() {
         currentConfigPasswordTextField.getValidators().add(requiredFieldValidator);
-        currentConfigPasswordTextField.focusedProperty().addListener((o, oldValue, newValue) -> {
+        currentConfigPasswordTextField.focusedProperty().addListener((_, oldValue, newValue) -> {
             if (Boolean.TRUE.equals(oldValue) && Boolean.FALSE.equals(newValue)) {
                 currentConfigPasswordTextField.validate();
             }
@@ -453,13 +453,13 @@ public class Console extends Application {
     }
 
     private void initCurrentConfigPasswordCommonEvent(TextField field) {
-        field.textProperty().addListener((o, oldValue, newValue) -> field.setText(newValue));
-        field.setOnMouseEntered(event -> {
+        field.textProperty().addListener((_, _, newValue) -> field.setText(newValue));
+        field.setOnMouseEntered(_ -> {
             if (field.isVisible()) {
                 currentConfigPasswordToggleButton.setVisible(true);
             }
         });
-        field.setOnMouseExited(event -> {
+        field.setOnMouseExited(_ -> {
             if (field.isVisible()) {
                 currentConfigPasswordToggleButton.setVisible(false);
             }
@@ -468,7 +468,7 @@ public class Console extends Application {
 
     private void initCurrentConfigPortTextField() {
         currentConfigPortTextField.getValidators().add(requiredFieldValidator);
-        currentConfigPortTextField.textProperty().addListener((o, oldValue, newValue) -> currentConfigPortTextField.validate());
+        currentConfigPortTextField.textProperty().addListener((_, _, _) -> currentConfigPortTextField.validate());
     }
 
     private void initCurrentConfigCipherChoiceBox() {
@@ -478,7 +478,7 @@ public class Console extends Application {
         currentConfigCipherChoiceBox.disableProperty().bind(Bindings.equal(Protocol.trojan, currentConfigProtocolChoiceBox.valueProperty()));
         // currentConfigHostTextField
         currentConfigHostTextField.getValidators().add(requiredFieldValidator);
-        currentConfigHostTextField.textProperty().addListener((o, oldValue, newValue) -> currentConfigHostTextField.validate());
+        currentConfigHostTextField.textProperty().addListener((_, _, _) -> currentConfigHostTextField.validate());
     }
 
     private void initCurrentConfigProtocolChoiceBox() {
@@ -557,12 +557,12 @@ public class Console extends Application {
     private void initTrafficComponents() {
         ObservableList<Node> children = ((VBox) tab2.getContent()).getChildren();
         ClientChannelTrafficTableView tableView = new ClientChannelTrafficTableView(channelTraffic);
-        primaryStage.setOnHidden(event -> {
+        primaryStage.setOnHidden(_ -> {
             children.clear();
             trafficCounterLineChartBackstage.stop();
             tableView.stop();
         });
-        primaryStage.setOnShown(event -> {
+        primaryStage.setOnShown(_ -> {
             if (children.isEmpty()) {
                 children.add(trafficCounterLineChartBackstage.newLineChart());
                 children.add(tableView);

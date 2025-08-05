@@ -14,14 +14,7 @@ import java.awt.TrayIcon.MessageType;
 import java.awt.event.ItemListener;
 import java.util.List;
 
-public class ServersMenuItem {
-    private final Console console;
-    private final Tray tray;
-
-    public ServersMenuItem(Console console, Tray tray) {
-        this.console = console;
-        this.tray = tray;
-    }
+public record ServersMenuItem(Console console, Tray tray) {
 
     public JMenuItem build() {
         JMenu menu = new JMenu(I18N.getString(I18N.TRAY_MENU_SERVERS));
@@ -41,12 +34,12 @@ public class ServersMenuItem {
                 menu.add(item);
             }
         }
-        tray.changeSupport().addPropertyChangeListener(e -> menu.setText(I18N.getString(I18N.TRAY_MENU_SERVERS)));
+        tray.changeSupport().addPropertyChangeListener(_ -> menu.setText(I18N.getString(I18N.TRAY_MENU_SERVERS)));
         return menu;
     }
 
     private ItemListener createItemListener(JRadioButtonMenuItem item, ClientConfig config, int index) {
-        return event -> {
+        return _ -> {
             if (item.isSelected()) {
                 config.setIndex(index);
                 if (Platform.isFxApplicationThread()) {

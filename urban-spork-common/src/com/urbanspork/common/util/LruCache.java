@@ -47,14 +47,14 @@ public class LruCache<K, V> {
     }
 
     public void insert(K key, V value) {
-        inner.put(key, new Pair<>(value, timer.newTimeout(timeout -> expire(key, value), timeToLive.toNanos(), TimeUnit.NANOSECONDS)));
+        inner.put(key, new Pair<>(value, timer.newTimeout(_ -> expire(key, value), timeToLive.toNanos(), TimeUnit.NANOSECONDS)));
     }
 
     public V get(K key) {
         Pair<V> pair = inner.get(key);
         if (pair != null) {
             pair.timeout.cancel();
-            pair.timeout = timer.newTimeout(timeout -> expire(key, pair.value), timeToLive.toNanos(), TimeUnit.NANOSECONDS);
+            pair.timeout = timer.newTimeout(_ -> expire(key, pair.value), timeToLive.toNanos(), TimeUnit.NANOSECONDS);
             return pair.value;
         } else {
             return null;

@@ -145,7 +145,7 @@ Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-
 
 ### Require
 
-Java 21+
+Java 25+
 
 Rust 1.69+
 

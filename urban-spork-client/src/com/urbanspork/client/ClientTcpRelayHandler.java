@@ -141,7 +141,7 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
             QuicChannel.newBootstrap(quicEndpoint).remoteAddress(serverAddress).streamHandler(new ChannelInboundHandlerAdapter()).connect().addListener(f1 -> {
                     if (f1.isSuccess()) {
                         QuicChannel quicChannel = (QuicChannel) f1.get();
-                        inbound.closeFuture().addListener(f -> quicChannel.close());
+                        inbound.closeFuture().addListener(_ -> quicChannel.close());
                         connectQuic(inbound, dstAddress, context, quicChannel, quicEndpoint);
                     } else {
                         logger.error("[quic] create endpoint channel failed, relay server {}", serverAddress, f1.cause());
@@ -241,7 +241,7 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
                 ClientRelayHandler.addSslHandler(outbound, context);
                 if (ClientRelayHandler.addWebSocketHandlers(outbound, context)) {
                     outbound.pipeline().addLast(new WebSocketCodec(inbound, context.config(), ClientTcpRelayHandler.this));
-                    inbound.closeFuture().addListener(future -> outbound.writeAndFlush(new CloseWebSocketFrame()));
+                    inbound.closeFuture().addListener(_ -> outbound.writeAndFlush(new CloseWebSocketFrame()));
                 }
                 ClientRelayHandler.addChannelTrafficHandler(outbound, address, context);
                 addProtocolHandler(outbound, address.address(), context);

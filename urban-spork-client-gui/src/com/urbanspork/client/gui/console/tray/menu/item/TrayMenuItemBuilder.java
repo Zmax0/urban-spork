@@ -21,7 +21,7 @@ public interface TrayMenuItemBuilder {
         JMenuItem item = new JMenuItem();
         item.setText(getText());
         item.addActionListener(getActionListener());
-        getPropertyChangeSupport().addPropertyChangeListener(e -> item.setText(getText()));
+        getPropertyChangeSupport().addPropertyChangeListener(_ -> item.setText(getText()));
         return item;
     }
 }

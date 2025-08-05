@@ -58,7 +58,7 @@ public class EchoWebSocketTestServer {
                         promise.setFailure(future.cause());
                     }
                 }).sync().channel().closeFuture().sync();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         }
     }

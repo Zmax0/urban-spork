@@ -68,7 +68,7 @@ class ClientHttpUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> 
         @Override
         public Consumer<Channel> outboundReady(Channel inbound) {
             inbound.pipeline().remove(INSTANCE);
-            return channel -> {};
+            return _ -> {};
         }
 
         @Override

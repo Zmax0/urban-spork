@@ -7,15 +7,7 @@ import javafx.application.Platform;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeSupport;
 
-public class ConsoleMenuItem implements TrayMenuItemBuilder {
-
-    private final Console console;
-    private final PropertyChangeSupport changeSupport;
-
-    public ConsoleMenuItem(Console console, PropertyChangeSupport changeSupport) {
-        this.console = console;
-        this.changeSupport = changeSupport;
-    }
+public record ConsoleMenuItem(Console console, PropertyChangeSupport changeSupport) implements TrayMenuItemBuilder {
 
     @Override
     public String getTextKey() {
@@ -24,7 +16,7 @@ public class ConsoleMenuItem implements TrayMenuItemBuilder {
 
     @Override
     public ActionListener getActionListener() {
-        return e -> Platform.runLater(console::show);
+        return _ -> Platform.runLater(console::show);
     }
 
     @Override

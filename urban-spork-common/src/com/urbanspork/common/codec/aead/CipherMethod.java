@@ -52,13 +52,9 @@ public enum CipherMethod {
         };
     }
 
-    private static class BouncyCastleCipherInstance implements CipherInstance {
-        private final KeyParameter key;
-        private final AEADCipher cipher;
-
-        public BouncyCastleCipherInstance(AEADCipher cipher, byte[] key) {
-            this.cipher = cipher;
-            this.key = new KeyParameter(key);
+    private record BouncyCastleCipherInstance(AEADCipher cipher, KeyParameter key) implements CipherInstance {
+        BouncyCastleCipherInstance(AEADCipher cipher, byte[] key) {
+            this(cipher, new KeyParameter(key));
         }
 
         @Override
