@@ -3,6 +3,7 @@ package com.urbanspork.common.config;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.transport.Transport;
 import com.urbanspork.common.transport.udp.PacketEncoding;
+import com.urbanspork.test.SslUtil;
 import com.urbanspork.test.TestDice;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,27 @@ public class ServerConfigTest {
         String remark = TestDice.rollString();
         config.setRemark(remark);
         Assertions.assertEquals(remark, config.listItemText());
+    }
+
+    @Test
+    void testNetworkText() {
+        ServerConfig config = new ServerConfig();
+        config.setTransport(new Transport[]{Transport.UDP});
+        config.setProtocol(Protocol.shadowsocks);
+        Assertions.assertEquals("udp", config.networkText());
+        config.setTransport(new Transport[]{Transport.QUIC});
+        Assertions.assertEquals("quic", config.networkText());
+        config.setTransport(new Transport[]{Transport.TCP});
+        Assertions.assertEquals("tcp", config.networkText());
+        SslSetting ssl = SslUtil.getSslSetting();
+        config.setSsl(ssl);
+        Assertions.assertEquals("tls", config.networkText());
+        config.setSsl(null);
+        WebSocketSetting ws = new WebSocketSetting();
+        config.setWs(ws);
+        Assertions.assertEquals("ws", config.networkText());
+        config.setSsl(ssl);
+        Assertions.assertEquals("wss", config.networkText());
     }
 
     public static ServerConfig testConfig(int port) {

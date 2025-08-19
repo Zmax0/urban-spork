@@ -48,13 +48,13 @@ import java.util.function.Consumer;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class UdpTestTemplate extends TestTemplate {
     private static final Logger logger = LoggerFactory.getLogger(UdpTestTemplate.class);
-    private final List<InetSocketAddress> dstAddress = new ArrayList<>();
+    protected final List<InetSocketAddress> dstAddress = new ArrayList<>();
     private final EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-    private Channel channel;
+    protected Channel channel;
     private Consumer<DatagramPacketWrapper> consumer;
-    private DatagramSocket simpleEchoTestUdpServer;
+    protected DatagramSocket simpleEchoTestUdpServer;
     private ServerSocket simpleEchoTestTcpServer;
-    private DatagramSocket delayedEchoTestUdpServer;
+    protected DatagramSocket delayedEchoTestUdpServer;
     private ServerSocket delayedEchoTestTcpServer;
 
     @BeforeAll
@@ -137,7 +137,7 @@ public abstract class UdpTestTemplate extends TestTemplate {
         Assertions.assertEquals(Socks5CommandStatus.SUCCESS, response.status());
         CompletableFuture<Void> promise = new CompletableFuture<>();
         consumer = msg -> {
-            if (dstAddress.equals(msg.server())) {
+            if (dstAddress.isUnresolved() || dstAddress.equals(msg.server())) {
                 promise.complete(null);
             } else {
                 promise.completeExceptionally(AssertionFailureBuilder.assertionFailure().message("Not equals").build());

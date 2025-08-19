@@ -20,12 +20,12 @@ A network tool for improved privacy and security
 |   `tcp`    |     `ws`      |    ✔     |      ✔      |   ✔   |        |
 |   `tcp`    |     `wss`     |    ✔     |      ✔      |   ✔   |   ✔    |
 |   `tcp`    |    `quic`     |    ✔     |    ✔(*)     |   ✔   |   ✔    |
-|   `udp`    |     `udp`     |          |      ✔      |       |        |
-|   `udp`    |     `tcp`     |          |             |   ✔   |        |
-|   `udp`    |     `tls`     |          |             |   ✔   |   ✔    |
-|   `udp`    |     `ws`      |          |             |   ✔   |        |
-|   `udp`    |     `wss`     |          |             |   ✔   |   ✔    |
-|   `udp`    |    `quic`     |          |             |   ✔   |   ✔    |
+|   `udp`    |     `udp`     |    ✔     |      ✔      |       |        |
+|   `udp`    |     `tcp`     |    ✔     |             |   ✔   |        |
+|   `udp`    |     `tls`     |    ✔     |             |   ✔   |   ✔    |
+|   `udp`    |     `ws`      |    ✔     |             |   ✔   |        |
+|   `udp`    |     `wss`     |    ✔     |             |   ✔   |   ✔    |
+|   `udp`    |    `quic`     |    ✔     |             |   ✔   |   ✔    |
 
 `*` starting the shadowsocks quic server will bind udp socket but process tcp payload
 
@@ -111,7 +111,8 @@ Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-
 
 > `dns`: (OPTIONAL) DNS specific configurations
 
-> > `nameServer`: The DoH (DNS over HTTPS - [RFC 8484](https://datatracker.ietf.org/doc/html/rfc8484)) resolver endpoint URL
+> > `nameServer`: The DoH (DNS over HTTPS - [RFC 8484](https://datatracker.ietf.org/doc/html/rfc8484)) resolver endpoint
+> > URL
 
 > `ssl`: (OPTIONAL) SSL specific configurations
 

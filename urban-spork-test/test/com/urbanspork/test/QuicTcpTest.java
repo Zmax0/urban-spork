@@ -74,7 +74,7 @@ class QuicTcpTest extends TcpTestTemplate {
     @ParameterizedTest
     @ArgumentsSource(Parameter.QuicProvider.class)
     void testClientDnsByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
-        ServerSocketChannel dohServer = ClientDnsTest.launchDohTestServer();
+        ServerSocketChannel dohServer = dohTestServer();
         CipherKind cipher = parameter.cipher();
         ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();

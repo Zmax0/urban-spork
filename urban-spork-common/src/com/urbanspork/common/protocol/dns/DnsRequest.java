@@ -4,4 +4,4 @@ import com.urbanspork.common.config.SslSetting;
 
 import java.net.InetSocketAddress;
 
-public record DnsRequest<T>(InetSocketAddress address, SslSetting ssl, T msg) {}
+public record DnsRequest(InetSocketAddress address, SslSetting ssl, Object msg) {}
