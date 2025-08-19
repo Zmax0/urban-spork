@@ -61,18 +61,18 @@ public class Doh {
 
     private Doh() {}
 
-    public static Promise<IpResponse> query(EventLoopGroup group, String nameServer, String domain) throws InterruptedException {
-        DnsRequest<FullHttpRequest> quest = getRequest(nameServer, domain, null);
+    public static Promise<IpResponse> query(EventLoopGroup group, String nameServer, String domain) {
+        DnsRequest quest = getRequest(nameServer, domain, null);
         Promise<IpResponse> promise = group.next().newPromise();
         Channel channel = new Bootstrap().group(group).channel(NioSocketChannel.class)
             .handler(new ChannelHandlerAdapter() {})
-            .connect(quest.address()).sync()
+            .connect(quest.address()).syncUninterruptibly()
             .channel();
         query(channel, quest, promise);
         return promise;
     }
 
-    public static void query(Channel channel, DnsRequest<FullHttpRequest> request, Promise<IpResponse> promise) {
+    public static void query(Channel channel, DnsRequest request, Promise<IpResponse> promise) {
         SslHandler ssl;
         try {
             InetSocketAddress address = request.address();
@@ -148,7 +148,7 @@ public class Doh {
         channel.writeAndFlush(request.msg());
     }
 
-    public static DnsRequest<FullHttpRequest> getRequest(String nameServer, String domain, SslSetting ssl) {
+    public static DnsRequest getRequest(String nameServer, String domain, SslSetting ssl) {
         short tid = (short) ThreadLocalRandom.current().nextInt(); // unsigned short
         DefaultDnsQuery dnsQuery = new DefaultDnsQuery(tid);
         DefaultDnsQuestion question = new DefaultDnsQuestion(domain, DnsRecordType.A);
@@ -178,6 +178,6 @@ public class Doh {
         String host = uri.getHost();
         FullHttpRequest msg = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri.toString());
         msg.headers().set(HttpHeaderNames.ACCEPT, "application/dns-message").set(HttpHeaderNames.CONTENT_TYPE, "application/dns-message");
-        return new DnsRequest<>(InetSocketAddress.createUnresolved(host, port), ssl, msg);
+        return new DnsRequest(InetSocketAddress.createUnresolved(host, port), ssl, msg);
     }
 }

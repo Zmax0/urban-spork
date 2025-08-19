@@ -75,10 +75,10 @@ public class Server {
             logger.warn("Interrupt main launch thread");
             Thread.currentThread().interrupt();
         } catch (Throwable e) {
+            logger.error("Launch server failed", e);
             for (Instance server : servers) {
                 server.close();
             }
-            logger.error("Launch server failed", e);
             promise.completeExceptionally(e);
         } finally {
             workerGroup.shutdownGracefully().syncUninterruptibly();
@@ -89,6 +89,12 @@ public class Server {
 
     private static Instance start(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerInitializationContext context)
         throws InterruptedException {
+        ServerSocketChannel tcp = startTcp(bossGroup, workerGroup, context);
+        Optional<DatagramChannel> udp = startUdp(bossGroup, workerGroup, context);
+        return new Instance(tcp, udp);
+    }
+
+    private static ServerSocketChannel startTcp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerInitializationContext context) throws InterruptedException {
         ServerConfig config = context.config();
         ServerSocketChannel tcp = (ServerSocketChannel) new ServerBootstrap()
             .group(bossGroup, workerGroup)
@@ -98,8 +104,7 @@ public class Server {
             .sync().channel();
         config.setPort(tcp.localAddress().getPort());
         logger.info("Running a tcp server => {}", config);
-        Optional<DatagramChannel> udp = startUdp(bossGroup, workerGroup, context);
-        return new Instance(tcp, udp);
+        return tcp;
     }
 
     private static Optional<DatagramChannel> startUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerInitializationContext context) throws InterruptedException {

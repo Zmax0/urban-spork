@@ -9,11 +9,9 @@ import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.transport.Transport;
 import com.urbanspork.server.Server;
-import com.urbanspork.test.server.tcp.DohTestServer;
 import com.urbanspork.test.template.TcpTestTemplate;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.util.NetUtil;
-import io.netty.util.concurrent.DefaultPromise;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -24,10 +22,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ClientDnsTest extends TcpTestTemplate {
+class ClientTcpDnsTest extends TcpTestTemplate {
     @Test
     void test() throws ExecutionException, InterruptedException, TimeoutException {
-        ServerSocketChannel dohServer = launchDohTestServer();
+        ServerSocketChannel dohServer = dohTestServer();
         Protocol protocol = Protocol.trojan;
         String password = TestDice.rollPassword(protocol, null);
         WebSocketSetting wsSetting = new WebSocketSetting();
@@ -76,11 +74,5 @@ class ClientDnsTest extends TcpTestTemplate {
         Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientTcpAddress));
         closeServer(server);
         client.close();
-    }
-
-    static ServerSocketChannel launchDohTestServer() throws ExecutionException, InterruptedException {
-        DefaultPromise<ServerSocketChannel> promise = new DefaultPromise<>() {};
-        POOL.submit(() -> DohTestServer.launch(0, promise));
-        return promise.get();
     }
 }

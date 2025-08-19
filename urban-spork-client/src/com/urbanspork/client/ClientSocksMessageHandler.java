@@ -28,7 +28,7 @@ class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks5Messag
     private void channelRead1(ChannelHandlerContext ctx, Socks5CommandRequest request) {
         ChannelPipeline pipeline = ctx.pipeline();
         if (request.type() == Socks5CommandType.CONNECT) {
-            pipeline.replace(this, null, new ClientSocksConnectHandler());
+            pipeline.replace(this, null, ClientSocksConnectHandler.INSTANCE);
             pipeline.remove(Socks5CommandRequestDecoder.class);
             ctx.fireChannelRead(request);
         } else if (request.type() == Socks5CommandType.UDP_ASSOCIATE) {

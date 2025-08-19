@@ -1,6 +1,7 @@
 package com.urbanspork.client;
 
-import com.urbanspork.common.channel.ChannelCloseUtils;
+import com.urbanspork.common.channel.ChannelCloseUtil;
+import com.urbanspork.common.codec.address.MaybeResolved;
 import com.urbanspork.common.config.DnsSetting;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.SslSetting;
@@ -39,7 +40,6 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.SSLException;
 import java.io.File;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
@@ -54,16 +54,6 @@ public interface ClientRelayHandler {
 
     record InboundReady(Consumer<Channel> success, Consumer<Channel> failure) {}
 
-    record MaybeResolved(InetSocketAddress original, InetSocketAddress resolved) {
-        public MaybeResolved(InetSocketAddress peer) {
-            this(peer, null);
-        }
-
-        public InetSocketAddress address() {
-            return resolved == null ? original : resolved;
-        }
-    }
-
     default Consumer<Channel> outboundReady(Channel ignore) {
         return _ -> {};
     }
@@ -74,7 +64,7 @@ public interface ClientRelayHandler {
 
     default void handleFailure(Channel inbound) {
         inboundReady().failure().accept(inbound);
-        ChannelCloseUtils.closeOnFlush(inbound);
+        ChannelCloseUtil.closeOnFlush(inbound);
     }
 
     class WebSocketCodec extends MessageToMessageCodec<BinaryWebSocketFrame, ByteBuf> {
@@ -113,7 +103,7 @@ public interface ClientRelayHandler {
             if (evt == WebSocketClientProtocolHandler.ClientHandshakeStateEvent.HANDSHAKE_TIMEOUT) {
                 logger.error("Connect proxy websocket server {}:{} time out", config.getHost(), config.getPort());
                 relayHandler.inboundReady().failure().accept(inbound);
-                ChannelCloseUtils.closeOnFlush(inbound);
+                ChannelCloseUtil.closeOnFlush(inbound);
             }
             ctx.fireUserEventTriggered(evt);
         }
@@ -198,8 +188,6 @@ public interface ClientRelayHandler {
             logger.info("resolved host {} -> {}", host, resolved);
             dns.cache().put(host, resolved.ip(), resolved.ttl(), Instant.now());
             return Optional.of(resolved.ip());
-        } catch (InterruptedException _) {
-            return Optional.empty();
         } catch (Exception e) {
             logger.error("resolve server host {} failed", host, e);
             return Optional.empty();

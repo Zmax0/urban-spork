@@ -49,13 +49,7 @@ public class Client {
         String host = config.getHost() == null ? InetAddress.getLoopbackAddress().getHostName() : config.getHost();
         int port = config.getPort();
         try {
-            ServerSocketChannel tcp = (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
-                .childOption(ChannelOption.SO_KEEPALIVE, true) // socks5 require
-                .childOption(ChannelOption.TCP_NODELAY, false)
-                .childOption(ChannelOption.SO_LINGER, 1)
-                .childHandler(new ClientInitializer(context))
-                .bind(host, port).sync().channel();
+            ServerSocketChannel tcp = launchTcp(bossGroup, workerGroup, host, port, context);
             InetSocketAddress tcpLocalAddress = tcp.localAddress();
             int localPort = tcpLocalAddress.getPort();
             config.setPort(localPort);
@@ -81,6 +75,16 @@ public class Client {
         }
     }
 
+    private static ServerSocketChannel launchTcp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, String host, int port, ClientChannelContext context) throws InterruptedException {
+        return (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
+            .channel(NioServerSocketChannel.class)
+            .childOption(ChannelOption.SO_KEEPALIVE, true) // socks5 require
+            .childOption(ChannelOption.TCP_NODELAY, false)
+            .childOption(ChannelOption.SO_LINGER, 1)
+            .childHandler(new ClientInitializer(context))
+            .bind(host, port).sync().channel();
+    }
+
     private static DatagramChannel launchUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, String host, int port, ClientChannelContext context) throws InterruptedException {
         ChannelHandler udpTransportHandler = getUdpReplayHandler(workerGroup, context);
         return (DatagramChannel) new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
@@ -91,6 +95,7 @@ public class Client {
                         context.traffic(),
                         new DatagramPacketEncoder(),
                         new DatagramPacketDecoder(),
+                        new ClientUdpDnsDecoder(context, workerGroup),
                         udpTransportHandler
                     );
                 }

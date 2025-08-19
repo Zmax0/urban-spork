@@ -86,7 +86,7 @@ public interface ClientDnsRelayHandler extends ClientRelayHandler {
                 }
             }
         } else {
-            callback1(new MaybeResolved(target));
+            callback1(new MaybeResolved(target, null));
         }
     }
 
