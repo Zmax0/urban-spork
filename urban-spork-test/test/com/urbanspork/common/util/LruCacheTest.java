@@ -23,8 +23,9 @@ class LruCacheTest {
         cache.insert(a1, new EmbeddedChannel());
         cache.remove(a1);
         Assertions.assertNull(cache.get(a1));
-        cache.insert(a3, new EmbeddedChannel());
         cache.insert(a2, new EmbeddedChannel());
+        cache.insert(a3, new EmbeddedChannel());
+        cache.get(a2);
         cache.insert(a1, new EmbeddedChannel());
         Assertions.assertNull(cache.get(a3));
         LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
