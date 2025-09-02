@@ -15,7 +15,7 @@ public class LruCache<K, V> {
     final Duration timeToLive;
     final HashedWheelTimer timer = new HashedWheelTimer(1, TimeUnit.SECONDS);
     final BiConsumer<K, V> afterExpired;
-    final Map<K, Pair<V>> inner = new LinkedHashMap<>() {
+    final Map<K, Pair<V>> inner = new LinkedHashMap<>(16, 0.75f, true) {
         @Override
         protected boolean removeEldestEntry(Map.Entry<K, Pair<V>> eldest) {
             boolean flag = size() > capacity;
