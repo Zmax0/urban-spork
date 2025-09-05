@@ -1,17 +1,17 @@
 package com.urbanspork.client;
 
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.socksx.v5.*;
 
-@ChannelHandler.Sharable
+
 class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks5Message> {
+    private final ClientChannelContext context;
 
-    static final ClientSocksMessageHandler INSTANCE = new ClientSocksMessageHandler();
-
-    private ClientSocksMessageHandler() {}
+    ClientSocksMessageHandler(ClientChannelContext context) {
+        this.context = context;
+    }
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Socks5Message msg) {
@@ -28,11 +28,11 @@ class ClientSocksMessageHandler extends SimpleChannelInboundHandler<Socks5Messag
     private void channelRead1(ChannelHandlerContext ctx, Socks5CommandRequest request) {
         ChannelPipeline pipeline = ctx.pipeline();
         if (request.type() == Socks5CommandType.CONNECT) {
-            pipeline.replace(this, null, ClientSocksConnectHandler.INSTANCE);
+            pipeline.replace(this, null, new ClientSocksConnectHandler(context));
             pipeline.remove(Socks5CommandRequestDecoder.class);
             ctx.fireChannelRead(request);
         } else if (request.type() == Socks5CommandType.UDP_ASSOCIATE) {
-            pipeline.replace(this, null, ClientSocksUdpAssociateHandler.INSTANCE);
+            pipeline.replace(this, null, new ClientSocksUdpAssociateHandler(context));
             pipeline.remove(Socks5CommandRequestDecoder.class);
             ctx.fireChannelRead(request);
         } else {

@@ -44,7 +44,7 @@ class ClientTest {
         ClientConfig config = ClientConfigTest.testConfig(0, 0);
         ConfigHandler.DEFAULT.save(config);
         try (ExecutorService pool = Executors.newSingleThreadExecutor()) {
-            Future<?> future = pool.submit(() -> Client.main(null));
+            Future<?> future = pool.submit(Client::main);
             try {
                 future.get(2, TimeUnit.SECONDS);
             } catch (TimeoutException | InterruptedException _) {

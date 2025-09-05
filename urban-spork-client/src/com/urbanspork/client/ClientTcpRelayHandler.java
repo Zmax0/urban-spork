@@ -38,8 +38,7 @@ import java.util.Optional;
 public interface ClientTcpRelayHandler extends ClientRelayHandler {
     Logger logger = LoggerFactory.getLogger(ClientTcpRelayHandler.class);
 
-    default void connect(Channel inbound, InetSocketAddress dstAddress) {
-        ClientChannelContext context = inbound.attr(ClientChannelContext.KEY).get();
+    default void connect(Channel inbound, InetSocketAddress dstAddress, ClientChannelContext context) {
         if (context.config().quicEnabled()) {
             quic(inbound, dstAddress, context);
         } else {
