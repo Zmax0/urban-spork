@@ -134,8 +134,7 @@ class QuicTcpTest extends TcpTestTemplate {
         try (ExecutorService pool = Executors.newSingleThreadExecutor()) {
             Future<?> submitted = pool.submit(() -> EchoTestServer.launch(0, new CompletableFuture<>()));
             Channel inbound = new Bootstrap().group(group).channel(NioDatagramChannel.class).handler(new ChannelInboundHandlerAdapter()).bind(0).sync().channel();
-            inbound.attr(ClientChannelContext.KEY).set(new ClientChannelContext(config, null, null));
-            new ClientTcpRelayHandler() {}.connect(inbound, serverAddress);
+            new ClientTcpRelayHandler() {}.connect(inbound, serverAddress, new ClientChannelContext(config, null, null));
             inbound.close().sync();
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(500));
             submitted.cancel(true);

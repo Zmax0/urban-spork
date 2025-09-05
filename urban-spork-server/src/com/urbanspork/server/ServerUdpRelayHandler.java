@@ -73,7 +73,7 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
                         new InboundHandler(channel)
                     );
                 }
-            })// callback->server->client
+            }) // callback->server->client
             .bind(0) // automatically assigned port now, may have security implications
             .syncUninterruptibly()
             .channel();

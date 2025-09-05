@@ -13,14 +13,14 @@ import org.junit.jupiter.api.Test;
 class ClientSocksMessageHandlerTest {
     @Test
     void testUnsupportedMessage() {
-        EmbeddedChannel channel = new EmbeddedChannel(ClientSocksMessageHandler.INSTANCE);
+        EmbeddedChannel channel = new EmbeddedChannel(new ClientSocksMessageHandler(null));
         channel.writeInbound(new DefaultSocks5PasswordAuthRequest("", ""));
         Assertions.assertFalse(channel.isActive());
     }
 
     @Test
     void testUnsupportedCommand() {
-        EmbeddedChannel channel = new EmbeddedChannel(ClientSocksMessageHandler.INSTANCE);
+        EmbeddedChannel channel = new EmbeddedChannel(new ClientSocksMessageHandler(null));
         channel.writeInbound(new DefaultSocks5CommandRequest(Socks5CommandType.BIND, Socks5AddressType.DOMAIN, "", 0));
         Socks5CommandResponse response = channel.readOutbound();
         Assertions.assertNotEquals(Socks5CommandStatus.SUCCESS, response.status());

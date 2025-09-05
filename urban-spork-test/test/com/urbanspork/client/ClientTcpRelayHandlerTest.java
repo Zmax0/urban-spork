@@ -25,7 +25,6 @@ class ClientTcpRelayHandlerTest {
         ServerConfig config = ServerConfigTest.testConfig(0);
         config.setSsl(SslUtil.getSslSetting());
         config.setTransport(new Transport[]{Transport.QUIC});
-        inbound.attr(ClientChannelContext.KEY).set(new ClientChannelContext(config, null, null));
         Promise<Boolean> promise = group.next().newPromise();
         ClientRelayHandler.InboundReady inboundReady = new ClientRelayHandler.InboundReady(
             _ -> promise.setSuccess(true), _ -> promise.setSuccess(false)
@@ -36,7 +35,7 @@ class ClientTcpRelayHandlerTest {
                 return inboundReady;
             }
         };
-        testHandler.connect(inbound, InetSocketAddress.createUnresolved("localhost", 0));
+        testHandler.connect(inbound, InetSocketAddress.createUnresolved("localhost", 0), new ClientChannelContext(config, null, null));
         Boolean res = promise.get();
         Assertions.assertFalse(res);
     }

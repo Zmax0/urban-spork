@@ -5,7 +5,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.HttpMethod;
@@ -14,11 +13,12 @@ import io.netty.util.concurrent.Promise;
 import java.net.InetSocketAddress;
 import java.util.function.Consumer;
 
-@ChannelHandler.Sharable
 class ClientHttpUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> {
-    static final ClientHttpUnificationHandler INSTANCE = new ClientHttpUnificationHandler();
+    private final ClientChannelContext context;
 
-    private ClientHttpUnificationHandler() {}
+    ClientHttpUnificationHandler(ClientChannelContext context) {
+        this.context = context;
+    }
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
@@ -30,9 +30,9 @@ class ClientHttpUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> 
             return;
         }
         if (HttpMethod.CONNECT == option.method()) {
-            new HttpsRelayHandler().connect(ctx.channel(), dstAddress);
+            new HttpsRelayHandler(this).connect(ctx.channel(), dstAddress, context);
         } else {
-            ctx.pipeline().remove(this).addLast(new HttpRelayHandler(ctx.channel(), dstAddress)).fireChannelRead(msg.retain());
+            ctx.pipeline().remove(this).addLast(new HttpRelayHandler(ctx.channel(), dstAddress, context)).fireChannelRead(msg.retain());
         }
     }
 
@@ -44,7 +44,7 @@ class ClientHttpUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> 
             promise = ctx.executor().newPromise();
         }
 
-        HttpRelayHandler(Channel channel, InetSocketAddress dstAddress) {
+        HttpRelayHandler(Channel channel, InetSocketAddress dstAddress, ClientChannelContext context) {
             super(false);
             new ClientTcpRelayHandler() {
                 @Override
@@ -52,7 +52,7 @@ class ClientHttpUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> 
                     inbound.pipeline().remove(HttpRelayHandler.this);
                     return c -> promise.setSuccess(c);
                 }
-            }.connect(channel, dstAddress);
+            }.connect(channel, dstAddress, context);
         }
 
         @Override
@@ -61,19 +61,19 @@ class ClientHttpUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> 
         }
     }
 
-    private static class HttpsRelayHandler implements ClientTcpRelayHandler {
+    private record HttpsRelayHandler(ClientHttpUnificationHandler handler) implements ClientTcpRelayHandler {
         private static final byte[] SUCCESS = "HTTP/1.1 200 Connection established\r\n\r\n".getBytes();
         private static final byte[] FAILED = "HTTP/1.1 500 Internal Server Error\r\n\r\n".getBytes();
 
         @Override
         public Consumer<Channel> outboundReady(Channel inbound) {
-            inbound.pipeline().remove(INSTANCE);
+            inbound.pipeline().remove(handler);
             return _ -> {};
         }
 
         @Override
-        public ClientRelayHandler.InboundReady inboundReady() {
-            return new ClientRelayHandler.InboundReady(
+        public InboundReady inboundReady() {
+            return new InboundReady(
                 channel -> channel.writeAndFlush(Unpooled.wrappedBuffer(SUCCESS)),
                 channel -> channel.writeAndFlush(Unpooled.wrappedBuffer(FAILED))
             );
