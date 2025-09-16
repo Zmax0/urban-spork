@@ -217,7 +217,7 @@ public class Console extends Application {
             } else {
                 serverConfigJFXListView.refresh();
             }
-            CLIENT_CONFIG.setPort(clientConfigPortTextField.getIntValue());
+            clientConfigPortTextField.getIntValue().ifPresent(CLIENT_CONFIG::setPort);
             CLIENT_CONFIG.setIndex(selectionModel.getSelectedIndex());
             saveConfig();
             launchProxy();
@@ -421,13 +421,16 @@ public class Console extends Application {
 
     private void initClientConfigPortTextField() {
         clientConfigPortTextField.getValidators().add(requiredFieldValidator);
-        clientConfigPortTextField.textProperty().addListener((_, _, _) -> {
-            clientConfigPortTextField.validate();
-            int port = clientConfigPortTextField.getIntValue();
-            if (CLIENT_CONFIG.getPort() != port) {
-                CLIENT_CONFIG.setPort(port);
-                launchProxy();
-                saveConfig();
+        clientConfigPortTextField.textProperty().addListener((_, _, _) -> clientConfigPortTextField.validate());
+        clientConfigPortTextField.focusedProperty().addListener((_, _, newValue) -> {
+            if (!newValue) {
+                clientConfigPortTextField.getIntValue().ifPresent(port -> {
+                    if (CLIENT_CONFIG.getPort() != port) {
+                        CLIENT_CONFIG.setPort(port);
+                        launchProxy();
+                        saveConfig();
+                    }
+                });
             }
         });
     }
@@ -613,7 +616,7 @@ public class Console extends Application {
 
     private void pack(ServerConfig config) {
         config.setHost(currentConfigHostTextField.getText());
-        config.setPort(currentConfigPortTextField.getIntValue());
+        currentConfigPortTextField.getIntValue().ifPresent(config::setPort);
         config.setPassword(currentConfigPasswordTextField.getText());
         config.setRemark(currentConfigRemarkTextField.getText());
         config.setCipher(currentConfigCipherChoiceBox.getValue());
