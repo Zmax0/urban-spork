@@ -34,7 +34,7 @@ import java.nio.charset.StandardCharsets;
 public class WebSocketTestClient {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketTestClient.class);
 
-    public static void main(String[] args) throws URISyntaxException, IOException {
+    static void main() throws URISyntaxException, IOException {
         URI uri = new URI("ws", null, InetAddress.getLoopbackAddress().getHostName(), EchoWebSocketTestServer.PORT, EchoWebSocketTestServer.PATH, null, null);
         HttpHeaders headers = new DefaultHttpHeaders();
         headers.set(HttpHeaderNames.HOST, "www.example.com");

@@ -51,7 +51,7 @@ public class DohTestServer {
     public static final int PORT = 16803;
     private static final Logger logger = LoggerFactory.getLogger(DohTestServer.class);
 
-    public static void main(String[] args) {
+    static void main() {
         launch(PORT, new DefaultPromise<>() {});
     }
 

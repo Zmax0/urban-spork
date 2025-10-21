@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 public class HttpTestServer {
     public static final int PORT = 16802;
 
-    public static void main(String[] args) throws IOException {
+    static void main() throws IOException {
         Logger logger = Logger.getLogger("HttpTestServer");
         try (ServerSocket server = new ServerSocket(PORT); ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
             logger.info("Listening on " + server.getLocalSocketAddress());

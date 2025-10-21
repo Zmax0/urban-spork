@@ -28,7 +28,7 @@ public class DualUdpTestClient {
 
     private static final Logger logger = LoggerFactory.getLogger(DualUdpTestClient.class);
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    static void main() throws IOException, InterruptedException {
         EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
         Channel channel = new Bootstrap().group(bossGroup)
             .channel(NioDatagramChannel.class)

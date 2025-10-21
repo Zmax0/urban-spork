@@ -29,7 +29,7 @@ public class HttpPostMultipartTestServer {
     private static final Logger logger = LoggerFactory.getLogger(HttpPostMultipartTestServer.class);
     public static final int PORT = 16802;
 
-    public static void main(String[] args) {
+    static void main() {
         launch(PORT, new DefaultPromise<>() {});
     }
 
