@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class DohTestClient {
-    public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
+    static void main() throws InterruptedException, ExecutionException, TimeoutException {
         SslSetting sslSetting = new SslSetting();
         ClassLoader classLoader = DohTestClient.class.getClassLoader();
         sslSetting.setCertificateFile(Objects.requireNonNull(classLoader.getResource("localhost.crt")).getFile());

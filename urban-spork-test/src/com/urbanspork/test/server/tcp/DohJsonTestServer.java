@@ -41,7 +41,7 @@ public class DohJsonTestServer {
     public static final int PORT = 16804;
     private static final Logger logger = LoggerFactory.getLogger(DohJsonTestServer.class);
 
-    public static void main(String[] args) {
+    static void main() {
         launch(PORT, new DefaultPromise<>() {});
     }
 

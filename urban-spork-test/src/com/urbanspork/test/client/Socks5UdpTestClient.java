@@ -34,7 +34,7 @@ import java.util.concurrent.ExecutionException;
 public class Socks5UdpTestClient extends TestClientTemplate {
     private static final Logger logger = LoggerFactory.getLogger(Socks5UdpTestClient.class);
 
-    public static void main(String[] args) throws InterruptedException, IOException, ExecutionException {
+    static void main() throws InterruptedException, IOException, ExecutionException {
         new Socks5UdpTestClient().launch();
     }
 

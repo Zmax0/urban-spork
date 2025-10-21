@@ -11,7 +11,7 @@ import java.text.MessageFormat;
 import java.util.logging.Logger;
 
 public class SimpleUdpSender {
-    public static void main(String[] args) throws IOException {
+    static void main() throws IOException {
         Logger logger = Logger.getGlobal();
         try (DatagramSocket socket = new DatagramSocket(0); BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
             String bindPortInfo = MessageFormat.format("UDP test client bind port {0,number,#}", socket.getLocalPort());
