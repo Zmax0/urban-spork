@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public enum UdpCipherCache {
-    INSTANCE(new LruCache<>(AEAD2022.UDP.CIPHER_CACHE_LIMIT, AEAD2022.UDP.CIPHER_CACHE_DURATION, (k, v) -> {}));
+    INSTANCE(new LruCache<>(AEAD2022.UDP.CIPHER_CACHE_LIMIT, AEAD2022.UDP.CIPHER_CACHE_DURATION, (_, _) -> {}));
 
     private final LruCache<Key, UdpCipher> cache;
 
@@ -19,7 +19,7 @@ public enum UdpCipherCache {
     public UdpCipher get(CipherKind kind, CipherMethod method, byte[] key, long sessionId) {
         return cache.computeIfAbsent(
             new Key(kind, key, sessionId),
-            k -> {
+            _ -> {
                 if (kind == CipherKind.aead2022_blake3_chacha8_poly1305 || kind == CipherKind.aead2022_blake3_chacha20_poly1305) {
                     return new UdpCipher(method, key);
                 } else {

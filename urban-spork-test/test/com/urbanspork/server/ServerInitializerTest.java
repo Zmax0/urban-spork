@@ -33,6 +33,6 @@ class ServerInitializerTest {
         EmbeddedChannel channel = new EmbeddedChannel();
         ServerInitializationContext context = new ServerInitializationContext(config, new Context());
         ServerInitializer initializer = new ServerInitializer(context);
-        Assertions.assertThrows(IllegalArgumentException.class, () -> initializer.initChannel(channel));
+        Assertions.assertThrows(NullPointerException.class, () -> initializer.initChannel(channel));
     }
 }

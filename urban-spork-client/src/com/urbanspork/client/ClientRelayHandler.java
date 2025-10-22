@@ -1,12 +1,12 @@
 package com.urbanspork.client;
 
-import com.urbanspork.common.channel.ChannelCloseUtils;
+import com.urbanspork.common.channel.ChannelCloseUtil;
+import com.urbanspork.common.codec.address.MaybeResolved;
 import com.urbanspork.common.config.DnsSetting;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.protocol.Protocol;
-import com.urbanspork.common.protocol.dns.Cache;
 import com.urbanspork.common.protocol.dns.IpResponse;
 import com.urbanspork.common.util.Doh;
 import io.netty.bootstrap.Bootstrap;
@@ -29,6 +29,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler;
 import io.netty.handler.codec.quic.QuicClientCodecBuilder;
 import io.netty.handler.codec.quic.QuicSslContext;
 import io.netty.handler.codec.quic.QuicSslContextBuilder;
+import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
@@ -39,7 +40,6 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.SSLException;
 import java.io.File;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
@@ -51,31 +51,20 @@ import java.util.function.Consumer;
 
 public interface ClientRelayHandler {
     Logger logger = LoggerFactory.getLogger(ClientRelayHandler.class);
-    Cache SERVER_CACHE = new Cache(256);
 
     record InboundReady(Consumer<Channel> success, Consumer<Channel> failure) {}
 
-    record MaybeResolved(InetSocketAddress peer, InetSocketAddress resolved) {
-        public MaybeResolved(InetSocketAddress peer) {
-            this(peer, null);
-        }
-
-        public InetSocketAddress address() {
-            return resolved == null ? peer : resolved;
-        }
-    }
-
     default Consumer<Channel> outboundReady(Channel ignore) {
-        return channel -> {};
+        return _ -> {};
     }
 
     default InboundReady inboundReady() {
-        return new InboundReady(channel -> {}, channel -> {});
+        return new InboundReady(_ -> {}, _ -> {});
     }
 
     default void handleFailure(Channel inbound) {
         inboundReady().failure().accept(inbound);
-        ChannelCloseUtils.closeOnFlush(inbound);
+        ChannelCloseUtil.closeOnFlush(inbound);
     }
 
     class WebSocketCodec extends MessageToMessageCodec<BinaryWebSocketFrame, ByteBuf> {
@@ -114,7 +103,7 @@ public interface ClientRelayHandler {
             if (evt == WebSocketClientProtocolHandler.ClientHandshakeStateEvent.HANDSHAKE_TIMEOUT) {
                 logger.error("Connect proxy websocket server {}:{} time out", config.getHost(), config.getPort());
                 relayHandler.inboundReady().failure().accept(inbound);
-                ChannelCloseUtils.closeOnFlush(inbound);
+                ChannelCloseUtil.closeOnFlush(inbound);
             }
             ctx.fireUserEventTriggered(evt);
         }
@@ -153,7 +142,7 @@ public interface ClientRelayHandler {
     }
 
     static void addChannelTrafficHandler(Channel outbound, MaybeResolved address, ClientChannelContext context) {
-        outbound.pipeline().addLast(new ClientChannelTrafficHandler(address.peer().getHostString(), address.peer().getPort(), context));
+        outbound.pipeline().addLast(new ClientChannelTrafficHandler(address.original().getHostString(), address.original().getPort(), context));
     }
 
     private static WebSocketClientProtocolHandler buildWebSocketHandler(ClientChannelContext context) throws URISyntaxException {
@@ -174,7 +163,7 @@ public interface ClientRelayHandler {
     }
 
     static ChannelFuture quicEndpoint(SslSetting sslSetting, EventLoopGroup group) {
-        QuicSslContext context = QuicSslContextBuilder.forClient().trustManager(new File(sslSetting.getCertificateFile())).applicationProtocols().applicationProtocols("http/1.1").build();
+        QuicSslContext context = QuicSslContextBuilder.forClient().trustManager(new File(sslSetting.getCertificateFile())).applicationProtocols(ApplicationProtocolNames.HTTP_1_1).build();
         ChannelHandler codec = new QuicClientCodecBuilder()
             .sslContext(context)
             .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
@@ -184,28 +173,28 @@ public interface ClientRelayHandler {
         return new Bootstrap().group(group).channel(NioDatagramChannel.class).handler(codec).bind(0);
     }
 
-    static String resolveServerHost(EventLoopGroup group, ServerConfig config) {
+    static String tryResolveServerHost(EventLoopGroup group, ServerConfig config) {
         String host = config.getHost();
         DnsSetting dns = config.getDns();
         if (dns != null && canResolve(host)) {
-            Optional<String> cached = SERVER_CACHE.get(host, Instant.now());
-            if (cached.isPresent()) {
-                return cached.get();
-            }
-            try {
-                IpResponse resolved = Doh.query(group, dns.getNameServer(), host).get(10, TimeUnit.SECONDS);
-                logger.info("resolved host {} -> {}", host, resolved);
-                SERVER_CACHE.put(host, resolved.ip(), resolved.ttl(), Instant.now());
-                return resolved.ip();
-            } catch (Exception e) {
-                logger.error("resolve server host {} failed", host, e);
-            }
+            return dns.cache().get(host, Instant.now()).orElse(resolveServerHost(group, dns, host).orElse(host));
         }
         return host;
+    }
+
+    private static Optional<String> resolveServerHost(EventLoopGroup group, DnsSetting dns, String host) {
+        try {
+            IpResponse resolved = Doh.query(group, dns.nameServer(), host).get(10, TimeUnit.SECONDS);
+            logger.info("resolved host {} -> {}", host, resolved);
+            dns.cache().put(host, resolved.ip(), resolved.ttl(), Instant.now());
+            return Optional.of(resolved.ip());
+        } catch (Exception e) {
+            logger.error("resolve server host {} failed", host, e);
+            return Optional.empty();
+        }
     }
 
     static boolean canResolve(String host) {
         return !InetAddress.getLoopbackAddress().getHostName().equals(host) && !NetUtil.isValidIpV4Address(host) && !NetUtil.isValidIpV6Address(host);
     }
-
 }

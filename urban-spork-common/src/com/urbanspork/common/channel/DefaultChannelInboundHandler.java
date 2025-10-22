@@ -23,7 +23,7 @@ public class DefaultChannelInboundHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
         if (channel.isActive()) {
-            ChannelCloseUtils.closeOnFlush(channel);
+            ChannelCloseUtil.closeOnFlush(channel);
         }
         ctx.fireChannelInactive();
     }

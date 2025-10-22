@@ -21,6 +21,7 @@ module com.urbanspork.common {
     requires org.jspecify;
 
     exports com.urbanspork.common.channel;
+    exports com.urbanspork.common.codec.address;
     exports com.urbanspork.common.codec.aead;
     exports com.urbanspork.common.codec.chunk;
     exports com.urbanspork.common.codec.shadowsocks.tcp;

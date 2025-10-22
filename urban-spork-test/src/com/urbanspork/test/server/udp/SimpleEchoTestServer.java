@@ -12,7 +12,7 @@ public class SimpleEchoTestServer {
 
     public static final int PORT = 16800;
 
-    public static void main(String[] args) throws IOException {
+    static void main() throws IOException {
         launch(PORT, new CompletableFuture<>());
     }
 

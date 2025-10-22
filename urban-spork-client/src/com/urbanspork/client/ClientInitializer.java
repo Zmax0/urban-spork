@@ -13,7 +13,6 @@ class ClientInitializer extends ChannelInitializer<NioSocketChannel> {
 
     @Override
     protected void initChannel(NioSocketChannel channel) {
-        channel.attr(ClientChannelContext.KEY).set(context);
-        channel.pipeline().addLast(context.traffic(), new ClientProxyUnificationHandler());
+        channel.pipeline().addLast(context.traffic(), new ClientProxyUnificationHandler(context));
     }
 }

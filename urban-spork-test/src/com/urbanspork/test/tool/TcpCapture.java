@@ -110,7 +110,7 @@ public class TcpCapture {
                         if (promise.isDone()) {
                             ctx.fireChannelRead(buf);
                         } else {
-                            promise.addListener(c -> ctx.fireChannelRead(buf));
+                            promise.addListener(_ -> ctx.fireChannelRead(buf));
                         }
                     } else {
                         ctx.fireChannelRead(msg);

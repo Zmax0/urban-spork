@@ -14,7 +14,7 @@ public record Context(LruCache<Key, Object> saltCache) {
     }
 
     public static Context newCheckReplayInstance() {
-        return new Context(new LruCache<>(Long.MAX_VALUE, Duration.ofSeconds(AEAD2022.SERVER_STREAM_TIMESTAMP_MAX_DIFF * 2), (k, v) -> {}));
+        return new Context(new LruCache<>(Long.MAX_VALUE, Duration.ofSeconds(AEAD2022.SERVER_STREAM_TIMESTAMP_MAX_DIFF * 2), (_, _) -> {}));
     }
 
     public boolean checkNonceReplay(byte[] nonce) {
@@ -26,7 +26,7 @@ public record Context(LruCache<Key, Object> saltCache) {
         if (unused != null) {
             return true;
         } else {
-            saltCache.computeIfAbsent(key, k -> V);
+            saltCache.computeIfAbsent(key, _ -> V);
             return false;
         }
     }

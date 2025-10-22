@@ -9,7 +9,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 
 public class HttpsProxyTestClient extends TcpTestClientTemplate<HttpResponse> {
-    public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
+    static void main() throws IOException, ExecutionException, InterruptedException {
         new HttpsProxyTestClient().launch();
     }
 

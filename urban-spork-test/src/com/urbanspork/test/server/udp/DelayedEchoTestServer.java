@@ -18,7 +18,7 @@ public class DelayedEchoTestServer {
     public static final int PORT = 16801;
     public static final int MAX_DELAYED_SECOND = 2;
 
-    public static void main(String[] args) throws IOException {
+    static void main() throws IOException {
         launch(PORT, new CompletableFuture<>());
     }
 

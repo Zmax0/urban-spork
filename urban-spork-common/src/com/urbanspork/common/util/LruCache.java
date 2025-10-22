@@ -15,7 +15,7 @@ public class LruCache<K, V> {
     final Duration timeToLive;
     final HashedWheelTimer timer = new HashedWheelTimer(1, TimeUnit.SECONDS);
     final BiConsumer<K, V> afterExpired;
-    final Map<K, Pair<V>> inner = new LinkedHashMap<>() {
+    final Map<K, Pair<V>> inner = new LinkedHashMap<>(16, 0.75f, true) {
         @Override
         protected boolean removeEldestEntry(Map.Entry<K, Pair<V>> eldest) {
             boolean flag = size() > capacity;
@@ -47,14 +47,14 @@ public class LruCache<K, V> {
     }
 
     public void insert(K key, V value) {
-        inner.put(key, new Pair<>(value, timer.newTimeout(timeout -> expire(key, value), timeToLive.toNanos(), TimeUnit.NANOSECONDS)));
+        inner.put(key, new Pair<>(value, timer.newTimeout(_ -> expire(key, value), timeToLive.toNanos(), TimeUnit.NANOSECONDS)));
     }
 
     public V get(K key) {
         Pair<V> pair = inner.get(key);
         if (pair != null) {
             pair.timeout.cancel();
-            pair.timeout = timer.newTimeout(timeout -> expire(key, pair.value), timeToLive.toNanos(), TimeUnit.NANOSECONDS);
+            pair.timeout = timer.newTimeout(_ -> expire(key, pair.value), timeToLive.toNanos(), TimeUnit.NANOSECONDS);
             return pair.value;
         } else {
             return null;

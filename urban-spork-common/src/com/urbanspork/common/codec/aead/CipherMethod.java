@@ -45,20 +45,16 @@ public enum CipherMethod {
     public CipherInstance init(byte[] key) {
         return switch (this) {
             case AES_128_GCM, AES_265_GCM -> new BouncyCastleCipherInstance(GCMBlockCipher.newInstance(AESEngine.newInstance()), key);
-            case CHACHA8_POLY1305 -> new JniCipherInstance(com.urbanspork.jni.chacha8poly1305.Cipher.init(key), tagSize);
-            case XCHACHA8_POLY1305 -> new JniCipherInstance(com.urbanspork.jni.xchacha8poly1305.Cipher.init(key), tagSize);
-            case XCHACHA20_POLY1305 -> new JniCipherInstance(com.urbanspork.jni.xchacha20poly1305.Cipher.init(key), tagSize);
+            case CHACHA8_POLY1305 -> new JniCipherInstance(com.urbanspork.jni.chacha8poly1305.Cipher.newInstance(key), tagSize);
+            case XCHACHA8_POLY1305 -> new JniCipherInstance(com.urbanspork.jni.xchacha8poly1305.Cipher.newInstance(key), tagSize);
+            case XCHACHA20_POLY1305 -> new JniCipherInstance(com.urbanspork.jni.xchacha20poly1305.Cipher.newInstance(key), tagSize);
             default -> new BouncyCastleCipherInstance(new ChaCha20Poly1305(), key);
         };
     }
 
-    private static class BouncyCastleCipherInstance implements CipherInstance {
-        private final KeyParameter key;
-        private final AEADCipher cipher;
-
-        public BouncyCastleCipherInstance(AEADCipher cipher, byte[] key) {
-            this.cipher = cipher;
-            this.key = new KeyParameter(key);
+    private record BouncyCastleCipherInstance(AEADCipher cipher, KeyParameter key) implements CipherInstance {
+        BouncyCastleCipherInstance(AEADCipher cipher, byte[] key) {
+            this(cipher, new KeyParameter(key));
         }
 
         @Override

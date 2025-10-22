@@ -41,7 +41,7 @@ public class DohJsonTestServer {
     public static final int PORT = 16804;
     private static final Logger logger = LoggerFactory.getLogger(DohJsonTestServer.class);
 
-    public static void main(String[] args) {
+    static void main() {
         launch(PORT, new DefaultPromise<>() {});
     }
 
@@ -106,7 +106,7 @@ public class DohJsonTestServer {
                     }
                 }).sync().channel().closeFuture().sync();
             logger.info("Doh json test server close");
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         }
     }

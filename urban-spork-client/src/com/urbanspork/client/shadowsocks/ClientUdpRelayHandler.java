@@ -34,15 +34,15 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
         this.workerGroup = workerGroup;
         ServerConfig config = context.config();
         this.relay = new InetSocketAddress(config.getHost(), config.getPort());
-        UdpRelayCodec codec = new UdpRelayCodec(config, Mode.Client, ServerUserManager.empty());
-        codec.setAutoRelease(false);
-        this.codec = codec;
+        UdpRelayCodec relayCodec = new UdpRelayCodec(config, Mode.Client, ServerUserManager.empty());
+        relayCodec.setAutoRelease(false);
+        this.codec = relayCodec;
     }
 
     @Override
     protected Object convertToWrite(DatagramPacketWrapper msg) {
         DatagramPacket packet = msg.packet();
-        return new DatagramPacketWrapper(new DatagramPacket(packet.content(), msg.proxy(), packet.sender()), relay);
+        return new DatagramPacketWrapper(new DatagramPacket(packet.content(), msg.server(), packet.sender()), relay);
     }
 
     @Override

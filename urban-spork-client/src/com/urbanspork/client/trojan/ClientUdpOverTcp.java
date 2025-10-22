@@ -19,7 +19,7 @@ interface ClientUdpOverTcp {
     default Object convertToWrite(DatagramPacketWrapper msg) {
         DatagramPacket packet = msg.packet();
         ByteBuf buffer = Unpooled.buffer();
-        Address.encode(msg.proxy(), buffer);
+        Address.encode(msg.server(), buffer);
         ByteBuf content = packet.content();
         buffer.writeShort(content.readableBytes());
         buffer.writeBytes(Trojan.CRLF);

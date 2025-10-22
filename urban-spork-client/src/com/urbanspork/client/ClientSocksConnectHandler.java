@@ -11,13 +11,19 @@ import java.net.InetSocketAddress;
 import java.util.function.Consumer;
 
 class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks5CommandRequest> {
+    private final ClientChannelContext context;
+
+    ClientSocksConnectHandler(ClientChannelContext context) {
+        this.context = context;
+    }
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Socks5CommandRequest request) {
         new ClientTcpRelayHandler() {
             @Override
             public Consumer<Channel> outboundReady(Channel inbound) {
                 inbound.pipeline().remove(ClientSocksConnectHandler.class);
-                return channel -> {};
+                return _ -> {};
             }
 
             @Override
@@ -27,6 +33,6 @@ class ClientSocksConnectHandler extends SimpleChannelInboundHandler<Socks5Comman
                     c -> c.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()))
                 );
             }
-        }.connect(ctx.channel(), InetSocketAddress.createUnresolved(request.dstAddr(), request.dstPort()));
+        }.connect(ctx.channel(), InetSocketAddress.createUnresolved(request.dstAddr(), request.dstPort()), context);
     }
 }

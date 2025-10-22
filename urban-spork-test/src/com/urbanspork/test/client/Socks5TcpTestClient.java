@@ -10,7 +10,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 
 public class Socks5TcpTestClient extends TcpTestClientTemplate<Socks5CommandResponse> {
-    public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
+    static void main() throws IOException, ExecutionException, InterruptedException {
         new Socks5TcpTestClient().launch();
     }
 

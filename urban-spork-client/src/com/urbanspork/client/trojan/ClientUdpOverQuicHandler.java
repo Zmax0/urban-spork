@@ -28,7 +28,6 @@ public class ClientUdpOverQuicHandler extends AbstractClientUdpOverQuicHandler<I
         return ClientUdpOverTcp.super.getKey(msg);
     }
 
-
     @Override
     protected ChannelInitializer<Channel> newOutboundInitializer(InetSocketAddress ignore) {
         return new ChannelInitializer<>() {

@@ -22,7 +22,7 @@ public class DatagramPacketDecoder extends MessageToMessageDecoder<DatagramPacke
             throw new DecoderException("discarding fragmented payload");
         }
         content.skipBytes(3);
-        InetSocketAddress proxy = Address.decode(content);
-        out.add(new DatagramPacketWrapper(msg.replace(content).retain(), proxy));
+        InetSocketAddress server = Address.decode(content);
+        out.add(new DatagramPacketWrapper(msg.replace(content).retain(), server));
     }
 }

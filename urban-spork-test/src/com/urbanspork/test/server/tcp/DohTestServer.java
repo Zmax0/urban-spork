@@ -51,7 +51,7 @@ public class DohTestServer {
     public static final int PORT = 16803;
     private static final Logger logger = LoggerFactory.getLogger(DohTestServer.class);
 
-    public static void main(String[] args) {
+    static void main() {
         launch(PORT, new DefaultPromise<>() {});
     }
 
@@ -96,7 +96,7 @@ public class DohTestServer {
                     }
                 }).sync().channel().closeFuture().sync();
             logger.info("Doh test server close");
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         }
     }
@@ -128,12 +128,10 @@ public class DohTestServer {
                     Http2FrameCodecBuilder.forServer().build(), new ChannelDuplexHandler() {
                         @Override
                         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                            if (msg instanceof Http2HeadersFrame) {
-                                onHeadersRead(ctx, (Http2HeadersFrame) msg);
-                            } else if (msg instanceof Http2DataFrame) {
-                                onDataRead(ctx, (Http2DataFrame) msg);
-                            } else {
-                                super.channelRead(ctx, msg);
+                            switch (msg) {
+                                case Http2HeadersFrame headersFrame -> onHeadersRead(ctx, headersFrame);
+                                case Http2DataFrame bodyFrame -> onDataRead(ctx, bodyFrame);
+                                default -> super.channelRead(ctx, msg);
                             }
                         }
 

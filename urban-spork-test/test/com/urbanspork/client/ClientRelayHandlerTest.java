@@ -39,11 +39,11 @@ class ClientRelayHandlerTest {
     }
 
     @RepeatedTest(2)
-    void testResolveServerHost() {
+    void testTryResolveServerHost() {
         ServerConfig config = ServerConfigTest.testConfig(0);
         config.setHost("example.com");
         config.setDns(DnsUtil.getDnsSetting());
-        String host = ClientRelayHandler.resolveServerHost(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()), config);
+        String host = ClientRelayHandler.tryResolveServerHost(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()), config);
         Assertions.assertNotNull(host);
         Assertions.assertNotEquals(host, config.getHost());
     }

@@ -12,7 +12,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.util.concurrent.Promise;
 
 import java.util.Objects;
@@ -21,14 +20,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class DohTestClient {
-    public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
+    static void main() throws InterruptedException, ExecutionException, TimeoutException {
         SslSetting sslSetting = new SslSetting();
         ClassLoader classLoader = DohTestClient.class.getClassLoader();
         sslSetting.setCertificateFile(Objects.requireNonNull(classLoader.getResource("localhost.crt")).getFile());
         sslSetting.setKeyFile(Objects.requireNonNull(classLoader.getResource("localhost.key")).getFile());
         sslSetting.setServerName("localhost");
         EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-        DnsRequest<FullHttpRequest> quest = Doh.getRequest("https://localhost:" + DohTestServer.PORT + "/dns-query", ".example.com", sslSetting);
+        DnsRequest quest = Doh.getRequest("https://localhost:" + DohTestServer.PORT + "/dns-query", ".example.com", sslSetting);
         Promise<IpResponse> promise = group.next().newPromise();
         Channel channel = new Bootstrap().group(group).channel(NioSocketChannel.class)
             .handler(new ChannelHandlerAdapter() {})

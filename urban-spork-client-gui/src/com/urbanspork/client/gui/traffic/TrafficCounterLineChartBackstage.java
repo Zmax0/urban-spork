@@ -30,8 +30,8 @@ public class TrafficCounterLineChartBackstage {
     private XYChart.Series<Number, Number> readSeries;
 
     public TrafficCounterLineChartBackstage(ObjectProperty<TrafficCounter> trafficCounter) {
-        timeline.setCycleCount(Timeline.INDEFINITE);
-        trafficCounter.addListener((observable, oldValue, newValue) -> {
+        timeline.setCycleCount(Animation.INDEFINITE);
+        trafficCounter.addListener((_, _, newValue) -> {
             if (newValue != null && timeline.getStatus() == Animation.Status.RUNNING) {
                 refresh(newValue);
             }
@@ -66,14 +66,16 @@ public class TrafficCounterLineChartBackstage {
     public void refresh(TrafficCounter counter) {
         ObservableList<KeyFrame> keyFrames = timeline.getKeyFrames();
         keyFrames.clear();
-        keyFrames.add(new KeyFrame(Duration.millis(counter.checkInterval()), event -> {
+        keyFrames.add(new KeyFrame(
+            Duration.millis(counter.checkInterval()), _ -> {
             long writeBytes = counter.lastWrittenBytes();
             long readBytes = counter.lastReadBytes();
             writeSeries.setName(HumanReadable.byteCountSI(writeBytes));
             readSeries.setName(HumanReadable.byteCountSI(readBytes));
             scroll(write, writeBytes);
             scroll(read, readBytes);
-        }));
+        }
+        ));
         timeline.playFromStart();
     }
 

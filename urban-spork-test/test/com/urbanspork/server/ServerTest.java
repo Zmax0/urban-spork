@@ -70,9 +70,9 @@ class ServerTest {
             Future<?> future = service.submit(() -> Server.launch(configs));
             try {
                 future.get(1, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException _) {
                 Thread.currentThread().interrupt();
-            } catch (ExecutionException | TimeoutException e) {
+            } catch (ExecutionException | TimeoutException _) {
                 future.cancel(true);
             }
             Assertions.assertTrue(future.isCancelled());

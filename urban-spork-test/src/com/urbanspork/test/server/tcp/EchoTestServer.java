@@ -23,7 +23,7 @@ public class EchoTestServer {
     private static final Logger logger = LoggerFactory.getLogger(EchoTestServer.class);
     public static final int PORT = 16802;
 
-    public static void main(String[] args) {
+    static void main() {
         launch(PORT, new CompletableFuture<>());
     }
 
@@ -54,7 +54,7 @@ public class EchoTestServer {
                         promise.completeExceptionally(future.cause());
                     }
                 }).sync().channel().closeFuture().sync();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         } finally {
             bossGroup.shutdownGracefully();

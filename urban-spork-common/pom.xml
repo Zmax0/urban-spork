@@ -4,7 +4,7 @@
   <parent>
     <groupId>urban-spork</groupId>
     <artifactId>urban-spork</artifactId>
-    <version>2.5.8</version>
+    <version>2.6.0</version>
   </parent>
   <artifactId>urban-spork-common</artifactId>
   <dependencies>
@@ -35,6 +35,12 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-codec-http3</artifactId>
+      <exclusions>
+        <exclusion>
+          <artifactId>bcprov-jdk18on</artifactId>
+          <groupId>org.bouncycastle</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
