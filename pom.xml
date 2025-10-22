@@ -22,7 +22,7 @@
     <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
     <junit.jupiter.version>5.13.1</junit.jupiter.version>
     <jackson.version>2.19.0</jackson.version>
-    <logback.version>1.5.18</logback.version>
+    <logback.version>1.5.19</logback.version>
     <netty.version>4.2.5.Final</netty.version>
     <bouncycastle.version>2.73.7</bouncycastle.version>
     <jar-jni.version>1.2.0</jar-jni.version>
