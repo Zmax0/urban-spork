@@ -79,7 +79,8 @@ public abstract class UdpTestTemplate extends TestTemplate {
             dstAddress.add(new InetSocketAddress(InetAddress.getLoopbackAddress(), localPort));
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
-        } catch (Exception _) {
+        } catch (Exception e) {
+            logger.error("launch simple echo server failed", e);
             Assertions.fail("launch test server failed");
         }
         CompletableFuture<DatagramSocket> f2 = new CompletableFuture<>();
@@ -97,7 +98,8 @@ public abstract class UdpTestTemplate extends TestTemplate {
             dstAddress.add(new InetSocketAddress(InetAddress.getLoopbackAddress(), localPort));
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
-        } catch (Exception _) {
+        } catch (Exception e) {
+            logger.error("launch delayed echo server failed", e);
             Assertions.fail("launch test server failed");
         }
     }
