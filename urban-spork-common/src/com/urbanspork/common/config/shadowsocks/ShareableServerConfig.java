@@ -45,7 +45,7 @@ public class ShareableServerConfig {
     public static Optional<URI> produceUri(ServerConfig config) {
         try {
             return Optional.of(new URI(SS, config.getCipher().toString() + ":" + config.getPassword(), config.getHost(), config.getPort(), null, null, config.getRemark()));
-        } catch (URISyntaxException e) {
+        } catch (URISyntaxException _) {
             return Optional.empty();
         }
     }

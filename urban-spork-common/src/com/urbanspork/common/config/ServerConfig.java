@@ -152,6 +152,27 @@ public class ServerConfig {
         return remark == null || remark.isEmpty() ? host + ':' + port : remark;
     }
 
+    public String networkText() {
+        if (Protocol.shadowsocks == protocol && udpEnabled()) {
+            return "udp";
+        }
+        if (quicEnabled()) {
+            return "quic";
+        }
+        boolean ssl = this.ssl != null;
+        boolean ws = this.ws != null;
+        if (ssl && ws) {
+            return "wss";
+        }
+        if (ssl) {
+            return "tls";
+        }
+        if (ws) {
+            return "ws";
+        }
+        return "tcp";
+    }
+
     public boolean udpEnabled() {
         return transport != null && transport.length != 0 && Arrays.stream(transport).anyMatch(t -> Transport.UDP == t);
     }

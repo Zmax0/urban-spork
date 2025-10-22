@@ -44,15 +44,13 @@ class ClientTest {
         ClientConfig config = ClientConfigTest.testConfig(0, 0);
         ConfigHandler.DEFAULT.save(config);
         try (ExecutorService pool = Executors.newSingleThreadExecutor()) {
-            Future<?> future = pool.submit(() -> Client.main(null));
+            Future<?> future = pool.submit(Client::main);
             try {
                 future.get(2, TimeUnit.SECONDS);
+            } catch (TimeoutException | InterruptedException _) {
+                future.cancel(true);
             } catch (Exception e) {
-                if (e instanceof TimeoutException) {
-                    future.cancel(true);
-                } else {
-                    throw new RuntimeException(e);
-                }
+                throw new RuntimeException(e);
             }
             Assertions.assertTrue(future.isCancelled());
         }

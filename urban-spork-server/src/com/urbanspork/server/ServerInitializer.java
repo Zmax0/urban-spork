@@ -24,7 +24,7 @@ import io.netty.handler.ssl.SslHandler;
 import javax.net.ssl.SSLException;
 import java.io.File;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 
 public class ServerInitializer extends ChannelInitializer<Channel> {
 
@@ -52,9 +52,8 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
     }
 
     private static void addSslHandler(Channel c, ServerConfig config) throws SSLException {
-        Optional<SslSetting> op = Optional.ofNullable(config.getSsl());
-        if (op.isPresent()) {
-            SslSetting sslSetting = op.get();
+        SslSetting sslSetting = config.getSsl();
+        if (sslSetting != null) {
             SslContext sslContext = SslContextBuilder.forServer(new File(sslSetting.getCertificateFile()), new File(sslSetting.getKeyFile()), sslSetting.getKeyPassword()).build();
             String serverName = config.getHost();
             if (sslSetting.getServerName() != null) {
@@ -74,10 +73,7 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
         if (setting == null) {
             return;
         }
-        String path = setting.getPath();
-        if (path == null) {
-            throw new IllegalArgumentException("required path not present");
-        }
+        String path = Objects.requireNonNull(setting.getPath(), "required path not present");
         channel.pipeline().addLast(
             new HttpServerCodec(),
             new WebSocketServerProtocolHandler(path, null, true, 0xfffff),

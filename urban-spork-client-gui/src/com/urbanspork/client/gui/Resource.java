@@ -28,7 +28,7 @@ public class Resource {
         ClientConfig config;
         try {
             config = ConfigHandler.DEFAULT.read();
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             config = new ClientConfig();
             config.setServers(new ArrayList<>());
         }

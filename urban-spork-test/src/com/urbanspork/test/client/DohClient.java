@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class DohClient {
-    public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
+    static void main() throws InterruptedException, ExecutionException, TimeoutException {
         EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         try {
             Promise<IpResponse> promise = Doh.query(group, "https://8.8.8.8/dns-query", "example.com");

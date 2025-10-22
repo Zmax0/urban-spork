@@ -48,22 +48,4 @@ public class ClientChannelTrafficHandler extends ChannelTrafficShapingHandler {
         context.channelTraffic().remove(channelId);
         super.handlerRemoved(ctx);
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (channelId != null && o instanceof ClientChannelTrafficHandler other) {
-            return channelId.equals(other.channelId);
-        } else {
-            return this == o;
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        if (channelId != null) {
-            return channelId.hashCode();
-        } else {
-            return super.hashCode();
-        }
-    }
 }

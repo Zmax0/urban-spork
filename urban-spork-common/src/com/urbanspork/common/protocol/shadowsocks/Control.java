@@ -23,7 +23,7 @@ public class Control {
     public void increasePacketId(long i) {
         try {
             packetId = Math.addExact(packetId, i);
-        } catch (ArithmeticException e) {
+        } catch (ArithmeticException _) {
             long id;
             do {
                 id = ThreadLocalRandom.current().nextLong();

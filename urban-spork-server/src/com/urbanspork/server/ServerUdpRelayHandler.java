@@ -73,14 +73,11 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
                         new InboundHandler(channel)
                     );
                 }
-            })// callback->server->client
+            }) // callback->server->client
             .bind(0) // automatically assigned port now, may have security implications
             .syncUninterruptibly()
             .channel();
-        workerChannel.closeFuture().addListener(future -> {
-            Channel removed = workerChannels.remove(key);
-            logger.info("[udp][binding]{} != {}", key, removed);
-        });
+        workerChannel.closeFuture().addListener(_ -> logger.info("[udp][binding]{} != {}", key, workerChannels.remove(key)));
         logger.info("[udp][binding]{} == {}", key, workerChannel);
         return workerChannel;
     }

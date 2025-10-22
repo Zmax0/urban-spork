@@ -4,6 +4,8 @@ import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 
 public class HumanReadable {
+    private HumanReadable() {}
+
     public static String byteCountSI(long bytes) {
         if (-1000 < bytes && bytes < 1000) {
             return bytes + " B";

@@ -48,13 +48,13 @@ import java.util.function.Consumer;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class UdpTestTemplate extends TestTemplate {
     private static final Logger logger = LoggerFactory.getLogger(UdpTestTemplate.class);
-    private final List<InetSocketAddress> dstAddress = new ArrayList<>();
+    protected final List<InetSocketAddress> dstAddress = new ArrayList<>();
     private final EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-    private Channel channel;
+    protected Channel channel;
     private Consumer<DatagramPacketWrapper> consumer;
-    private DatagramSocket simpleEchoTestUdpServer;
+    protected DatagramSocket simpleEchoTestUdpServer;
     private ServerSocket simpleEchoTestTcpServer;
-    private DatagramSocket delayedEchoTestUdpServer;
+    protected DatagramSocket delayedEchoTestUdpServer;
     private ServerSocket delayedEchoTestTcpServer;
 
     @BeforeAll
@@ -77,9 +77,10 @@ public abstract class UdpTestTemplate extends TestTemplate {
             int localPort = simpleEchoTestUdpServer.getLocalPort();
             simpleEchoTestTcpServer = new ServerSocket(localPort); // bind tcp at same time
             dstAddress.add(new InetSocketAddress(InetAddress.getLoopbackAddress(), localPort));
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
+            logger.error("launch simple echo server failed", e);
             Assertions.fail("launch test server failed");
         }
         CompletableFuture<DatagramSocket> f2 = new CompletableFuture<>();
@@ -95,9 +96,10 @@ public abstract class UdpTestTemplate extends TestTemplate {
             int localPort = delayedEchoTestUdpServer.getLocalPort();
             delayedEchoTestTcpServer = new ServerSocket(localPort);  // bind tcp at same time
             dstAddress.add(new InetSocketAddress(InetAddress.getLoopbackAddress(), localPort));
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
+            logger.error("launch delayed echo server failed", e);
             Assertions.fail("launch test server failed");
         }
     }
@@ -137,7 +139,7 @@ public abstract class UdpTestTemplate extends TestTemplate {
         Assertions.assertEquals(Socks5CommandStatus.SUCCESS, response.status());
         CompletableFuture<Void> promise = new CompletableFuture<>();
         consumer = msg -> {
-            if (dstAddress.equals(msg.proxy())) {
+            if (dstAddress.isUnresolved() || dstAddress.equals(msg.server())) {
                 promise.complete(null);
             } else {
                 promise.completeExceptionally(AssertionFailureBuilder.assertionFailure().message("Not equals").build());
@@ -148,7 +150,7 @@ public abstract class UdpTestTemplate extends TestTemplate {
         DatagramPacketWrapper msg = new DatagramPacketWrapper(data, proxyAddress);
         logger.info("Send msg {}", msg);
         channel.writeAndFlush(msg);
-        promise.get(DelayedEchoTestServer.MAX_DELAYED_SECOND + 3, TimeUnit.SECONDS);
+        promise.get(DelayedEchoTestServer.MAX_DELAYED_SECOND + 3L, TimeUnit.SECONDS);
         Assertions.assertTrue(promise.isDone());
     }
 

@@ -13,12 +13,7 @@ import java.beans.PropertyChangeEvent;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-public class LanguageMenuItem {
-    private final Tray tray;
-
-    public LanguageMenuItem(Tray tray) {
-        this.tray = tray;
-    }
+public record LanguageMenuItem(Tray tray) {
 
     public JMenuItem build() {
         JMenu menu = new JMenu(I18N.getString(I18N.TRAY_MENU_LANGUAGE));
@@ -34,7 +29,7 @@ public class LanguageMenuItem {
             if (locale.equals(configLanguage)) {
                 item.setSelected(true);
             }
-            item.addActionListener(evt -> {
+            item.addActionListener(_ -> {
                 if (item.isSelected()) {
                     String lang = item.getName();
                     config.setLanguage(lang);

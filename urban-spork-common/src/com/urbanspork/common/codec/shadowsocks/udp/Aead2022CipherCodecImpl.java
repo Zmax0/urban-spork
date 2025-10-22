@@ -20,17 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
-class Aead2022CipherCodecImpl implements AeadCipherCodec {
+record Aead2022CipherCodecImpl(CipherKind cipherKind, CipherMethod cipherMethod, Keys keys) implements AeadCipherCodec {
     private static final Logger logger = LoggerFactory.getLogger(Aead2022CipherCodecImpl.class);
-    private final Keys keys;
-    private final CipherKind cipherKind;
-    private final CipherMethod cipherMethod;
-
-    Aead2022CipherCodecImpl(CipherKind cipherKind, CipherMethod cipherMethod, Keys keys) {
-        this.keys = keys;
-        this.cipherKind = cipherKind;
-        this.cipherMethod = cipherMethod;
-    }
 
     @Override
     public void encode(Context context, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {

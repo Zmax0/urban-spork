@@ -17,15 +17,19 @@ public interface Socks5 {
         InetAddress inetAddress = address.getAddress();
         Socks5AddressType dstAddrType;
         String dstAddr;
-        if (inetAddress instanceof Inet4Address v4) {
-            dstAddrType = Socks5AddressType.IPv4;
-            dstAddr = v4.getHostAddress();
-        } else if (inetAddress instanceof Inet6Address v6) {
-            dstAddrType = Socks5AddressType.IPv6;
-            dstAddr = NetUtil.toAddressString(v6);
-        } else {
-            dstAddrType = Socks5AddressType.DOMAIN;
-            dstAddr = address.getHostString();
+        switch (inetAddress) {
+            case Inet4Address v4 -> {
+                dstAddrType = Socks5AddressType.IPv4;
+                dstAddr = v4.getHostAddress();
+            }
+            case Inet6Address v6 -> {
+                dstAddrType = Socks5AddressType.IPv6;
+                dstAddr = NetUtil.toAddressString(v6);
+            }
+            case null, default -> {
+                dstAddrType = Socks5AddressType.DOMAIN;
+                dstAddr = address.getHostString();
+            }
         }
         return new DefaultSocks5CommandRequest(
             type,

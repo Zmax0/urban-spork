@@ -102,7 +102,7 @@ public abstract class TcpTestTemplate extends TestTemplate {
             })
             .connect(proxyAddress).sync().channel();
         channel.writeAndFlush(msg1);
-        channel.closeFuture().addListener(future -> {
+        channel.closeFuture().addListener(_ -> {
             if (!promise.isDone()) {
                 promise.setFailure(new IllegalStateException("Channel closed"));
             }

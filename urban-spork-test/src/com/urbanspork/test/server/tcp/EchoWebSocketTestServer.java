@@ -25,7 +25,7 @@ public class EchoWebSocketTestServer {
     public static final int PORT = 16802;
     public static final String PATH = "/ws";
 
-    public static void main(String[] args) {
+    static void main() {
         launch(PORT, new DefaultPromise<>() {});
     }
 
@@ -58,7 +58,7 @@ public class EchoWebSocketTestServer {
                         promise.setFailure(future.cause());
                     }
                 }).sync().channel().closeFuture().sync();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         }
     }

@@ -7,7 +7,9 @@ use chacha20poly1305::aead::generic_array::typenum::Unsigned;
 use chacha20poly1305::{AeadCore, AeadInPlace};
 use chacha20poly1305::{ChaCha8Poly1305, KeyInit, XChaCha8Poly1305, XChaCha20Poly1305};
 use core::slice;
+use jni::sys::jlong;
 use jni::{JNIEnv, errors::Error, objects::*};
+use std::sync::Mutex;
 
 const PTR: &str = "ptr";
 
@@ -76,12 +78,13 @@ pub(crate) unsafe fn encrypt<'local, Cipher>(
                 let plaintext = env.get_array_elements(&plaintext, ReleaseMode::CopyBack)?;
                 let plaintext =
                     slice::from_raw_parts_mut(plaintext.as_ptr() as *mut u8, plaintext.len());
-                let cipher: Cipher = env.take_rust_field(&this, PTR)?;
                 let tag_size = <Cipher as AeadCore>::TagSize::USIZE;
                 let (buffer, tag) = plaintext.split_at_mut(plaintext.len() - tag_size);
-                if let Ok(_tag) = cipher.encrypt_in_place_detached(nonce.into(), aad, buffer) {
+                if let Ok(_tag) = env
+                    .get_rust_field::<_, _, Cipher>(&this, PTR)?
+                    .encrypt_in_place_detached(nonce.into(), aad, buffer)
+                {
                     tag.copy_from_slice(_tag.as_slice());
-                    env.set_rust_field(&this, PTR, cipher)?;
                 } else {
                     env.throw_new("java/lang/RuntimeException", "encrypt failed")?;
                 }
@@ -115,10 +118,10 @@ pub(crate) unsafe fn decrypt<'local, Cipher>(
                 let ciphertext = env.get_array_elements(&ciphertext, ReleaseMode::CopyBack)?;
                 let ciphertext =
                     slice::from_raw_parts_mut(ciphertext.as_ptr() as *mut u8, ciphertext.len());
-                let cipher: Cipher = env.take_rust_field(&this, PTR)?;
                 let tag_size = <Cipher as AeadCore>::TagSize::USIZE;
                 let (buffer, tag) = ciphertext.split_at_mut(ciphertext.len() - tag_size);
-                if cipher
+                if env
+                    .get_rust_field::<_, _, Cipher>(&this, PTR)?
                     .decrypt_in_place_detached(
                         nonce.into(),
                         aad,
@@ -129,7 +132,22 @@ pub(crate) unsafe fn decrypt<'local, Cipher>(
                 {
                     env.throw_new("java/lang/RuntimeException", "decrypt failed")?;
                 }
-                env.set_rust_field(&this, PTR, cipher)?;
+                Ok(())
+            },
+            env
+        )
+    }
+}
+
+pub(crate) unsafe fn dispose<'local, Cipher>(mut env: JNIEnv<'local>, ptr: jlong)
+where
+    Cipher: Send + 'static,
+{
+    unsafe {
+        try_catch!(
+            {
+                let mbox = Box::from_raw(ptr as *mut Mutex<Cipher>);
+                drop(mbox.try_lock()?);
                 Ok(())
             },
             env

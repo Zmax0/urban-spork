@@ -28,7 +28,7 @@ public class AuthID {
             byte[] bytes;
             try {
                 bytes = AES.decrypt(KDF.kdf16(key, KDF_SALT_AUTH_ID_ENCRYPTION_KEY), authID, 16);
-            } catch (Exception ignore) {
+            } catch (Exception _) {
                 continue;
             }
             ByteBuf buf = Unpooled.wrappedBuffer(bytes);

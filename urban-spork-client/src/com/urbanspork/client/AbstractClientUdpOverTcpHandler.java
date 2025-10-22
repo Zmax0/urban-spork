@@ -76,7 +76,7 @@ public abstract class AbstractClientUdpOverTcpHandler<K> extends AbstractClientU
         protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
             BinaryWebSocketFrame frame = new BinaryWebSocketFrame(msg.retain());
             if (!promise.isDone()) {
-                promise.addListener(f -> ctx.writeAndFlush(frame));
+                promise.addListener(_ -> ctx.writeAndFlush(frame));
             } else {
                 out.add(frame);
             }

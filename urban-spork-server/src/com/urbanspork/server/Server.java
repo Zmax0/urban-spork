@@ -23,6 +23,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.quic.QuicServerCodecBuilder;
 import io.netty.handler.codec.quic.QuicSslContext;
 import io.netty.handler.codec.quic.QuicSslContextBuilder;
+import io.netty.handler.ssl.ApplicationProtocolNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ public class Server {
 
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
-    public static void main(String[] args) {
+    public static void main() {
         launch(ConfigHandler.DEFAULT.read().getServers());
     }
 
@@ -64,20 +65,20 @@ public class Server {
             }
             CountDownLatch latch = new CountDownLatch(count);
             for (Instance server : servers) {
-                server.tcp().closeFuture().addListener(future -> latch.countDown());
-                server.udp().ifPresent(v -> v.closeFuture().addListener(future -> latch.countDown()));
+                server.tcp().closeFuture().addListener(_ -> latch.countDown());
+                server.udp().ifPresent(v -> v.closeFuture().addListener(_ -> latch.countDown()));
             }
             promise.complete(servers);
             latch.await(); // main thread is waiting here
             logger.info("Server is terminated");
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             logger.warn("Interrupt main launch thread");
             Thread.currentThread().interrupt();
         } catch (Throwable e) {
+            logger.error("Launch server failed", e);
             for (Instance server : servers) {
                 server.close();
             }
-            logger.error("Launch server failed", e);
             promise.completeExceptionally(e);
         } finally {
             workerGroup.shutdownGracefully().syncUninterruptibly();
@@ -88,6 +89,12 @@ public class Server {
 
     private static Instance start(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerInitializationContext context)
         throws InterruptedException {
+        ServerSocketChannel tcp = startTcp(bossGroup, workerGroup, context);
+        Optional<DatagramChannel> udp = startUdp(bossGroup, workerGroup, context);
+        return new Instance(tcp, udp);
+    }
+
+    private static ServerSocketChannel startTcp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerInitializationContext context) throws InterruptedException {
         ServerConfig config = context.config();
         ServerSocketChannel tcp = (ServerSocketChannel) new ServerBootstrap()
             .group(bossGroup, workerGroup)
@@ -97,8 +104,7 @@ public class Server {
             .sync().channel();
         config.setPort(tcp.localAddress().getPort());
         logger.info("Running a tcp server => {}", config);
-        Optional<DatagramChannel> udp = startUdp(bossGroup, workerGroup, context);
-        return new Instance(tcp, udp);
+        return tcp;
     }
 
     private static Optional<DatagramChannel> startUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerInitializationContext context) throws InterruptedException {
@@ -132,7 +138,7 @@ public class Server {
             return Optional.empty();
         }
         QuicSslContext quicSslContext = QuicSslContextBuilder.forServer(new File(sslSetting.getKeyFile()), sslSetting.getKeyPassword(), new File(sslSetting.getCertificateFile()))
-            .applicationProtocols("http/1.1").build();
+            .applicationProtocols(ApplicationProtocolNames.HTTP_1_1).build();
         ChannelHandler codec = new QuicServerCodecBuilder()
             .sslContext(quicSslContext)
             .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)

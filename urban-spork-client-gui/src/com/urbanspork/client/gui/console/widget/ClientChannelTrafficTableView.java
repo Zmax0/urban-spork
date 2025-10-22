@@ -5,6 +5,7 @@ import com.urbanspork.client.gui.i18n.I18N;
 import com.urbanspork.client.gui.util.HumanReadable;
 import io.netty.handler.traffic.AbstractTrafficShapingHandler;
 import io.netty.handler.traffic.TrafficCounter;
+import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.beans.property.ObjectProperty;
@@ -26,18 +27,18 @@ public class ClientChannelTrafficTableView extends TableView<ClientChannelTraffi
     private final Timeline timeline = new Timeline();
 
     public ClientChannelTrafficTableView(ObjectProperty<Map<String, ClientChannelTrafficHandler>> channelTraffic) {
-        timeline.setCycleCount(Timeline.INDEFINITE);
+        timeline.setCycleCount(Animation.INDEFINITE);
         initTableColumn();
         setItems(this.list);
         setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
         placeholderProperty().set(new StackPane());
-        channelTraffic.addListener((observable, oldValue, newValue) -> {
+        channelTraffic.addListener((_, _, _) -> {
             ObservableList<KeyFrame> keyFrames = timeline.getKeyFrames();
             keyFrames.clear();
             keyFrames.add(new KeyFrame(
                 channelTraffic.get().values().stream().findFirst().map(AbstractTrafficShapingHandler::trafficCounter).map(TrafficCounter::checkInterval).map(Duration::millis)
                     .orElse(Duration.seconds(1)),
-                event -> this.list.setAll(convert(channelTraffic).values())
+                _ -> this.list.setAll(convert(channelTraffic).values())
             ));
             this.list.setAll(convert(channelTraffic).values());
         });
