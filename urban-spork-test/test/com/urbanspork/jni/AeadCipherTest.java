@@ -1,13 +1,11 @@
 package com.urbanspork.jni;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Base64;
 
-@DisplayName("jni.AeadCipherTest")
 class AeadCipherTest {
     private static final byte[] KEY = Base64.getDecoder().decode("1nFNRRLWhYe4Tq2yBimnQTNMr0RIDhgwqZMRCWSoFcc=");
 

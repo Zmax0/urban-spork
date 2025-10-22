@@ -31,5 +31,4 @@ class AESTest {
         byte[] decrypt = AES.decrypt("4ylXkB2KedlvbLFytehZISl HZNo3s3LR049qziLBO9YVsZB".getBytes(), Base64.getDecoder().decode("P1RKHzOxcv1GKRlbD5OZGA=="), 32);
         Assertions.assertEquals("Tp5MsnjQk/37dPkQpaBB9w==", Base64.getEncoder().encodeToString(decrypt));
     }
-
 }
