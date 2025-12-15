@@ -23,7 +23,7 @@
     <junit.jupiter.version>5.13.4</junit.jupiter.version>
     <jackson.version>2.20.0</jackson.version>
     <logback.version>1.5.20</logback.version>
-    <netty.version>4.2.7.Final</netty.version>
+    <netty.version>4.2.8.Final</netty.version>
     <bouncycastle.version>2.73.9</bouncycastle.version>
     <jar-jni.version>1.2.0</jar-jni.version>
     <javafx.version>24.0.2</javafx.version>
