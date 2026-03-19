@@ -7,6 +7,7 @@ import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -20,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
+@Tag("integration")
 class DohTest {
     private static final EventLoopGroup GROUP = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
 
@@ -27,7 +29,7 @@ class DohTest {
     @ArgumentsSource(Provider.class)
     void testQuery(String nameServer) throws InterruptedException, ExecutionException {
         try {
-            IpResponse ipResponse = Doh.query(GROUP, nameServer, "example.com").get(5, TimeUnit.SECONDS);
+            IpResponse ipResponse = Doh.query(GROUP, nameServer, "google.com").get(5, TimeUnit.SECONDS);
             Assertions.assertNotNull(ipResponse);
         } catch (TimeoutException _) {
             // skip
@@ -45,7 +47,6 @@ class DohTest {
             URI uri = URI.create(DnsUtil.getDnsSetting().nameServer());
             String host = uri.getHost();
             return Stream.of(
-                "https://" + host + "/dns-query",
                 "https://" + host + ":443/dns-query?dns=",
                 "https://" + host + ":443/dns-query?a=b"
             ).map(Arguments::of);

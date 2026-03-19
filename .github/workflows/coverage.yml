@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - name: Setup rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@v6
       - name: Setup JDK
         uses: actions/setup-java@v5
         with:
@@ -16,7 +19,7 @@ jobs:
           distribution: 'oracle'
           cache: maven
       - name: Build with Maven
-        run: mvn -B test --file pom.xml
+        run: mvn -B test --file pom.xml -Dcom.urbanspork.test.client.port=52081 -Dcom.urbanspork.test.server.port=52082
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3.1.4
         with:
