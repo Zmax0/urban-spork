@@ -41,7 +41,7 @@ class ClientRelayHandlerTest {
     @RepeatedTest(2)
     void testTryResolveServerHost() {
         ServerConfig config = ServerConfigTest.testConfig(0);
-        config.setHost("www.w3c.org");
+        config.setHost("google.com");
         config.setDns(DnsUtil.getDnsSetting());
         String host = ClientRelayHandler.tryResolveServerHost(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()), config);
         Assertions.assertNotNull(host);

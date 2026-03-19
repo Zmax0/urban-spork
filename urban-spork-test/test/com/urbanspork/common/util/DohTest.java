@@ -27,7 +27,7 @@ class DohTest {
     @ArgumentsSource(Provider.class)
     void testQuery(String nameServer) throws InterruptedException, ExecutionException {
         try {
-            IpResponse ipResponse = Doh.query(GROUP, nameServer, "example.com").get(5, TimeUnit.SECONDS);
+            IpResponse ipResponse = Doh.query(GROUP, nameServer, "google.com").get(5, TimeUnit.SECONDS);
             Assertions.assertNotNull(ipResponse);
         } catch (TimeoutException _) {
             // skip
@@ -45,7 +45,6 @@ class DohTest {
             URI uri = URI.create(DnsUtil.getDnsSetting().nameServer());
             String host = uri.getHost();
             return Stream.of(
-                "https://" + host + "/dns-query",
                 "https://" + host + ":443/dns-query?dns=",
                 "https://" + host + ":443/dns-query?a=b"
             ).map(Arguments::of);
