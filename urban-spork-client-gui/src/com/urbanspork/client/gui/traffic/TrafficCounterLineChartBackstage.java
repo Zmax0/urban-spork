@@ -15,6 +15,7 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.shape.LineTo;
+import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.PathElement;
 import javafx.util.Duration;
@@ -108,42 +109,33 @@ public class TrafficCounterLineChartBackstage {
 
         private void curve(Path path) {
             ObservableList<PathElement> elements = path.getElements();
-            if (elements.size() > 3) {
+            if (elements.size() > 2 && elements.getFirst() instanceof MoveTo) {
                 curve(elements);
             }
         }
 
         private void curve(ObservableList<PathElement> elements) {
-            int size = elements.size();
-            Point2D[] points = new Point2D[size - 1];
-            for (int i = 0; i < points.length; i++) {
-                PathElement e = elements.get(i + 1);
-                if (e instanceof LineTo lineTo) {
-                    points[i] = new Point2D(lineTo.getX(), lineTo.getY());
-                }
+            Point2D[] points = new Point2D[elements.size()];
+            PathElement first = elements.getFirst();
+            if (!(first instanceof MoveTo moveTo)) {
+                return;
             }
-            double alpha = 0.5;
+            points[0] = new Point2D(moveTo.getX(), moveTo.getY());
             for (int i = 1; i < points.length; i++) {
-                double yDiff = Math.abs(points[i].getY() - points[i - 1].getY());
-                double yAvg = (points[i].getY() + points[i - 1].getY()) / 2;
-                if (yAvg > 0 && yDiff / yAvg > 1.5) {
-                    alpha = 0.2;
-                    break;
+                PathElement element = elements.get(i);
+                if (!(element instanceof LineTo lineTo)) {
+                    return;
                 }
+                points[i] = new Point2D(lineTo.getX(), lineTo.getY());
             }
-            Point2D[] interpolate = new CatmullRom(alpha).interpolate(points, 32);
-            // update
-            for (int i = 1; i < size; i++) {
-                PathElement e = elements.get(i);
-                if (e instanceof LineTo lineTo) {
-                    lineTo.setX(interpolate[i - 1].getX());
-                    lineTo.setY(interpolate[i - 1].getY());
-                }
+            // Rebuild the whole path from sampled points so each layout pass stays consistent.
+            Point2D[] interpolate = new CatmullRom(0.5).interpolate(points, 12);
+            ArrayList<PathElement> smooth = new ArrayList<>(interpolate.length);
+            smooth.add(new MoveTo(interpolate[0].getX(), interpolate[0].getY()));
+            for (int i = 1; i < interpolate.length; i++) {
+                smooth.add(new LineTo(interpolate[i].getX(), interpolate[i].getY()));
             }
-            // add
-            for (int i = 0; i < interpolate.length - size; i++) {
-                elements.add(new LineTo(interpolate[i + size].getX(), interpolate[i + size].getY()));
-            }
+            elements.setAll(smooth);
         }
     }
 }
