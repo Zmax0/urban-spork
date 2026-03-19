@@ -10,6 +10,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.nio.NioIoHandler;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -38,10 +39,11 @@ class ClientRelayHandlerTest {
         Assertions.assertDoesNotThrow(() -> ClientRelayHandler.addWebSocketHandlers(channel, context));
     }
 
+    @Tag("integration")
     @RepeatedTest(2)
     void testTryResolveServerHost() {
         ServerConfig config = ServerConfigTest.testConfig(0);
-        config.setHost("example.com");
+        config.setHost("google.com");
         config.setDns(DnsUtil.getDnsSetting());
         String host = ClientRelayHandler.tryResolveServerHost(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()), config);
         Assertions.assertNotNull(host);
