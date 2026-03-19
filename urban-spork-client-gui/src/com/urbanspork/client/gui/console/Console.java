@@ -60,7 +60,7 @@ public class Console extends Application {
     Proxy proxy;
     final ObjectProperty<TrafficCounter> trafficCounter = new SimpleObjectProperty<>();
     final ObjectProperty<Map<String, ClientChannelTrafficHandler>> channelTraffic = new SimpleObjectProperty<>();
-    final TrafficCounterLineChartBackstage trafficCounterLineChartBackstage = new TrafficCounterLineChartBackstage(trafficCounter);
+    final TrafficCounterLineChartBackstage trafficCounterLineChartBackstage = new TrafficCounterLineChartBackstage();
     private final RequiredFieldValidator requiredFieldValidator = new RequiredFieldValidator();
 
     private Stage primaryStage;
