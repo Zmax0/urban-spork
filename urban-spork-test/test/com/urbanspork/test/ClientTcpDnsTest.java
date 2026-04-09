@@ -9,6 +9,7 @@ import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.transport.Transport;
 import com.urbanspork.server.Server;
+import com.urbanspork.test.template.FutureInstance;
 import com.urbanspork.test.template.TcpTestTemplate;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.util.NetUtil;
@@ -43,13 +44,13 @@ class ClientTcpDnsTest extends TcpTestTemplate {
         serverConfig.setSsl(sslSetting);
         serverConfig.setDns(dnsSetting);
         serverConfig.setWs(wsSetting);
-        List<Server.Instance> server = launchServer(config.getServers());
-        Client.Instance client = launchClient(config);
-        InetSocketAddress clientTcpAddress = client.tcp().localAddress();
+        FutureInstance<List<Server.Instance>> server = launchServer(config.getServers());
+        FutureInstance<Client.Instance> client = launchClient(config);
+        InetSocketAddress clientTcpAddress = client.instance().tcp().localAddress();
         socksHandshakeAndSendBytes(clientTcpAddress);
         socksHandshakeAndSendBytes(clientTcpAddress); // check dns cache
         closeServer(server);
-        client.close();
+        closeClient(client);
         dohServer.close();
     }
 
@@ -67,12 +68,12 @@ class ClientTcpDnsTest extends TcpTestTemplate {
         serverConfig.setTransport(new Transport[]{Transport.TCP});
         serverConfig.setSsl(sslSetting);
         serverConfig.setDns(dnsSetting);
-        List<Server.Instance> server = launchServer(config.getServers());
-        Client.Instance client = launchClient(config);
+        FutureInstance<List<Server.Instance>> server = launchServer(config.getServers());
+        FutureInstance<Client.Instance> client = launchClient(config);
         this.dstAddress = InetSocketAddress.createUnresolved(TestDice.rollHost(), dstAddress.getPort());
-        InetSocketAddress clientTcpAddress = client.tcp().localAddress();
+        InetSocketAddress clientTcpAddress = client.instance().tcp().localAddress();
         Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientTcpAddress));
         closeServer(server);
-        client.close();
+        closeClient(client);
     }
 }

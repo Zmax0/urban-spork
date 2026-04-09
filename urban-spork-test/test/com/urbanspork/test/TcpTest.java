@@ -10,6 +10,7 @@ import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.transport.Transport;
 import com.urbanspork.server.Server;
+import com.urbanspork.test.template.FutureInstance;
 import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.TcpTestTemplate;
 import org.junit.jupiter.api.Assertions;
@@ -42,34 +43,34 @@ class TcpTest extends TcpTestTemplate {
         serverConfig.setTransport(TRANSPORTS);
         serverConfig.setSsl(parameter.sslSetting());
         serverConfig.setWs(parameter.wsSetting());
-        List<Server.Instance> server = launchServer(config.getServers());
-        Client.Instance client = launchClient(config);
-        InetSocketAddress clientAddress = client.tcp().localAddress();
+        FutureInstance<List<Server.Instance>> server = launchServer(config.getServers());
+        FutureInstance<Client.Instance> client = launchClient(config);
+        InetSocketAddress clientAddress = client.instance().tcp().localAddress();
         socksHandshakeAndSendBytes(clientAddress);
         checkHttpsHandshakeAndSendBytes(clientAddress);
         checkHttpSendBytes(clientAddress);
         closeServer(server);
-        client.close();
+        closeClient(client);
     }
 
     @Test
     void testHttpBadRequest() throws ExecutionException, InterruptedException {
         ClientConfig config = testConfig();
-        Client.Instance client = launchClient(config);
-        InetSocketAddress proxyAddress = client.udp().localAddress();
+        FutureInstance<Client.Instance> client = launchClient(config);
+        InetSocketAddress proxyAddress = client.instance().udp().localAddress();
         Assertions.assertThrows(ExecutionException.class, () -> checkHttpSendBytes(proxyAddress, proxyAddress));
-        client.close();
+        client.instance().close();
     }
 
     @Test
     void testConnectServerFailed() throws ExecutionException, InterruptedException {
         ClientConfig config = ClientConfigTest.testConfig(CLIENT_PORT, TestDice.rollPort());
-        Client.Instance client = launchClient(config);
-        InetSocketAddress clientAddress = client.tcp().localAddress();
+        FutureInstance<Client.Instance> client = launchClient(config);
+        InetSocketAddress clientAddress = client.instance().tcp().localAddress();
         Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientAddress));
         Assertions.assertThrows(ExecutionException.class, () -> checkHttpsHandshakeAndSendBytes(clientAddress));
         Assertions.assertThrows(ExecutionException.class, () -> checkHttpSendBytes(clientAddress));
-        client.close();
+        closeClient(client);
     }
 
     void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
@@ -83,18 +84,18 @@ class TcpTest extends TcpTestTemplate {
         List<ServerUserConfig> user = new ArrayList<>();
         user.add(new ServerUserConfig(TestDice.rollString(10), parameter.clientPassword()));
         serverConfig.setUser(user);
-        List<Server.Instance> server = launchServer(List.of(serverConfig));
+        FutureInstance<List<Server.Instance>> server = launchServer(List.of(serverConfig));
         ClientConfig config = ClientConfigTest.testConfig(0, serverConfig.getPort());
         ServerConfig current = config.getCurrent();
         current.setCipher(cipher);
         current.setProtocol(protocol);
         current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
-        Client.Instance client = launchClient(config);
-        InetSocketAddress clientAddress = client.tcp().localAddress();
+        FutureInstance<Client.Instance> client = launchClient(config);
+        InetSocketAddress clientAddress = client.instance().tcp().localAddress();
         socksHandshakeAndSendBytes(clientAddress);
         checkHttpsHandshakeAndSendBytes(clientAddress);
         checkHttpSendBytes(clientAddress);
         closeServer(server);
-        client.close();
+        closeClient(client);
     }
 }
