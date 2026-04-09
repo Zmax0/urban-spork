@@ -10,6 +10,7 @@ import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.transport.Transport;
 import com.urbanspork.server.Server;
+import com.urbanspork.test.template.FutureInstance;
 import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.UdpTestTemplate;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -43,12 +44,12 @@ class UdpTest extends UdpTestTemplate {
         serverConfig.setPassword(parameter.serverPassword());
         serverConfig.setSsl(parameter.sslSetting());
         serverConfig.setWs(parameter.wsSetting());
-        List<Server.Instance> server = launchServer(config.getServers());
-        Client.Instance client = launchClient(config);
-        InetSocketAddress clientLocalAddress = client.tcp().localAddress();
+        FutureInstance<List<Server.Instance>> server = launchServer(config.getServers());
+        FutureInstance<Client.Instance> client = launchClient(config);
+        InetSocketAddress clientLocalAddress = client.instance().tcp().localAddress();
         handshakeAndSendBytes(clientLocalAddress);
         closeServer(server);
-        client.close();
+        closeClient(client);
     }
 
     void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
@@ -63,18 +64,18 @@ class UdpTest extends UdpTestTemplate {
         List<ServerUserConfig> user = new ArrayList<>();
         user.add(new ServerUserConfig(TestDice.rollString(10), parameter.clientPassword()));
         serverConfig.setUser(user);
-        List<Server.Instance> server = launchServer(List.of(serverConfig));
+        FutureInstance<List<Server.Instance>> server = launchServer(List.of(serverConfig));
         ClientConfig clientConfig = ClientConfigTest.testConfig(CLIENT_PORT, serverConfig.getPort());
         ServerConfig current = clientConfig.getCurrent();
         current.setCipher(cipher);
         current.setTransport(transports);
         current.setProtocol(protocol);
         current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
-        Client.Instance client = launchClient(clientConfig);
-        InetSocketAddress clientLocalAddress = client.tcp().localAddress();
+        FutureInstance<Client.Instance> client = launchClient(clientConfig);
+        InetSocketAddress clientLocalAddress = client.instance().tcp().localAddress();
         handshakeAndSendBytes(clientLocalAddress);
         closeServer(server);
-        client.close();
+        closeClient(client);
     }
 
     @ParameterizedTest
@@ -89,7 +90,7 @@ class UdpTest extends UdpTestTemplate {
         serverConfig.setPassword(parameter.serverPassword());
         serverConfig.setSsl(parameter.sslSetting());
         serverConfig.setWs(parameter.wsSetting());
-        List<Server.Instance> server = launchServer(List.of(serverConfig));
+        FutureInstance<List<Server.Instance>> server = launchServer(List.of(serverConfig));
         ClientConfig clientConfig = ClientConfigTest.testConfig(CLIENT_PORT, serverConfig.getPort());
         ServerConfig current = clientConfig.getCurrent();
         current.setCipher(cipher);
@@ -97,11 +98,11 @@ class UdpTest extends UdpTestTemplate {
         current.setProtocol(protocol);
         current.setSsl(parameter.sslSetting());
         current.setPassword(parameter.serverPassword());
-        Client.Instance client = launchClient(clientConfig);
-        InetSocketAddress clientLocalAddress = client.tcp().localAddress();
+        FutureInstance<Client.Instance> client = launchClient(clientConfig);
+        InetSocketAddress clientLocalAddress = client.instance().tcp().localAddress();
         handshakeAndSendBytes(clientLocalAddress);
         closeServer(server);
-        client.close();
+        closeClient(client);
     }
 
     static class QuicProvider implements ArgumentsProvider {

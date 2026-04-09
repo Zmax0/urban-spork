@@ -9,6 +9,7 @@ import com.urbanspork.common.config.ServerConfigTest;
 import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.server.Server;
+import com.urbanspork.test.template.FutureInstance;
 import com.urbanspork.test.template.TcpTestTemplate;
 import com.urbanspork.test.tool.TcpCapture;
 import io.netty.buffer.Unpooled;
@@ -27,14 +28,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 class ShadowsocksTcpTest extends TcpTestTemplate {
-    private List<Server.Instance> server;
+    private FutureInstance<List<Server.Instance>> server;
     private TcpCapture capture;
-    private Client.Instance client;
+    private FutureInstance<Client.Instance> client;
 
     @Test
     void testTooShortHeader() throws InterruptedException, ExecutionException {
         setUp(true);
-        Channel channel = connect(client.tcp().localAddress());
+        Channel channel = connect(client.instance().tcp().localAddress());
         String request = "GET http://" + NetUtil.toSocketAddressString(dstAddress) + "/?a=b&c=d HTTP/1.1\r\n\r\n";
         channel.writeAndFlush(Unpooled.wrappedBuffer(request.getBytes())).sync().addListener(ChannelFutureListener.CLOSE);
         byte[] msg = capture.nextOutboundCapture().getLast();
@@ -47,13 +48,13 @@ class ShadowsocksTcpTest extends TcpTestTemplate {
         Assertions.assertFalse(remoteChannel.isActive());
         remoteChannel.closeFuture().sync();
         closeServer(server);
-        client.close();
+        closeClient(client);
     }
 
     @Test
     void testReplayAttack() throws ExecutionException, InterruptedException, TimeoutException {
         setUp(false);
-        checkHttpSendBytes(client.tcp().localAddress());
+        checkHttpSendBytes(client.instance().tcp().localAddress());
         byte[] msg = capture.nextOutboundCapture().getLast();
         SocketChannel remoteChannel = capture.newRemoteChannel();
         byte[] header = Arrays.copyOf(msg, 75);
@@ -70,7 +71,7 @@ class ShadowsocksTcpTest extends TcpTestTemplate {
         Assertions.assertNotEquals(msg.length, count);
         remoteChannel.closeFuture().sync();
         closeServer(server);
-        client.close();
+        closeClient(client);
     }
 
     void setUp(boolean block) throws ExecutionException, InterruptedException {

@@ -9,6 +9,7 @@ import com.urbanspork.common.config.ServerConfigTest;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.transport.Transport;
 import com.urbanspork.server.Server;
+import com.urbanspork.test.template.FutureInstance;
 import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.UdpTestTemplate;
 import io.netty.channel.socket.ServerSocketChannel;
@@ -39,12 +40,12 @@ class ClientUdpDnsTest extends UdpTestTemplate {
         serverConfig.setPassword(parameter.serverPassword());
         serverConfig.setSsl(parameter.sslSetting());
         serverConfig.setDns(dnsSetting);
-        List<Server.Instance> server = launchServer(config.getServers());
-        Client.Instance client = launchClient(config);
-        InetSocketAddress clientLocalAddress = client.tcp().localAddress();
+        FutureInstance<List<Server.Instance>> server = launchServer(config.getServers());
+        FutureInstance<Client.Instance> client = launchClient(config);
+        InetSocketAddress clientLocalAddress = client.instance().tcp().localAddress();
         handshakeAndSendBytes(clientLocalAddress);
         closeServer(server);
-        client.close();
+        closeClient(client);
     }
 
     @Test
@@ -60,7 +61,7 @@ class ClientUdpDnsTest extends UdpTestTemplate {
         serverConfig.setProtocol(parameter.protocol());
         serverConfig.setPassword(parameter.serverPassword());
         serverConfig.setSsl(parameter.sslSetting());
-        List<Server.Instance> server = launchServer(List.of(serverConfig));
+        FutureInstance<List<Server.Instance>> server = launchServer(List.of(serverConfig));
         ClientConfig clientConfig = ClientConfigTest.testConfig(CLIENT_PORT, serverConfig.getPort());
         ServerConfig current = clientConfig.getCurrent();
         current.setTransport(new Transport[]{Transport.UDP, Transport.QUIC});
@@ -68,11 +69,11 @@ class ClientUdpDnsTest extends UdpTestTemplate {
         current.setSsl(parameter.sslSetting());
         current.setPassword(parameter.serverPassword());
         current.setDns(dnsSetting);
-        Client.Instance client = launchClient(clientConfig);
-        InetSocketAddress clientLocalAddress = client.tcp().localAddress();
+        FutureInstance<Client.Instance> client = launchClient(clientConfig);
+        InetSocketAddress clientLocalAddress = client.instance().tcp().localAddress();
         handshakeAndSendBytes(clientLocalAddress);
         closeServer(server);
-        client.close();
+        closeClient(client);
     }
 
     private static Parameter newParameter() {
