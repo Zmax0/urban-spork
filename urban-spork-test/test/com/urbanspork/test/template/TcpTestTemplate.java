@@ -38,6 +38,7 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -45,19 +46,19 @@ import java.util.concurrent.TimeoutException;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TcpTestTemplate extends TestTemplate {
     final EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-    protected ServerSocketChannel echoTestServer;
+    protected FutureInstance<ServerSocketChannel> echoTestServer;
     protected InetSocketAddress dstAddress;
 
     @BeforeAll
-    protected void beforeAll() throws ExecutionException, InterruptedException {
+    void initTemplate() throws ExecutionException, InterruptedException {
         launchEchoTestServer();
     }
 
     private void launchEchoTestServer() throws InterruptedException, ExecutionException {
         CompletableFuture<ServerSocketChannel> promise = new CompletableFuture<>();
-        POOL.submit(() -> EchoTestServer.launch(0, promise));
-        echoTestServer = promise.get();
-        dstAddress = echoTestServer.localAddress();
+        Future<?> echoTestServerFuture = POOL.submit(() -> EchoTestServer.launch(0, promise));
+        echoTestServer = new FutureInstance<>(echoTestServerFuture, promise.get());
+        dstAddress = echoTestServer.instance().localAddress();
     }
 
     protected Channel connect(InetSocketAddress address) throws InterruptedException {
@@ -141,11 +142,13 @@ public abstract class TcpTestTemplate extends TestTemplate {
         );
         channel.writeAndFlush(Unpooled.wrappedBuffer(bytes));
         promise.get(10, TimeUnit.SECONDS);
+        channel.close().sync();
     }
 
     @AfterAll
-    protected void afterAll() {
-        echoTestServer.close().syncUninterruptibly();
-        group.shutdownGracefully();
+    void cleanTemplate() {
+        logger.info("close echo test server: {}", echoTestServer);
+        echoTestServer.close(Channel::close);
+        group.shutdownGracefully().syncUninterruptibly();
     }
 }

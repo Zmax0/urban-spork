@@ -1,5 +1,6 @@
 package com.urbanspork.client;
 
+import com.urbanspork.common.Runtime;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ClientConfigTest;
 import com.urbanspork.common.config.ConfigHandler;
@@ -36,6 +37,8 @@ import java.util.stream.Stream;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ClientTest {
     private static final ExecutorService SERVICE = Executors.newVirtualThreadPerTaskExecutor();
+    private static final Runtime RUNTIME = new Runtime();
+
     private final EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
 
     @Test
@@ -82,7 +85,7 @@ class ClientTest {
 
     public static Client.Instance asyncLaunchClient(ClientConfig config) throws InterruptedException, ExecutionException {
         CompletableFuture<Client.Instance> promise = new CompletableFuture<>();
-        SERVICE.submit(() -> Client.launch(config, promise));
+        SERVICE.submit(() -> Client.launch(config, promise, RUNTIME));
         return promise.get();
     }
 

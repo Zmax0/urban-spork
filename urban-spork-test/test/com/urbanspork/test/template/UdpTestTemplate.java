@@ -12,6 +12,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
@@ -35,15 +36,15 @@ import java.io.UncheckedIOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
-
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class UdpTestTemplate extends TestTemplate {
@@ -52,20 +53,18 @@ public abstract class UdpTestTemplate extends TestTemplate {
     private final EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
     protected Channel channel;
     private Consumer<DatagramPacketWrapper> consumer;
-    protected DatagramSocket simpleEchoTestUdpServer;
-    private ServerSocket simpleEchoTestTcpServer;
-    protected DatagramSocket delayedEchoTestUdpServer;
-    private ServerSocket delayedEchoTestTcpServer;
+    protected FutureInstance<DatagramSocket> simpleEchoTestUdpServer;
+    protected FutureInstance<DatagramSocket> delayedEchoTestUdpServer;
 
     @BeforeAll
-    protected void beforeAll() {
+    protected void initTemplate() {
         launchUDPTestServer();
         initChannel();
     }
 
     private void launchUDPTestServer() {
         CompletableFuture<DatagramSocket> f1 = new CompletableFuture<>();
-        POOL.submit(() -> {
+        Future<?> simpleEchoTestUdpServerFuture = POOL.submit(() -> {
             try {
                 SimpleEchoTestServer.launch(0, f1);
             } catch (IOException e) {
@@ -73,9 +72,8 @@ public abstract class UdpTestTemplate extends TestTemplate {
             }
         });
         try {
-            simpleEchoTestUdpServer = f1.get();
-            int localPort = simpleEchoTestUdpServer.getLocalPort();
-            simpleEchoTestTcpServer = new ServerSocket(localPort); // bind tcp at same time
+            simpleEchoTestUdpServer = new FutureInstance<>(simpleEchoTestUdpServerFuture, f1.get());
+            int localPort = simpleEchoTestUdpServer.instance().getLocalPort();
             dstAddress.add(new InetSocketAddress(InetAddress.getLoopbackAddress(), localPort));
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
@@ -84,7 +82,7 @@ public abstract class UdpTestTemplate extends TestTemplate {
             Assertions.fail("launch test server failed");
         }
         CompletableFuture<DatagramSocket> f2 = new CompletableFuture<>();
-        POOL.submit(() -> {
+        Future<?> delayedEchoTestUdpServerFuture = POOL.submit(() -> {
             try {
                 DelayedEchoTestServer.launch(0, f2);
             } catch (IOException e) {
@@ -92,9 +90,8 @@ public abstract class UdpTestTemplate extends TestTemplate {
             }
         });
         try {
-            delayedEchoTestUdpServer = f2.get();
-            int localPort = delayedEchoTestUdpServer.getLocalPort();
-            delayedEchoTestTcpServer = new ServerSocket(localPort);  // bind tcp at same time
+            delayedEchoTestUdpServer = new FutureInstance<>(delayedEchoTestUdpServerFuture, f2.get());
+            int localPort = delayedEchoTestUdpServer.instance().getLocalPort();
             dstAddress.add(new InetSocketAddress(InetAddress.getLoopbackAddress(), localPort));
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
@@ -133,7 +130,7 @@ public abstract class UdpTestTemplate extends TestTemplate {
     }
 
     void handshakeAndSendBytes(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) throws InterruptedException, ExecutionException, TimeoutException {
-        HandshakeResult<Socks5CommandResponse> result = Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).get();
+        HandshakeResult<Socks5CommandResponse> result = Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS);
         result.channel().close().sync();
         Socks5CommandResponse response = result.response();
         Assertions.assertEquals(Socks5CommandStatus.SUCCESS, response.status());
@@ -155,12 +152,19 @@ public abstract class UdpTestTemplate extends TestTemplate {
     }
 
     @AfterAll
-    void shutdown() throws IOException {
-        simpleEchoTestUdpServer.close();
-        simpleEchoTestTcpServer.close();
-        delayedEchoTestUdpServer.close();
-        delayedEchoTestTcpServer.close();
-        channel.close();
-        group.shutdownGracefully();
+    void cleanTemplate() {
+        Channel channel = new Bootstrap().group(group)
+            .channel(NioDatagramChannel.class)
+            .handler(new ChannelInboundHandlerAdapter()).bind(0).syncUninterruptibly().channel();
+        logger.info("send close msg");
+        for (InetSocketAddress dstAddress : dstAddress) {
+            channel.writeAndFlush(new DatagramPacket(Unpooled.wrappedBuffer("close".getBytes(StandardCharsets.UTF_8)), dstAddress));
+        }
+        channel.close().syncUninterruptibly();
+        simpleEchoTestUdpServer.close(_ -> {});
+        delayedEchoTestUdpServer.close(_ -> {});
+        logger.info("close channel");
+        this.channel.close().syncUninterruptibly();
+        group.shutdownGracefully().syncUninterruptibly();
     }
 }

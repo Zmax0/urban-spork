@@ -27,6 +27,9 @@ public class SimpleEchoTestServer {
                 DatagramPacket packet = new DatagramPacket(data, data.length);
                 socket.receive(packet);
                 String str = new String(data, 0, packet.getLength());
+                if ("close".equals(str)) {
+                    break;
+                }
                 InetSocketAddress address = new InetSocketAddress(packet.getAddress().getHostAddress(), packet.getPort());
                 String receiveMsgInfo = MessageFormat.format("Receive msg from [{0}]: {1}", address, str);
                 logger.info(receiveMsgInfo);
@@ -34,9 +37,6 @@ public class SimpleEchoTestServer {
                 DatagramPacket msg = new DatagramPacket(bytes, bytes.length, address);
                 socket.send(msg);
                 logger.info("Callback");
-                if ("close".equals(str)) {
-                    break;
-                }
             }
         }
     }

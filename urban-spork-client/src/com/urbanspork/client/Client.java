@@ -1,6 +1,7 @@
 package com.urbanspork.client;
 
 import com.urbanspork.client.shadowsocks.ClientUdpRelayHandler;
+import com.urbanspork.common.Runtime;
 import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
 import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.config.ClientConfig;
@@ -10,12 +11,11 @@ import com.urbanspork.common.protocol.Protocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.MultiThreadIoEventLoopGroup;
-import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
@@ -37,24 +37,29 @@ public class Client {
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
     public static void main() {
-        launch(ConfigHandler.DEFAULT.read(), new CompletableFuture<>());
+        Runtime runtime = new Runtime();
+        try {
+            launch(ConfigHandler.DEFAULT.read(), new CompletableFuture<>(), runtime);
+        } finally {
+            runtime.close();
+        }
     }
 
-    public static void launch(ClientConfig config, CompletableFuture<Instance> promise) {
-        EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-        EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-        GlobalChannelTrafficShapingHandler traffic = new GlobalChannelTrafficShapingHandler(workerGroup);
+    public static void launch(ClientConfig config, CompletableFuture<Instance> promise, Runtime runtime) {
+        GlobalChannelTrafficShapingHandler traffic = new GlobalChannelTrafficShapingHandler(runtime.childGroup());
         ConcurrentHashMap<String, ClientChannelTrafficHandler> channelTraffic = new ConcurrentHashMap<>();
         ClientChannelContext context = new ClientChannelContext(config.getCurrent(), traffic, channelTraffic);
         String host = config.getHost() == null ? InetAddress.getLoopbackAddress().getHostName() : config.getHost();
         int port = config.getPort();
+        ServerSocketChannel tcp = null;
+        DatagramChannel udp = null;
         try {
-            ServerSocketChannel tcp = launchTcp(bossGroup, workerGroup, host, port, context);
+            tcp = launchTcp(runtime.parentGroup(), runtime.childGroup(), host, port, context);
             InetSocketAddress tcpLocalAddress = tcp.localAddress();
             int localPort = tcpLocalAddress.getPort();
             config.setPort(localPort);
-            DatagramChannel udp = launchUdp(bossGroup, workerGroup, host, localPort, context);
-            Instance client = new Instance(tcp, udp, traffic.trafficCounter(), channelTraffic);
+            udp = launchUdp(runtime.parentGroup(), runtime.childGroup(), host, localPort, context);
+            Instance client = new Instance(tcp, udp, traffic.trafficCounter(), channelTraffic, context);
             int clientId = System.identityHashCode(client);
             logger.info("Launch client [id:{}] => tcp{} udp{} ", clientId, tcpLocalAddress, udp.localAddress());
             promise.complete(client);
@@ -64,14 +69,15 @@ public class Client {
             ).get();
             logger.info("Client [id:{}] is terminated", clientId);
         } catch (InterruptedException _) {
+            logger.warn("Interrupt main launch thread");
+            close0(tcp, udp);
             Thread.currentThread().interrupt();
         } catch (Throwable e) {
             logger.error("Launch client failed {}:{}", host, port, e);
+            close0(tcp, udp);
             promise.completeExceptionally(e);
         } finally {
             context.traffic().release();
-            workerGroup.shutdownGracefully().syncUninterruptibly();
-            bossGroup.shutdownGracefully().syncUninterruptibly();
         }
     }
 
@@ -120,11 +126,24 @@ public class Client {
         }
     }
 
-    public record Instance(ServerSocketChannel tcp, DatagramChannel udp, TrafficCounter traffic, Map<String, ClientChannelTrafficHandler> channelTraffic) implements Closeable {
+    static void close0(ServerSocketChannel tcp, DatagramChannel udp) {
+        ChannelFuture closeTcp = null;
+        if (tcp != null) {
+            closeTcp = tcp.close();
+        }
+        if (udp != null) {
+            udp.close().syncUninterruptibly();
+        }
+        if (closeTcp != null) {
+            closeTcp.syncUninterruptibly();
+        }
+    }
+
+    public record Instance(ServerSocketChannel tcp, DatagramChannel udp, TrafficCounter traffic,
+                           Map<String, ClientChannelTrafficHandler> channelTraffic, ClientChannelContext context) implements Closeable {
         @Override
         public void close() {
-            tcp.close().syncUninterruptibly();
-            udp.close().syncUninterruptibly();
+            close0(tcp, udp);
         }
     }
 }

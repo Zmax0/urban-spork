@@ -24,7 +24,7 @@ public class DelayedEchoTestServer {
 
     public static void launch(int port, CompletableFuture<DatagramSocket> future) throws IOException {
         Logger logger = Logger.getGlobal();
-        try (ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor(); DatagramSocket socket = new DatagramSocket(port)) {
+        try (ScheduledExecutorService service = Executors.newScheduledThreadPool(2); DatagramSocket socket = new DatagramSocket(port)) {
             future.complete(socket);
             String startupInfo = MessageFormat.format("UDP test server start [{0}]", socket.getLocalSocketAddress());
             logger.info(startupInfo);
@@ -33,23 +33,25 @@ public class DelayedEchoTestServer {
                 DatagramPacket packet = new DatagramPacket(data, data.length);
                 socket.receive(packet);
                 String str = new String(data, 0, packet.getLength());
+                if ("close".equals(str)) {
+                    break;
+                }
                 InetSocketAddress address = new InetSocketAddress(packet.getAddress().getHostAddress(), packet.getPort());
                 byte[] bytes = MessageFormat.format("Received your msg [{0}] ^_^", str).getBytes();
                 DatagramPacket msg = new DatagramPacket(bytes, bytes.length, address);
                 int id = System.identityHashCode(msg);
-                service.schedule(() -> {
-                    try {
-                        logger.info(MessageFormat.format("Callback [id: {0,number,#}]", id));
-                        socket.send(msg);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                }, ThreadLocalRandom.current().nextInt(0, MAX_DELAYED_SECOND), TimeUnit.SECONDS);
+                service.schedule(
+                    () -> {
+                        try {
+                            logger.info(MessageFormat.format("Callback [id: {0,number,#}]", id));
+                            socket.send(msg);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    }, ThreadLocalRandom.current().nextInt(0, MAX_DELAYED_SECOND), TimeUnit.SECONDS
+                );
                 String receivedMsgInfo = MessageFormat.format("Received msg from [{0}]: {1} [id: {2,number,#}]", address, str, id);
                 logger.info(receivedMsgInfo);
-                if ("close".equals(str)) {
-                    break;
-                }
             }
         }
     }

@@ -67,8 +67,7 @@ class QuicTcpTest extends TcpTestTemplate {
         socksHandshakeAndSendBytes(clientAddress);
         checkHttpsHandshakeAndSendBytes(clientAddress);
         checkHttpSendBytes(clientAddress);
-        closeServer(server);
-        closeClient(client);
+        close(client, server);
     }
 
     @Order(2)
@@ -84,7 +83,7 @@ class QuicTcpTest extends TcpTestTemplate {
         serverConfig.setPassword(parameter.serverPassword());
         serverConfig.setTransport(TRANSPORTS);
         serverConfig.setSsl(parameter.sslSetting());
-        InetSocketAddress echoServerAddress = echoTestServer.localAddress();
+        InetSocketAddress echoServerAddress = echoTestServer.instance().localAddress();
         String nameServer = String.format("https://localhost:%d?&resolved=%s&name=", dohServer.localAddress().getPort(), NetUtil.toAddressString(echoServerAddress.getAddress()));
         DnsSetting dnsSetting = new DnsSetting(nameServer, parameter.sslSetting());
         this.dstAddress = new InetSocketAddress(TestDice.rollHost(), echoServerAddress.getPort());
@@ -94,8 +93,7 @@ class QuicTcpTest extends TcpTestTemplate {
         InetSocketAddress clientAddress = client.instance().tcp().localAddress();
         socksHandshakeAndSendBytes(clientAddress);
         socksHandshakeAndSendBytes(clientAddress); // check dns cache
-        closeServer(server);
-        closeClient(client);
+        close(client, server);
     }
 
     @Order(3)
@@ -115,11 +113,10 @@ class QuicTcpTest extends TcpTestTemplate {
         serverConfig.setDns(dnsSetting);
         FutureInstance<List<Server.Instance>> server = launchServer(config.getServers());
         FutureInstance<Client.Instance> client = launchClient(config);
-        this.dstAddress = InetSocketAddress.createUnresolved(TestDice.rollHost(), echoTestServer.localAddress().getPort());
+        this.dstAddress = InetSocketAddress.createUnresolved(TestDice.rollHost(), echoTestServer.instance().localAddress().getPort());
         InetSocketAddress clientTcpAddress = client.instance().tcp().localAddress();
         Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientTcpAddress));
-        closeServer(server);
-        closeClient(client);
+        close(client, server);
     }
 
     @Order(4)
@@ -141,6 +138,6 @@ class QuicTcpTest extends TcpTestTemplate {
             submitted.cancel(true);
         }
         closeServer(server);
-        group.shutdownGracefully();
+        group.shutdownGracefully().syncUninterruptibly();
     }
 }

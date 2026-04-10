@@ -47,8 +47,7 @@ class ShadowsocksTcpTest extends TcpTestTemplate {
         remoteChannel.writeAndFlush(Unpooled.wrappedBuffer(right));
         Assertions.assertFalse(remoteChannel.isActive());
         remoteChannel.closeFuture().sync();
-        closeServer(server);
-        closeClient(client);
+        close(client, server);
     }
 
     @Test
@@ -70,8 +69,7 @@ class ShadowsocksTcpTest extends TcpTestTemplate {
         }
         Assertions.assertNotEquals(msg.length, count);
         remoteChannel.closeFuture().sync();
-        closeServer(server);
-        closeClient(client);
+        close(client, server);
     }
 
     void setUp(boolean block) throws ExecutionException, InterruptedException {

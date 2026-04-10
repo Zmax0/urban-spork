@@ -19,7 +19,7 @@ public class DohClient {
             IpResponse result = promise.get(10, TimeUnit.SECONDS);
             System.out.println(result);
         } finally {
-            group.shutdownGracefully();
+            group.shutdownGracefully().syncUninterruptibly();
         }
     }
 }

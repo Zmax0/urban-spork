@@ -1,5 +1,7 @@
 package com.urbanspork.server;
 
+import com.urbanspork.common.Runtime;
+import com.urbanspork.common.config.ConfigHandlerTest;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTest;
 import com.urbanspork.common.protocol.Protocol;
@@ -16,9 +18,10 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 import java.net.InetSocketAddress;
 import java.util.Collections;
@@ -31,13 +34,17 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ServerTest {
+    private static Runtime runtime;
+
+    @BeforeAll
+    static void beforeAll() {
+        runtime = new Runtime();
+    }
 
     @Test
-    void launchRejected() {
-        List<ServerConfig> empty = Collections.emptyList();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Server.launch(empty));
+    void launchEmpty() throws NoSuchFieldException, IllegalAccessException {
+        ConfigHandlerTest.runWithCustomJson("{\"servers\":[]}", Server::main);
     }
 
     @Test
@@ -45,7 +52,7 @@ class ServerTest {
         int port = TestDice.rollPort();
         List<ServerConfig> configs = ServerConfigTest.testConfigs(port, port);
         CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
-        Server.launch(configs, promise);
+        Server.launch(configs, promise, runtime);
         Assertions.assertEquals(java.net.BindException.class, promise.exceptionNow().getClass());
     }
 
@@ -56,7 +63,7 @@ class ServerTest {
         quic.setTransport(new Transport[]{Transport.QUIC});
         CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
         try (ExecutorService service = Executors.newSingleThreadExecutor()) {
-            service.submit(() -> Server.launch(Collections.singletonList(quic), promise));
+            service.submit(() -> Server.launch(Collections.singletonList(quic), promise, runtime));
             List<Server.Instance> res = promise.get(1, TimeUnit.SECONDS);
             Assertions.assertEquals(1, res.size());
             closeServer(res);
@@ -67,7 +74,7 @@ class ServerTest {
     void shutdown() {
         List<ServerConfig> configs = ServerConfigTest.testConfigs(0, 0);
         try (ExecutorService service = Executors.newSingleThreadExecutor()) {
-            Future<?> future = service.submit(() -> Server.launch(configs));
+            Future<?> future = service.submit(() -> Server.launch(configs, new CompletableFuture<>(), runtime));
             try {
                 future.get(1, TimeUnit.SECONDS);
             } catch (InterruptedException _) {
@@ -85,7 +92,7 @@ class ServerTest {
         config.setTransport(new Transport[]{Transport.TCP, Transport.UDP});
         try (ExecutorService service = Executors.newVirtualThreadPerTaskExecutor()) {
             CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
-            service.submit(() -> Server.launch(List.of(config), promise));
+            service.submit(() -> Server.launch(List.of(config), promise, runtime));
             List<Server.Instance> servers = promise.get();
             InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
             Channel channel = new Bootstrap().group(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()))
@@ -104,7 +111,7 @@ class ServerTest {
         ServerConfig config = ServerConfigTest.testConfig(0);
         try (ExecutorService service = Executors.newVirtualThreadPerTaskExecutor()) {
             CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
-            service.submit(() -> Server.launch(List.of(config), promise));
+            service.submit(() -> Server.launch(List.of(config), promise, runtime));
             List<Server.Instance> servers = promise.get();
             Channel channel = new Bootstrap().group(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()))
                 .channel(NioSocketChannel.class)
@@ -123,5 +130,10 @@ class ServerTest {
         for (Server.Instance server : servers) {
             server.close();
         }
+    }
+
+    @AfterAll
+    static void afterAll() {
+        runtime.close();
     }
 }

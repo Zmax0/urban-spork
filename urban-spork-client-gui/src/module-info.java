@@ -5,7 +5,9 @@ module com.urbanspork.client.gui {
     requires com.jfoenix;
     requires com.urbanspork.client;
     requires com.urbanspork.common;
+    requires io.netty.common;
     requires io.netty.handler;
+    requires io.netty.transport;
     requires java.desktop;
     requires javafx.base;
     requires javafx.controls;

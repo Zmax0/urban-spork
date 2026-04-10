@@ -30,8 +30,8 @@ class ClientUdpDnsTest extends UdpTestTemplate {
         ServerSocketChannel dohServer = dohTestServer();
         Parameter parameter = newParameter();
         String nameServer = String.format("https://localhost:%d/dns-query?resolved=%s", dohServer.localAddress().getPort(), NetUtil.toAddressString(InetAddress.getLoopbackAddress()));
-        dstAddress.set(0, new InetSocketAddress(TestDice.rollHost(), simpleEchoTestUdpServer.getLocalPort()));
-        dstAddress.set(1, new InetSocketAddress(TestDice.rollHost(), delayedEchoTestUdpServer.getLocalPort()));
+        InetSocketAddress dstAddress0 = dstAddress.set(0, new InetSocketAddress(TestDice.rollHost(), simpleEchoTestUdpServer.instance().getLocalPort()));
+        InetSocketAddress dstAddress1 = dstAddress.set(1, new InetSocketAddress(TestDice.rollHost(), delayedEchoTestUdpServer.instance().getLocalPort()));
         DnsSetting dnsSetting = new DnsSetting(nameServer, parameter.sslSetting());
         ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();
@@ -44,8 +44,9 @@ class ClientUdpDnsTest extends UdpTestTemplate {
         FutureInstance<Client.Instance> client = launchClient(config);
         InetSocketAddress clientLocalAddress = client.instance().tcp().localAddress();
         handshakeAndSendBytes(clientLocalAddress);
-        closeServer(server);
-        closeClient(client);
+        close(client, server);
+        dstAddress.set(0, dstAddress0);
+        dstAddress.set(1, dstAddress1);
     }
 
     @Test
@@ -53,8 +54,8 @@ class ClientUdpDnsTest extends UdpTestTemplate {
         ServerSocketChannel dohServer = dohTestServer();
         Parameter parameter = newParameter();
         String nameServer = String.format("https://localhost:%d/dns-query?resolved=%s", dohServer.localAddress().getPort(), NetUtil.toAddressString(InetAddress.getLoopbackAddress()));
-        dstAddress.set(0, new InetSocketAddress(TestDice.rollHost(), simpleEchoTestUdpServer.getLocalPort()));
-        dstAddress.set(1, new InetSocketAddress(TestDice.rollHost(), delayedEchoTestUdpServer.getLocalPort()));
+        InetSocketAddress dstAddress0 = dstAddress.set(0, new InetSocketAddress(TestDice.rollHost(), simpleEchoTestUdpServer.instance().getLocalPort()));
+        InetSocketAddress dstAddress1 = dstAddress.set(1, new InetSocketAddress(TestDice.rollHost(), delayedEchoTestUdpServer.instance().getLocalPort()));
         DnsSetting dnsSetting = new DnsSetting(nameServer, parameter.sslSetting());
         ServerConfig serverConfig = ServerConfigTest.testConfig(SERVER_PORT);
         serverConfig.setTransport(new Transport[]{Transport.QUIC});
@@ -72,8 +73,9 @@ class ClientUdpDnsTest extends UdpTestTemplate {
         FutureInstance<Client.Instance> client = launchClient(clientConfig);
         InetSocketAddress clientLocalAddress = client.instance().tcp().localAddress();
         handshakeAndSendBytes(clientLocalAddress);
-        closeServer(server);
-        closeClient(client);
+        close(client, server);
+        dstAddress.set(0, dstAddress0);
+        dstAddress.set(1, dstAddress1);
     }
 
     private static Parameter newParameter() {
