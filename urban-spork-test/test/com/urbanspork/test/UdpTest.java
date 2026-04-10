@@ -29,29 +29,7 @@ import java.util.stream.Stream;
 
 class UdpTest extends UdpTestTemplate {
     @ParameterizedTest
-    @ArgumentsSource(Parameter.Provider.class)
-    void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
-        Protocol protocol = parameter.protocol();
-        CipherKind cipher = parameter.cipher();
-        if (protocol == Protocol.shadowsocks && cipher.isAead2022() && cipher.supportEih()) {
-            testShadowsocksAEAD2022EihByParameter(parameter);
-        }
-        ClientConfig config = testConfig();
-        ServerConfig serverConfig = config.getServers().getFirst();
-        serverConfig.setTransport(new Transport[]{Transport.UDP});
-        serverConfig.setProtocol(protocol);
-        serverConfig.setCipher(cipher);
-        serverConfig.setPassword(parameter.serverPassword());
-        serverConfig.setSsl(parameter.sslSetting());
-        serverConfig.setWs(parameter.wsSetting());
-        FutureInstance<List<Server.Instance>> server = launchServer(config.getServers());
-        FutureInstance<Client.Instance> client = launchClient(config);
-        InetSocketAddress clientLocalAddress = client.instance().tcp().localAddress();
-        handshakeAndSendBytes(clientLocalAddress);
-        closeServer(server);
-        closeClient(client);
-    }
-
+    @ArgumentsSource(ShadowsocksEihProvider.class)
     void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
         CipherKind cipher = parameter.cipher();
         Protocol protocol = parameter.protocol();
@@ -74,8 +52,15 @@ class UdpTest extends UdpTestTemplate {
         FutureInstance<Client.Instance> client = launchClient(clientConfig);
         InetSocketAddress clientLocalAddress = client.instance().tcp().localAddress();
         handshakeAndSendBytes(clientLocalAddress);
-        closeServer(server);
-        closeClient(client);
+        close(client, server);
+    }
+
+    static class ShadowsocksEihProvider implements ArgumentsProvider {
+        @Override
+        public Stream<? extends Arguments> provideArguments(ParameterDeclarations parameters, ExtensionContext context) {
+            return new Parameter.Provider().provideArguments(parameters, context).flatMap(e -> Stream.of(e.get())).map(Parameter.class::cast)
+                .filter(p -> p.protocol() == Protocol.shadowsocks && p.cipher().isAead2022() && p.cipher().supportEih()).map(Arguments::of);
+        }
     }
 
     @ParameterizedTest
@@ -101,14 +86,13 @@ class UdpTest extends UdpTestTemplate {
         FutureInstance<Client.Instance> client = launchClient(clientConfig);
         InetSocketAddress clientLocalAddress = client.instance().tcp().localAddress();
         handshakeAndSendBytes(clientLocalAddress);
-        closeServer(server);
-        closeClient(client);
+        close(client, server);
     }
 
     static class QuicProvider implements ArgumentsProvider {
         @Override
-        public Stream<? extends Arguments> provideArguments(ParameterDeclarations parameters, ExtensionContext extensionContext) {
-            return new Parameter.QuicProvider().provideArguments(parameters, extensionContext).flatMap(e -> Stream.of(e.get())).map(Parameter.class::cast)
+        public Stream<? extends Arguments> provideArguments(ParameterDeclarations parameters, ExtensionContext context) {
+            return new Parameter.QuicProvider().provideArguments(parameters, context).flatMap(e -> Stream.of(e.get())).map(Parameter.class::cast)
                 .filter(p -> p.protocol() != Protocol.shadowsocks).map(Arguments::of);
         }
     }

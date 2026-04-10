@@ -3,6 +3,7 @@ package com.urbanspork.client.gui.console;
 import com.urbanspork.client.Client;
 import com.urbanspork.client.gui.Resource;
 import com.urbanspork.client.gui.tray.Tray;
+import com.urbanspork.common.Runtime;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ServerConfig;
 
@@ -16,6 +17,7 @@ import java.util.concurrent.Executors;
 class Proxy {
     private static final ClientConfig config = Resource.config();
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final Runtime runtime = new Runtime();
     private final Tray tray;
     private Client.Instance client;
 
@@ -31,7 +33,7 @@ class Proxy {
         }
         Optional.ofNullable(client).ifPresent(Client.Instance::close);
         CompletableFuture<Client.Instance> promise = new CompletableFuture<>();
-        executor.submit(() -> Client.launch(config, promise));
+        executor.submit(() -> Client.launch(config, promise, runtime));
         try {
             client = promise.get();
             String message = current.toString();
@@ -50,5 +52,6 @@ class Proxy {
     void exit() {
         Optional.ofNullable(client).ifPresent(Client.Instance::close);
         executor.shutdown();
+        runtime.close();
     }
 }

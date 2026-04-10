@@ -32,7 +32,7 @@ class ClientTcpDnsTest extends TcpTestTemplate {
         WebSocketSetting wsSetting = new WebSocketSetting();
         wsSetting.setPath("/ws");
         SslSetting sslSetting = SslUtil.getSslSetting();
-        InetSocketAddress echoServerAddress = echoTestServer.localAddress();
+        InetSocketAddress echoServerAddress = echoTestServer.instance().localAddress();
         this.dstAddress = new InetSocketAddress(TestDice.rollHost(), echoServerAddress.getPort());
         String nameServer = String.format("https://localhost:%d/dns-query?resolved=%s", dohServer.localAddress().getPort(), NetUtil.toAddressString(echoServerAddress.getAddress()));
         DnsSetting dnsSetting = new DnsSetting(nameServer, sslSetting);
@@ -49,8 +49,7 @@ class ClientTcpDnsTest extends TcpTestTemplate {
         InetSocketAddress clientTcpAddress = client.instance().tcp().localAddress();
         socksHandshakeAndSendBytes(clientTcpAddress);
         socksHandshakeAndSendBytes(clientTcpAddress); // check dns cache
-        closeServer(server);
-        closeClient(client);
+        close(client, server);
         dohServer.close();
     }
 
@@ -59,7 +58,7 @@ class ClientTcpDnsTest extends TcpTestTemplate {
         Protocol protocol = Protocol.trojan;
         String password = TestDice.rollPassword(protocol, null);
         SslSetting sslSetting = SslUtil.getSslSetting();
-        String nameServer = String.format("https://localhost:%d/dns-query", echoTestServer.localAddress().getPort());
+        String nameServer = String.format("https://localhost:%d/dns-query", echoTestServer.instance().localAddress().getPort());
         DnsSetting dnsSetting = new DnsSetting(nameServer, null);
         ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();
@@ -73,7 +72,6 @@ class ClientTcpDnsTest extends TcpTestTemplate {
         this.dstAddress = InetSocketAddress.createUnresolved(TestDice.rollHost(), dstAddress.getPort());
         InetSocketAddress clientTcpAddress = client.instance().tcp().localAddress();
         Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientTcpAddress));
-        closeServer(server);
-        closeClient(client);
+        close(client, server);
     }
 }

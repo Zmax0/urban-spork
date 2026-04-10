@@ -1,5 +1,6 @@
 package com.urbanspork.server;
 
+import com.urbanspork.common.Runtime;
 import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.codec.shadowsocks.tcp.Context;
@@ -14,8 +15,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.MultiThreadIoEventLoopGroup;
-import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
@@ -41,25 +40,22 @@ public class Server {
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
     public static void main() {
-        launch(ConfigHandler.DEFAULT.read().getServers());
-    }
-
-    public static void launch(List<ServerConfig> configs) {
-        if (configs.isEmpty()) {
-            throw new IllegalArgumentException("Server config in the file is empty");
+        List<ServerConfig> configs = ConfigHandler.DEFAULT.read().getServers();
+        Runtime runtime = new Runtime();
+        try {
+            launch(configs, new CompletableFuture<>(), runtime);
+        } finally {
+            runtime.close();
         }
-        launch(configs, new CompletableFuture<>());
     }
 
-    public static void launch(List<ServerConfig> configs, CompletableFuture<List<Instance>> promise) {
+    public static void launch(List<ServerConfig> configs, CompletableFuture<List<Instance>> promise, Runtime runtime) {
         Context context = Context.newCheckReplayInstance();
-        EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-        EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         List<Instance> servers = new ArrayList<>(configs.size());
         try {
             int count = 0;
             for (ServerConfig config : configs) {
-                Instance server = start(bossGroup, workerGroup, new ServerInitializationContext(config, context));
+                Instance server = start(runtime.parentGroup(), runtime.childGroup(), new ServerInitializationContext(config, context));
                 count += server.udp().isPresent() ? 2 : 1;
                 servers.add(server);
             }
@@ -73,6 +69,9 @@ public class Server {
             logger.info("Server is terminated");
         } catch (InterruptedException _) {
             logger.warn("Interrupt main launch thread");
+            for (Instance server : servers) {
+                server.close();
+            }
             Thread.currentThread().interrupt();
         } catch (Throwable e) {
             logger.error("Launch server failed", e);
@@ -81,8 +80,6 @@ public class Server {
             }
             promise.completeExceptionally(e);
         } finally {
-            workerGroup.shutdownGracefully().syncUninterruptibly();
-            bossGroup.shutdownGracefully().syncUninterruptibly();
             context.release();
         }
     }
@@ -91,7 +88,7 @@ public class Server {
         throws InterruptedException {
         ServerSocketChannel tcp = startTcp(bossGroup, workerGroup, context);
         Optional<DatagramChannel> udp = startUdp(bossGroup, workerGroup, context);
-        return new Instance(tcp, udp);
+        return new Instance(tcp, udp, context);
     }
 
     private static ServerSocketChannel startTcp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerInitializationContext context) throws InterruptedException {
@@ -147,7 +144,6 @@ public class Server {
             .initialMaxStreamDataBidirectionalRemote(0xfffff)
             .initialMaxStreamsBidirectional(100)
             .initialMaxStreamsUnidirectional(100)
-            .activeMigration(true)
             .streamHandler(new ChannelInitializer<>() {
                 @Override
                 protected void initChannel(Channel ch) {
@@ -166,7 +162,7 @@ public class Server {
         return Optional.of(channel);
     }
 
-    public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp) implements Closeable {
+    public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp, ServerInitializationContext context) implements Closeable {
         @Override
         public void close() {
             udp.ifPresent(c -> c.close().syncUninterruptibly());

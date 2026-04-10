@@ -38,7 +38,7 @@ class DohTest {
 
     @AfterAll
     static void afterAll() {
-        GROUP.shutdownGracefully();
+        GROUP.shutdownGracefully().syncUninterruptibly();
     }
 
     private static class Provider implements ArgumentsProvider {

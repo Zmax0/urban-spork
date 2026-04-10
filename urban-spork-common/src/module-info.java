@@ -20,6 +20,7 @@ module com.urbanspork.common {
     requires com.github.benmanes.caffeine;
     requires org.jspecify;
 
+    exports com.urbanspork.common;
     exports com.urbanspork.common.channel;
     exports com.urbanspork.common.codec.address;
     exports com.urbanspork.common.codec.aead;
