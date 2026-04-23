@@ -32,7 +32,7 @@ abstract class TestTemplate {
 
     protected static FutureInstance<Client.Instance> launchClient(ClientConfig config) throws InterruptedException, ExecutionException {
         CompletableFuture<Client.Instance> promise = new CompletableFuture<>();
-        Future<?> task = POOL.submit(() -> Client.launch(config, promise, RUNTIME));
+        Future<?> task = POOL.submit(() -> Client.launch(RUNTIME, config, promise));
         FutureInstance<Client.Instance> result = new FutureInstance<>(task, promise.get());
         logger.info("new client: {}", result);
         return result;
@@ -40,7 +40,7 @@ abstract class TestTemplate {
 
     protected static FutureInstance<List<Server.Instance>> launchServer(List<ServerConfig> configs) throws InterruptedException, ExecutionException {
         CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
-        Future<?> task = POOL.submit(() -> Server.launch(configs, promise, RUNTIME));
+        Future<?> task = POOL.submit(() -> Server.launch(RUNTIME, configs, promise));
         FutureInstance<List<Server.Instance>> result = new FutureInstance<>(task, promise.get());
         logger.info("new server: {}", result);
         return result;

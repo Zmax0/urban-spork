@@ -43,13 +43,13 @@ public class Server {
         List<ServerConfig> configs = ConfigHandler.DEFAULT.read().getServers();
         Runtime runtime = new Runtime();
         try {
-            launch(configs, new CompletableFuture<>(), runtime);
+            launch(runtime, configs, new CompletableFuture<>());
         } finally {
             runtime.close();
         }
     }
 
-    public static void launch(List<ServerConfig> configs, CompletableFuture<List<Instance>> promise, Runtime runtime) {
+    public static void launch(Runtime runtime, List<ServerConfig> configs, CompletableFuture<List<Instance>> promise) {
         Context context = Context.newCheckReplayInstance();
         List<Instance> servers = new ArrayList<>(configs.size());
         try {

@@ -39,13 +39,13 @@ public class Client {
     public static void main() {
         Runtime runtime = new Runtime();
         try {
-            launch(ConfigHandler.DEFAULT.read(), new CompletableFuture<>(), runtime);
+            launch(runtime, ConfigHandler.DEFAULT.read(), new CompletableFuture<>());
         } finally {
             runtime.close();
         }
     }
 
-    public static void launch(ClientConfig config, CompletableFuture<Instance> promise, Runtime runtime) {
+    public static void launch(Runtime runtime, ClientConfig config, CompletableFuture<Instance> promise) {
         GlobalChannelTrafficShapingHandler traffic = new GlobalChannelTrafficShapingHandler(runtime.childGroup());
         ConcurrentHashMap<String, ClientChannelTrafficHandler> channelTraffic = new ConcurrentHashMap<>();
         ClientChannelContext context = new ClientChannelContext(config.getCurrent(), traffic, channelTraffic);

@@ -33,7 +33,7 @@ class Proxy {
         }
         Optional.ofNullable(client).ifPresent(Client.Instance::close);
         CompletableFuture<Client.Instance> promise = new CompletableFuture<>();
-        executor.submit(() -> Client.launch(config, promise, runtime));
+        executor.submit(() -> Client.launch(runtime, config, promise));
         try {
             client = promise.get();
             String message = current.toString();

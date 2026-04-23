@@ -85,7 +85,7 @@ class ClientTest {
 
     public static Client.Instance asyncLaunchClient(ClientConfig config) throws InterruptedException, ExecutionException {
         CompletableFuture<Client.Instance> promise = new CompletableFuture<>();
-        SERVICE.submit(() -> Client.launch(config, promise, RUNTIME));
+        SERVICE.submit(() -> Client.launch(RUNTIME, config, promise));
         return promise.get();
     }
 
