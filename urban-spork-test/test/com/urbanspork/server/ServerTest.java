@@ -52,7 +52,7 @@ class ServerTest {
         int port = TestDice.rollPort();
         List<ServerConfig> configs = ServerConfigTest.testConfigs(port, port);
         CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
-        Server.launch(configs, promise, runtime);
+        Server.launch(runtime, configs, promise);
         Assertions.assertEquals(java.net.BindException.class, promise.exceptionNow().getClass());
     }
 
@@ -63,7 +63,7 @@ class ServerTest {
         quic.setTransport(new Transport[]{Transport.QUIC});
         CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
         try (ExecutorService service = Executors.newSingleThreadExecutor()) {
-            service.submit(() -> Server.launch(Collections.singletonList(quic), promise, runtime));
+            service.submit(() -> Server.launch(runtime, Collections.singletonList(quic), promise));
             List<Server.Instance> res = promise.get(1, TimeUnit.SECONDS);
             Assertions.assertEquals(1, res.size());
             closeServer(res);
@@ -74,7 +74,7 @@ class ServerTest {
     void shutdown() {
         List<ServerConfig> configs = ServerConfigTest.testConfigs(0, 0);
         try (ExecutorService service = Executors.newSingleThreadExecutor()) {
-            Future<?> future = service.submit(() -> Server.launch(configs, new CompletableFuture<>(), runtime));
+            Future<?> future = service.submit(() -> Server.launch(runtime, configs, new CompletableFuture<>()));
             try {
                 future.get(1, TimeUnit.SECONDS);
             } catch (InterruptedException _) {
@@ -92,7 +92,7 @@ class ServerTest {
         config.setTransport(new Transport[]{Transport.TCP, Transport.UDP});
         try (ExecutorService service = Executors.newVirtualThreadPerTaskExecutor()) {
             CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
-            service.submit(() -> Server.launch(List.of(config), promise, runtime));
+            service.submit(() -> Server.launch(runtime, List.of(config), promise));
             List<Server.Instance> servers = promise.get();
             InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
             Channel channel = new Bootstrap().group(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()))
@@ -111,7 +111,7 @@ class ServerTest {
         ServerConfig config = ServerConfigTest.testConfig(0);
         try (ExecutorService service = Executors.newVirtualThreadPerTaskExecutor()) {
             CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
-            service.submit(() -> Server.launch(List.of(config), promise, runtime));
+            service.submit(() -> Server.launch(runtime, List.of(config), promise));
             List<Server.Instance> servers = promise.get();
             Channel channel = new Bootstrap().group(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()))
                 .channel(NioSocketChannel.class)
