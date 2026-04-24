@@ -14,6 +14,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.local.LocalAddress;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.EncoderException;
 import io.netty.handler.codec.MessageToMessageCodec;
@@ -67,7 +68,8 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Datagra
             Filter filter = filterMap.get(control.getClientSessionId());
             control.setPacketId(filter.increasePacketId(1));
         } else {
-            control = netMap.computeIfAbsent(data.sender(), _ -> new Control());
+            SocketAddress key = data.sender() == null ? LocalAddress.ANY : data.sender();
+            control = netMap.computeIfAbsent(key, _ -> new Control());
             control.increasePacketId(1);
         }
         logger.trace("[udp][{}][encode]{}|{}", mode, proxy, control);
