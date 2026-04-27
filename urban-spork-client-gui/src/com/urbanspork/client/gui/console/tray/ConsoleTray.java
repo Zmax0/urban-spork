@@ -73,13 +73,37 @@ public final class ConsoleTray implements Tray {
         } catch (Exception _) {
             // ignore
         }
+        Icon arrowIcon = UIManager.getIcon("Menu.arrowIcon");
+        UIManager.put(
+            "Menu.arrowIcon", new Icon() {
+                @Override
+                public void paintIcon(Component c, Graphics g, int x, int y) {
+                    arrowIcon.paintIcon(c, g, x + 8, y);
+                }
+
+                @Override
+                public int getIconWidth() {
+                    return arrowIcon.getIconWidth();
+                }
+
+                @Override
+                public int getIconHeight() {
+                    return arrowIcon.getIconHeight();
+                }
+            }
+        );
         SwingUtilities.updateComponentTreeUI(menu);
-        menu.add(new ServersMenuItem(console, this).build());
+        menu.add(apply(new ServersMenuItem(console, this).build()));
         menu.addSeparator();
-        menu.add(new ConsoleMenuItem(console, changeSupport).build());
+        menu.add(apply(new ConsoleMenuItem(console, changeSupport).build()));
         menu.addSeparator();
-        menu.add(new LanguageMenuItem(this).build());
+        menu.add(apply(new LanguageMenuItem(this).build()));
         menu.addSeparator();
-        menu.add(new ExitMenuItem(changeSupport).build());
+        menu.add(apply(new ExitMenuItem(changeSupport).build()));
+    }
+
+    private JMenuItem apply(JMenuItem item) {
+        item.setMargin(new Insets(2, -24, 2, 12));
+        return item;
     }
 }
