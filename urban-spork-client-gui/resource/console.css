@@ -6,7 +6,7 @@
 }
 
 .root {
-  -fx-font-family: 'Microsoft YaHei UI';
+  -fx-font-family: 'Microsoft YaHei UI', 'Segoe UI Emoji';
   -fx-font-size: 12px;
 }
 
@@ -200,6 +200,6 @@ GridPane {
   -fx-background-repeat: no-repeat;
 }
 
-.table-view .column-header-background .label{
+.table-view .column-header-background .label {
   -fx-alignment: center;
 }
