@@ -8,7 +8,15 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public enum UdpCipherCache {
-    INSTANCE(new LruCache<>(AEAD2022.UDP.CIPHER_CACHE_LIMIT, AEAD2022.UDP.CIPHER_CACHE_DURATION, (_, _) -> {}));
+    INSTANCE(new LruCache<>(
+        AEAD2022.UDP.CIPHER_CACHE_LIMIT, AEAD2022.UDP.CIPHER_CACHE_DURATION, (_, c) -> {
+        try {
+            c.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    ));
 
     private final LruCache<Key, UdpCipher> cache;
 

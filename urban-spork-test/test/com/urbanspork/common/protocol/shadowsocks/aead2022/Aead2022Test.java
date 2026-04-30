@@ -15,7 +15,6 @@ import com.urbanspork.test.template.TraceLevelLoggerTestTemplate;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -79,7 +78,7 @@ class Aead2022Test extends TraceLevelLoggerTestTemplate {
     }
 
     @Test
-    void testUdpUserNotFound() throws InvalidCipherTextException {
+    void testUdpUserNotFound() throws Exception {
         CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
         CipherMethod method = CipherMethod.AES_265_GCM;
         byte[] iPSK = Base64.getDecoder().decode(TestDice.rollPassword(Protocol.shadowsocks, kind));

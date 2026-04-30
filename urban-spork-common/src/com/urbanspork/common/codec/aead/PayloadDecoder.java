@@ -8,7 +8,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 
 import java.util.List;
 
-public record PayloadDecoder(Authenticator auth, ChunkSizeCodec sizeCodec, PaddingLengthGenerator padding, Length length) {
+public record PayloadDecoder(Authenticator auth, ChunkSizeCodec sizeCodec, PaddingLengthGenerator padding, Length length) implements AutoCloseable {
 
     public PayloadDecoder(Authenticator auth, ChunkSizeCodec sizeCodec, PaddingLengthGenerator padding) {
         this(auth, sizeCodec, padding, new Length());
@@ -70,6 +70,11 @@ public record PayloadDecoder(Authenticator auth, ChunkSizeCodec sizeCodec, Paddi
         in.readBytes(payloadBytes);
         in.skipBytes(paddingLength);
         return Unpooled.wrappedBuffer(auth().open(payloadBytes));
+    }
+
+    @Override
+    public void close() throws Exception {
+        auth.close();
     }
 
     private static class Length {

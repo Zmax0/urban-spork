@@ -4,7 +4,7 @@ import com.urbanspork.common.codec.aead.Authenticator;
 import io.netty.buffer.Unpooled;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
-public record AEADChunkSizeParser(Authenticator auth) implements ChunkSizeCodec {
+public record AEADChunkSizeParser(Authenticator auth) implements ChunkSizeCodec, AutoCloseable {
 
     @Override
     public int sizeBytes() {
@@ -21,5 +21,10 @@ public record AEADChunkSizeParser(Authenticator auth) implements ChunkSizeCodec 
     @Override
     public int decode(byte[] data) throws InvalidCipherTextException {
         return Unpooled.wrappedBuffer(auth.open(data)).readUnsignedShort() + auth().overhead();
+    }
+
+    @Override
+    public void close() throws Exception {
+        auth.close();
     }
 }

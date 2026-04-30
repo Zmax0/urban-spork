@@ -2,9 +2,8 @@ package com.urbanspork.common.protocol.shadowsocks.aead2022;
 
 import com.urbanspork.common.codec.aead.CipherInstance;
 import com.urbanspork.common.codec.aead.CipherMethod;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 
-public class UdpCipher {
+public class UdpCipher implements AutoCloseable {
     private final byte[] key;
     private final CipherMethod method;
     private final CipherInstance cache;
@@ -21,11 +20,28 @@ public class UdpCipher {
         }
     }
 
-    public byte[] seal(byte[] in, byte[] nonce) throws InvalidCipherTextException {
-        return (cache == null ? method.init(key) : cache).encrypt(nonce, null, in);
+    public byte[] seal(byte[] in, byte[] nonce) throws Exception {
+        if (cache == null) {
+            try (CipherInstance instance = method.init(key)) {
+                return instance.encrypt(nonce, null, in);
+            }
+        } else {
+            return cache.encrypt(nonce, null, in);
+        }
     }
 
-    public byte[] open(byte[] in, byte[] nonce) throws InvalidCipherTextException {
-        return (cache == null ? method.init(key) : cache).decrypt(nonce, null, in);
+    public byte[] open(byte[] in, byte[] nonce) throws Exception {
+        if (cache == null) {
+            try (CipherInstance instance = method.init(key)) {
+                return instance.decrypt(nonce, null, in);
+            }
+        } else {
+            return cache.decrypt(nonce, null, in);
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        cache.close();
     }
 }

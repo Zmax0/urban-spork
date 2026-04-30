@@ -6,7 +6,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 
 import java.util.Arrays;
 
-public record Authenticator(CipherMethod method, CipherInstance instance, NonceGenerator nonceGenerator, BytesGenerator associatedTextGenerator) {
+public record Authenticator(CipherMethod method, CipherInstance instance, NonceGenerator nonceGenerator, BytesGenerator associatedTextGenerator) implements AutoCloseable {
     public Authenticator(byte[] key, CipherMethod method, NonceGenerator nonceGenerator, BytesGenerator associatedTextGenerator) {
         this(method, method.init(method.keySize() == key.length ? key : Arrays.copyOf(key, method.keySize())), nonceGenerator, associatedTextGenerator);
     }
@@ -21,5 +21,10 @@ public record Authenticator(CipherMethod method, CipherInstance instance, NonceG
 
     public byte[] open(byte[] in) throws InvalidCipherTextException {
         return instance.decrypt(nonceGenerator.generate(), associatedTextGenerator.generate(), in);
+    }
+
+    @Override
+    public void close() throws Exception {
+        instance.close();
     }
 }

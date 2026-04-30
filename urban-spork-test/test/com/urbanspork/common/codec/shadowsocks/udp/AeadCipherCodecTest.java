@@ -13,7 +13,6 @@ import com.urbanspork.test.template.TraceLevelLoggerTestTemplate;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,12 +41,12 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
     }
 
     @Test
-    void testEmptyMsg() throws InvalidCipherTextException {
+    void testEmptyMsg() throws Exception {
         testEmptyMsg(Mode.Client, Mode.Server);
         testEmptyMsg(Mode.Server, Mode.Client);
     }
 
-    void testEmptyMsg(Mode from, Mode to) throws InvalidCipherTextException {
+    void testEmptyMsg(Mode from, Mode to) throws Exception {
         AeadCipherCodec codec = newAEADCipherCodec();
         InetSocketAddress address = InetSocketAddress.createUnresolved(TestDice.rollHost(), TestDice.rollPort());
         ByteBuf in = Unpooled.buffer();
@@ -69,7 +68,7 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
     }
 
     @Test
-    void testInvalidSocketType() throws InvalidCipherTextException {
+    void testInvalidSocketType() throws Exception {
         InetSocketAddress address = InetSocketAddress.createUnresolved(TestDice.rollHost(), TestDice.rollPort());
         Context c1 = new Context(Mode.Client, new Control(), address, ServerUserManager.empty());
         testInvalidSocketType(c1);
@@ -77,7 +76,7 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
         testInvalidSocketType(c2);
     }
 
-    private static void testInvalidSocketType(Context c) throws InvalidCipherTextException {
+    private static void testInvalidSocketType(Context c) throws Exception {
         AeadCipherCodec codec = newAEADCipherCodec();
         byte[] msg = Dice.rollBytes(10);
         ByteBuf in = Unpooled.buffer();

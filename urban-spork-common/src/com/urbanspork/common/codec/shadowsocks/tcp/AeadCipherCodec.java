@@ -31,7 +31,7 @@ import java.util.List;
  * @author Zmax0
  * @see <a href=https://shadowsocks.org/doc/aead.html">AEAD ciphers</a>
  */
-class AeadCipherCodec {
+class AeadCipherCodec implements AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(AeadCipherCodec.class);
     private final Keys keys;
@@ -101,7 +101,7 @@ class AeadCipherCodec {
         }
     }
 
-    public void decode(Session session, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+    public void decode(Session session, ByteBuf in, List<Object> out) throws Exception {
         if (payloadDecoder == null) {
             initPayloadDecoder(session, cipherKind, in, out);
             if (payloadDecoder == null) {
@@ -112,7 +112,7 @@ class AeadCipherCodec {
         payloadDecoder.decodePayload(in, out);
     }
 
-    private void initPayloadDecoder(Session session, CipherKind kind, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+    private void initPayloadDecoder(Session session, CipherKind kind, ByteBuf in, List<Object> out) throws Exception {
         if (in.readableBytes() < session.identity().salt().length) {
             return;
         }
@@ -124,7 +124,7 @@ class AeadCipherCodec {
         }
     }
 
-    private void initAEAD2022PayloadDecoder(Session session, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+    private void initAEAD2022PayloadDecoder(Session session, ByteBuf in, List<Object> out) throws Exception {
         int tagSize = cipherMethod.tagSize();
         int saltLength = cipherKind.keySize();
         int requestSaltLength = Mode.Server == session.mode() ? 0 : saltLength;
@@ -180,6 +180,7 @@ class AeadCipherCodec {
         if (in.readableBytes() < length + tagSize) {
             session.context().resetNonceReplay(salt);
             in.resetReaderIndex();
+            newPayloadDecoder.close();
             return;
         }
         byte[] encryptedPayloadBytes = new byte[length + tagSize];
@@ -196,7 +197,7 @@ class AeadCipherCodec {
         this.payloadDecoder = newPayloadDecoder;
     }
 
-    private void initPayloadDecoder(Session session, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+    private void initPayloadDecoder(Session session, ByteBuf in, List<Object> out) throws Exception {
         byte[] salt = session.identity().salt();
         in.readBytes(salt);
         PayloadDecoder newPayloadDecoder = AEAD.TCP.newPayloadDecoder(cipherMethod, keys.encKey(), salt);
@@ -204,6 +205,7 @@ class AeadCipherCodec {
         newPayloadDecoder.decodePayload(in, list);
         if (list.isEmpty()) {
             in.resetReaderIndex();
+            newPayloadDecoder.close();
             return;
         }
         if (Mode.Server == session.mode()) {
@@ -220,6 +222,16 @@ class AeadCipherCodec {
         out.writeBytes(salt); // salt should be sent with the first chunk
         if (Mode.Client == session.mode() && kind.supportEih()) {
             AEAD2022.TCP.withEih(kind, keys, salt, out);
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (payloadEncoder != null) {
+            payloadEncoder.close();
+        }
+        if (payloadDecoder != null) {
+            payloadDecoder.close();
         }
     }
 }
