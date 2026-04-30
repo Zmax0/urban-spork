@@ -48,6 +48,12 @@ public class TcpRelayCodec extends ByteToMessageCodec<ByteBuf> {
         }
     }
 
+    @Override
+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+        super.handlerRemoved(ctx);
+        cipher.close();
+    }
+
     private void exceptionCaught0(ChannelHandlerContext ctx, Throwable cause) {
         String transLog = ExceptionHandler.transLog(ctx.channel());
         logger.error("[tcp][{}] {}", transLog, cause.getMessage());

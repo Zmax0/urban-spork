@@ -2,12 +2,10 @@ package com.urbanspork.jni;
 
 import io.questdb.jar.jni.JarJniLoader;
 
-import java.lang.ref.Cleaner;
-
 public abstract class CipherLoader implements AeadCipher {
     // ptr of cipher for rust
-    @SuppressWarnings("unused")
     protected long ptr = 0;
+    protected volatile boolean closed;
 
     static {
         JarJniLoader.loadLib(
@@ -16,6 +14,4 @@ public abstract class CipherLoader implements AeadCipher {
             "ciphers" /* match with [lib.name] in Cargo.toml */
         );
     }
-
-    protected static final Cleaner CLEANER = Cleaner.create();
 }

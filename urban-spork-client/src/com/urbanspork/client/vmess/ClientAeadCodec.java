@@ -1,6 +1,7 @@
 package com.urbanspork.client.vmess;
 
 import com.urbanspork.common.codec.CipherKind;
+import com.urbanspork.common.codec.aead.CipherInstance;
 import com.urbanspork.common.codec.aead.CipherMethod;
 import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
@@ -95,8 +96,10 @@ public class ClientAeadCodec extends ByteToMessageCodec<ByteBuf> {
             byte[] aeadEncryptedResponseHeaderLength = new byte[Short.BYTES + tagSize];
             in.markReaderIndex();
             in.readBytes(aeadEncryptedResponseHeaderLength);
-            int decryptedResponseHeaderLength = Unpooled.wrappedBuffer(method.init(aeadResponseHeaderLengthEncryptionKey).decrypt(
-                aeadResponseHeaderLengthEncryptionIV, null, aeadEncryptedResponseHeaderLength)).readShort();
+            int decryptedResponseHeaderLength;
+            try (CipherInstance instance = method.init(aeadResponseHeaderLengthEncryptionKey)) {
+                decryptedResponseHeaderLength = Unpooled.wrappedBuffer(instance.decrypt(aeadResponseHeaderLengthEncryptionIV, null, aeadEncryptedResponseHeaderLength)).readShort();
+            }
             if (in.readableBytes() < decryptedResponseHeaderLength + tagSize) {
                 logger.info("unexpected readable bytes for decoding client header: expecting {} but actually {}", decryptedResponseHeaderLength + tagSize, in.readableBytes());
                 in.resetReaderIndex();
@@ -106,7 +109,10 @@ public class ClientAeadCodec extends ByteToMessageCodec<ByteBuf> {
             byte[] aeadResponseHeaderPayloadEncryptionIV = KDF.kdf(session.getResponseBodyIV(), nonceSize, KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV.getBytes());
             byte[] encryptedResponseHeaderBytes = new byte[decryptedResponseHeaderLength + tagSize];
             in.readBytes(encryptedResponseHeaderBytes);
-            byte[] decryptedResponseHeaderBytes = method.init(aeadResponseHeaderPayloadEncryptionKey).decrypt(aeadResponseHeaderPayloadEncryptionIV, null, encryptedResponseHeaderBytes);
+            byte[] decryptedResponseHeaderBytes;
+            try (CipherInstance instance = method.init(aeadResponseHeaderPayloadEncryptionKey)) {
+                decryptedResponseHeaderBytes = instance.decrypt(aeadResponseHeaderPayloadEncryptionIV, null, encryptedResponseHeaderBytes);
+            }
             byte responseHeader = decryptedResponseHeaderBytes[0];
             if (session.getResponseHeader() != responseHeader) { // v[1]
                 throw new DecoderException(String.format("unexpected response header: expecting %d but actually %d", session.getResponseHeader(), responseHeader));
@@ -117,6 +123,17 @@ public class ClientAeadCodec extends ByteToMessageCodec<ByteBuf> {
             bodyDecoder.decodePacket(in, out);
         } else {
             bodyDecoder.decodePayload(in, out);
+        }
+    }
+
+    @Override
+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+        super.handlerRemoved(ctx);
+        if (bodyEncoder != null) {
+            bodyEncoder.close();
+        }
+        if (bodyDecoder != null) {
+            bodyDecoder.close();
         }
     }
 }

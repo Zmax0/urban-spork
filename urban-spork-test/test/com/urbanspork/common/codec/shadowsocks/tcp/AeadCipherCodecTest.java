@@ -16,7 +16,6 @@ import com.urbanspork.test.template.TraceLevelLoggerTestTemplate;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,7 +38,7 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
     }
 
     @Test
-    void testUnexpectedStreamType() throws InvalidCipherTextException {
+    void testUnexpectedStreamType() throws Exception {
         InetSocketAddress request = InetSocketAddress.createUnresolved(TestDice.rollHost(), TestDice.rollPort());
         CipherKind kind = CipherKind.aead2022_blake3_aes_128_gcm;
         int saltSize = 16;
@@ -68,10 +67,13 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
         Session session = new Session(Mode.Server, new Identity(kind), request, ServerUserManager.empty(), new Context());
         codec.decode(session, msg, out);
         Assertions.assertThrows(DecoderException.class, () -> codec.decode(session, temp, out));
+        codec.close();
+        encoder.close();
+        decoder.close();
     }
 
     @Test
-    void testAead2022TcpAntiReplay() {
+    void testAead2022TcpAntiReplay() throws Exception {
         CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
         ServerConfig config = new ServerConfig();
         config.setPassword(TestDice.rollPassword(Protocol.shadowsocks, kind));
@@ -94,6 +96,9 @@ class AeadCipherCodecTest extends TraceLevelLoggerTestTemplate {
         Assertions.assertDoesNotThrow(() -> serverCodec1.decode(serverSession, msg1, out));
         AeadCipherCodec serverCodec2 = AeadCipherCodecs.get(config);
         Assertions.assertThrows(DecoderException.class, () -> serverCodec2.decode(serverSession, msg2, out));
+        clientCodec.close();
+        serverCodec1.close();
+        serverCodec2.close();
     }
 
     @Override
