@@ -1,6 +1,5 @@
 package com.urbanspork.client.gui.console;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jfoenix.controls.JFXListView;
 import com.jfoenix.controls.JFXPasswordField;
 import com.jfoenix.controls.JFXTabPane;
@@ -44,8 +43,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
@@ -157,13 +156,8 @@ public class Console extends Application {
         ServerConfig config = serverConfigJFXListView.getSelectionModel().getSelectedItem();
         if (config != null) {
             ObjectMapper mapper = new ObjectMapper();
-            ServerConfig copied;
-            try {
-                copied = mapper.readValue(mapper.writeValueAsBytes(config), ServerConfig.class);
-                serverConfigObservableList.add(copied);
-            } catch (IOException e) {
-                logger.error("Copy server config error", e);
-            }
+            ServerConfig copied = mapper.readValue(mapper.writeValueAsBytes(config), ServerConfig.class);
+            serverConfigObservableList.add(copied);
         }
     }
 

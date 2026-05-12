@@ -2,10 +2,12 @@ package com.urbanspork.common.protocol.shadowsocks.aead2022;
 
 import com.urbanspork.common.codec.aead.CipherInstance;
 import com.urbanspork.common.codec.aead.CipherMethod;
+import org.jspecify.annotations.Nullable;
 
 public class UdpCipher implements AutoCloseable {
     private final byte[] key;
     private final CipherMethod method;
+    @Nullable
     private final CipherInstance cache;
 
     public UdpCipher(CipherMethod method, byte[] key) {
@@ -42,6 +44,8 @@ public class UdpCipher implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        cache.close();
+        if (cache != null) {
+            cache.close();
+        }
     }
 }

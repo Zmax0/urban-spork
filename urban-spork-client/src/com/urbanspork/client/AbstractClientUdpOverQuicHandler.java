@@ -19,7 +19,7 @@ public abstract class AbstractClientUdpOverQuicHandler<K> extends AbstractClient
 
     protected AbstractClientUdpOverQuicHandler(ClientChannelContext context, Duration keepAlive, EventLoopGroup workerGroup) {
         super(context, keepAlive);
-        endpoint = ClientRelayHandler.quicEndpoint(context.config().getSsl(), workerGroup).syncUninterruptibly().channel();
+        endpoint = ClientRelayHandler.quicEndpoint(context.config(), workerGroup).syncUninterruptibly().channel();
     }
 
     protected abstract ChannelInitializer<Channel> newOutboundInitializer(K k);

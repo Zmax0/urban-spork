@@ -52,6 +52,7 @@ import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -160,9 +161,7 @@ public class Doh {
         if (uri.getQuery() == null) {
             uri = URI.create(nameServer + "?dns=" + domain);
         } else if ((queryParams = QueryStringDecoder.builder().build(uri).parameters()).containsKey("dns")) {
-            List<String> dns = queryParams.get("dns");
-            dns.clear();
-            dns.add(domain);
+            queryParams.put("dns", Collections.singletonList(domain));
             QueryStringEncoder encoder = new QueryStringEncoder(nameServer.replace("?" + uri.getQuery(), ""));
             for (Map.Entry<String, List<String>> entry : queryParams.entrySet()) {
                 encoder.addParam(entry.getKey(), entry.getValue().getFirst());

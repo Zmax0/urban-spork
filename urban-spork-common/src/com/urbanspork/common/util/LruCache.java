@@ -37,11 +37,15 @@ public class LruCache<K, V> {
     }
 
     public V remove(K key) {
-        return inner.asMap().remove(key);
+        V v = inner.asMap().get(key);
+        if (v != null) {
+            inner.invalidate(key);
+        }
+        return v;
     }
 
     public void release() {
-        for (Map.Entry<K, V> entry : Map.copyOf(inner.asMap()).entrySet()) {
+        for (Map.Entry<K, V> entry : inner.asMap().entrySet()) {
             afterExpired.accept(entry.getKey(), entry.getValue());
         }
         inner.invalidateAll();
