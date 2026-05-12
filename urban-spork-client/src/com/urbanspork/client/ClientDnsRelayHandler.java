@@ -103,7 +103,7 @@ public interface ClientDnsRelayHandler extends ClientRelayHandler {
     }
 
     default void newQuicChannel(EventLoopGroup group, InetSocketAddress server, DnsRequest dohRequest, ClientChannelContext context, Promise<Channel> channelPromise) {
-        ClientRelayHandler.quicEndpoint(context.config().getSsl(), group).addListener((ChannelFutureListener) f0 -> {
+        ClientRelayHandler.quicEndpoint(context.config(), group).addListener((ChannelFutureListener) f0 -> {
             Channel quicEndpoint = f0.channel();
             QuicChannel.newBootstrap(quicEndpoint).remoteAddress(server).streamHandler(new ChannelInboundHandlerAdapter()).connect().addListener((GenericFutureListener<Future<QuicChannel>>) f1 -> {
                 if (f1.isSuccess()) {

@@ -13,7 +13,6 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.EventLoopGroup;
@@ -162,15 +161,20 @@ public interface ClientRelayHandler {
         return new WebSocketClientProtocolHandler(builder.build());
     }
 
-    static ChannelFuture quicEndpoint(SslSetting sslSetting, EventLoopGroup group) {
-        QuicSslContext context = QuicSslContextBuilder.forClient().trustManager(new File(sslSetting.getCertificateFile())).applicationProtocols(ApplicationProtocolNames.HTTP_1_1).build();
-        ChannelHandler codec = new QuicClientCodecBuilder()
-            .sslContext(context)
+    static ChannelFuture quicEndpoint(ServerConfig config, EventLoopGroup group) {
+        SslSetting sslSetting = config.getSsl();
+        String serverName = sslSetting.getServerName();
+        QuicSslContext context = QuicSslContextBuilder.forClient().keylog(true).trustManager(new File(sslSetting.getCertificateFile())).applicationProtocols(ApplicationProtocolNames.HTTP_1_1).build();
+        QuicClientCodecBuilder builder = new QuicClientCodecBuilder()
             .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
             .initialMaxData(0xfffff)
-            .initialMaxStreamDataBidirectionalLocal(0xfffff)
-            .build();
-        return new Bootstrap().group(group).channel(NioDatagramChannel.class).handler(codec).bind(0);
+            .initialMaxStreamDataBidirectionalLocal(0xfffff);
+        if (serverName != null) {
+            builder.sslEngineProvider(c -> context.newEngine(c.alloc(), serverName, config.getPort()));
+        } else {
+            builder.sslContext(context);
+        }
+        return new Bootstrap().group(group).channel(NioDatagramChannel.class).handler(builder.build()).bind(0);
     }
 
     static String tryResolveServerHost(EventLoopGroup group, ServerConfig config) {
