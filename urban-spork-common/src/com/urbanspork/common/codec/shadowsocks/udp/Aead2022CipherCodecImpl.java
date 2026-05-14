@@ -14,7 +14,6 @@ import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +23,7 @@ record Aead2022CipherCodecImpl(CipherKind cipherKind, CipherMethod cipherMethod,
     private static final Logger logger = LoggerFactory.getLogger(Aead2022CipherCodecImpl.class);
 
     @Override
-    public void encode(Context context, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+    public void encode(Context context, ByteBuf msg, ByteBuf out) throws Exception {
         if (Mode.Client == context.mode()) {
             encodeClientPacketAead2022(context, msg, out);
         } else {
@@ -33,7 +32,7 @@ record Aead2022CipherCodecImpl(CipherKind cipherKind, CipherMethod cipherMethod,
     }
 
     // Client -> Server
-    private void encodeClientPacketAead2022(Context context, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+    private void encodeClientPacketAead2022(Context context, ByteBuf msg, ByteBuf out) throws Exception {
         Control control = context.control();
         InetSocketAddress address = context.address();
         int paddingLength = AEAD2022.getPaddingLength(msg);
@@ -64,7 +63,7 @@ record Aead2022CipherCodecImpl(CipherKind cipherKind, CipherMethod cipherMethod,
     }
 
     // Server -> Client
-    private void encodeServerPacketAead2022(Context context, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+    private void encodeServerPacketAead2022(Context context, ByteBuf msg, ByteBuf out) throws Exception {
         Control control = context.control();
         int paddingLength = AEAD2022.getPaddingLength(msg);
         int nonceLength = AEAD2022.UDP.getNonceLength(cipherKind);
@@ -94,7 +93,7 @@ record Aead2022CipherCodecImpl(CipherKind cipherKind, CipherMethod cipherMethod,
     }
 
     @Override
-    public RelayingPacket<ByteBuf> decode(Context context, ByteBuf in) throws InvalidCipherTextException {
+    public RelayingPacket<ByteBuf> decode(Context context, ByteBuf in) throws Exception {
         if (Mode.Client == context.mode()) {
             return decodeServerPocketAead2022(context, in);
         } else {
@@ -103,7 +102,7 @@ record Aead2022CipherCodecImpl(CipherKind cipherKind, CipherMethod cipherMethod,
     }
 
     // Client -> Server(*)
-    private RelayingPacket<ByteBuf> decodeClientPocketAead2022(Context context, ByteBuf in) throws InvalidCipherTextException {
+    private RelayingPacket<ByteBuf> decodeClientPocketAead2022(Context context, ByteBuf in) throws Exception {
         int nonceLength = AEAD2022.UDP.getNonceLength(cipherKind);
         int tagSize = cipherMethod.tagSize();
         boolean requireEih = cipherKind.supportEih() && context.userManager().userCount() > 0;
@@ -137,7 +136,7 @@ record Aead2022CipherCodecImpl(CipherKind cipherKind, CipherMethod cipherMethod,
     }
 
     // Server -> Client(*)
-    private RelayingPacket<ByteBuf> decodeServerPocketAead2022(Context context, ByteBuf in) throws InvalidCipherTextException {
+    private RelayingPacket<ByteBuf> decodeServerPocketAead2022(Context context, ByteBuf in) throws Exception {
         int nonceLength = AEAD2022.UDP.getNonceLength(cipherKind);
         int tagSize = cipherMethod.tagSize();
         int headerLength = nonceLength + tagSize + 8 + 8 + 1 + 8 + 2;

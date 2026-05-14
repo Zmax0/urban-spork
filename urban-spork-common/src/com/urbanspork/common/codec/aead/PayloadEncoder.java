@@ -6,7 +6,7 @@ import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
-public record PayloadEncoder(Authenticator auth, ChunkSizeCodec sizeCodec, PaddingLengthGenerator padding, int payloadLimit) {
+public record PayloadEncoder(Authenticator auth, ChunkSizeCodec sizeCodec, PaddingLengthGenerator padding, int payloadLimit) implements AutoCloseable {
 
     /**
      * encrypt payload for TCP
@@ -39,5 +39,11 @@ public record PayloadEncoder(Authenticator auth, ChunkSizeCodec sizeCodec, Paddi
         if (paddingLength > 0) {
             out.writeBytes(Dice.rollBytes(paddingLength));
         }
+    }
+
+    @Override
+    public void close() throws Exception {
+        auth.close();
+        sizeCodec.close();
     }
 }

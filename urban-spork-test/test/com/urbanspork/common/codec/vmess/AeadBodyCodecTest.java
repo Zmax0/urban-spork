@@ -14,7 +14,6 @@ import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,26 +36,26 @@ class AeadBodyCodecTest {
 
     @ParameterizedTest
     @EnumSource(SecurityType.class)
-    void testBySecurity(SecurityType security) throws InvalidCipherTextException {
+    void testBySecurity(SecurityType security) throws Exception {
         RequestHeader header = RequestHeader.defaultHeader(security, RequestCommand.TCP, null, UUID.randomUUID().toString());
         testByHeader(header);
     }
 
     @ParameterizedTest
     @ArgumentsSource(RequestOptionProvider.class)
-    void testByOptionMask(int mask) throws InvalidCipherTextException {
+    void testByOptionMask(int mask) throws Exception {
         testByHeader(new RequestHeader(VMess.VERSION, RequestCommand.TCP, RequestOption.fromMask((byte) mask), SecurityType.CHACHA20_POLY1305, null, ID.newID(uuid)));
         testByHeader(new RequestHeader(VMess.VERSION, RequestCommand.UDP, RequestOption.fromMask((byte) mask), SecurityType.AES128_GCM, null, ID.newID(uuid)));
     }
 
     @ParameterizedTest
     @ArgumentsSource(RequestCommandProvider.class)
-    void testByCommand(RequestCommand command) throws InvalidCipherTextException {
+    void testByCommand(RequestCommand command) throws Exception {
         RequestHeader header = RequestHeader.defaultHeader(SecurityType.CHACHA20_POLY1305, command, null, UUID.randomUUID().toString());
         testByHeader(header);
     }
 
-    private static void testByHeader(RequestHeader header) throws InvalidCipherTextException {
+    private static void testByHeader(RequestHeader header) throws Exception {
         ClientSession clientSession = new ClientSession();
         ServerSession serverSession = new ServerSession(clientSession);
         PayloadEncoder clientBodyEncoder = AEADBodyCodec.getBodyEncoder(header, clientSession);
@@ -80,6 +79,10 @@ class AeadBodyCodecTest {
             clientBodyDecoder.decodePayload(out, list);
         }
         Assertions.assertArrayEquals(bytes, ByteBufUtil.getBytes(merge(list)));
+        clientBodyEncoder.close();
+        serverBodyDecoder.close();
+        serverBodyEncoder.close();
+        clientBodyDecoder.close();
     }
 
     private static ByteBuf merge(List<Object> list) {

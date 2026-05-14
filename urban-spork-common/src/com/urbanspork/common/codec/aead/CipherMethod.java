@@ -72,6 +72,11 @@ public enum CipherMethod {
             cipher.doFinal(out, cipher.processBytes(in, 0, in.length, out, 0));
             return out;
         }
+
+        @Override
+        public void close() {
+            // skip
+        }
     }
 
     private record JniCipherInstance(AeadCipher cipher, int tagSize) implements CipherInstance {
@@ -86,6 +91,11 @@ public enum CipherMethod {
         public byte[] decrypt(byte[] nonce, byte[] aad, byte[] in) {
             cipher.decrypt(nonce, aad, in);
             return Arrays.copyOfRange(in, 0, in.length - tagSize);
+        }
+
+        @Override
+        public void close() throws Exception {
+            cipher.close();
         }
     }
 }

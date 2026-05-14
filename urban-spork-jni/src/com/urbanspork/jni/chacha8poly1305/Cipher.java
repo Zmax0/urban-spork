@@ -6,10 +6,7 @@ public class Cipher extends CipherLoader {
     private Cipher() {}
 
     public static Cipher newInstance(byte[] key) {
-        Cipher cipher = init(key);
-        long p = cipher.ptr;
-        CLEANER.register(cipher, () -> dispose(p));
-        return cipher;
+        return init(key);
     }
 
     static native Cipher init(byte[] key);
@@ -21,4 +18,13 @@ public class Cipher extends CipherLoader {
 
     @Override
     public native void decrypt(byte[] nonce, byte[] aad, byte[] ciphertext);
+
+    @Override
+    public void close() {
+        if (closed) {
+            return;
+        }
+        dispose(ptr);
+        closed = true;
+    }
 }

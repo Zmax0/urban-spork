@@ -14,7 +14,6 @@ import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.TestDice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -71,7 +70,7 @@ class AeadCipherCodecsTest {
     }
 
     private List<RelayingPacket<ByteBuf>> cipherTest(Context request, Context response, ByteBuf in)
-        throws InvalidCipherTextException {
+        throws Exception {
         ServerConfig config = new ServerConfig();
         config.setCipher(kind);
         config.setPassword(password);

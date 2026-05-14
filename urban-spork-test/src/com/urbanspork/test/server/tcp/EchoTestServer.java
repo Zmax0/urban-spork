@@ -12,6 +12,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +31,9 @@ public class EchoTestServer {
     public static void launch(int port, CompletableFuture<ServerSocketChannel> promise) {
         EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+        Channel channel = null;
         try {
-            new ServerBootstrap().group(bossGroup, workerGroup)
+            channel = new ServerBootstrap().group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new ChannelInitializer<>() {
                     @Override
@@ -47,18 +49,23 @@ public class EchoTestServer {
                 })
                 .bind(InetAddress.getLoopbackAddress(), port).addListener((ChannelFutureListener) future -> {
                     if (future.isSuccess()) {
-                        ServerSocketChannel channel = (ServerSocketChannel) future.channel();
-                        logger.info("Launch echo test server => {}", channel.localAddress());
-                        promise.complete(channel);
+                        ServerSocketChannel c = (ServerSocketChannel) future.channel();
+                        logger.info("Launch echo test server => {}", c.localAddress());
+                        promise.complete(c);
                     } else {
                         promise.completeExceptionally(future.cause());
                     }
-                }).sync().channel().closeFuture().sync();
+                }).sync().channel();
+            channel.closeFuture().sync();
         } catch (InterruptedException _) {
+            if (channel != null) {
+                channel.close();
+            }
             Thread.currentThread().interrupt();
         } finally {
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
+            Future<?> shutdownWorker = workerGroup.shutdownGracefully().syncUninterruptibly();
+            bossGroup.shutdownGracefully().syncUninterruptibly();
+            shutdownWorker.syncUninterruptibly();
         }
     }
 

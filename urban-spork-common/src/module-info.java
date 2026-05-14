@@ -1,24 +1,24 @@
 module com.urbanspork.common {
-    requires com.urbanspork.jni;
     requires com.fasterxml.jackson.annotation;
-    requires com.fasterxml.jackson.core;
-    requires com.fasterxml.jackson.databind;
+    requires com.github.benmanes.caffeine;
+    requires com.urbanspork.jni;
     requires io.netty.buffer;
+    requires io.netty.codec.classes.quic;
     requires io.netty.codec.compression;
     requires io.netty.codec.dns;
-    requires io.netty.codec.http;
     requires io.netty.codec.http2;
+    requires io.netty.codec.http;
     requires io.netty.codec.socks;
     requires io.netty.codec;
     requires io.netty.common;
     requires io.netty.handler;
-    requires io.netty.codec.classes.quic;
     requires io.netty.transport;
     requires jdk.unsupported;
     requires org.bouncycastle.lts.prov;
-    requires org.slf4j;
-    requires com.github.benmanes.caffeine;
     requires org.jspecify;
+    requires org.slf4j;
+    requires tools.jackson.core;
+    requires tools.jackson.databind;
 
     exports com.urbanspork.common.channel;
     exports com.urbanspork.common.codec.address;
@@ -47,4 +47,5 @@ module com.urbanspork.common {
     exports com.urbanspork.common.transport.udp;
     exports com.urbanspork.common.transport;
     exports com.urbanspork.common.util;
+    exports com.urbanspork.common;
 }

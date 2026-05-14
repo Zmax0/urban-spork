@@ -1,10 +1,9 @@
 package com.urbanspork.common.config;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.json.JsonReadFeature;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import tools.jackson.core.json.JsonReadFeature;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 class JSONConfigCodec implements ConfigCodec {
 
@@ -17,12 +16,12 @@ class JSONConfigCodec implements ConfigCodec {
     }
 
     @Override
-    public String encode(ClientConfig config) throws JsonProcessingException {
+    public String encode(ClientConfig config) {
         return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(config);
     }
 
     @Override
-    public ClientConfig decode(String config) throws JsonProcessingException {
+    public ClientConfig decode(String config) {
         return mapper.readValue(config, ClientConfig.class);
     }
 }

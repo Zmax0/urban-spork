@@ -117,7 +117,7 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
 
     private void quic(Channel inbound, InetSocketAddress dstAddress, ClientChannelContext context) {
         ServerConfig config = context.config();
-        ClientRelayHandler.quicEndpoint(config.getSsl(), inbound.eventLoop()).addListener((ChannelFutureListener) f0 -> {
+        ClientRelayHandler.quicEndpoint(config, inbound.eventLoop()).addListener((ChannelFutureListener) f0 -> {
             InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
             Channel quicEndpoint = f0.channel();
             QuicChannel.newBootstrap(quicEndpoint).remoteAddress(serverAddress).streamHandler(new ChannelInboundHandlerAdapter()).connect().addListener(f1 -> {
@@ -176,7 +176,7 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
             if (f2.isSuccess()) {
                 quicOutboundReady(inbound, (QuicStreamChannel) f2.get());
             } else {
-                logger.error("[quic][{}] create stream channel failed", quicChannel);
+                logger.error("[quic][{}] create stream channel failed", quicChannel, f2.cause());
             }
         });
     }

@@ -1,5 +1,6 @@
 package com.urbanspork.server.vmess;
 
+import com.urbanspork.common.codec.aead.CipherInstance;
 import com.urbanspork.common.codec.aead.CipherMethod;
 import com.urbanspork.common.codec.aead.PayloadDecoder;
 import com.urbanspork.common.codec.aead.PayloadEncoder;
@@ -51,7 +52,7 @@ public class ServerAeadCodec extends ByteToMessageCodec<ByteBuf> {
     }
 
     @Override
-    public void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+    public void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
         if (payloadEncoder == null) {
             byte[] aeadResponseHeaderLengthEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_LEN_KEY.getBytes());
             CipherMethod method = CipherMethod.AES_128_GCM;
@@ -61,10 +62,14 @@ public class ServerAeadCodec extends ByteToMessageCodec<ByteBuf> {
             byte[] aeadEncryptedHeaderBuffer = new byte[]{session.getResponseHeader(), (byte) option, 0, 0};
             byte[] aeadResponseHeaderLengthEncryptionBuffer = new byte[Short.BYTES];
             Unpooled.wrappedBuffer(aeadResponseHeaderLengthEncryptionBuffer).setShort(0, aeadEncryptedHeaderBuffer.length);
-            out.writeBytes(method.init(aeadResponseHeaderLengthEncryptionKey).encrypt(aeadResponseHeaderLengthEncryptionIV, null, aeadResponseHeaderLengthEncryptionBuffer));
+            try (CipherInstance instance = method.init(aeadResponseHeaderLengthEncryptionKey)) {
+                out.writeBytes(instance.encrypt(aeadResponseHeaderLengthEncryptionIV, null, aeadResponseHeaderLengthEncryptionBuffer));
+            }
             byte[] aeadResponseHeaderPayloadEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY.getBytes());
             byte[] aeadResponseHeaderPayloadEncryptionIV = KDF.kdf(session.getResponseBodyIV(), nonceSize, KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV.getBytes());
-            out.writeBytes(method.init(aeadResponseHeaderPayloadEncryptionKey).encrypt(aeadResponseHeaderPayloadEncryptionIV, null, aeadEncryptedHeaderBuffer));
+            try (CipherInstance instance = method.init(aeadResponseHeaderPayloadEncryptionKey)) {
+                out.writeBytes(instance.encrypt(aeadResponseHeaderPayloadEncryptionIV, null, aeadEncryptedHeaderBuffer));
+            }
             payloadEncoder = AEADBodyCodec.getBodyEncoder(header, session);
         }
         if (RequestCommand.UDP.equals(header.command())) {
@@ -132,5 +137,12 @@ public class ServerAeadCodec extends ByteToMessageCodec<ByteBuf> {
         } else {
             payloadDecoder.decodePayload(in, out);
         }
+    }
+
+    @Override
+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+        super.handlerRemoved(ctx);
+        payloadDecoder.close();
+        payloadEncoder.close();
     }
 }
