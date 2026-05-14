@@ -38,5 +38,6 @@ class ClientTcpRelayHandlerTest {
         testHandler.connect(inbound, InetSocketAddress.createUnresolved("localhost", 0), new ClientChannelContext(config, null, null));
         Boolean res = promise.get();
         Assertions.assertFalse(res);
+        group.shutdownGracefully().sync();
     }
 }

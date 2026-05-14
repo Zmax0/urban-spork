@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 
-class ConfigHandlerTest {
+public class ConfigHandlerTest {
     @Test
     void testSaveAndRead() {
         int clientPort = TestDice.rollPort();
@@ -23,10 +23,7 @@ class ConfigHandlerTest {
 
     @Test
     void testException() throws NoSuchFieldException, IllegalAccessException {
-        Field holderField = ConfigHandler.class.getDeclaredField("holder");
-        holderField.setAccessible(true);
-        Object temp = holderField.get(ConfigHandler.DEFAULT);
-        holderField.set(ConfigHandler.DEFAULT, new ConfigHolder() {
+        ConfigHolder configHolder = new ConfigHolder() {
             @Override
             public void save(String str) throws IOException {
                 throw new IOException();
@@ -41,10 +38,47 @@ class ConfigHandlerTest {
             public void delete() throws IOException {
                 throw new IOException();
             }
-        });
-        ClientConfig config = ClientConfigTest.testConfig(0, 0);
-        Assertions.assertThrows(UncheckedIOException.class, () -> ConfigHandler.DEFAULT.save(config));
-        Assertions.assertThrows(UncheckedIOException.class, ConfigHandler.DEFAULT::read);
-        holderField.set(ConfigHandler.DEFAULT, temp);
+        };
+        runWithCustomHolder(
+            configHolder, () -> {
+                ClientConfig config = ClientConfigTest.testConfig(0, 0);
+                Assertions.assertThrows(UncheckedIOException.class, () -> ConfigHandler.DEFAULT.save(config));
+                Assertions.assertThrows(UncheckedIOException.class, ConfigHandler.DEFAULT::read);
+            }
+        );
+    }
+
+    public static void runWithCustomJson(String json, Runnable runnable) throws NoSuchFieldException, IllegalAccessException {
+        ConfigHolder configHolder = new ConfigHolder() {
+            String temp = json;
+
+            @Override
+            public void save(String str) {
+                temp = str;
+            }
+
+            @Override
+            public String read() {
+                return temp;
+            }
+
+            @Override
+            public void delete() {
+                temp = "";
+            }
+        };
+        runWithCustomHolder(configHolder, runnable);
+    }
+
+    static void runWithCustomHolder(ConfigHolder configHolder, Runnable runnable) throws NoSuchFieldException, IllegalAccessException {
+        Field holderField = ConfigHandler.class.getDeclaredField("holder");
+        holderField.setAccessible(true);
+        Object temp = holderField.get(ConfigHandler.DEFAULT);
+        holderField.set(ConfigHandler.DEFAULT, configHolder);
+        try {
+            runnable.run();
+        } finally {
+            holderField.set(ConfigHandler.DEFAULT, temp);
+        }
     }
 }

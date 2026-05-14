@@ -21,7 +21,6 @@ import com.urbanspork.common.util.ByteString;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.Blake3Digest;
 import org.bouncycastle.crypto.params.Blake3Parameters;
 import org.slf4j.Logger;
@@ -238,7 +237,7 @@ public interface AEAD2022 {
             return UdpCipherCache.INSTANCE.get(kind, method, key, sessionId);
         }
 
-        static void encodePacket(CipherKind kind, UdpCipher cipher, byte[] key, int eihLength, ByteBuf in, ByteBuf out) throws InvalidCipherTextException {
+        static void encodePacket(CipherKind kind, UdpCipher cipher, byte[] key, int eihLength, ByteBuf in, ByteBuf out) throws Exception {
             if (CipherKind.aead2022_blake3_chacha8_poly1305 == kind || CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
                 byte[] nonce = new byte[getNonceLength(kind)];
                 in.readBytes(nonce);
@@ -261,7 +260,7 @@ public interface AEAD2022 {
             }
         }
 
-        static ByteBuf decodePacket(CipherKind kind, CipherMethod method, Control control, ServerUserManager userManager, byte[] key, ByteBuf in) throws InvalidCipherTextException {
+        static ByteBuf decodePacket(CipherKind kind, CipherMethod method, Control control, ServerUserManager userManager, byte[] key, ByteBuf in) throws Exception {
             if (CipherKind.aead2022_blake3_chacha8_poly1305 == kind || CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
                 byte[] nonce = new byte[getNonceLength(kind)];
                 in.readBytes(nonce);

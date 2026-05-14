@@ -13,6 +13,7 @@ import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.transport.Transport;
 import com.urbanspork.server.Server;
 import com.urbanspork.test.server.tcp.EchoTestServer;
+import com.urbanspork.test.template.FutureInstance;
 import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.TcpTestTemplate;
 import io.netty.bootstrap.Bootstrap;
@@ -60,14 +61,13 @@ class QuicTcpTest extends TcpTestTemplate {
         serverConfig.setPassword(parameter.serverPassword());
         serverConfig.setTransport(TRANSPORTS);
         serverConfig.setSsl(parameter.sslSetting());
-        List<Server.Instance> server = launchServer(config.getServers());
-        Client.Instance client = launchClient(config);
-        InetSocketAddress clientAddress = client.tcp().localAddress();
+        FutureInstance<List<Server.Instance>> server = launchServer(config.getServers());
+        FutureInstance<Client.Instance> client = launchClient(config);
+        InetSocketAddress clientAddress = client.instance().tcp().localAddress();
         socksHandshakeAndSendBytes(clientAddress);
         checkHttpsHandshakeAndSendBytes(clientAddress);
         checkHttpSendBytes(clientAddress);
-        closeServer(server);
-        client.close();
+        close(client, server);
     }
 
     @Order(2)
@@ -83,18 +83,17 @@ class QuicTcpTest extends TcpTestTemplate {
         serverConfig.setPassword(parameter.serverPassword());
         serverConfig.setTransport(TRANSPORTS);
         serverConfig.setSsl(parameter.sslSetting());
-        InetSocketAddress echoServerAddress = echoTestServer.localAddress();
+        InetSocketAddress echoServerAddress = echoTestServer.instance().localAddress();
         String nameServer = String.format("https://localhost:%d?&resolved=%s&name=", dohServer.localAddress().getPort(), NetUtil.toAddressString(echoServerAddress.getAddress()));
         DnsSetting dnsSetting = new DnsSetting(nameServer, parameter.sslSetting());
         this.dstAddress = new InetSocketAddress(TestDice.rollHost(), echoServerAddress.getPort());
         serverConfig.setDns(dnsSetting);
-        List<Server.Instance> server = launchServer(config.getServers());
-        Client.Instance client = launchClient(config);
-        InetSocketAddress clientAddress = client.tcp().localAddress();
+        FutureInstance<List<Server.Instance>> server = launchServer(config.getServers());
+        FutureInstance<Client.Instance> client = launchClient(config);
+        InetSocketAddress clientAddress = client.instance().tcp().localAddress();
         socksHandshakeAndSendBytes(clientAddress);
         socksHandshakeAndSendBytes(clientAddress); // check dns cache
-        closeServer(server);
-        client.close();
+        close(client, server);
     }
 
     @Order(3)
@@ -112,13 +111,12 @@ class QuicTcpTest extends TcpTestTemplate {
         serverConfig.setTransport(TRANSPORTS);
         serverConfig.setSsl(sslSetting);
         serverConfig.setDns(dnsSetting);
-        List<Server.Instance> server = launchServer(config.getServers());
-        Client.Instance client = launchClient(config);
-        this.dstAddress = InetSocketAddress.createUnresolved(TestDice.rollHost(), echoTestServer.localAddress().getPort());
-        InetSocketAddress clientTcpAddress = client.tcp().localAddress();
+        FutureInstance<List<Server.Instance>> server = launchServer(config.getServers());
+        FutureInstance<Client.Instance> client = launchClient(config);
+        this.dstAddress = InetSocketAddress.createUnresolved(TestDice.rollHost(), echoTestServer.instance().localAddress().getPort());
+        InetSocketAddress clientTcpAddress = client.instance().tcp().localAddress();
         Assertions.assertThrows(ExecutionException.class, () -> socksHandshakeAndSendBytes(clientTcpAddress));
-        closeServer(server);
-        client.close();
+        close(client, server);
     }
 
     @Order(4)
@@ -128,8 +126,8 @@ class QuicTcpTest extends TcpTestTemplate {
         config.setSsl(SslUtil.getSslSetting());
         config.setProtocol(Protocol.trojan);
         config.setTransport(new Transport[]{Transport.QUIC});
-        List<Server.Instance> server = launchServer(Collections.singletonList(config));
-        InetSocketAddress serverAddress = server.getFirst().tcp().localAddress();
+        FutureInstance<List<Server.Instance>> server = launchServer(Collections.singletonList(config));
+        InetSocketAddress serverAddress = server.instance().getFirst().tcp().localAddress();
         EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         try (ExecutorService pool = Executors.newSingleThreadExecutor()) {
             Future<?> submitted = pool.submit(() -> EchoTestServer.launch(0, new CompletableFuture<>()));
@@ -140,6 +138,6 @@ class QuicTcpTest extends TcpTestTemplate {
             submitted.cancel(true);
         }
         closeServer(server);
-        group.shutdownGracefully();
+        group.shutdownGracefully().syncUninterruptibly();
     }
 }

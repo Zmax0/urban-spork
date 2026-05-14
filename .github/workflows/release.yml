@@ -7,11 +7,11 @@ jobs:
   build-jni-on-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Setup JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '25'
           distribution: 'oracle'
@@ -31,11 +31,11 @@ jobs:
     needs: build-jni-on-windows
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Setup JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '25'
           distribution: 'oracle'
