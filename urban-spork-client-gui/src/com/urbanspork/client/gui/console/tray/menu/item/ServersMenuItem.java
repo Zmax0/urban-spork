@@ -43,9 +43,9 @@ public record ServersMenuItem(Console console, Tray tray) {
             if (item.isSelected()) {
                 config.setIndex(index);
                 if (Platform.isFxApplicationThread()) {
-                    console.getServerConfigJFXListView().getSelectionModel().select(index);
+                    console.selectServerConfig(index);
                 } else {
-                    Platform.runLater(() -> console.getServerConfigJFXListView().getSelectionModel().select(index));
+                    Platform.runLater(() -> console.selectServerConfig(index));
                 }
                 try {
                     ConfigHandler.DEFAULT.save(config);

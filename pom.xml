@@ -27,7 +27,6 @@
     <bouncycastle.version>2.73.9</bouncycastle.version>
     <jar-jni.version>1.2.0</jar-jni.version>
     <javafx.version>26</javafx.version>
-    <jfoenix.version>9.0.10</jfoenix.version>
     <caffeine.version>3.2.2</caffeine.version>
   </properties>
   <dependencyManagement>
@@ -122,11 +121,6 @@
         <groupId>org.questdb</groupId>
         <artifactId>jar-jni</artifactId>
         <version>${jar-jni.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.jfoenix</groupId>
-        <artifactId>jfoenix</artifactId>
-        <version>${jfoenix.version}</version>
       </dependency>
       <dependency>
         <groupId>org.openjfx</groupId>

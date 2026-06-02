@@ -1,19 +1,19 @@
 package com.urbanspork.client.gui.console.widget;
 
-import com.jfoenix.controls.JFXTextField;
-
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.function.UnaryOperator;
 
-public class NumericTextField extends JFXTextField {
+import javafx.scene.control.TextFormatter;
+
+public class NumericTextField extends ConsoleTextField {
 
     public NumericTextField() {
+        UnaryOperator<TextFormatter.Change> filter = change -> change.getControlNewText().matches("\\d*") ? change : null;
+        setTextFormatter(new TextFormatter<>(filter));
         textProperty().addListener((_, _, newValue) -> {
             if (newValue.isBlank()) {
                 validate();
-            }
-            if (!newValue.matches("\\d*")) {
-                setText(newValue.replaceAll("\\D", ""));
             }
         });
     }
