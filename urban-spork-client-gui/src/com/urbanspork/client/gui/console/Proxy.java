@@ -16,7 +16,11 @@ import java.util.concurrent.Executors;
 
 class Proxy {
     private static final ClientConfig config = Resource.config();
-    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private static final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
+        Thread thread = new Thread(r);
+        thread.setName("Client-Launcher");
+        return thread;
+    });
     private final Runtime runtime = new Runtime();
     private final Tray tray;
     private Client.Instance client;

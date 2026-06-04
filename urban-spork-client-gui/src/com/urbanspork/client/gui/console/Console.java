@@ -92,8 +92,9 @@ public class Console extends Application {
 
     @Override
     public void stop() {
-        tray.exit();
+        primaryStage.hide();
         proxy.exit();
+        tray.exit();
     }
 
     public void show() {
