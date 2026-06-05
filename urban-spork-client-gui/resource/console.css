@@ -202,7 +202,9 @@ GridPane {
 }
 
 .table-row-cell:active-server {
-  -fx-background-color: derive(-fx-selection-bar, 50%);
+  -fx-active-server-pulse-start: #2980b9;
+  -fx-active-server-pulse-end: #1abc9c;
+  -fx-font-weight: 700;
 }
 
 .table-row-cell:active-server:selected {

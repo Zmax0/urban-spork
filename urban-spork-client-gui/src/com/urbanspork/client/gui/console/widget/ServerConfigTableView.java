@@ -5,7 +5,6 @@ import com.urbanspork.common.config.ServerConfig;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ObservableList;
-import javafx.css.PseudoClass;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -13,7 +12,6 @@ import javafx.scene.control.TableView;
 import javafx.scene.layout.StackPane;
 
 public class ServerConfigTableView extends TableView<ServerConfig> {
-    public static final PseudoClass ACTIVE_SERVER = PseudoClass.getPseudoClass("active-server");
 
     public ServerConfigTableView() {
         initTableColumn();

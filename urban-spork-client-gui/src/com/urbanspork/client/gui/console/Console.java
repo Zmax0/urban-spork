@@ -2,6 +2,7 @@ package com.urbanspork.client.gui.console;
 
 import com.urbanspork.client.ClientChannelTrafficHandler;
 import com.urbanspork.client.gui.Resource;
+import com.urbanspork.client.gui.console.widget.ActiveServerTableRow;
 import com.urbanspork.client.gui.console.widget.ClientChannelTrafficTableView;
 import com.urbanspork.client.gui.console.widget.ConsoleLabel;
 import com.urbanspork.client.gui.console.widget.ConsoleRowConstraints;
@@ -26,7 +27,15 @@ import javafx.collections.ObservableList;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.ColumnConstraints;
@@ -315,15 +324,15 @@ public class Console extends Application {
         serverConfigTableView.getSelectionModel().clearSelection();
         serverConfigTableView.setContextMenu(createTableContextMenu());
         serverConfigTableView.setRowFactory(_ -> {
-            TableRow<ServerConfig> row = new TableRow<>();
+            ActiveServerTableRow row = new ActiveServerTableRow();
             row.itemProperty().addListener((_, _, item) -> {
                 boolean active = item != null && row.getIndex() == CLIENT_CONFIG.getIndex();
-                row.pseudoClassStateChanged(ServerConfigTableView.ACTIVE_SERVER, active);
+                row.setActive(active);
                 row.setContextMenu(item == null ? null : createRowContextMenu());
             });
             row.indexProperty().addListener((_, _, _) -> {
                 boolean active = !row.isEmpty() && row.getItem() != null && row.getIndex() == CLIENT_CONFIG.getIndex();
-                row.pseudoClassStateChanged(ServerConfigTableView.ACTIVE_SERVER, active);
+                row.setActive(active);
             });
             row.setOnMouseClicked(event -> {
                 if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
