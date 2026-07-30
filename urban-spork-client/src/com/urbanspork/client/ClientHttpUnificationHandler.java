@@ -8,6 +8,8 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 
 import java.net.InetSocketAddress;
@@ -57,7 +59,7 @@ class ClientHttpUnificationHandler extends SimpleChannelInboundHandler<ByteBuf> 
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
-            promise.addListener(f -> ((Channel) f.get()).writeAndFlush(msg));
+            promise.addListener((GenericFutureListener<Future<Channel>>) f -> f.get().writeAndFlush(msg).addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE));
         }
     }
 

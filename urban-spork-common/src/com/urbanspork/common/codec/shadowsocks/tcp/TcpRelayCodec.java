@@ -32,6 +32,9 @@ public class TcpRelayCodec extends ByteToMessageCodec<ByteBuf> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
+        if (!msg.isReadable()) {
+            return;
+        }
         cipher.encode(session, msg, out);
     }
 

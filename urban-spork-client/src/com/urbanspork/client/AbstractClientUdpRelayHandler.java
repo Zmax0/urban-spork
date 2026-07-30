@@ -43,7 +43,7 @@ public abstract class AbstractClientUdpRelayHandler<K> extends SimpleChannelInbo
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) {
-        logger.info("Stop timer and clear binding");
+        logger.info("Clean binding");
         binding.release();
     }
 
