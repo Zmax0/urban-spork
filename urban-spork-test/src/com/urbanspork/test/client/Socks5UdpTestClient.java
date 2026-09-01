@@ -3,7 +3,6 @@ package com.urbanspork.test.client;
 import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
 import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.protocol.HandshakeResult;
-import com.urbanspork.common.protocol.socks.Handshake;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.test.server.udp.DelayedEchoTestServer;
 import com.urbanspork.test.server.udp.SimpleEchoTestServer;
@@ -21,6 +20,7 @@ import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.socksx.v5.Socks5CommandResponse;
+import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,6 +70,7 @@ public class Socks5UdpTestClient extends TestClientTemplate {
                 Thread.currentThread().interrupt();
             } catch (ExecutionException | TimeoutException e) {
                 logger.warn("Initial association failed", e);
+                return;
             }
 
             scheduledExecutorService.scheduleWithFixedDelay(
@@ -175,7 +176,9 @@ public class Socks5UdpTestClient extends TestClientTemplate {
                 throw new ExecutionException(channelFuture.cause());
             }
             result1 = handshake(group, dstAddress1);
+            checkResponse(result1);
             result2 = handshake(group, dstAddress2);
+            checkResponse(result2);
             logger.info("Associate ports: [{}, {}]", result1.response().bndPort(), result2.response().bndPort());
             return new UdpAssociation(udpChannel, result1, result2);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
@@ -190,7 +193,14 @@ public class Socks5UdpTestClient extends TestClientTemplate {
     }
 
     private HandshakeResult<Socks5CommandResponse> handshake(EventLoopGroup group, InetSocketAddress dstAddress) throws InterruptedException, ExecutionException, TimeoutException {
-        return Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).get(CONNECT_TIMEOUT.getSeconds(), TimeUnit.SECONDS);
+        return Socks5Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).get(CONNECT_TIMEOUT.getSeconds(), TimeUnit.SECONDS);
+    }
+
+    private static void checkResponse(HandshakeResult<Socks5CommandResponse> result) throws ExecutionException {
+        Socks5CommandStatus status = result.response().status();
+        if (!status.isSuccess()) {
+            throw new ExecutionException(new IllegalStateException("Unsuccessful response status: " + status));
+        }
     }
 
     private int currentDelay(int attempt) {

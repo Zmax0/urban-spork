@@ -33,7 +33,7 @@ public class ClientSocksUdpAssociateHandler extends ChannelInboundHandlerAdapter
         ServerConfig config = context.config();
         if (Protocol.vmess == config.getProtocol() && !config.udpEnabled()) {
             logger.error("UDP is not enabled");
-            channel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, request.dstAddrType()));
+            channel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FORBIDDEN, request.dstAddrType()));
             return;
         }
         if (request.dstPort() == 0) {
