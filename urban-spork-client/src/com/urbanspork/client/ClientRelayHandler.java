@@ -130,6 +130,7 @@ public interface ClientRelayHandler {
 
         SslContext sslContext = sslContextBuilder.build();
         SslHandler sslHandler = sslContext.newHandler(ch.alloc(), serverName, config.getPort());
+        sslHandler.setCloseNotifyReadTimeout(1, TimeUnit.SECONDS);
         ch.pipeline().addLast(sslHandler);
     }
 
