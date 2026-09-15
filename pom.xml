@@ -20,6 +20,7 @@
     <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
     <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
     <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
+    <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
     <junit.jupiter.version>5.13.4</junit.jupiter.version>
     <jackson.version>3.1.3</jackson.version>
     <logback.version>1.5.32</logback.version>
@@ -184,6 +185,10 @@
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>${jacoco-maven-plugin.version}</version>
         </plugin>
+        <plugin>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>${maven-antrun-plugin.version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -227,6 +232,8 @@
       </activation>
       <properties>
         <javafx.platform>win</javafx.platform>
+        <jlink.executable>${java.home}/bin/jlink.exe</jlink.executable>
+        <jpackage.executable>${java.home}/bin/jpackage.exe</jpackage.executable>
       </properties>
     </profile>
     <profile>

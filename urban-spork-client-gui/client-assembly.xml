@@ -9,6 +9,9 @@
       <useProjectArtifact>false</useProjectArtifact>
       <outputDirectory>lib</outputDirectory>
       <unpack>false</unpack>
+      <excludes>
+        <exclude>org.openjfx:*</exclude>
+      </excludes>
     </dependencySet>
   </dependencySets>
   <fileSets>
@@ -16,9 +19,9 @@
       <directory>resource</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
-        <include>*.cmd</include>
         <include>*.sh</include>
       </includes>
+      <fileMode>0755</fileMode>
     </fileSet>
     <fileSet>
       <directory>${project.build.directory}</directory>
@@ -26,6 +29,11 @@
       <includes>
         <include>*.jar</include>
       </includes>
+    </fileSet>
+    <fileSet>
+      <directory>${project.build.directory}/runtime</directory>
+      <outputDirectory>runtime</outputDirectory>
+      <fileMode>0755</fileMode>
     </fileSet>
   </fileSets>
 </assembly>

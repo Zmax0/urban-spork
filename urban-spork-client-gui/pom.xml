@@ -8,6 +8,9 @@
   </parent>
   <groupId>urban-spork-client-gui</groupId>
   <artifactId>urban-spork-client-gui</artifactId>
+  <properties>
+    <skip.assembly>false</skip.assembly>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>urban-spork</groupId>
@@ -55,6 +58,57 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.8.1</version>
+        <executions>
+          <execution>
+            <id>copy-javafx-modules</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <includeGroupIds>org.openjfx</includeGroupIds>
+              <includeScope>compile</includeScope>
+              <outputDirectory>${project.build.directory}/javafx-modules</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>jlink-runtime</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <delete dir="${project.build.directory}/runtime"/>
+                <exec executable="${jlink.executable}" failonerror="true">
+                  <arg value="--module-path"/>
+                  <arg value="${java.home}/jmods${path.separator}${project.build.directory}/javafx-modules"/>
+                  <arg value="--add-modules"/>
+                  <arg value="javafx.controls,java.logging,java.naming,jdk.crypto.ec,jdk.unsupported"/>
+                  <arg value="--output"/>
+                  <arg value="${project.build.directory}/runtime"/>
+                  <arg value="--strip-debug"/>
+                  <arg value="--no-header-files"/>
+                  <arg value="--no-man-pages"/>
+                  <arg value="--compress"/>
+                  <arg value="zip-6"/>
+                </exec>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
@@ -78,6 +132,7 @@
               <goal>single</goal>
             </goals>
             <configuration>
+              <skipAssembly>${skip.assembly}</skipAssembly>
               <descriptors>
                 <descriptor>client-assembly.xml</descriptor>
               </descriptors>
@@ -87,4 +142,95 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>client.package.windows</id>
+      <activation>
+        <os>
+          <family>windows</family>
+        </os>
+      </activation>
+      <properties>
+        <skip.assembly>true</skip.assembly>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>copy-client-libs</id>
+                <phase>prepare-package</phase>
+                <goals>
+                  <goal>copy-dependencies</goal>
+                </goals>
+                <configuration>
+                  <excludeGroupIds>org.openjfx</excludeGroupIds>
+                  <includeScope>runtime</includeScope>
+                  <outputDirectory>${project.build.directory}/jpackage-input/lib</outputDirectory>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>jpackage-app-image</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <copy file="${project.build.directory}/${project.build.finalName}.jar"
+                          tofile="${project.build.directory}/jpackage-input/${project.build.finalName}.jar"/>
+                    <delete dir="${project.build.directory}/jpackage"/>
+                    <exec executable="${jpackage.executable}" failonerror="true">
+                      <arg value="--type"/>
+                      <arg value="app-image"/>
+                      <arg value="--name"/>
+                      <arg value="UrbanSpork"/>
+                      <arg value="--app-version"/>
+                      <arg value="${project.version}"/>
+                      <arg value="--vendor"/>
+                      <arg value="urban-spork"/>
+                      <arg value="--description"/>
+                      <arg value="A network tool for improved privacy and security"/>
+                      <arg value="--input"/>
+                      <arg value="${project.build.directory}/jpackage-input"/>
+                      <arg value="--main-jar"/>
+                      <arg value="${project.build.finalName}.jar"/>
+                      <arg value="--main-class"/>
+                      <arg value="com.urbanspork.client.gui.Main"/>
+                      <arg value="--runtime-image"/>
+                      <arg value="${project.build.directory}/runtime"/>
+                      <arg value="--dest"/>
+                      <arg value="${project.build.directory}/jpackage"/>
+                      <arg value="--icon"/>
+                      <arg value="${project.basedir}/icon/urban-spork.ico"/>
+                      <arg value="--java-options"/>
+                      <arg value="-Xms64m"/>
+                      <arg value="--java-options"/>
+                      <arg value="-Xmx256m"/>
+                      <arg value="--java-options"/>
+                      <arg value="-Dio.netty.maxDirectMemory=0"/>
+                    </exec>
+                    <!-- jpackage marks the launcher read-only, which mvn clean cannot delete -->
+                    <attrib readonly="false">
+                      <fileset dir="${project.build.directory}/jpackage" includes="**/*.exe"/>
+                    </attrib>
+                    <zip destfile="${project.build.directory}/${project.build.finalName}-${javafx.platform}-${project.version}.zip"
+                         basedir="${project.build.directory}/jpackage"/>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

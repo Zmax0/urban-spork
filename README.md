@@ -146,7 +146,7 @@ Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-
 
 ### Require
 
-Java 25+
+JDK 25+
 
 Rust 1.69+
 
@@ -156,6 +156,6 @@ server
 
     urban-spork-server/target/urban-spork-server-<version>.zip
 
-client
+client(with a bundled java runtime, no java required to run)
 
     urban-spork-client-gui/target/urban-spork-client-gui-<platform>-<version>.zip
