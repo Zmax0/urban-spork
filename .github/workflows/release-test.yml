@@ -2,8 +2,12 @@ name: release-test
 on:
   workflow_dispatch
 jobs:
-  build-jni-on-windows:
-    runs-on: windows-latest
+  client:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -16,19 +20,24 @@ jobs:
           java-version: '25'
           distribution: 'oracle'
           cache: maven
-      - name: Build urban-spork-jni
-        run: mvn package -B -pl urban-spork-jni -am -DskipTests
-      - name: Upload artifact
+      - name: Build with Maven
+        run: mvn package -B -f pom.xml
+      - name: Upload client artifact
         uses: actions/upload-artifact@v7
         with:
-          name: urban-spork-jni
+          name: urban-spork-client-${{ runner.os }}
+          path: urban-spork-client-gui/target/*.zip
+          retention-days: 1
+          overwrite: true
+      - name: Upload native library
+        uses: actions/upload-artifact@v7
+        with:
+          name: urban-spork-native-${{ runner.os }}
           path: urban-spork-jni/target/classes/native/
           retention-days: 1
           overwrite: true
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-  build:
-    needs: build-jni-on-windows
+  server:
+    needs: client
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -40,24 +49,50 @@ jobs:
           java-version: '25'
           distribution: 'oracle'
           cache: maven
-      - name: Download urban-spork-jni artifact
+      - name: Download native libraries
         uses: actions/download-artifact@v4
         with:
-          name: urban-spork-jni
+          pattern: urban-spork-native-*
           path: urban-spork-jni/target/classes/native/
+          merge-multiple: true
       - name: Build with Maven
-        run: mvn package -B -f pom.xml -Pwin -Plinux
+        run: mvn package -B -pl urban-spork-server -am
+      - name: Check native library
+        run: |
+          cd urban-spork-server/target
+          unzip -p *.zip 'lib/urban-spork-jni-*.jar' > jni.jar
+          unzip -l jni.jar | grep win32-x86-64/ciphers.dll
+      - name: Upload server artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: urban-spork-server
+          path: urban-spork-server/target/*.zip
+          retention-days: 1
+          overwrite: true
+  release:
+    needs: [ client, server ]
+    runs-on: ubuntu-latest
+    steps:
       - name: Tag
         id: tag
         run: |
           echo "::set-output name=release_test_tag::PreRelease_$(date +"%Y.%m.%d_%H-%M")"
+      - name: Download client artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: urban-spork-client-*
+          path: dist
+          merge-multiple: true
+      - name: Download server artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: urban-spork-server
+          path: dist
       - name: Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag.outputs.release_test_tag }}
-          files: |
-            urban-spork-client-gui/target/*.zip
-            urban-spork-server/target/*.zip
+          files: dist/*.zip
           prerelease: true
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
