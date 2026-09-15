@@ -19,6 +19,7 @@
     <maven-surefire-plugin.versioin>3.5.4</maven-surefire-plugin.versioin>
     <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
     <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
+    <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
     <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
     <junit.jupiter.version>5.13.4</junit.jupiter.version>
     <jackson.version>3.1.5</jackson.version>
