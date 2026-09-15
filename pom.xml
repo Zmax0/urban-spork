@@ -16,16 +16,15 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <urban-spork.version>${project.version}</urban-spork.version>
-    <maven-surefire-plugin.versioin>3.6.0</maven-surefire-plugin.versioin>
-    <maven-jar-plugin.version>3.5.1</maven-jar-plugin.version>
-    <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
-    <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
-    <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
-    <junit.jupiter.version>6.1.3</junit.jupiter.version>
-    <jackson.version>3.2.2</jackson.version>
-    <logback.version>1.6.3</logback.version>
-    <netty.version>4.2.18.Final</netty.version>
-    <bouncycastle.version>2.73.12</bouncycastle.version>
+    <maven-surefire-plugin.versioin>3.5.4</maven-surefire-plugin.versioin>
+    <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
+    <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
+    <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
+    <junit.jupiter.version>5.13.4</junit.jupiter.version>
+    <jackson.version>3.1.5</jackson.version>
+    <logback.version>1.5.32</logback.version>
+    <netty.version>4.2.16.Final</netty.version>
+    <bouncycastle.version>2.73.11</bouncycastle.version>
     <jar-jni.version>1.2.0</jar-jni.version>
     <javafx.version>26.0.2</javafx.version>
     <caffeine.version>3.2.4</caffeine.version>
