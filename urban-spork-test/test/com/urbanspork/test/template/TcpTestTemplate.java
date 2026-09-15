@@ -2,6 +2,7 @@ package com.urbanspork.test.template;
 
 import com.urbanspork.common.protocol.HandshakeResult;
 import com.urbanspork.common.util.Dice;
+import com.urbanspork.test.client.Socks5Handshake;
 import com.urbanspork.test.server.tcp.EchoTestServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -66,8 +67,12 @@ public abstract class TcpTestTemplate extends TestTemplate {
     }
 
     protected void socksHandshakeAndSendBytes(InetSocketAddress proxyAddress) throws ExecutionException, InterruptedException, TimeoutException {
-        HandshakeResult<Socks5CommandResponse> result = com.urbanspork.common.protocol.socks.Handshake
+        HandshakeResult<Socks5CommandResponse> result = Socks5Handshake
             .noAuth(group, Socks5CommandType.CONNECT, proxyAddress, dstAddress).get();
+        if (!result.response().status().isSuccess()) {
+            result.channel().close();
+            throw new ExecutionException(new IllegalStateException("Unsuccessful response status: " + result.response().status()));
+        }
         Channel channel = result.channel();
         checkSendRandomBytes(channel);
     }

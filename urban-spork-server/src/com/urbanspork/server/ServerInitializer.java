@@ -25,6 +25,7 @@ import javax.net.ssl.SSLException;
 import java.io.File;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public class ServerInitializer extends ChannelInitializer<Channel> {
 
@@ -60,6 +61,7 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
                 serverName = sslSetting.getServerName();
             }
             SslHandler sslHandler = sslContext.newHandler(c.alloc(), serverName, config.getPort());
+            sslHandler.setCloseNotifyReadTimeout(1, TimeUnit.SECONDS);
             c.pipeline().addLast(sslHandler);
             return;
         }

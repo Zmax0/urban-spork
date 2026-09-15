@@ -5,6 +5,7 @@ import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.common.transport.udp.PacketEncoding;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
@@ -101,7 +102,8 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
             InetSocketAddress callback = msg.sender(); // reverse naming
             InetSocketAddress sender = this.callbackMap.get(callback);
             logger.info("[udp][relay]{}←{}~{}←{}", sender, callback, inboundChannel.localAddress(), ctx.channel().localAddress());
-            inboundChannel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(msg.retain().content(), callback), sender));
+            inboundChannel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(msg.retain().content(), callback), sender))
+                .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
         }
 
         @Override

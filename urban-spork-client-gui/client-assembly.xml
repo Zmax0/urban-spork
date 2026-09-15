@@ -1,5 +1,5 @@
 <assembly>
-  <id>linux-${project.version}</id>
+  <id>${javafx.platform}-${project.version}</id>
   <formats>
     <format>zip</format>
   </formats>
@@ -10,9 +10,7 @@
       <outputDirectory>lib</outputDirectory>
       <unpack>false</unpack>
       <excludes>
-        <exclude>org.openjfx:javafx-base:jar:win</exclude>
-        <exclude>org.openjfx:javafx-controls:jar:win</exclude>
-        <exclude>org.openjfx:javafx-graphics:jar:win</exclude>
+        <exclude>org.openjfx:*</exclude>
       </excludes>
     </dependencySet>
   </dependencySets>
@@ -23,6 +21,7 @@
       <includes>
         <include>*.sh</include>
       </includes>
+      <fileMode>0755</fileMode>
     </fileSet>
     <fileSet>
       <directory>${project.build.directory}</directory>
@@ -30,6 +29,11 @@
       <includes>
         <include>*.jar</include>
       </includes>
+    </fileSet>
+    <fileSet>
+      <directory>${project.build.directory}/runtime</directory>
+      <outputDirectory>runtime</outputDirectory>
+      <fileMode>0755</fileMode>
     </fileSet>
   </fileSets>
 </assembly>

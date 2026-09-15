@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>urban-spork</groupId>
   <artifactId>urban-spork</artifactId>
-  <version>2.6.1</version>
+  <version>2.7.0</version>
   <packaging>pom</packaging>
   <modules>
     <module>urban-spork-common</module>
@@ -26,9 +26,10 @@
     <netty.version>4.2.16.Final</netty.version>
     <bouncycastle.version>2.73.11</bouncycastle.version>
     <jar-jni.version>1.2.0</jar-jni.version>
-    <javafx.version>26</javafx.version>
-    <jfoenix.version>9.0.10</jfoenix.version>
-    <caffeine.version>3.2.2</caffeine.version>
+    <javafx.version>26.0.2</javafx.version>
+    <caffeine.version>3.2.4</caffeine.version>
+    <jlink.executable>${java.home}/bin/jlink</jlink.executable>
+    <jpackage.executable>${java.home}/bin/jpackage</jpackage.executable>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -124,26 +125,10 @@
         <version>${jar-jni.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.jfoenix</groupId>
-        <artifactId>jfoenix</artifactId>
-        <version>${jfoenix.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.openjfx</groupId>
         <artifactId>javafx-base</artifactId>
         <version>${javafx.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.openjfx</groupId>
-        <artifactId>javafx-base</artifactId>
-        <version>${javafx.version}</version>
-        <classifier>linux</classifier>
-      </dependency>
-      <dependency>
-        <groupId>org.openjfx</groupId>
-        <artifactId>javafx-base</artifactId>
-        <version>${javafx.version}</version>
-        <classifier>win</classifier>
+        <classifier>${javafx.platform}</classifier>
       </dependency>
       <dependency>
         <groupId>org.openjfx</groupId>
@@ -154,30 +139,13 @@
         <groupId>org.openjfx</groupId>
         <artifactId>javafx-controls</artifactId>
         <version>${javafx.version}</version>
-        <classifier>linux</classifier>
-      </dependency>
-      <dependency>
-        <groupId>org.openjfx</groupId>
-        <artifactId>javafx-controls</artifactId>
-        <version>${javafx.version}</version>
-        <classifier>win</classifier>
+        <classifier>${javafx.platform}</classifier>
       </dependency>
       <dependency>
         <groupId>org.openjfx</groupId>
         <artifactId>javafx-graphics</artifactId>
         <version>${javafx.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.openjfx</groupId>
-        <artifactId>javafx-graphics</artifactId>
-        <version>${javafx.version}</version>
-        <classifier>linux</classifier>
-      </dependency>
-      <dependency>
-        <groupId>org.openjfx</groupId>
-        <artifactId>javafx-graphics</artifactId>
-        <version>${javafx.version}</version>
-        <classifier>win</classifier>
+        <classifier>${javafx.platform}</classifier>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -218,6 +186,10 @@
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>${jacoco-maven-plugin.version}</version>
         </plugin>
+        <plugin>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>${maven-antrun-plugin.version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -250,4 +222,66 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>javafx.platform.windows.x86_64</id>
+      <activation>
+        <os>
+          <family>windows</family>
+          <arch>amd64</arch>
+        </os>
+      </activation>
+      <properties>
+        <javafx.platform>win</javafx.platform>
+      </properties>
+    </profile>
+    <profile>
+      <id>javafx.platform.linux.x86_64</id>
+      <activation>
+        <os>
+          <name>linux</name>
+          <arch>amd64</arch>
+        </os>
+      </activation>
+      <properties>
+        <javafx.platform>linux</javafx.platform>
+      </properties>
+    </profile>
+    <profile>
+      <id>javafx.platform.linux.aarch64</id>
+      <activation>
+        <os>
+          <name>linux</name>
+          <arch>aarch64</arch>
+        </os>
+      </activation>
+      <properties>
+        <javafx.platform>linux-aarch64</javafx.platform>
+      </properties>
+    </profile>
+    <profile>
+      <id>javafx.platform.macos.x86_64</id>
+      <activation>
+        <os>
+          <name>macos</name>
+          <arch>x86_64</arch>
+        </os>
+      </activation>
+      <properties>
+        <javafx.platform>mac</javafx.platform>
+      </properties>
+    </profile>
+    <profile>
+      <id>javafx.platform.macos.aarch64</id>
+      <activation>
+        <os>
+          <name>macos</name>
+          <arch>aarch64</arch>
+        </os>
+      </activation>
+      <properties>
+        <javafx.platform>mac-aarch64</javafx.platform>
+      </properties>
+    </profile>
+  </profiles>
 </project>

@@ -8,24 +8,24 @@ A network tool for improved privacy and security
 
 ### Local
 
-- http(s)
+- http (s)
 - socks5
 
 ### Transport
 
 | Local-Peer | Client-Server | Peer DoH | Shadowsocks | VMess | Trojan |
 |:----------:|:-------------:|:--------:|:-----------:|:-----:|:------:|
-|   `tcp`    |     `tcp`     |    ✔     |      ✔      |   ✔   |        |
-|   `tcp`    |     `tls`     |    ✔     |      ✔      |   ✔   |   ✔    |
-|   `tcp`    |     `ws`      |    ✔     |      ✔      |   ✔   |        |
-|   `tcp`    |     `wss`     |    ✔     |      ✔      |   ✔   |   ✔    |
-|   `tcp`    |    `quic`     |    ✔     |    ✔(*)     |   ✔   |   ✔    |
-|   `udp`    |     `udp`     |    ✔     |      ✔      |       |        |
-|   `udp`    |     `tcp`     |    ✔     |             |   ✔   |        |
-|   `udp`    |     `tls`     |    ✔     |             |   ✔   |   ✔    |
-|   `udp`    |     `ws`      |    ✔     |             |   ✔   |        |
-|   `udp`    |     `wss`     |    ✔     |             |   ✔   |   ✔    |
-|   `udp`    |    `quic`     |    ✔     |             |   ✔   |   ✔    |
+|   `tcp`    |     `tcp`     |    ✔    |     ✔      |  ✔   |        |
+|   `tcp`    |     `tls`     |    ✔    |     ✔      |  ✔   |   ✔   |
+|   `tcp`    |     `ws`      |    ✔    |     ✔      |  ✔   |        |
+|   `tcp`    |     `wss`     |    ✔    |     ✔      |  ✔   |   ✔   |
+|   `tcp`    |    `quic`     |    ✔    |    ✔(*)    |  ✔   |   ✔   |
+|   `udp`    |     `udp`     |    ✔    |     ✔      |       |        |
+|   `udp`    |     `tcp`     |    ✔    |             |  ✔   |        |
+|   `udp`    |     `tls`     |    ✔    |             |  ✔   |   ✔   |
+|   `udp`    |     `ws`      |    ✔    |             |  ✔   |        |
+|   `udp`    |     `wss`     |    ✔    |             |  ✔   |   ✔   |
+|   `udp`    |    `quic`     |    ✔    |             |  ✔   |   ✔   |
 
 `*` starting the shadowsocks quic server will bind udp socket but process tcp payload
 
@@ -146,7 +146,7 @@ Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-
 
 ### Require
 
-Java 25+
+JDK 25+
 
 Rust 1.69+
 
@@ -154,8 +154,8 @@ Rust 1.69+
 
 server
 
-    urban-spork-server/target/urban-spork-server.zip
+    urban-spork-server/target/urban-spork-server-<version>.zip
 
-client
+client(with a bundled java runtime, no java required to run)
 
-    urban-spork-client-gui/target/urban-spork-client-gui.zip
+    urban-spork-client-gui/target/urban-spork-client-gui-<platform>-<version>.zip

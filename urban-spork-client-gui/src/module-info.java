@@ -1,7 +1,6 @@
 module com.urbanspork.client.gui {
     requires ch.qos.logback.classic;
     requires ch.qos.logback.core;
-    requires com.jfoenix;
     requires com.urbanspork.client;
     requires com.urbanspork.common;
     requires io.netty.common;

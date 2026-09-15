@@ -38,6 +38,14 @@ public interface I18N {
     String CONSOLE_LABEL_REMARK = "console.label.remark";
     String CONSOLE_LABEL_PROXY_PORT = "console.label.proxy.port";
     String CONSOLE_VALIDATOR_REQUIRED_FIELD_MESSAGE = "console.validator.required.field.message";
+    String CONSOLE_SERVER_DIALOG_TITLE = "console.server.dialog.title";
+    String CONSOLE_TABLE_SERVER_COLUMN_INDEX = "console.table.server.column.index";
+    String CONSOLE_TABLE_SERVER_COLUMN_PROTOCOL = "console.table.server.column.protocol";
+    String CONSOLE_TABLE_SERVER_COLUMN_ALIAS = "console.table.server.column.alias";
+    String CONSOLE_TABLE_SERVER_COLUMN_HOST = "console.table.server.column.host";
+    String CONSOLE_TABLE_SERVER_COLUMN_PORT = "console.table.server.column.port";
+    String CONSOLE_CONTEXT_MENU_EDIT = "console.context.menu.edit";
+    String CONSOLE_CONTEXT_MENU_SET_ACTIVE = "console.context.menu.set.active";
     String CHANNEL_TRAFFIC_TABLEVIEW_COLUMN_0_LABEL = "channel.traffic.tableview.column.0.label";
     String CHANNEL_TRAFFIC_TABLEVIEW_COLUMN_1_LABEL = "channel.traffic.tableview.column.1.label";
     String CHANNEL_TRAFFIC_TABLEVIEW_COLUMN_2_LABEL = "channel.traffic.tableview.column.2.label";

@@ -1,5 +1,7 @@
 package com.urbanspork.common.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.List;
 
 public class ClientConfig {
@@ -54,6 +56,7 @@ public class ClientConfig {
         this.servers = servers;
     }
 
+    @JsonIgnore
     public ServerConfig getCurrent() {
         ServerConfig current = null;
         List<ServerConfig> s = getServers();

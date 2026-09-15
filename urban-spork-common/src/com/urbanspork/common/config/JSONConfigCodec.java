@@ -1,5 +1,6 @@
 package com.urbanspork.common.config;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import tools.jackson.core.json.JsonReadFeature;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
@@ -11,6 +12,7 @@ class JSONConfigCodec implements ConfigCodec {
 
     public JSONConfigCodec() {
         this.mapper = JsonMapper.builder()
+            .changeDefaultPropertyInclusion(v -> v.withValueInclusion(JsonInclude.Include.NON_NULL))
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .enable(JsonReadFeature.ALLOW_JAVA_COMMENTS).build();
     }

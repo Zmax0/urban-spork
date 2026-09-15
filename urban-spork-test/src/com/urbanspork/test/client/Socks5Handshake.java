@@ -1,6 +1,7 @@
-package com.urbanspork.common.protocol.socks;
+package com.urbanspork.test.client;
 
 import com.urbanspork.common.protocol.HandshakeResult;
+import com.urbanspork.common.protocol.socks.Socks5;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -23,8 +24,13 @@ import io.netty.util.concurrent.Promise;
 
 import java.net.InetSocketAddress;
 
-public interface Handshake {
-    static Promise<HandshakeResult<Socks5CommandResponse>> noAuth(EventLoopGroup worker, Socks5CommandType type, InetSocketAddress proxyAddress, InetSocketAddress dstAddress) {
+public interface Socks5Handshake {
+    static Promise<HandshakeResult<Socks5CommandResponse>> noAuth(
+        EventLoopGroup worker,
+        Socks5CommandType type,
+        InetSocketAddress proxyAddress,
+        InetSocketAddress dstAddress
+    ) {
         Promise<HandshakeResult<Socks5CommandResponse>> promise = worker.next().newPromise();
         try {
             new Bootstrap().group(worker).channel(NioSocketChannel.class)
@@ -48,22 +54,18 @@ public interface Handshake {
                             new SimpleChannelInboundHandler<Socks5CommandResponse>() {
                                 @Override
                                 protected void channelRead0(ChannelHandlerContext ctx, Socks5CommandResponse msg) {
-                                    if (msg.status().isSuccess()) {
-                                        ChannelPipeline pipeline = ch.pipeline();
-                                        pipeline.remove(socks5CommandResponseDecoder);
-                                        pipeline.remove(socks5InitialResponseDecoder);
-                                        pipeline.remove(this);
-                                        promise.setSuccess(new HandshakeResult<>(ch, msg));
-                                    } else {
-                                        promise.setFailure(new IllegalStateException("Unsuccessful response status: " + msg.status().toString()));
-                                    }
+                                    ChannelPipeline pipeline = ch.pipeline();
+                                    pipeline.remove(socks5CommandResponseDecoder);
+                                    pipeline.remove(socks5InitialResponseDecoder);
+                                    pipeline.remove(this);
+                                    promise.setSuccess(new HandshakeResult<>(ch, msg));
                                 }
                             }
                         );
                     }
                 })
                 .connect(proxyAddress).syncUninterruptibly().channel()
-                .writeAndFlush(new DefaultSocks5InitialRequest(Socks5AuthMethod.NO_AUTH)); // greeting
+                .writeAndFlush(new DefaultSocks5InitialRequest(Socks5AuthMethod.NO_AUTH));
         } catch (Exception e) {
             promise.setFailure(e);
         }

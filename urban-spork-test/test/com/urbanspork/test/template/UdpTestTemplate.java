@@ -3,9 +3,9 @@ package com.urbanspork.test.template;
 import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
 import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.protocol.HandshakeResult;
-import com.urbanspork.common.protocol.socks.Handshake;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.test.TestDice;
+import com.urbanspork.test.client.Socks5Handshake;
 import com.urbanspork.test.server.udp.DelayedEchoTestServer;
 import com.urbanspork.test.server.udp.SimpleEchoTestServer;
 import io.netty.bootstrap.Bootstrap;
@@ -130,10 +130,13 @@ public abstract class UdpTestTemplate extends TestTemplate {
     }
 
     void handshakeAndSendBytes(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) throws InterruptedException, ExecutionException, TimeoutException {
-        HandshakeResult<Socks5CommandResponse> result = Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS);
-        result.channel().close().sync();
-        Socks5CommandResponse response = result.response();
-        Assertions.assertEquals(Socks5CommandStatus.SUCCESS, response.status());
+        HandshakeResult<Socks5CommandResponse> result = Socks5Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS);
+        try {
+            Socks5CommandResponse response = result.response();
+            Assertions.assertEquals(Socks5CommandStatus.SUCCESS, response.status());
+        } finally {
+            result.channel().close().sync();
+        }
         CompletableFuture<Void> promise = new CompletableFuture<>();
         consumer = msg -> {
             if (dstAddress.isUnresolved() || dstAddress.equals(msg.server())) {

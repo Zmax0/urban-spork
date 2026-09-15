@@ -8,7 +8,8 @@ import java.util.stream.Collectors;
 class FileConfigHolder implements ConfigHolder {
 
     private static final String FILE_NAME = "config.json";
-    private static final String FOLDER_NAME = "lib";
+    private static final String LIB_FOLDER_NAME = "lib";
+    private static final String APP_FOLDER_NAME = "app";
     private static final Path PATH;
 
     static {
@@ -23,10 +24,15 @@ class FileConfigHolder implements ConfigHolder {
     private static String parentPath() {
         File file = new File(FileConfigHolder.class.getProtectionDomain().getCodeSource().getLocation().getFile());
         File parentFile = file.getParentFile();
-        if (parentFile.getName().endsWith(FOLDER_NAME)) {
+        while (isSubFolder(parentFile)) {
             parentFile = parentFile.getParentFile();
         }
         return parentFile.getAbsolutePath();
+    }
+
+    private static boolean isSubFolder(File dir) {
+        String name = dir.getName();
+        return name.endsWith(LIB_FOLDER_NAME) || APP_FOLDER_NAME.equals(name);
     }
 
     FileConfigHolder() {}

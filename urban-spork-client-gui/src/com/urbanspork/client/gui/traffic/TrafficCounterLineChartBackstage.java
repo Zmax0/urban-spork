@@ -87,8 +87,8 @@ public class TrafficCounterLineChartBackstage {
     }
 
     public void refresh(TrafficCounter counter) {
-        ObservableList<KeyFrame> keyFrames = sampleTimeline.getKeyFrames();
-        keyFrames.setAll(new KeyFrame(Duration.millis(counter.checkInterval()), _ -> sample(counter)));
+        sampleTimeline.stop();
+        sampleTimeline.getKeyFrames().setAll(new KeyFrame(Duration.millis(counter.checkInterval()), _ -> sample(counter)));
         sample(counter);
         sampleTimeline.playFromStart();
         renderTimeline.playFromStart();

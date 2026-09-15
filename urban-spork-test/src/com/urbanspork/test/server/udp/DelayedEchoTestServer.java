@@ -48,7 +48,7 @@ public class DelayedEchoTestServer {
                         } catch (IOException e) {
                             throw new UncheckedIOException(e);
                         }
-                    }, ThreadLocalRandom.current().nextInt(0, MAX_DELAYED_SECOND), TimeUnit.SECONDS
+                    }, ThreadLocalRandom.current().nextInt(1, MAX_DELAYED_SECOND), TimeUnit.SECONDS
                 );
                 String receivedMsgInfo = MessageFormat.format("Received msg from [{0}]: {1} [id: {2,number,#}]", address, str, id);
                 logger.info(receivedMsgInfo);
