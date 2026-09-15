@@ -60,7 +60,7 @@ jobs:
       - name: Check native library
         run: |
           cd urban-spork-server/target
-          unzip -p *.zip 'lib/urban-spork-jni-*.jar' > jni.jar
+          unzip -p *.zip 'urban-spork-server/lib/urban-spork-jni-*.jar' > jni.jar
           unzip -l jni.jar | grep win32-x86-64/ciphers.dll
       - name: Upload server artifact
         uses: actions/upload-artifact@v7
