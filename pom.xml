@@ -29,6 +29,8 @@
     <jar-jni.version>1.2.0</jar-jni.version>
     <javafx.version>26.0.2</javafx.version>
     <caffeine.version>3.2.4</caffeine.version>
+    <jlink.executable>${java.home}/bin/jlink</jlink.executable>
+    <jpackage.executable>${java.home}/bin/jpackage</jpackage.executable>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -232,8 +234,6 @@
       </activation>
       <properties>
         <javafx.platform>win</javafx.platform>
-        <jlink.executable>${java.home}/bin/jlink.exe</jlink.executable>
-        <jpackage.executable>${java.home}/bin/jpackage.exe</jpackage.executable>
       </properties>
     </profile>
     <profile>
