@@ -1,6 +1,14 @@
 name: release-test
 on:
-  workflow_dispatch
+  workflow_dispatch:
+    inputs:
+      trace_logs:
+        description: Enable Netty trace logs
+        type: boolean
+        required: false
+        default: false
+env:
+  URBAN_SPORK_NETTY_LOG_LEVEL: ${{ inputs.trace_logs == true && 'TRACE' || 'INFO' }}
 jobs:
   client:
     strategy:
@@ -21,7 +29,7 @@ jobs:
           distribution: 'oracle'
           cache: maven
       - name: Build with Maven
-        run: mvn package -B -f pom.xml
+        run: mvn package -B -f pom.xml -Durban-spork.netty.log.level=${{ env.URBAN_SPORK_NETTY_LOG_LEVEL }}
       - name: Upload client artifact
         uses: actions/upload-artifact@v7
         with:
@@ -56,7 +64,7 @@ jobs:
           path: urban-spork-jni/target/classes/native/
           merge-multiple: true
       - name: Build with Maven
-        run: mvn package -B -pl urban-spork-server -am
+        run: mvn package -B -pl urban-spork-server -am -Durban-spork.netty.log.level=${{ env.URBAN_SPORK_NETTY_LOG_LEVEL }}
       - name: Check native library
         run: |
           cd urban-spork-server/target
