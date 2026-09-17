@@ -20,4 +20,4 @@ jobs:
           distribution: 'oracle'
           cache: maven
       - name: Test with Maven
-        run: mvn test -B -f pom.xml -Dcom.urbanspork.test.client.port=52081 -Dcom.urbanspork.test.server.port=52082 -Durban-spork.netty.log.level=DEBUG
+        run: mvn test -B -f pom.xml "-Dcom.urbanspork.test.client.port=52081" "-Dcom.urbanspork.test.server.port=52082" "-Durban-spork.netty.log.level=DEBUG"
