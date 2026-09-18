@@ -5,6 +5,8 @@
     </encoder>
   </appender>
 
+  <logger name="io.netty.handler.logging.LoggingHandler" level="${urban-spork.netty.log.level:-INFO}"/>
+
   <root level="INFO">
     <appender-ref ref="STDOUT"/>
   </root>

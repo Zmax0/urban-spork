@@ -20,6 +20,8 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.ByteBufFormat;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.traffic.GlobalChannelTrafficShapingHandler;
 import io.netty.handler.traffic.TrafficCounter;
 import org.slf4j.Logger;
@@ -98,6 +100,7 @@ public class Client {
                 @Override
                 protected void initChannel(Channel ch) {
                     ch.pipeline().addLast(
+                        new LoggingHandler(ByteBufFormat.SIMPLE),
                         context.traffic(),
                         new DatagramPacketEncoder(),
                         new DatagramPacketDecoder(),
