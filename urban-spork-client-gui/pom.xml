@@ -15,6 +15,19 @@
     <dependency>
       <groupId>urban-spork</groupId>
       <artifactId>urban-spork-client</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-codec-native-quic</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec-native-quic</artifactId>
+      <version>${netty.version}</version>
+      <classifier>${os.detected.classifier}</classifier>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.openjfx</groupId>
@@ -37,6 +50,13 @@
     </dependency>
   </dependencies>
   <build>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.7.1</version>
+      </extension>
+    </extensions>
     <resources>
       <resource>
         <directory>resource</directory>
