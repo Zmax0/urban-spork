@@ -2,16 +2,16 @@ package com.urbanspork.server;
 
 import com.urbanspork.common.transport.udp.PacketEncoding;
 import com.urbanspork.test.TestDice;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
-import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramPacket;
+import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,11 +23,12 @@ class ServerUdpRelayHandlerTest {
     @ParameterizedTest
     @EnumSource(PacketEncoding.class)
     void testWorkAndIdle(PacketEncoding packetEncoding) throws Exception {
-        EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-        ServerUdpRelayHandler handler = new ServerUdpRelayHandler(packetEncoding, group);
-        handler.workerChannel(new InetSocketAddress(TestDice.rollPort()), new EmbeddedChannel(handler));
+        ServerUdpRelayHandler handler = new ServerUdpRelayHandler(packetEncoding);
+        Channel inboundChannel = new Bootstrap().group(new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory())).channel(NioDatagramChannel.class)
+            .handler(handler).bind(0).sync().channel();
+        handler.workerChannel(new InetSocketAddress(TestDice.rollPort()), inboundChannel);
         InetSocketAddress recipient = new InetSocketAddress(TestDice.rollPort());
-        Channel outboundChannel = handler.workerChannel(recipient, new EmbeddedChannel(new ServerUdpRelayHandler(packetEncoding, group)));
+        Channel outboundChannel = handler.workerChannel(recipient, inboundChannel).get();
         Assertions.assertNotNull(outboundChannel);
         ChannelPipeline workerPipeline = outboundChannel.pipeline();
         ChannelInboundHandlerAdapter last = (ChannelInboundHandlerAdapter) workerPipeline.last();

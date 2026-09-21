@@ -17,7 +17,7 @@ public interface FutureListeners {
     static <V> GenericFutureListener<Future<V>> success(Consumer<V> consumer) {
         return f -> {
             if (f.isSuccess()) {
-                consumer.accept(f.get());
+                consumer.accept(f.getNow());
             }
         };
     }

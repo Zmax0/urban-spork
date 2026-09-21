@@ -11,11 +11,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler;
+import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,14 +24,12 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.List;
 
-public abstract class AbstractClientUdpOverTcpHandler<K> extends AbstractClientUdpRelayHandler<K> {
+public abstract class AbstractClientUdpOverTcpHandler<K> extends AbstractClientUdpRelayHandler<K, Channel> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractClientUdpOverTcpHandler.class);
-    private final EventLoopGroup workerGroup;
 
-    protected AbstractClientUdpOverTcpHandler(ClientChannelContext context, Duration keepAlive, EventLoopGroup workerGroup) {
+    protected AbstractClientUdpOverTcpHandler(ClientChannelContext context, Duration keepAlive) {
         super(context, keepAlive);
-        this.workerGroup = workerGroup;
     }
 
     protected abstract ChannelInitializer<Channel> newOutboundInitializer(K key);
@@ -39,11 +37,11 @@ public abstract class AbstractClientUdpOverTcpHandler<K> extends AbstractClientU
     protected abstract ChannelHandler newInboundHandler(Channel inboundChannel, K key);
 
     @Override
-    protected Channel newBindingChannel(Channel inboundChannel, K key) {
+    protected void newBindingChannel(Channel inboundChannel, K key, Promise<Channel> promise) {
         ServerConfig config = context.config();
         InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
-        return new Bootstrap()
-            .group(workerGroup)
+        new Bootstrap()
+            .group(inboundChannel.eventLoop())
             .channel(NioSocketChannel.class)
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
             .handler(newOutboundInitializer(key))
@@ -52,10 +50,12 @@ public abstract class AbstractClientUdpOverTcpHandler<K> extends AbstractClientU
                     Channel outbound = future.channel();
                     outbound.pipeline().addLast(newInboundHandler(inboundChannel, key)); // R → L
                     inboundChannel.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
+                    promise.trySuccess(outbound);
                 } else {
                     logger.error("connect relay server {} failed", serverAddress);
+                    promise.tryFailure(future.cause());
                 }
-            }).syncUninterruptibly().channel();
+            });
     }
 
     protected void addWebSocketHandler(Channel channel) throws URISyntaxException {

@@ -40,7 +40,7 @@ public class ServerRelayHandler extends ChannelInboundHandlerAdapter {
     private void relayUdp(ChannelHandlerContext ctx, RelayingPacket<?> relayingPacket) {
         ctx.pipeline().addLast(
             new ServerUdpOverTcpCodec(relayingPacket.address()),
-            new ServerUdpRelayHandler(config.getPacketEncoding(), ctx.channel().eventLoop().parent().next())
+            new ServerUdpRelayHandler(config.getPacketEncoding())
         ).remove(this);
         ctx.fireChannelRead(relayingPacket.content());
     }

@@ -8,6 +8,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.socket.DatagramPacket;
+import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +35,7 @@ class AbstractClientUdpRelayHandlerTest {
         outbound.close();
     }
 
-    private static class TestClientUdpRelayHandler extends AbstractClientUdpRelayHandler<String> {
+    private static class TestClientUdpRelayHandler extends AbstractClientUdpRelayHandler<String, Channel> {
         private final Channel outbound;
 
         protected TestClientUdpRelayHandler(ClientChannelContext context, Channel outbound) {
@@ -53,8 +54,8 @@ class AbstractClientUdpRelayHandlerTest {
         }
 
         @Override
-        protected Channel newBindingChannel(Channel inboundChannel, String s) {
-            return outbound;
+        protected void newBindingChannel(Channel inboundChannel, String s, Promise<Channel> promise) {
+            promise.trySuccess(outbound);
         }
     }
 

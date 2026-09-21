@@ -50,37 +50,38 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
         ServerConfig config = context.config();
         boolean isReadyOnceConnected = config.getWs() == null;
         EventLoop eventLoop = inbound.eventLoop();
-        String serverHost = ClientRelayHandler.tryResolveServerHost(eventLoop, config);
-        InetSocketAddress serverAddress = new InetSocketAddress(serverHost, config.getPort());
-        new ClientDnsRelayHandler() {
-            @Override
-            public String label() {
-                return config.networkText();
-            }
+        ClientRelayHandler.resolveServerHost(eventLoop, config).addListener(FutureListeners.success(serverHost -> {
+            InetSocketAddress serverAddress = new InetSocketAddress(serverHost, config.getPort());
+            new ClientDnsRelayHandler() {
+                @Override
+                public String label() {
+                    return config.networkText();
+                }
 
-            @Override
-            public Future<? extends Channel> newChannel(DnsRequest dohRequest, Promise<IpResponse> ipPromise) {
-                Promise<Channel> channelPromise = eventLoop.newPromise();
-                newTcpChannel(eventLoop, serverAddress, dohRequest, context, channelPromise, ipPromise);
-                channelPromise.addListener(FutureListeners.failure(_ -> ClientTcpRelayHandler.this.handleFailure(inbound)));
-                return channelPromise;
-            }
+                @Override
+                public Future<? extends Channel> newChannel(DnsRequest dohRequest, Promise<IpResponse> ipPromise) {
+                    Promise<Channel> channelPromise = eventLoop.newPromise();
+                    newTcpChannel(eventLoop, serverAddress, dohRequest, context, channelPromise, ipPromise);
+                    channelPromise.addListener(FutureListeners.failure(_ -> ClientTcpRelayHandler.this.handleFailure(inbound)));
+                    return channelPromise;
+                }
 
-            @Override
-            public boolean isReadyOnceConnected() {
-                return isReadyOnceConnected;
-            }
+                @Override
+                public boolean isReadyOnceConnected() {
+                    return isReadyOnceConnected;
+                }
 
-            @Override
-            public void callback1(MaybeResolved maybeResolved) {
-                connectTcp(inbound, context, serverAddress, maybeResolved, isReadyOnceConnected);
-            }
+                @Override
+                public void callback1(MaybeResolved maybeResolved) {
+                    connectTcp(inbound, context, serverAddress, maybeResolved, isReadyOnceConnected);
+                }
 
-            @Override
-            public void callback0(Throwable t) {
-                ClientTcpRelayHandler.this.handleFailure(inbound);
-            }
-        }.resolve(eventLoop, config.getDns(), dst);
+                @Override
+                public void callback0(Throwable t) {
+                    ClientTcpRelayHandler.this.handleFailure(inbound);
+                }
+            }.resolve(eventLoop, config.getDns(), dst);
+        }));
     }
 
     private void connectTcp(Channel inbound, ClientChannelContext context, InetSocketAddress serverAddress, MaybeResolved dstAddress, boolean isReadyOnceConnected) {

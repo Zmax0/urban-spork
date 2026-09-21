@@ -1,19 +1,23 @@
 package com.urbanspork.client;
 
+import com.urbanspork.common.config.DnsSetting;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.config.ServerConfigTest;
 import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.protocol.Protocol;
-import com.urbanspork.test.DnsUtil;
+import com.urbanspork.test.TestDice;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.nio.NioIoHandler;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 class ClientRelayHandlerTest {
     @Test
@@ -39,15 +43,25 @@ class ClientRelayHandlerTest {
         Assertions.assertDoesNotThrow(() -> ClientRelayHandler.addWebSocketHandlers(channel, context));
     }
 
-    @Tag("integration")
-    @RepeatedTest(2)
-    void testTryResolveServerHost() {
+    @Test
+    void testTryResolveServerHost() throws ExecutionException, InterruptedException, TimeoutException {
         ServerConfig config = ServerConfigTest.testConfig(0);
-        config.setHost("google.com");
-        config.setDns(DnsUtil.getDnsSetting());
-        String host = ClientRelayHandler.tryResolveServerHost(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()), config);
-        Assertions.assertNotNull(host);
-        Assertions.assertNotEquals(host, config.getHost());
+        config.setHost(TestDice.rollHost());
+        int port = TestDice.rollPort();
+        String nameServer = "https://255.255.255.255:" + port + "/dns-query";
+        DnsSetting dnsSetting = new DnsSetting(nameServer, null);
+        config.setDns(dnsSetting);
+        String host = "1.2.3.4";
+        EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+        try {
+            String resolved = ClientRelayHandler.resolveServerHost(group, config).get(10, TimeUnit.SECONDS);
+            Assertions.assertEquals(config.getHost(), resolved);
+            dnsSetting.cache().put(config.getHost(), host, 60, Instant.now());
+            resolved = ClientRelayHandler.resolveServerHost(group, config).get(10, TimeUnit.SECONDS);
+            Assertions.assertEquals(host, resolved);
+        } finally {
+            group.shutdownGracefully();
+        }
     }
 
     @Test
@@ -57,4 +71,6 @@ class ClientRelayHandlerTest {
         Assertions.assertFalse(ClientRelayHandler.canResolve("abcd:ef01:2345:6789:abcd:ef01:2345:6789"));
         Assertions.assertTrue(ClientRelayHandler.canResolve("example.com"));
     }
+
+
 }

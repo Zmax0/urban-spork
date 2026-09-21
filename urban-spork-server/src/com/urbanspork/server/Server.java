@@ -87,7 +87,7 @@ public class Server {
     private static Instance start(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerInitializationContext context)
         throws InterruptedException {
         ServerSocketChannel tcp = startTcp(bossGroup, workerGroup, context);
-        Optional<DatagramChannel> udp = startUdp(bossGroup, workerGroup, context);
+        Optional<DatagramChannel> udp = startUdp(workerGroup, context);
         return new Instance(tcp, udp, context);
     }
 
@@ -104,16 +104,16 @@ public class Server {
         return tcp;
     }
 
-    private static Optional<DatagramChannel> startUdp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerInitializationContext context) throws InterruptedException {
+    private static Optional<DatagramChannel> startUdp(EventLoopGroup group, ServerInitializationContext context) throws InterruptedException {
         ServerConfig config = context.config();
         if (Protocol.shadowsocks == config.getProtocol() && config.udpEnabled()) {
-            Channel channel = new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
+            Channel channel = new Bootstrap().group(group).channel(NioDatagramChannel.class)
                 .handler(new ChannelInitializer<>() {
                     @Override
                     protected void initChannel(Channel ch) {
                         ch.pipeline().addLast(
                             new UdpRelayCodec(config, Mode.Server, context.userManager()),
-                            new ServerUdpRelayHandler(config.getPacketEncoding(), workerGroup),
+                            new ServerUdpRelayHandler(config.getPacketEncoding()),
                             new ExceptionHandler(config)
                         );
                     }
@@ -122,7 +122,7 @@ public class Server {
             logger.info("Running a udp server => {}", config);
             return Optional.of((DatagramChannel) channel);
         } else if (config.quicEnabled()) {
-            return startQuic(bossGroup, context);
+            return startQuic(group, context);
         } else {
             return Optional.empty();
         }

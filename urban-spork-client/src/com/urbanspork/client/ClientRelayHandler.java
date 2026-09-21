@@ -34,6 +34,9 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.NetUtil;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -179,25 +182,32 @@ public interface ClientRelayHandler {
         return new Bootstrap().group(group).channel(NioDatagramChannel.class).handler(builder.build()).bind(0);
     }
 
-    static String tryResolveServerHost(EventLoopGroup group, ServerConfig config) {
+    static Promise<String> resolveServerHost(EventLoopGroup group, ServerConfig config) {
+        Promise<String> promise = group.next().newPromise();
         String host = config.getHost();
         DnsSetting dns = config.getDns();
         if (dns != null && canResolve(host)) {
-            return dns.cache().get(host, Instant.now()).orElse(resolveServerHost(group, dns, host).orElse(host));
+            Optional<String> op = dns.cache().get(host, Instant.now());
+            if (op.isPresent()) {
+                promise.trySuccess(op.get());
+            } else {
+                Doh.query(group, dns.nameServer(), host).addListener((GenericFutureListener<Future<IpResponse>>) f -> {
+                    if (f.isSuccess()) {
+                        IpResponse resolved = f.get();
+                        logger.info("resolved host {} -> {}", host, resolved);
+                        dns.cache().put(host, resolved.ip(), resolved.ttl(), Instant.now());
+                        promise.trySuccess(resolved.ip());
+                    } else {
+                        Throwable t = f.cause();
+                        logger.warn("resolve server host {} failed", host, t);
+                        promise.trySuccess(host);
+                    }
+                });
+            }
+        } else {
+            promise.trySuccess(host);
         }
-        return host;
-    }
-
-    private static Optional<String> resolveServerHost(EventLoopGroup group, DnsSetting dns, String host) {
-        try {
-            IpResponse resolved = Doh.query(group, dns.nameServer(), host).get(10, TimeUnit.SECONDS);
-            logger.info("resolved host {} -> {}", host, resolved);
-            dns.cache().put(host, resolved.ip(), resolved.ttl(), Instant.now());
-            return Optional.of(resolved.ip());
-        } catch (Exception e) {
-            logger.error("resolve server host {} failed", host, e);
-            return Optional.empty();
-        }
+        return promise;
     }
 
     static boolean canResolve(String host) {

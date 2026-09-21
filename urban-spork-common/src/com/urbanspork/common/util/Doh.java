@@ -8,6 +8,7 @@ import com.urbanspork.common.protocol.dns.IpResponse;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -65,11 +66,15 @@ public class Doh {
     public static Promise<IpResponse> query(EventLoopGroup group, String nameServer, String domain) {
         DnsRequest quest = getRequest(nameServer, domain, null);
         Promise<IpResponse> promise = group.next().newPromise();
-        Channel channel = new Bootstrap().group(group).channel(NioSocketChannel.class)
+        new Bootstrap().group(group).channel(NioSocketChannel.class)
             .handler(new ChannelHandlerAdapter() {})
-            .connect(quest.address()).syncUninterruptibly()
-            .channel();
-        query(channel, quest, promise);
+            .connect(quest.address()).addListener((ChannelFutureListener) f -> {
+                if (f.isSuccess()) {
+                    query(f.channel(), quest, promise);
+                } else {
+                    promise.tryFailure(f.cause());
+                }
+            });
         return promise;
     }
 

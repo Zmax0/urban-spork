@@ -3,18 +3,20 @@ package com.urbanspork.server;
 import com.urbanspork.common.channel.AttributeKeys;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import com.urbanspork.common.transport.udp.PacketEncoding;
+import com.urbanspork.common.util.FutureListeners;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.EventLoop;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,14 +28,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramPacket> {
     private static final Logger logger = LoggerFactory.getLogger(ServerUdpRelayHandler.class);
-    private final Map<Object, Channel> workerChannels = new ConcurrentHashMap<>();
-    private final EventLoopGroup workerGroup;
+    private final Map<Object, Promise<Channel>> workerChannels = new ConcurrentHashMap<>();
     private final PacketEncoding packetEncoding;
 
-    public ServerUdpRelayHandler(PacketEncoding packetEncoding, EventLoopGroup workerGroup) {
+    public ServerUdpRelayHandler(PacketEncoding packetEncoding) {
         super(false);
         this.packetEncoding = packetEncoding;
-        this.workerGroup = workerGroup;
     }
 
     @Override
@@ -45,42 +45,53 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
         if (key == null) {
             key = sender;
         }
-        Channel workerChannel = workerChannel(key, channel);
-        logger.info("[udp][relay]{}→{}~{}→{}", sender, recipient, channel.localAddress(), workerChannel.localAddress());
-        workerChannel.writeAndFlush(msg);
+        Promise<Channel> promise = workerChannel(key, channel);
+        promise.addListener(FutureListeners.success(workerChannel -> {
+            logger.info("[udp][relay]{}→{}~{}→{}", sender, recipient, channel.localAddress(), workerChannel.localAddress());
+            workerChannel.writeAndFlush(msg);
+        }));
     }
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) {
-        for (Map.Entry<?, Channel> entry : workerChannels.entrySet()) {
-            entry.getValue().close();
+        for (Map.Entry<?, Promise<Channel>> entry : workerChannels.entrySet()) {
+            entry.getValue().addListener(FutureListeners.success(Channel::close));
         }
     }
 
-    Channel workerChannel(Object key, Channel inboundChannel) {
+    Promise<Channel> workerChannel(Object key, Channel inboundChannel) {
         if (PacketEncoding.Packet == packetEncoding) {
             key = PacketEncoding.Packet.seqPacketMagicAddress();
         }
         return workerChannels.computeIfAbsent(key, k -> newWorkerChannel(k, inboundChannel));
     }
 
-    private Channel newWorkerChannel(Object key, Channel channel) {
-        Channel workerChannel = new Bootstrap().group(workerGroup).channel(NioDatagramChannel.class)
+    private Promise<Channel> newWorkerChannel(Object key, Channel inboundChannel) {
+        EventLoop eventLoop = inboundChannel.eventLoop();
+        Promise<Channel> promise = eventLoop.next().newPromise();
+        new Bootstrap().group(eventLoop).channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {
                 @Override
                 protected void initChannel(Channel ch) {
                     ch.pipeline().addLast(
                         new IdleStateHandler(0, 0, 300),
-                        new InboundHandler(channel)
+                        new InboundHandler(inboundChannel)
                     );
                 }
             }) // callback->server->client
-            .bind(0) // automatically assigned port now, may have security implications
-            .syncUninterruptibly()
-            .channel();
-        workerChannel.closeFuture().addListener(_ -> logger.info("[udp][binding]{} != {}", key, workerChannels.remove(key)));
-        logger.info("[udp][binding]{} == {}", key, workerChannel);
-        return workerChannel;
+            .bind(0)// automatically assigned port now, may have security implications
+            .addListener((ChannelFutureListener) f -> {
+                if (f.isSuccess()) {
+                    Channel workerChannel = f.channel();
+                    workerChannel.closeFuture().addListener(_ -> logger.info("[udp][binding]{} != {}", key, workerChannels.remove(key)));
+                    logger.info("[udp][binding]{} == {}", key, workerChannel);
+                    promise.trySuccess(workerChannel);
+                } else {
+                    logger.error("[udp][binding] bind failed");
+                    promise.tryFailure(f.cause());
+                }
+            });
+        return promise;
     }
 
     private static class InboundHandler extends MessageToMessageCodec<DatagramPacket, DatagramPacket> {

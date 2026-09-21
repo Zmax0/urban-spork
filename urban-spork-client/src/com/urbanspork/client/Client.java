@@ -65,10 +65,8 @@ public class Client {
             int clientId = System.identityHashCode(client);
             logger.info("Launch client [id:{}] => tcp{} udp{} ", clientId, tcpLocalAddress, udp.localAddress());
             promise.complete(client);
-            CompletableFuture.allOf(
-                CompletableFuture.supplyAsync(() -> client.tcp().closeFuture().syncUninterruptibly()),
-                CompletableFuture.supplyAsync(() -> client.udp().closeFuture().syncUninterruptibly())
-            ).get();
+            client.tcp().closeFuture().sync();
+            client.udp().closeFuture().sync();
             logger.info("Client [id:{}] is terminated", clientId);
         } catch (InterruptedException _) {
             logger.warn("Interrupt main launch thread");
@@ -104,7 +102,7 @@ public class Client {
                         context.traffic(),
                         new DatagramPacketEncoder(),
                         new DatagramPacketDecoder(),
-                        new ClientUdpDnsDecoder(context, workerGroup),
+                        new ClientUdpDnsDecoder(context),
                         udpTransportHandler
                     );
                 }
@@ -118,14 +116,14 @@ public class Client {
             if (current.quicEnabled()) {
                 return new com.urbanspork.client.vmess.ClientUdpOverQuicHandler(context, workerGroup);
             }
-            return new com.urbanspork.client.vmess.ClientUdpOverTcpHandler(context, workerGroup);
+            return new com.urbanspork.client.vmess.ClientUdpOverTcpHandler(context);
         } else if (Protocol.trojan == current.getProtocol()) {
             if (current.quicEnabled()) {
                 return new com.urbanspork.client.trojan.ClientUdpOverQuicHandler(context, workerGroup);
             }
-            return new com.urbanspork.client.trojan.ClientUdpOverTcpHandler(context, workerGroup);
+            return new com.urbanspork.client.trojan.ClientUdpOverTcpHandler(context);
         } else {
-            return new ClientUdpRelayHandler(context, workerGroup);
+            return new ClientUdpRelayHandler(context);
         }
     }
 

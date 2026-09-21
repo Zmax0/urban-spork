@@ -7,7 +7,7 @@ import io.netty.util.concurrent.Future;
 
 public record Runtime(EventLoopGroup parentGroup, EventLoopGroup childGroup) {
     public Runtime() {
-        this(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()), new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()));
+        this(new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory()), new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()));
     }
 
     public void close() {

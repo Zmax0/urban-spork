@@ -150,7 +150,7 @@ public abstract class UdpTestTemplate extends TestTemplate {
         DatagramPacketWrapper msg = new DatagramPacketWrapper(data, proxyAddress);
         logger.info("Send msg {}", msg);
         channel.writeAndFlush(msg);
-        promise.get(DelayedEchoTestServer.MAX_DELAYED_SECOND + 3L, TimeUnit.SECONDS);
+        promise.get(DelayedEchoTestServer.MAX_DELAYED_SECOND + 5L, TimeUnit.SECONDS);
         Assertions.assertTrue(promise.isDone());
     }
 

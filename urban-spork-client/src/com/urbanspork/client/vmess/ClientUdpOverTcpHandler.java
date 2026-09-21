@@ -9,7 +9,6 @@ import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
 
 import javax.net.ssl.SSLException;
 import java.net.URISyntaxException;
@@ -17,8 +16,8 @@ import java.time.Duration;
 
 public class ClientUdpOverTcpHandler extends AbstractClientUdpOverTcpHandler<Key> implements ClientUdpOverTcp {
 
-    public ClientUdpOverTcpHandler(ClientChannelContext context, EventLoopGroup workerGroup) {
-        super(context, Duration.ofMinutes(10), workerGroup);
+    public ClientUdpOverTcpHandler(ClientChannelContext context) {
+        super(context, Duration.ofMinutes(10));
     }
 
     @Override

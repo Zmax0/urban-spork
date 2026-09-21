@@ -47,7 +47,7 @@ public class ServerHeaderDecoder extends ByteToMessageDecoder {
         in.skipBytes(Trojan.CRLF.length);
         ChannelPipeline p = ctx.pipeline();
         if (SocksCmdType.UDP.byteValue() == command) {
-            p.addAfter(ctx.name(), null, new ServerUdpRelayHandler(config.getPacketEncoding(), ctx.channel().eventLoop().parent().next()));
+            p.addAfter(ctx.name(), null, new ServerUdpRelayHandler(config.getPacketEncoding()));
             p.addAfter(ctx.name(), null, new ServerPacketCodec(address));
             p.remove(this);
         } else {

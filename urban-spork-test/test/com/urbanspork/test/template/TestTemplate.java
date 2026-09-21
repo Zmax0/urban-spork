@@ -25,14 +25,15 @@ import java.util.function.ToIntFunction;
 abstract class TestTemplate {
     protected static final Logger logger = LoggerFactory.getLogger(TestTemplate.class);
     protected static final ExecutorService POOL = Executors.newThreadPerTaskExecutor(Thread.ofPlatform().name("testTemplatePool-", 1).factory());
-    protected static final Runtime RUNTIME = new Runtime();
+    protected static final Runtime CLIENT_RUNTIME = new Runtime();
+    protected static final Runtime SERVER_RUNTIME = new Runtime();
     protected static final int SERVER_PORT = getPortOrDefault("com.urbanspork.test.server.port", Integer::parseInt);
     protected static final int CLIENT_PORT = getPortOrDefault("com.urbanspork.test.client.port", Integer::parseInt);
     private static ServerSocketChannel DOH_TEST_SERVER;
 
     protected static FutureInstance<Client.Instance> launchClient(ClientConfig config) throws InterruptedException, ExecutionException {
         CompletableFuture<Client.Instance> promise = new CompletableFuture<>();
-        Future<?> task = POOL.submit(() -> Client.launch(RUNTIME, config, promise));
+        Future<?> task = POOL.submit(() -> Client.launch(CLIENT_RUNTIME, config, promise));
         FutureInstance<Client.Instance> result = new FutureInstance<>(task, promise.get());
         logger.info("new client: {}", result);
         return result;
@@ -40,7 +41,7 @@ abstract class TestTemplate {
 
     protected static FutureInstance<List<Server.Instance>> launchServer(List<ServerConfig> configs) throws InterruptedException, ExecutionException {
         CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
-        Future<?> task = POOL.submit(() -> Server.launch(RUNTIME, configs, promise));
+        Future<?> task = POOL.submit(() -> Server.launch(SERVER_RUNTIME, configs, promise));
         FutureInstance<List<Server.Instance>> result = new FutureInstance<>(task, promise.get());
         logger.info("new server: {}", result);
         return result;

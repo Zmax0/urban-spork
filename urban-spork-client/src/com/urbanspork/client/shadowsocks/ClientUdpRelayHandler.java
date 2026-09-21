@@ -10,28 +10,27 @@ import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
 
-public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSocketAddress> {
+public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSocketAddress, Channel> {
 
     private static final Logger logger = LoggerFactory.getLogger(ClientUdpRelayHandler.class);
-    private final EventLoopGroup workerGroup;
     private final InetSocketAddress relay;
     private final UdpRelayCodec codec; // used by outbound (client-server) channel and its lifetime controlled by inbound (local-client) channel
 
-    public ClientUdpRelayHandler(ClientChannelContext context, EventLoopGroup workerGroup) {
+    public ClientUdpRelayHandler(ClientChannelContext context) {
         super(context, Duration.ofMinutes(10));
-        this.workerGroup = workerGroup;
         ServerConfig config = context.config();
         this.relay = new InetSocketAddress(config.getHost(), config.getPort());
         UdpRelayCodec relayCodec = new UdpRelayCodec(config, Mode.Client, ServerUserManager.empty());
@@ -51,8 +50,8 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
     }
 
     @Override
-    protected Channel newBindingChannel(Channel inboundChannel, InetSocketAddress sender) {
-        return new Bootstrap().group(workerGroup).channel(NioDatagramChannel.class)
+    protected void newBindingChannel(Channel inboundChannel, InetSocketAddress sender, Promise<Channel> promise) {
+        new Bootstrap().group(inboundChannel.eventLoop()).channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {
                 @Override
                 protected void initChannel(Channel ch) {
@@ -63,7 +62,13 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
                     );
                 }
             }).bind(0) // automatically assigned port now, may have security implications
-            .syncUninterruptibly().channel();
+            .addListener((ChannelFutureListener) future -> {
+                if (future.isSuccess()) {
+                    promise.trySuccess(future.channel());
+                } else {
+                    promise.tryFailure(future.cause());
+                }
+            });
     }
 
     @Override
