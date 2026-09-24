@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Locale;
 
 public class ClientConfigTest {
     @Test
@@ -34,6 +35,7 @@ public class ClientConfigTest {
         config.setIndex(0);
         int[] serverPorts = Arrays.copyOfRange(ports, 1, ports.length);
         config.setServers(ServerConfigTest.testConfigs(serverPorts));
+        config.setLanguage(Locale.getDefault().getLanguage());
         return config;
     }
 }

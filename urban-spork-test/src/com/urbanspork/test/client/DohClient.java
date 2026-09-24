@@ -1,21 +1,28 @@
 package com.urbanspork.test.client;
 
+import com.urbanspork.common.protocol.dns.DnsRequest;
 import com.urbanspork.common.protocol.dns.IpResponse;
 import com.urbanspork.common.util.Doh;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
+import io.netty.handler.ssl.SslContext;
 import io.netty.util.concurrent.Promise;
 
+import javax.net.ssl.SSLException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class DohClient {
-    static void main() throws InterruptedException, ExecutionException, TimeoutException {
+    static void main() throws InterruptedException, ExecutionException, TimeoutException, SSLException {
         EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         try {
-            Promise<IpResponse> promise = Doh.query(group, "https://8.8.8.8/dns-query", "example.com");
+            DnsRequest request = new DnsRequest("https://8.8.8.8/dns-query", "example.com");
+            SslContext sslContext = Doh.buildSslContext(null);
+            Promise<IpResponse> promise = Doh.query(group, request, channel ->
+                sslContext.newHandler(channel.alloc(), request.address().getHostString(), request.address().getPort())
+            );
             IpResponse result = promise.get(10, TimeUnit.SECONDS);
             System.out.println(result);
         } finally {

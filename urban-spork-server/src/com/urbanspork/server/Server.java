@@ -7,7 +7,6 @@ import com.urbanspork.common.codec.shadowsocks.tcp.Context;
 import com.urbanspork.common.codec.shadowsocks.udp.UdpRelayCodec;
 import com.urbanspork.common.config.ConfigHandler;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.protocol.Protocol;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -21,13 +20,10 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.quic.QuicServerCodecBuilder;
 import io.netty.handler.codec.quic.QuicSslContext;
-import io.netty.handler.codec.quic.QuicSslContextBuilder;
-import io.netty.handler.ssl.ApplicationProtocolNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -55,7 +51,7 @@ public class Server {
         try {
             int count = 0;
             for (ServerConfig config : configs) {
-                Instance server = start(runtime.parentGroup(), runtime.childGroup(), new ServerInitializationContext(config, context));
+                Instance server = start(runtime.parentGroup(), runtime.childGroup(), new ServerChannelContext(config, context));
                 count += server.udp().isPresent() ? 2 : 1;
                 servers.add(server);
             }
@@ -84,14 +80,14 @@ public class Server {
         }
     }
 
-    private static Instance start(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerInitializationContext context)
+    private static Instance start(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerChannelContext context)
         throws InterruptedException {
         ServerSocketChannel tcp = startTcp(bossGroup, workerGroup, context);
         Optional<DatagramChannel> udp = startUdp(workerGroup, context);
         return new Instance(tcp, udp, context);
     }
 
-    private static ServerSocketChannel startTcp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerInitializationContext context) throws InterruptedException {
+    private static ServerSocketChannel startTcp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerChannelContext context) throws InterruptedException {
         ServerConfig config = context.config();
         ServerSocketChannel tcp = (ServerSocketChannel) new ServerBootstrap()
             .group(bossGroup, workerGroup)
@@ -104,7 +100,7 @@ public class Server {
         return tcp;
     }
 
-    private static Optional<DatagramChannel> startUdp(EventLoopGroup group, ServerInitializationContext context) throws InterruptedException {
+    private static Optional<DatagramChannel> startUdp(EventLoopGroup group, ServerChannelContext context) throws InterruptedException {
         ServerConfig config = context.config();
         if (Protocol.shadowsocks == config.getProtocol() && config.udpEnabled()) {
             Channel channel = new Bootstrap().group(group).channel(NioDatagramChannel.class)
@@ -128,14 +124,12 @@ public class Server {
         }
     }
 
-    private static Optional<DatagramChannel> startQuic(EventLoopGroup boosGroup, ServerInitializationContext context) throws InterruptedException {
+    private static Optional<DatagramChannel> startQuic(EventLoopGroup boosGroup, ServerChannelContext context) throws InterruptedException {
         ServerConfig config = context.config();
-        SslSetting sslSetting = config.getSsl();
-        if (sslSetting == null) {
-            return Optional.empty();
+        QuicSslContext quicSslContext = context.quicContext();
+        if (quicSslContext == null) {
+            return Optional.empty(); // required security setting not present
         }
-        QuicSslContext quicSslContext = QuicSslContextBuilder.forServer(new File(sslSetting.getKeyFile()), sslSetting.getKeyPassword(), new File(sslSetting.getCertificateFile()))
-            .applicationProtocols(ApplicationProtocolNames.HTTP_1_1).build();
         ChannelHandler codec = new QuicServerCodecBuilder()
             .sslContext(quicSslContext)
             .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
@@ -162,7 +156,7 @@ public class Server {
         return Optional.of(channel);
     }
 
-    public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp, ServerInitializationContext context) implements Closeable {
+    public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp, ServerChannelContext context) implements Closeable {
         @Override
         public void close() {
             udp.ifPresent(c -> c.close().syncUninterruptibly());

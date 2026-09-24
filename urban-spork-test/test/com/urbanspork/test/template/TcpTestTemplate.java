@@ -68,7 +68,7 @@ public abstract class TcpTestTemplate extends TestTemplate {
 
     protected void socksHandshakeAndSendBytes(InetSocketAddress proxyAddress) throws ExecutionException, InterruptedException, TimeoutException {
         HandshakeResult<Socks5CommandResponse> result = Socks5Handshake
-            .noAuth(group, Socks5CommandType.CONNECT, proxyAddress, dstAddress).get();
+            .noAuth(group, Socks5CommandType.CONNECT, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS);
         if (!result.response().status().isSuccess()) {
             result.channel().close();
             throw new ExecutionException(new IllegalStateException("Unsuccessful response status: " + result.response().status()));
@@ -118,7 +118,7 @@ public abstract class TcpTestTemplate extends TestTemplate {
 
     protected void checkHttpsHandshakeAndSendBytes(InetSocketAddress proxyAddress) throws ExecutionException, InterruptedException, TimeoutException {
         HandshakeResult<HttpResponse> result = com.urbanspork.common.protocol.https.proxy.Handshake
-            .start(group, proxyAddress, dstAddress).get();
+            .start(group, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS);
         Channel channel = result.channel();
         checkSendRandomBytes(channel);
     }

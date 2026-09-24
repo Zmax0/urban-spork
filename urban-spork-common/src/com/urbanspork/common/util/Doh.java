@@ -1,7 +1,5 @@
 package com.urbanspork.common.util;
 
-import com.urbanspork.common.config.SslSetting;
-import com.urbanspork.common.protocol.dns.DnsQueryEncoder;
 import com.urbanspork.common.protocol.dns.DnsRequest;
 import com.urbanspork.common.protocol.dns.DnsResponseDecoder;
 import com.urbanspork.common.protocol.dns.IpResponse;
@@ -15,22 +13,13 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.dns.DefaultDnsQuery;
-import io.netty.handler.codec.dns.DefaultDnsQuestion;
 import io.netty.handler.codec.dns.DnsRawRecord;
 import io.netty.handler.codec.dns.DnsRecord;
 import io.netty.handler.codec.dns.DnsRecordType;
 import io.netty.handler.codec.dns.DnsResponse;
 import io.netty.handler.codec.dns.DnsResponseCode;
 import io.netty.handler.codec.dns.DnsSection;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.QueryStringDecoder;
-import io.netty.handler.codec.http.QueryStringEncoder;
 import io.netty.handler.codec.http2.DefaultHttp2Connection;
 import io.netty.handler.codec.http2.DelegatingDecompressorFrameListener;
 import io.netty.handler.codec.http2.Http2Connection;
@@ -40,6 +29,7 @@ import io.netty.handler.codec.http2.HttpToHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.InboundHttp2ToHttpAdapterBuilder;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolNames;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SupportedCipherSuiteFilter;
@@ -51,26 +41,37 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.SSLException;
 import java.io.File;
 import java.net.InetSocketAddress;
-import java.net.URI;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 
 public class Doh {
     private static final Logger logger = LoggerFactory.getLogger(Doh.class);
 
     private Doh() {}
 
-    public static Promise<IpResponse> query(EventLoopGroup group, String nameServer, String domain) {
-        DnsRequest quest = getRequest(nameServer, domain, null);
+    public static SslContext buildSslContext(String certificateFile) throws SSLException {
+        SslContextBuilder sslContextBuilder = SslContextBuilder.forClient()
+            .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
+            .applicationProtocolConfig(new ApplicationProtocolConfig(
+                ApplicationProtocolConfig.Protocol.ALPN,
+                ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+                ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+                ApplicationProtocolNames.HTTP_2,
+                ApplicationProtocolNames.HTTP_1_1
+            ));
+        if (certificateFile != null) {
+            sslContextBuilder.trustManager(new File(certificateFile));
+        }
+        return sslContextBuilder.build();
+    }
+
+    public static Promise<IpResponse> query(EventLoopGroup group, DnsRequest request, Function<Channel, SslHandler> sslHandlers) {
         Promise<IpResponse> promise = group.next().newPromise();
         new Bootstrap().group(group).channel(NioSocketChannel.class)
             .handler(new ChannelHandlerAdapter() {})
-            .connect(quest.address()).addListener((ChannelFutureListener) f -> {
+            .connect(request.address()).addListener((ChannelFutureListener) f -> {
                 if (f.isSuccess()) {
-                    query(f.channel(), quest, promise);
+                    Channel channel = f.channel();
+                    query(channel, request, promise, sslHandlers.apply(channel));
                 } else {
                     promise.tryFailure(f.cause());
                 }
@@ -78,34 +79,8 @@ public class Doh {
         return promise;
     }
 
-    public static void query(Channel channel, DnsRequest request, Promise<IpResponse> promise) {
-        SslHandler ssl;
-        try {
-            InetSocketAddress address = request.address();
-            String serverName = address.getHostString();
-            SslContextBuilder sslContextBuilder = SslContextBuilder.forClient()
-                .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
-                .applicationProtocolConfig(new ApplicationProtocolConfig(
-                    ApplicationProtocolConfig.Protocol.ALPN,
-                    ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
-                    ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
-                    ApplicationProtocolNames.HTTP_2,
-                    ApplicationProtocolNames.HTTP_1_1
-                ));
-            SslSetting sslSetting = request.ssl();
-            if (sslSetting != null) {
-                if (sslSetting.getCertificateFile() != null) {
-                    sslContextBuilder.trustManager(new File(sslSetting.getCertificateFile()));
-                }
-                if (sslSetting.getServerName() != null) {
-                    serverName = sslSetting.getServerName(); // override
-                }
-            }
-            ssl = sslContextBuilder.build().newHandler(channel.alloc(), serverName, address.getPort());
-        } catch (SSLException e) {
-            promise.setFailure(e);
-            return;
-        }
+    public static void query(Channel channel, DnsRequest request, Promise<IpResponse> promise, SslHandler ssl) {
+        InetSocketAddress address = request.address();
         Http2Connection connection = new DefaultHttp2Connection(false);
         HttpToHttp2ConnectionHandler connectionHandler = new HttpToHttp2ConnectionHandlerBuilder()
             .frameListener(new DelegatingDecompressorFrameListener(
@@ -152,36 +127,6 @@ public class Doh {
             }
         );
         channel.writeAndFlush(request.msg());
-    }
-
-    public static DnsRequest getRequest(String nameServer, String domain, SslSetting ssl) {
-        short tid = (short) ThreadLocalRandom.current().nextInt(); // unsigned short
-        DefaultDnsQuery dnsQuery = new DefaultDnsQuery(tid);
-        DefaultDnsQuestion question = new DefaultDnsQuestion(domain, DnsRecordType.A);
-        dnsQuery.addRecord(DnsSection.QUESTION, question);
-        domain = Base64.getUrlEncoder().withoutPadding().encodeToString(DnsQueryEncoder.encode(dnsQuery));
-        dnsQuery.release();
-        URI uri = URI.create(nameServer);
-        Map<String, List<String>> queryParams;
-        if (uri.getQuery() == null) {
-            uri = URI.create(nameServer + "?dns=" + domain);
-        } else if ((queryParams = QueryStringDecoder.builder().build(uri).parameters()).containsKey("dns")) {
-            queryParams.put("dns", Collections.singletonList(domain));
-            QueryStringEncoder encoder = new QueryStringEncoder(nameServer.replace("?" + uri.getQuery(), ""));
-            for (Map.Entry<String, List<String>> entry : queryParams.entrySet()) {
-                encoder.addParam(entry.getKey(), entry.getValue().getFirst());
-            }
-            uri = URI.create(encoder.toString());
-        } else {
-            uri = URI.create(nameServer + "&dns=" + domain);
-        }
-        int port = uri.getPort();
-        if (port == -1) {
-            port = uri.getScheme().equals("https") ? 443 : 80;
-        }
-        String host = uri.getHost();
-        FullHttpRequest msg = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri.toString());
-        msg.headers().set(HttpHeaderNames.ACCEPT, "application/dns-message").set(HttpHeaderNames.CONTENT_TYPE, "application/dns-message");
-        return new DnsRequest(InetSocketAddress.createUnresolved(host, port), ssl, msg);
+        logger.debug("send DoH request {} to {}", request, address);
     }
 }

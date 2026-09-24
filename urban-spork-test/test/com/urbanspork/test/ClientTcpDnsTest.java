@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -25,7 +26,7 @@ import java.util.concurrent.TimeoutException;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ClientTcpDnsTest extends TcpTestTemplate {
     @Test
-    void test() throws ExecutionException, InterruptedException, TimeoutException {
+    void test() throws ExecutionException, InterruptedException, TimeoutException, SSLException {
         ServerSocketChannel dohServer = dohTestServer();
         Protocol protocol = Protocol.trojan;
         String password = TestDice.rollPassword(protocol, null);

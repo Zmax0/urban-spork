@@ -30,8 +30,13 @@ class TcpSharedTest extends TcpTestTemplate {
 
     private ServerConfig config;
     private FutureInstance<List<Server.Instance>> server;
-    private FutureInstance<Client.Instance> client;
     private InetSocketAddress clientAddress;
+    private FutureInstance<Client.Instance> client;
+
+    private ServerConfig sslConfig;
+    private FutureInstance<List<Server.Instance>> sslServer;
+    private FutureInstance<Client.Instance> sslClient;
+    private InetSocketAddress sslClientAddress;
 
     private ServerConfig shadowsocksAEAD2022EihServerConfig;
     private ClientConfig shadowsocksAEAD2022EihClientConfig;
@@ -43,6 +48,7 @@ class TcpSharedTest extends TcpTestTemplate {
     @BeforeAll
     void beforeAll() throws ExecutionException, InterruptedException {
         init();
+        initSsl();
         initShadowsocksAEAD2022Eih();
     }
 
@@ -53,6 +59,16 @@ class TcpSharedTest extends TcpTestTemplate {
         server = launchServer(clientConfig.getServers());
         client = launchClient(clientConfig);
         clientAddress = client.instance().tcp().localAddress();
+    }
+
+    private void initSsl() throws InterruptedException, ExecutionException {
+        ClientConfig clientConfig = ClientConfigTest.testConfig(0, 0);
+        sslConfig = clientConfig.getServers().getFirst();
+        sslConfig.setTransport(TRANSPORTS);
+        sslConfig.setSsl(SslUtil.getSslSetting());
+        sslServer = launchServer(clientConfig.getServers());
+        sslClient = launchClient(clientConfig);
+        sslClientAddress = sslClient.instance().tcp().localAddress();
     }
 
     private void initShadowsocksAEAD2022Eih() throws InterruptedException, ExecutionException {
@@ -69,7 +85,6 @@ class TcpSharedTest extends TcpTestTemplate {
     @ParameterizedTest
     @ArgumentsSource(Parameter.Provider.class)
     void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
-        updateConfig(config, parameter);
         CipherKind cipher = parameter.cipher();
         Protocol protocol = parameter.protocol();
         if (protocol == Protocol.shadowsocks && cipher.isAead2022() && cipher.supportEih()) {
@@ -86,15 +101,20 @@ class TcpSharedTest extends TcpTestTemplate {
             checkHttpsHandshakeAndSendBytes(shadowsocksAEAD2022EihClientAddress);
             checkHttpSendBytes(shadowsocksAEAD2022EihClientAddress);
         }
-        socksHandshakeAndSendBytes(clientAddress);
-        checkHttpsHandshakeAndSendBytes(clientAddress);
-        checkHttpSendBytes(clientAddress);
+        boolean tls = parameter.sslSetting() != null;
+        updateConfig(tls ? sslConfig : config, parameter);
+        InetSocketAddress address = tls ? sslClientAddress : clientAddress;
+        socksHandshakeAndSendBytes(address);
+        checkHttpsHandshakeAndSendBytes(address);
+        checkHttpSendBytes(address);
     }
 
     @AfterAll
     protected void afterAll() {
         closeClient(client);
         closeServer(server);
+        closeClient(sslClient);
+        closeServer(sslServer);
         closeClient(shadowsocksAEAD2022EihClient);
         closeServer(shadowsocksAEAD2022EihServer);
     }

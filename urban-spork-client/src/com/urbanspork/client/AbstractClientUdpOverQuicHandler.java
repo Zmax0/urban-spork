@@ -20,11 +20,15 @@ import java.net.InetSocketAddress;
 import java.time.Duration;
 
 public abstract class AbstractClientUdpOverQuicHandler<K> extends AbstractClientUdpRelayHandler<K, QuicStreamChannel> {
-    private final ChannelFuture endpoint;
+    protected final ChannelFuture endpoint;
 
     protected AbstractClientUdpOverQuicHandler(ClientChannelContext context, Duration keepAlive, EventLoopGroup workerGroup) {
         super(context, keepAlive);
-        endpoint = ClientRelayHandler.quicEndpoint(context.config(), workerGroup);
+        endpoint = newEndpoint(context, workerGroup);
+    }
+
+    protected ChannelFuture newEndpoint(ClientChannelContext context, EventLoopGroup workerGroup) {
+        return context.quicEndpoint(workerGroup);
     }
 
     protected abstract ChannelInitializer<Channel> newOutboundInitializer(K k);
@@ -37,13 +41,15 @@ public abstract class AbstractClientUdpOverQuicHandler<K> extends AbstractClient
             if (f1.isSuccess()) {
                 ServerConfig config = context.config();
                 InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
-                QuicChannel.newBootstrap(f1.channel()).remoteAddress(serverAddress).streamHandler(new ChannelInboundHandlerAdapter()).connect().addListener((Future<QuicChannel> f2) -> {
+                Channel c1 = f1.channel();
+                newQuicChannel(c1, serverAddress).addListener((GenericFutureListener<Future<QuicChannel>>) f2 -> {
                     if (!f2.isSuccess()) {
+                        c1.close();
                         promise.tryFailure(f2.cause());
                         return;
                     }
-                    QuicChannel quicChannel = f2.getNow();
-                    quicChannel.newStreamBootstrap().handler(newOutboundInitializer(k)).create(promise);
+                    QuicChannel c2 = f2.getNow();
+                    c2.newStreamBootstrap().handler(newOutboundInitializer(k)).create(promise);
                 });
                 promise.addListener(FutureListeners.success(outbound -> {
                     outbound.pipeline().addLast(newInboundHandler(inbound, k)); // R → L
@@ -54,6 +60,10 @@ public abstract class AbstractClientUdpOverQuicHandler<K> extends AbstractClient
             }
         });
 
+    }
+
+    protected Future<QuicChannel> newQuicChannel(Channel endpointChannel, InetSocketAddress serverAddress) {
+        return QuicChannel.newBootstrap(endpointChannel).remoteAddress(serverAddress).streamHandler(new ChannelInboundHandlerAdapter()).connect();
     }
 
     @Override

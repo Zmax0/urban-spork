@@ -21,32 +21,23 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 class ClientUdpDnsDecoderTest {
-    @Test
-    void testError() {
-        assertErrorCaught(new Transport[]{Transport.UDP});
-    }
-
-    @Test
-    void testQuicError() {
-        assertErrorCaught(new Transport[]{Transport.QUIC});
-    }
-
-    private static void assertErrorCaught(Transport[] transport) {
+    @ParameterizedTest
+    @EnumSource(mode = EnumSource.Mode.INCLUDE, names = {"UDP", "QUIC"})
+    void testError(Transport transport) {
         String str = TestDice.rollString();
         DnsSetting dnsSetting = new DnsSetting(String.format("https://localhost:%d/dns-query", TestDice.rollPort()), null);
         Protocol protocol = Protocol.trojan;
         String password = TestDice.rollPassword(protocol, null);
-        ServerConfig config = ServerConfigTest.testConfig(closedPort());
-        config.setTransport(transport);
+        ServerConfig config = ServerConfigTest.testConfig(0);
+        config.setTransport(new Transport[]{transport});
         config.setProtocol(protocol);
         config.setPassword(password);
         config.setSsl(SslUtil.getSslSetting());
@@ -72,7 +63,7 @@ class ClientUdpDnsDecoderTest {
             .channel(NioDatagramChannel.class)
             .handler(new ChannelInitializer<>() {
                 @Override
-                protected void initChannel(Channel ch) {
+                protected void initChannel(Channel ch) throws Exception {
                     ch.pipeline().addLast(new ClientUdpDnsDecoder(new ClientChannelContext(serverConfig, null, null)));
                     ch.pipeline().addLast(new SimpleChannelInboundHandler<DatagramPacketWrapper>() {
                         @Override
@@ -90,13 +81,5 @@ class ClientUdpDnsDecoderTest {
             .bind(0)
             .sync()
             .channel();
-    }
-
-    private static int closedPort() {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
     }
 }

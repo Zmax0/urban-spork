@@ -50,12 +50,12 @@ public class Client {
     public static void launch(Runtime runtime, ClientConfig config, CompletableFuture<Instance> promise) {
         GlobalChannelTrafficShapingHandler traffic = new GlobalChannelTrafficShapingHandler(runtime.childGroup());
         ConcurrentHashMap<String, ClientChannelTrafficHandler> channelTraffic = new ConcurrentHashMap<>();
-        ClientChannelContext context = new ClientChannelContext(config.getCurrent(), traffic, channelTraffic);
         String host = config.getHost() == null ? InetAddress.getLoopbackAddress().getHostName() : config.getHost();
         int port = config.getPort();
         ServerSocketChannel tcp = null;
         DatagramChannel udp = null;
         try {
+            ClientChannelContext context = new ClientChannelContext(config.getCurrent(), traffic, channelTraffic);
             tcp = launchTcp(runtime.parentGroup(), runtime.childGroup(), host, port, context);
             InetSocketAddress tcpLocalAddress = tcp.localAddress();
             int localPort = tcpLocalAddress.getPort();
@@ -77,7 +77,7 @@ public class Client {
             close0(tcp, udp);
             promise.completeExceptionally(e);
         } finally {
-            context.traffic().release();
+            traffic.release();
         }
     }
 

@@ -15,13 +15,14 @@ import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 class ClientUdpOverTcpHandlerTest {
     @Test
-    void testConnectFailed() throws InterruptedException {
+    void testConnectFailed() throws InterruptedException, SSLException {
         ServerConfig config = ServerConfigTest.testConfig(TestDice.rollPort());
         config.setProtocol(Protocol.vmess);
         config.setPassword(TestDice.rollPassword(Protocol.vmess, CipherKind.chacha20_poly1305));

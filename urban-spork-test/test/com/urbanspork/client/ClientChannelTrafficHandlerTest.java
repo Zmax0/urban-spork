@@ -5,11 +5,12 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import javax.net.ssl.SSLException;
 import java.util.HashMap;
 
 class ClientChannelTrafficHandlerTest {
     @Test
-    void testGetter() {
+    void testGetter() throws SSLException {
         ClientChannelContext context = new ClientChannelContext(null, null, new HashMap<>());
         EmbeddedChannel channel = new EmbeddedChannel();
         int port = TestDice.rollPort();

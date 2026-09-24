@@ -1,23 +1,25 @@
 package com.urbanspork.client;
 
+import com.urbanspork.client.trojan.ClientHeaderEncoder;
+import com.urbanspork.client.vmess.ClientAeadCodec;
 import com.urbanspork.common.channel.ChannelCloseUtil;
 import com.urbanspork.common.codec.address.MaybeResolved;
+import com.urbanspork.common.codec.shadowsocks.Mode;
+import com.urbanspork.common.codec.shadowsocks.tcp.Context;
+import com.urbanspork.common.codec.shadowsocks.tcp.TcpRelayCodec;
 import com.urbanspork.common.config.DnsSetting;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.config.WebSocketSetting;
-import com.urbanspork.common.protocol.Protocol;
+import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.dns.IpResponse;
-import com.urbanspork.common.util.Doh;
-import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -26,13 +28,9 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolConfig;
 import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler;
-import io.netty.handler.codec.quic.QuicClientCodecBuilder;
-import io.netty.handler.codec.quic.QuicSslContext;
-import io.netty.handler.codec.quic.QuicSslContextBuilder;
-import io.netty.handler.ssl.ApplicationProtocolNames;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.codec.quic.QuicChannel;
+import io.netty.handler.codec.quic.QuicStreamChannel;
+import io.netty.handler.codec.socks.SocksCmdType;
 import io.netty.util.NetUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -40,16 +38,14 @@ import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLException;
-import java.io.File;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public interface ClientRelayHandler {
@@ -112,31 +108,6 @@ public interface ClientRelayHandler {
         }
     }
 
-    static void addSslHandler(Channel ch, ClientChannelContext context) throws SSLException {
-        ServerConfig config = context.config();
-        SslSetting sslSetting = config.getSsl();
-        if (sslSetting == null) {
-            if (Protocol.trojan == config.getProtocol()) {
-                throw new IllegalArgumentException("required security setting not present");
-            } else {
-                return;
-            }
-        }
-        SslContextBuilder sslContextBuilder = SslContextBuilder.forClient();
-        String serverName = config.getHost();
-        if (sslSetting.getCertificateFile() != null) {
-            sslContextBuilder.trustManager(new File(sslSetting.getCertificateFile()));
-        }
-        if (sslSetting.getServerName() != null) {
-            serverName = sslSetting.getServerName(); // override
-        }
-
-        SslContext sslContext = sslContextBuilder.build();
-        SslHandler sslHandler = sslContext.newHandler(ch.alloc(), serverName, config.getPort());
-        sslHandler.setCloseNotifyReadTimeout(1, TimeUnit.SECONDS);
-        ch.pipeline().addLast(sslHandler);
-    }
-
     static boolean addWebSocketHandlers(Channel ch, ClientChannelContext context) throws URISyntaxException {
         if (context.config().getWs() != null) {
             ch.pipeline().addLast(new HttpClientCodec(), new HttpObjectAggregator(0xfffff), buildWebSocketHandler(context));
@@ -166,36 +137,21 @@ public interface ClientRelayHandler {
         return new WebSocketClientProtocolHandler(builder.build());
     }
 
-    static ChannelFuture quicEndpoint(ServerConfig config, EventLoopGroup group) {
-        SslSetting sslSetting = config.getSsl();
-        String serverName = sslSetting.getServerName();
-        QuicSslContext context = QuicSslContextBuilder.forClient().keylog(true).trustManager(new File(sslSetting.getCertificateFile())).applicationProtocols(ApplicationProtocolNames.HTTP_1_1).build();
-        QuicClientCodecBuilder builder = new QuicClientCodecBuilder()
-            .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
-            .initialMaxData(0xfffff)
-            .initialMaxStreamDataBidirectionalLocal(0xfffff);
-        if (serverName != null) {
-            builder.sslEngineProvider(c -> context.newEngine(c.alloc(), serverName, config.getPort()));
-        } else {
-            builder.sslContext(context);
-        }
-        return new Bootstrap().group(group).channel(NioDatagramChannel.class).handler(builder.build()).bind(0);
-    }
-
-    static Promise<String> resolveServerHost(EventLoopGroup group, ServerConfig config) {
+    static Promise<String> resolveServerHost(EventLoopGroup group, ClientChannelContext context) {
+        ServerConfig config = context.config();
         Promise<String> promise = group.next().newPromise();
         String host = config.getHost();
-        DnsSetting dns = config.getDns();
-        if (dns != null && canResolve(host)) {
-            Optional<String> op = dns.cache().get(host, Instant.now());
+        DnsSetting dnsSetting = config.getDns();
+        if (dnsSetting != null && canResolve(host)) {
+            Optional<String> op = dnsSetting.cache().get(host, Instant.now());
             if (op.isPresent()) {
                 promise.trySuccess(op.get());
             } else {
-                Doh.query(group, dns.nameServer(), host).addListener((GenericFutureListener<Future<IpResponse>>) f -> {
+                ClientDnsRelayHandler.dohQuery(group, context, dnsSetting.nameServer(), host).addListener((GenericFutureListener<Future<IpResponse>>) f -> {
                     if (f.isSuccess()) {
                         IpResponse resolved = f.get();
                         logger.info("resolved host {} -> {}", host, resolved);
-                        dns.cache().put(host, resolved.ip(), resolved.ttl(), Instant.now());
+                        dnsSetting.cache().put(host, resolved.ip(), resolved.ttl(), Instant.now());
                         promise.trySuccess(resolved.ip());
                     } else {
                         Throwable t = f.cause();
@@ -212,5 +168,30 @@ public interface ClientRelayHandler {
 
     static boolean canResolve(String host) {
         return !InetAddress.getLoopbackAddress().getHostName().equals(host) && !NetUtil.isValidIpV4Address(host) && !NetUtil.isValidIpV6Address(host);
+    }
+
+    default Future<QuicStreamChannel> createQuicStreamChannel(QuicChannel quicChannel, MaybeResolved dstAddress, ClientChannelContext context) {
+        return quicChannel.newStreamBootstrap().handler(
+            new ChannelInitializer<>() {
+                @Override
+                protected void initChannel(Channel ch) {
+                    ClientRelayHandler.addChannelTrafficHandler(ch, dstAddress, context);
+                    addProtocolHandler(ch, dstAddress.address(), context);
+                }
+            }
+        ).create();
+    }
+
+    static void addProtocolHandler(Channel outbound, InetSocketAddress address, ClientChannelContext context) {
+        outbound.pipeline().addLast(newProtocolHandler(address, context));
+    }
+
+    private static ChannelHandler newProtocolHandler(InetSocketAddress address, ClientChannelContext context) {
+        ServerConfig config = context.config();
+        return switch (config.getProtocol()) {
+            case vmess -> new ClientAeadCodec(config.getCipher(), address, config.getPassword());
+            case trojan -> new ClientHeaderEncoder(config.getPassword(), address, SocksCmdType.CONNECT.byteValue());
+            default -> new TcpRelayCodec(new Context(), config, address, Mode.Client, ServerUserManager.empty());
+        };
     }
 }

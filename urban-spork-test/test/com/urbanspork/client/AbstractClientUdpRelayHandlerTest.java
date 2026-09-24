@@ -12,6 +12,7 @@ import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import javax.net.ssl.SSLException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -21,7 +22,7 @@ import java.util.concurrent.locks.LockSupport;
 
 class AbstractClientUdpRelayHandlerTest {
     @Test
-    void test() {
+    void test() throws SSLException {
         EmbeddedChannel outbound = new EmbeddedChannel();
         EmbeddedChannel inbound = new EmbeddedChannel();
         ServerConfig config = ServerConfigTest.testConfig(0);

@@ -4,9 +4,7 @@ import com.urbanspork.common.channel.ExceptionHandler;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.codec.shadowsocks.tcp.TcpRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.config.SslSetting;
 import com.urbanspork.common.config.WebSocketSetting;
-import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.server.trojan.ServerHeaderDecoder;
 import com.urbanspork.server.vmess.ServerAeadCodec;
 import io.netty.buffer.ByteBuf;
@@ -17,56 +15,32 @@ import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.SslHandler;
 
-import javax.net.ssl.SSLException;
-import java.io.File;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 public class ServerInitializer extends ChannelInitializer<Channel> {
 
-    private final ServerInitializationContext context;
+    private final ServerChannelContext context;
 
-    public ServerInitializer(ServerInitializationContext context) {
+    public ServerInitializer(ServerChannelContext context) {
         this.context = context;
     }
 
     @Override
-    protected void initChannel(Channel ch) throws SSLException {
+    protected void initChannel(Channel ch) {
         ServerConfig config = context.config();
-        addSslHandler(ch, config);
+        context.addSslHandler(ch);
         addWebSocketHandlers(ch, config);
         addProtocolHandlers(ch, context);
     }
 
-    static void addProtocolHandlers(Channel ch, ServerInitializationContext context) {
+    static void addProtocolHandlers(Channel ch, ServerChannelContext context) {
         ServerConfig config = context.config();
         switch (config.getProtocol()) {
             case vmess -> ch.pipeline().addLast(new ServerAeadCodec(config), new ServerRelayHandler(config), new ExceptionHandler(config));
             case trojan -> ch.pipeline().addLast(new ServerHeaderDecoder(config), new ExceptionHandler(config));
             default -> ch.pipeline().addLast(new TcpRelayCodec(context.context(), config, Mode.Server, context.userManager()), new ExceptionHandler(config), new ServerRelayHandler(config));
-        }
-    }
-
-    private static void addSslHandler(Channel c, ServerConfig config) throws SSLException {
-        SslSetting sslSetting = config.getSsl();
-        if (sslSetting != null) {
-            SslContext sslContext = SslContextBuilder.forServer(new File(sslSetting.getCertificateFile()), new File(sslSetting.getKeyFile()), sslSetting.getKeyPassword()).build();
-            String serverName = config.getHost();
-            if (sslSetting.getServerName() != null) {
-                serverName = sslSetting.getServerName();
-            }
-            SslHandler sslHandler = sslContext.newHandler(c.alloc(), serverName, config.getPort());
-            sslHandler.setCloseNotifyReadTimeout(1, TimeUnit.SECONDS);
-            c.pipeline().addLast(sslHandler);
-            return;
-        }
-        if (Protocol.trojan == config.getProtocol()) {
-            throw new IllegalArgumentException("required security setting not present");
         }
     }
 

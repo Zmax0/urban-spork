@@ -28,7 +28,7 @@ public class ClientUdpDnsDecoder extends MessageToMessageDecoder<DatagramPacketW
         ServerConfig config = context.config();
         msg.retain();
         EventLoop group = ctx.channel().eventLoop();
-        ClientRelayHandler.resolveServerHost(group, config).addListener(FutureListeners.success(serverHost -> {
+        ClientRelayHandler.resolveServerHost(group, context).addListener(FutureListeners.success(serverHost -> {
             InetSocketAddress server = new InetSocketAddress(serverHost, config.getPort());
             InetSocketAddress target = msg.server();
             new ClientDnsRelayHandler() {
@@ -38,12 +38,12 @@ public class ClientUdpDnsDecoder extends MessageToMessageDecoder<DatagramPacketW
                 }
 
                 @Override
-                public Future<? extends Channel> newChannel(DnsRequest dohRequest, Promise<IpResponse> ipPromise) {
+                public Future<? extends Channel> newChannel(DnsRequest dnsRequest, Promise<IpResponse> ipPromise) {
                     Promise<Channel> channelPromise = group.next().newPromise();
                     if (config.quicEnabled()) {
-                        newQuicChannel(group, server, dohRequest, context, channelPromise);
+                        newQuicChannel(group, server, dnsRequest, context, channelPromise);
                     } else {
-                        newTcpChannel(group, server, dohRequest, context, channelPromise, ipPromise);
+                        newTcpChannel(group, server, dnsRequest, context, channelPromise, ipPromise);
                     }
                     channelPromise.addListener(FutureListeners.failure(ctx::fireExceptionCaught));
                     return channelPromise;
@@ -62,7 +62,7 @@ public class ClientUdpDnsDecoder extends MessageToMessageDecoder<DatagramPacketW
 
                 @Override
                 public void callback0(Throwable t) {}
-            }.resolve(group, config.getDns(), target);
+            }.resolve(group, context, target);
         }));
     }
 }

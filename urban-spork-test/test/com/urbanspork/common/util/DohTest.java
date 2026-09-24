@@ -1,10 +1,12 @@
 package com.urbanspork.common.util;
 
+import com.urbanspork.common.protocol.dns.DnsRequest;
 import com.urbanspork.common.protocol.dns.IpResponse;
 import com.urbanspork.test.DnsUtil;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
+import io.netty.handler.ssl.SslContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
@@ -15,6 +17,7 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.support.ParameterDeclarations;
 
+import javax.net.ssl.SSLException;
 import java.net.URI;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -27,9 +30,14 @@ class DohTest {
 
     @ParameterizedTest
     @ArgumentsSource(Provider.class)
-    void testQuery(String nameServer) throws InterruptedException, ExecutionException {
+    void testQuery(String nameServer) throws InterruptedException, ExecutionException, SSLException {
         try {
-            IpResponse ipResponse = Doh.query(GROUP, nameServer, "google.com").get(5, TimeUnit.SECONDS);
+            DnsRequest request = new DnsRequest(nameServer, "google.com");
+            SslContext sslContext = Doh.buildSslContext(DnsUtil.getDnsSetting().ssl() == null ? null : DnsUtil.getDnsSetting().ssl().getCertificateFile());
+            IpResponse ipResponse = Doh.query(
+                GROUP, request, channel ->
+                    sslContext.newHandler(channel.alloc(), request.address().getHostString(), request.address().getPort())
+            ).get(5, TimeUnit.SECONDS);
             Assertions.assertNotNull(ipResponse);
         } catch (TimeoutException _) {
             // skip
