@@ -1,6 +1,5 @@
 package com.urbanspork.client;
 
-import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.config.ServerConfig;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -49,7 +48,6 @@ public abstract class AbstractClientUdpOverTcpHandler<K> extends AbstractClientU
                 if (future.isSuccess()) {
                     Channel outbound = future.channel();
                     outbound.pipeline().addLast(newInboundHandler(inboundChannel, key)); // R → L
-                    inboundChannel.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
                     promise.trySuccess(outbound);
                 } else {
                     logger.error("connect relay server {} failed", serverAddress);

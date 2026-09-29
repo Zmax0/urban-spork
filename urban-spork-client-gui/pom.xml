@@ -234,8 +234,6 @@
                       <arg value="-Xms64m"/>
                       <arg value="--java-options"/>
                       <arg value="-Xmx256m"/>
-                      <arg value="--java-options"/>
-                      <arg value="-Dio.netty.maxDirectMemory=0"/>
                     </exec>
                     <!-- jpackage marks the launcher read-only, which mvn clean cannot delete -->
                     <attrib readonly="false">

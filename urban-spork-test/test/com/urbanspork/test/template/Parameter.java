@@ -13,6 +13,7 @@ import org.junit.jupiter.params.support.ParameterDeclarations;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public record Parameter(Protocol protocol, CipherKind cipher, String clientPassword, String serverPassword, WebSocketSetting wsSetting, SslSetting sslSetting) {
@@ -39,6 +40,7 @@ public record Parameter(Protocol protocol, CipherKind cipher, String clientPassw
             SslSetting sslSetting = SslUtil.getSslSetting();
             WebSocketSetting wsSetting = new WebSocketSetting();
             wsSetting.setPath("/ws");
+            wsSetting.setHeader(Map.of("tag", "test"));
             List<Parameter> list = new ArrayList<>();
             for (Protocol protocol : Protocol.values()) {
                 if (protocol != Protocol.trojan) {

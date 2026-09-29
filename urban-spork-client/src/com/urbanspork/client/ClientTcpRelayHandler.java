@@ -101,9 +101,9 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
     }
 
     private void tcpOutboundReady(Channel inbound, Channel outbound, boolean isReadyOnceConnected) {
-        outbound.pipeline().addLast(new DefaultChannelInboundHandler(inbound)); // R → L
+        outbound.pipeline().addLast(new DefaultChannelInboundHandler(inbound, false)); // R → L
         if (isReadyOnceConnected) {
-            inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
+            inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound, false)); // L → R
             inboundReady().success().accept(inbound);
             outboundReady(inbound).accept(outbound);
         }
@@ -113,19 +113,25 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
         ServerConfig config = context.config();
         context.quicEndpoint(inbound.eventLoop()).addListener((ChannelFutureListener) f0 -> {
             InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
-            Channel quicEndpoint = f0.channel();
-            QuicChannel.newBootstrap(quicEndpoint).remoteAddress(serverAddress).streamHandler(new ChannelInboundHandlerAdapter()).connect().addListener(f1 -> {
-                    if (f1.isSuccess()) {
-                        QuicChannel quicChannel = (QuicChannel) f1.get();
-                        inbound.closeFuture().addListener(_ -> quicChannel.close());
-                        connectQuic(inbound, dstAddress, context, quicChannel, quicEndpoint);
-                    } else {
-                        logger.error("[quic] create endpoint channel failed, relay server {}", serverAddress, f1.cause());
-                        quicEndpoint.close();
-                        handleFailure(inbound);
+            Channel c0 = f0.channel();
+            QuicChannel.newBootstrap(c0).remoteAddress(serverAddress).streamHandler(new ChannelInboundHandlerAdapter())
+                .connect().addListener(f1 -> {
+                        if (f1.isSuccess()) {
+                            QuicChannel c1 = (QuicChannel) f1.get();
+                            if (inbound.isActive()) {// check inbound channel
+                                inbound.closeFuture().addListener(_ -> c1.close());
+                                connectQuic(inbound, dstAddress, context, c1, c0);
+                            } else {
+                                logger.warn("[quic] create endpoint channel failed: inbound inactive");
+                                c0.close();
+                            }
+                        } else {
+                            logger.error("[quic] create endpoint channel failed, relay server {}", serverAddress, f1.cause());
+                            c0.close();
+                            handleFailure(inbound);
+                        }
                     }
-                }
-            );
+                );
         });
     }
 
@@ -176,8 +182,8 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
     }
 
     private void quicOutboundReady(Channel inbound, QuicStreamChannel outbound) {
-        outbound.pipeline().addLast(new DefaultChannelInboundHandler(inbound)); // R → L
-        inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
+        outbound.pipeline().addLast(new DefaultChannelInboundHandler(inbound, false)); // R → L
+        inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound, false)); // L → R
         inboundReady().success().accept(inbound);
         outboundReady(inbound).accept(outbound);
     }

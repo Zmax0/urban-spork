@@ -53,13 +53,13 @@ public class ServerRelayHandler extends ChannelInboundHandlerAdapter {
         return new Bootstrap().group(localChannel.eventLoop())
             .channel(NioSocketChannel.class)
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
-            .handler(new DefaultChannelInboundHandler(localChannel))
+            .handler(new DefaultChannelInboundHandler(localChannel, false))
             .connect(relayingPayload.address())
             .addListener((ChannelFutureListener) f -> {
                 if (f.isSuccess()) {
                     Channel remoteChannel = f.channel();
                     if (localChannel.isActive()) {
-                        localChannel.pipeline().addLast(new DefaultChannelInboundHandler(remoteChannel)).remove(ServerRelayHandler.class);
+                        localChannel.pipeline().addLast(new DefaultChannelInboundHandler(remoteChannel, false)).remove(ServerRelayHandler.class);
                         logger.info("[tcp][{}][{}→{}]", config.getProtocol(), localChannel.localAddress(), remoteChannel.remoteAddress());
                         remoteChannel.writeAndFlush(relayingPayload.content());
                     } else {

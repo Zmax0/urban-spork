@@ -90,7 +90,7 @@ public class ClientUdpRelayHandler extends AbstractClientUdpRelayHandler<InetSoc
 
         @Override
         public void channelRead0(ChannelHandlerContext ctx, DatagramPacket packet) {
-            logger.info("[udp][shadowsocks]{}←{}~{}←{}", sender, packet.recipient(), ctx.channel().localAddress(), packet.sender());
+            logger.debug("[udp][shadowsocks]{}←{}~{}←{}", sender, packet.recipient(), ctx.channel().localAddress(), packet.sender());
             channel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(packet.content(), packet.recipient()), sender));
         }
     }

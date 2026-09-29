@@ -81,11 +81,11 @@ public class TcpCapture {
                     Channel inbound = ctx.channel();
                     new Bootstrap().group(inbound.eventLoop())
                         .channel(inbound.getClass())
-                        .handler(new DefaultChannelInboundHandler(inbound))
+                        .handler(new DefaultChannelInboundHandler(inbound, true))
                         .connect(InetAddress.getLoopbackAddress(), remotePort).addListener((ChannelFutureListener) future -> {
                                 if (future.isSuccess()) {
                                     Channel outbound = future.channel();
-                                    inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound));
+                                    inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound, true));
                                     promise.setSuccess();
                                 } else {
                                     logger.error("Connect target localhost:{} failed", remotePort, future.cause());

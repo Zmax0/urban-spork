@@ -47,7 +47,7 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
         }
         Promise<Channel> promise = workerChannel(key, channel);
         promise.addListener(FutureListeners.success(workerChannel -> {
-            logger.info("[udp][relay]{}→{}~{}→{}", sender, recipient, channel.localAddress(), workerChannel.localAddress());
+            logger.debug("[udp][relay]{}→{}~{}→{}", sender, recipient, channel.localAddress(), workerChannel.localAddress());
             workerChannel.writeAndFlush(msg);
         }));
     }
@@ -112,7 +112,7 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
         protected void decode(ChannelHandlerContext ctx, DatagramPacket msg, List<Object> out) {
             InetSocketAddress callback = msg.sender(); // reverse naming
             InetSocketAddress sender = this.callbackMap.get(callback);
-            logger.info("[udp][relay]{}←{}~{}←{}", sender, callback, inboundChannel.localAddress(), ctx.channel().localAddress());
+            logger.debug("[udp][relay]{}←{}~{}←{}", sender, callback, inboundChannel.localAddress(), ctx.channel().localAddress());
             inboundChannel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(msg.retain().content(), callback), sender))
                 .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
         }

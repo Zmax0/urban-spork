@@ -44,7 +44,7 @@ public abstract class AbstractClientUdpRelayHandler<K, C extends Channel> extend
         Channel inbound = ctx.channel();
         getBindingChannel(inbound, getKey(msg)).addListener(
             FutureListeners.success(outbound -> {
-                logger.info("[udp][{}]{}→{}~{}→{}", context.config().getProtocol(), packet.sender(), msg.server(), inbound.localAddress(), outbound.localAddress());
+                logger.debug("[udp][{}]{}→{}~{}→{}", context.config().getProtocol(), packet.sender(), msg.server(), inbound.localAddress(), outbound.localAddress());
                 outbound.writeAndFlush(convertToWrite(msg));
             }));
     }
@@ -62,16 +62,17 @@ public abstract class AbstractClientUdpRelayHandler<K, C extends Channel> extend
             promise.addListener((Future<C> f) -> {
                 if (f.isSuccess()) {
                     C channel = f.getNow();
+                    logger.info("[udp][binding]{} == {}", key, channel.localAddress());
                     channel.closeFuture().addListener(_ -> {
                         Future<C> removed = binding.remove(key);
                         if (removed != null) {
-                            logger.info("[udp][binding][close]{} != {}", key, channel.localAddress());
+                            logger.info("[udp][binding]{} != {}", key, channel.localAddress());
                         }
                     });
                 } else {
                     // do not cache a failed binding, otherwise the next packet would reuse it
                     binding.remove(key);
-                    logger.warn("[udp][binding][connect]{} failed", key, f.cause());
+                    logger.warn("[udp][binding] connect {} failed", key, f.cause());
                 }
             });
             newBindingChannel(inboundChannel, key, promise);

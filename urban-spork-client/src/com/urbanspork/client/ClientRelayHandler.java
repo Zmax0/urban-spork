@@ -3,6 +3,7 @@ package com.urbanspork.client;
 import com.urbanspork.client.trojan.ClientHeaderEncoder;
 import com.urbanspork.client.vmess.ClientAeadCodec;
 import com.urbanspork.common.channel.ChannelCloseUtil;
+import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.codec.address.MaybeResolved;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.codec.shadowsocks.tcp.Context;
@@ -14,10 +15,8 @@ import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.dns.IpResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.MessageToMessageCodec;
@@ -90,12 +89,7 @@ public interface ClientRelayHandler {
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
             if (evt == WebSocketClientProtocolHandler.ClientHandshakeStateEvent.HANDSHAKE_COMPLETE) {
-                inbound.pipeline().addLast(new ChannelInboundHandlerAdapter() {
-                    @Override
-                    public void channelRead(ChannelHandlerContext ctx2, Object msg) {
-                        ctx.channel().writeAndFlush(msg).addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
-                    }
-                }); // L → R
+                inbound.pipeline().addLast(new DefaultChannelInboundHandler(ctx.channel(), false));
                 relayHandler.inboundReady().success().accept(inbound);
                 relayHandler.outboundReady(inbound).accept(ctx.channel());
             }

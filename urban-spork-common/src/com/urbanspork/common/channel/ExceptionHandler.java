@@ -29,7 +29,9 @@ public class ExceptionHandler extends ChannelInboundHandlerAdapter {
         } else {
             logger.error("{}[{}][{}] Caught exception", channel, protocol, transLog, cause);
         }
-        ctx.close();
+        if (channel.isActive()) {
+            ctx.close();
+        }
     }
 
     public static String transLog(Channel channel) {

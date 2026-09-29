@@ -41,9 +41,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.locks.LockSupport;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class QuicTcpTest extends TcpTestTemplate {
@@ -134,7 +132,6 @@ class QuicTcpTest extends TcpTestTemplate {
             Channel inbound = new Bootstrap().group(group).channel(NioDatagramChannel.class).handler(new ChannelInboundHandlerAdapter()).bind(0).sync().channel();
             new ClientTcpRelayHandler() {}.connect(inbound, serverAddress, new ClientChannelContext(config, null, null));
             inbound.close().sync();
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(500));
             submitted.cancel(true);
         }
         closeServer(server);

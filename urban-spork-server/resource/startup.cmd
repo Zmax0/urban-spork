@@ -7,4 +7,4 @@ java ^
 --add-opens java.base/java.nio=io.netty.common ^
 --add-reads io.netty.handler=org.bouncycastle.lts.prov ^
 -Dio.netty.eventLoopThreads=8 ^
--Xms64m -Xmx192m -jar %server%.jar
+-Xms32m -Xmx192m -jar %server%.jar

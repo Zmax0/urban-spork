@@ -1,6 +1,5 @@
 package com.urbanspork.client;
 
-import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.util.FutureListeners;
 import io.netty.channel.Channel;
@@ -51,10 +50,7 @@ public abstract class AbstractClientUdpOverQuicHandler<K> extends AbstractClient
                     QuicChannel c2 = f2.getNow();
                     c2.newStreamBootstrap().handler(newOutboundInitializer(k)).create(promise);
                 });
-                promise.addListener(FutureListeners.success(outbound -> {
-                    outbound.pipeline().addLast(newInboundHandler(inbound, k)); // R → L
-                    inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
-                }));
+                promise.addListener(FutureListeners.success(outbound -> outbound.pipeline().addLast(newInboundHandler(inbound, k)))); // R → L
             } else {
                 promise.tryFailure(f1.cause());
             }

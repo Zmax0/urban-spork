@@ -17,8 +17,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 class AbstractClientUdpRelayHandlerTest {
     @Test
@@ -31,7 +29,6 @@ class AbstractClientUdpRelayHandlerTest {
         InetSocketAddress recipient = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         DatagramPacketWrapper msg = new DatagramPacketWrapper(new DatagramPacket(Unpooled.wrappedBuffer(TestDice.rollString(10).getBytes()), recipient), recipient);
         Assertions.assertFalse(inbound.writeInbound(msg));
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(3));
         Assertions.assertFalse(inbound.writeInbound(msg));
         outbound.close();
     }

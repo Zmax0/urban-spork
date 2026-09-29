@@ -45,7 +45,7 @@ interface ClientUdpOverTcp {
         protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
             Channel outboundChannel = ctx.channel();
             InetSocketAddress address = Address.decode(in);
-            logger.info("[udp][trojan]{}←{}~{}←{}", sender, address, channel.localAddress(), outboundChannel.localAddress());
+            logger.debug("[udp][trojan]{}←{}~{}←{}", sender, address, channel.localAddress(), outboundChannel.localAddress());
             short length = in.readShort();
             in.skipBytes(Trojan.CRLF.length);
             ByteBuf content = in.readBytes(length);
