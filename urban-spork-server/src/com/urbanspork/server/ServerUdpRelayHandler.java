@@ -83,7 +83,7 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
             .addListener((ChannelFutureListener) f -> {
                 if (f.isSuccess()) {
                     Channel workerChannel = f.channel();
-                    workerChannel.closeFuture().addListener(_ -> logger.info("[udp][binding]{} != {}", key, workerChannels.remove(key)));
+                    workerChannel.closeFuture().addListener(_ -> logger.info("[udp][binding]{} != {}", key, workerChannels.remove(key).get()));
                     logger.info("[udp][binding]{} == {}", key, workerChannel);
                     promise.trySuccess(workerChannel);
                 } else {
