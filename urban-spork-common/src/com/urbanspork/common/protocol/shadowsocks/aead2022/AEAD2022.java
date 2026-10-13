@@ -129,26 +129,27 @@ public interface AEAD2022 {
         }
 
         static PayloadEncoder newPayloadEncoder(CipherMethod cipherMethod, byte[] key, byte[] salt) {
-            Authenticator auth = new Authenticator(sessionSubkey(key, salt), cipherMethod, NonceGenerator.generateInitialAEADNonce(), BytesGenerator.generateEmptyBytes());
+            Authenticator auth = new Authenticator(sessionSubkey(cipherMethod, key, salt), cipherMethod, NonceGenerator.generateInitialAEADNonce(), BytesGenerator.generateEmptyBytes());
             AEADChunkSizeParser sizeCodec = new AEADChunkSizeParser(auth);
             return new PayloadEncoder(auth, sizeCodec, EmptyPaddingLengthGenerator.INSTANCE, 0xffff);
         }
 
         static PayloadDecoder newPayloadDecoder(CipherMethod cipherMethod, byte[] key, byte[] salt) {
-            Authenticator auth = new Authenticator(sessionSubkey(key, salt), cipherMethod, NonceGenerator.generateInitialAEADNonce(), BytesGenerator.generateEmptyBytes());
+            Authenticator auth = new Authenticator(sessionSubkey(cipherMethod, key, salt), cipherMethod, NonceGenerator.generateInitialAEADNonce(), BytesGenerator.generateEmptyBytes());
             AEADChunkSizeParser sizeCodec = new AEADChunkSizeParser(auth);
             return new PayloadDecoder(auth, sizeCodec, EmptyPaddingLengthGenerator.INSTANCE);
         }
 
         static PayloadDecoder newPayloadDecoder(CipherMethod cipherMethod, Identity identity, ServerUserManager userManager, byte[] key, byte[] salt, byte[] eih) {
-            byte[] identitySubKey = deriveKey("shadowsocks 2022 identity subkey".getBytes(), concat(key, salt));
-            byte[] userHash = AES.decrypt(identitySubKey, eih, cipherMethod.keySize());
+            byte[] identitySubKey = identitySubkey(cipherMethod, key, salt);
+            String encryptedEih = logger.isTraceEnabled() ? ByteString.valueOf(eih) : null;
+            aesDecrypt(cipherMethod.keySize(), identitySubKey, eih);
             if (logger.isTraceEnabled()) {
-                logger.trace("server EIH {}, hash: {}", ByteString.valueOf(eih), ByteString.valueOf(userHash));
+                logger.trace("server EIH {}, hash: {}", encryptedEih, ByteString.valueOf(eih));
             }
-            ServerUser user = userManager.getUserByHash(userHash);
+            ServerUser user = userManager.getUserByHash(eih);
             if (user == null) {
-                throw new DecoderException("invalid client user identity " + ByteString.valueOf(userHash));
+                throw new DecoderException("invalid client user identity " + ByteString.valueOf(eih));
             } else {
                 if (logger.isTraceEnabled()) {
                     logger.trace("{} chosen by EIH", user);
@@ -159,8 +160,13 @@ public interface AEAD2022 {
         }
 
         // session_subkey := blake3::derive_key(context: "shadowsocks 2022 session subkey", key_material: key + salt)
-        static byte[] sessionSubkey(byte[] key, byte[] salt) {
-            return deriveKey("shadowsocks 2022 session subkey".getBytes(), concat(key, salt));
+        static byte[] sessionSubkey(CipherMethod method, byte[] key, byte[] salt) {
+            return deriveKey(method.keySize(), "shadowsocks 2022 session subkey".getBytes(), concat(key, salt));
+        }
+
+        // identity_subkey := blake3::derive_key(context: "shadowsocks 2022 identity subkey", key_material: key + salt)
+        static byte[] identitySubkey(CipherMethod method, byte[] key, byte[] salt) {
+            return deriveKey(method.keySize(), "shadowsocks 2022 identity subkey".getBytes(), concat(key, salt));
         }
 
         static void withEih(CipherKind kind, Keys keys, byte[] salt, ByteBuf out) {
@@ -169,7 +175,7 @@ public interface AEAD2022 {
                 if (subKey != null) {
                     withEih(kind, subKey, iPSK, out);
                 }
-                subKey = deriveKey("shadowsocks 2022 identity subkey".getBytes(), concat(iPSK, salt));
+                subKey = deriveKey(kind.keySize(), "shadowsocks 2022 identity subkey".getBytes(), concat(iPSK, salt));
             }
             if (subKey != null) {
                 withEih(kind, subKey, keys.encKey(), out);
@@ -179,11 +185,12 @@ public interface AEAD2022 {
         private static void withEih(CipherKind kind, byte[] subKey, byte[] iPSK, ByteBuf out) {
             byte[] iPSKHash = Digests.blake3.hash(iPSK);
             byte[] iPSKPlainText = Arrays.copyOf(iPSKHash, 16);
-            byte[] iPSKPEncryptText = AES.encrypt(subKey, iPSKPlainText, kind.keySize());
+            String hash = logger.isTraceEnabled() ? ByteString.valueOf(iPSKPlainText) : null;
+            aesEncrypt(kind.keySize(), subKey, iPSKPlainText);
             if (logger.isTraceEnabled()) {
-                logger.trace("client EIH:{}, hash:{}", ByteString.valueOf(iPSKPEncryptText), ByteString.valueOf(iPSKPlainText));
+                logger.trace("client EIH:{}, hash:{}", ByteString.valueOf(iPSKPlainText), hash);
             }
-            out.writeBytes(iPSKPEncryptText);
+            out.writeBytes(iPSKPlainText);
         }
     }
 
@@ -241,23 +248,30 @@ public interface AEAD2022 {
             if (CipherKind.aead2022_blake3_chacha8_poly1305 == kind || CipherKind.aead2022_blake3_chacha20_poly1305 == kind) {
                 byte[] nonce = new byte[getNonceLength(kind)];
                 in.readBytes(nonce);
-                byte[] encrypting = new byte[in.readableBytes()];
-                in.readBytes(encrypting);
+                byte[] buffer = newEncryptingBuffer(cipher, in);
+                cipher.sealInPlace(buffer, nonce);
                 out.writeBytes(nonce);
-                out.writeBytes(cipher.seal(encrypting, nonce));
+                out.writeBytes(buffer);
             } else {
                 byte[] header = new byte[16];
                 in.readBytes(header);
                 byte[] nonce = Arrays.copyOfRange(header, 4, 16);
-                AES.encrypt(key, header, kind.keySize(), header);
+                aesEncrypt(kind.keySize(), key, header);
                 out.writeBytes(header);
                 if (eihLength > 0) {
                     in.readBytes(out, eihLength);
                 }
-                byte[] encrypting = new byte[in.readableBytes()];
-                in.readBytes(encrypting);
-                out.writeBytes(cipher.seal(encrypting, nonce));
+                byte[] buffer = newEncryptingBuffer(cipher, in);
+                cipher.sealInPlace(buffer, nonce);
+                out.writeBytes(buffer);
             }
+        }
+
+        private static byte[] newEncryptingBuffer(UdpCipher cipher, ByteBuf in) {
+            int length = in.readableBytes();
+            byte[] buffer = new byte[length + cipher.overhead()];
+            in.readBytes(buffer, 0, length);
+            return buffer;
         }
 
         static ByteBuf decodePacket(CipherKind kind, CipherMethod method, Control control, ServerUserManager userManager, byte[] key, ByteBuf in) throws Exception {
@@ -266,14 +280,14 @@ public interface AEAD2022 {
                 in.readBytes(nonce);
                 long sessionId = in.getLong(0);
                 UdpCipher cipher = getCipher(kind, method, key, sessionId);
-                byte[] decrypting = new byte[in.readableBytes()];
-                in.readBytes(decrypting);
-                byte[] decrypted = cipher.open(decrypting, nonce);
-                return Unpooled.wrappedBuffer(decrypted);
+                byte[] buffer = new byte[in.readableBytes()];
+                in.readBytes(buffer);
+                int plainLength = cipher.openInPlace(buffer, nonce);
+                return Unpooled.wrappedBuffer(buffer, 0, plainLength);
             } else {
                 byte[] header = new byte[16];
                 in.readBytes(header);
-                AES.decrypt(key, header, kind.keySize(), header);
+                aesDecrypt(kind.keySize(), key, header);
                 ByteBuf headerBuffer = Unpooled.wrappedBuffer(header);
                 long sessionId = headerBuffer.getLong(0);
                 UdpCipher cipher;
@@ -284,7 +298,7 @@ public interface AEAD2022 {
                     if (logger.isTraceEnabled()) {
                         logger.trace("server EIH {}, session_id_packet_id: {},{}", ByteString.valueOf(eih), sessionId, headerBuffer.getLong(Long.BYTES));
                     }
-                    AES.decrypt(key, eih, kind.keySize(), eih);
+                    aesDecrypt(kind.keySize(), key, eih);
                     for (int i = 0; i < eih.length; i++) {
                         eih[i] ^= header[i];
                     }
@@ -302,17 +316,18 @@ public interface AEAD2022 {
                 }
                 byte[] nonce = new byte[12];
                 headerBuffer.getBytes(4, nonce);
-                byte[] decrypting = new byte[in.readableBytes()];
-                in.readBytes(decrypting);
-                return Unpooled.wrappedBuffer(header, eih, cipher.open(decrypting, nonce));
+                byte[] buffer = new byte[in.readableBytes()];
+                in.readBytes(buffer);
+                int plainLength = cipher.openInPlace(buffer, nonce);
+                return Unpooled.wrappedBuffer(Unpooled.wrappedBuffer(header, eih), Unpooled.wrappedBuffer(buffer, 0, plainLength));
             }
         }
 
-        static byte[] sessionSubkey(byte[] key, long sessionId) {
+        static byte[] sessionSubkey(CipherMethod method, byte[] key, long sessionId) {
             byte[] in = new byte[key.length + Long.BYTES];
             System.arraycopy(key, 0, in, 0, key.length);
             Unpooled.wrappedBuffer(in).setLong(key.length, sessionId);
-            return deriveKey("shadowsocks 2022 session subkey".getBytes(), in);
+            return deriveKey(method.keySize(), "shadowsocks 2022 session subkey".getBytes(), in);
         }
 
         static void withEih(CipherKind kind, byte[] key, byte[][] identityKeys, byte[] sessionIdPacketId, ByteBuf buffer) {
@@ -334,7 +349,7 @@ public interface AEAD2022 {
             for (int i = 0; i < 16; i++) {
                 identityHeader[i] ^= sessionIdPacketId[i];
             }
-            AES.encrypt(iPSK, identityHeader, kind.keySize(), identityHeader);
+            aesEncrypt(kind.keySize(), iPSK, identityHeader);
             if (logger.isTraceEnabled()) {
                 logger.trace("client EIH:{}, hash:{}", ByteString.valueOf(identityHeader), ByteString.valueOf(iPSKnHashPlainText));
             }
@@ -368,14 +383,30 @@ public interface AEAD2022 {
         return result;
     }
 
-    private static byte[] deriveKey(byte[] context, byte[] keyMaterial) {
+    private static byte[] deriveKey(int length, byte[] context, byte[] keyMaterial) {
         Blake3Digest digest = new Blake3Digest();
         Blake3Parameters parameters = Blake3Parameters.context(context);
         digest.init(parameters);
         digest.update(keyMaterial, 0, keyMaterial.length);
-        byte[] out = new byte[digest.getDigestSize()];
-        digest.doFinal(out, 0);
+        byte[] out = new byte[length];
+        digest.doFinal(out, 0, length);
         return out;
+    }
+
+    static void aesEncrypt(int keySize, byte[] key, byte[] block) {
+        if (AES.BLOCK_SIZE == keySize) {
+            AES.encrypt128(key, block);
+        } else {
+            AES.encrypt256(key, block);
+        }
+    }
+
+    static void aesDecrypt(int keySize, byte[] key, byte[] block) {
+        if (AES.BLOCK_SIZE == keySize) {
+            AES.decrypt128(key, block);
+        } else {
+            AES.decrypt256(key, block);
+        }
     }
 
     static Keys passwordToKeys(String password) {

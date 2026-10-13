@@ -8,6 +8,5 @@ module com.urbansport.server {
     requires io.netty.handler;
     requires io.netty.codec.classes.quic;
     requires io.netty.transport;
-    requires org.bouncycastle.lts.prov;
     requires org.slf4j;
 }

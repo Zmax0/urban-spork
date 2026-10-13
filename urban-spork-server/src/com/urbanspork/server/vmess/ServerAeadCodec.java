@@ -24,7 +24,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import io.netty.handler.codec.DecoderException;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -63,12 +62,12 @@ public class ServerAeadCodec extends ByteToMessageCodec<ByteBuf> {
             byte[] aeadResponseHeaderLengthEncryptionBuffer = new byte[Short.BYTES];
             Unpooled.wrappedBuffer(aeadResponseHeaderLengthEncryptionBuffer).setShort(0, aeadEncryptedHeaderBuffer.length);
             try (CipherInstance instance = method.init(aeadResponseHeaderLengthEncryptionKey)) {
-                out.writeBytes(instance.encrypt(aeadResponseHeaderLengthEncryptionIV, null, aeadResponseHeaderLengthEncryptionBuffer));
+                out.writeBytes(instance.encryptTo(aeadResponseHeaderLengthEncryptionIV, null, aeadResponseHeaderLengthEncryptionBuffer));
             }
             byte[] aeadResponseHeaderPayloadEncryptionKey = KDF.kdf16(session.getResponseBodyKey(), KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_KEY.getBytes());
             byte[] aeadResponseHeaderPayloadEncryptionIV = KDF.kdf(session.getResponseBodyIV(), nonceSize, KDF_SALT_AEAD_RESP_HEADER_PAYLOAD_IV.getBytes());
             try (CipherInstance instance = method.init(aeadResponseHeaderPayloadEncryptionKey)) {
-                out.writeBytes(instance.encrypt(aeadResponseHeaderPayloadEncryptionIV, null, aeadEncryptedHeaderBuffer));
+                out.writeBytes(instance.encryptTo(aeadResponseHeaderPayloadEncryptionIV, null, aeadEncryptedHeaderBuffer));
             }
             payloadEncoder = AEADBodyCodec.getBodyEncoder(header, session);
         }
@@ -123,7 +122,7 @@ public class ServerAeadCodec extends ByteToMessageCodec<ByteBuf> {
         decode(address, in, out);
     }
 
-    private void decode(InetSocketAddress address, ByteBuf in, List<Object> out) throws InvalidCipherTextException {
+    private void decode(InetSocketAddress address, ByteBuf in, List<Object> out) {
         boolean isUdp = RequestCommand.UDP.equals(header.command());
         if (address != null) {
             if (isUdp) {

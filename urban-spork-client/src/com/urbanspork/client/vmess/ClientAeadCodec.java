@@ -98,7 +98,7 @@ public class ClientAeadCodec extends ByteToMessageCodec<ByteBuf> {
             in.readBytes(aeadEncryptedResponseHeaderLength);
             int decryptedResponseHeaderLength;
             try (CipherInstance instance = method.init(aeadResponseHeaderLengthEncryptionKey)) {
-                decryptedResponseHeaderLength = Unpooled.wrappedBuffer(instance.decrypt(aeadResponseHeaderLengthEncryptionIV, null, aeadEncryptedResponseHeaderLength)).readShort();
+                decryptedResponseHeaderLength = Unpooled.wrappedBuffer(instance.decryptTo(aeadResponseHeaderLengthEncryptionIV, null, aeadEncryptedResponseHeaderLength)).readShort();
             }
             if (in.readableBytes() < decryptedResponseHeaderLength + tagSize) {
                 logger.info("unexpected readable bytes for decoding client header: expecting {} but actually {}", decryptedResponseHeaderLength + tagSize, in.readableBytes());
@@ -111,7 +111,7 @@ public class ClientAeadCodec extends ByteToMessageCodec<ByteBuf> {
             in.readBytes(encryptedResponseHeaderBytes);
             byte[] decryptedResponseHeaderBytes;
             try (CipherInstance instance = method.init(aeadResponseHeaderPayloadEncryptionKey)) {
-                decryptedResponseHeaderBytes = instance.decrypt(aeadResponseHeaderPayloadEncryptionIV, null, encryptedResponseHeaderBytes);
+                decryptedResponseHeaderBytes = instance.decryptTo(aeadResponseHeaderPayloadEncryptionIV, null, encryptedResponseHeaderBytes);
             }
             byte responseHeader = decryptedResponseHeaderBytes[0];
             if (session.getResponseHeader() != responseHeader) { // v[1]

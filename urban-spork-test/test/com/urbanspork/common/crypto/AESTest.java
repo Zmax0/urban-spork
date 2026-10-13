@@ -5,6 +5,7 @@ import com.urbanspork.test.TestDice;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.Base64;
 
 class AESTest {
@@ -12,23 +13,18 @@ class AESTest {
     void testEncryptAndDecrypt() {
         byte[] key = Dice.rollBytes(16);
         String str = TestDice.rollString(16);
-        Assertions.assertEquals(str, new String(AES.decrypt(key, AES.encrypt(key, str.getBytes(), 16), 16)));
-    }
-
-    @Test
-    void testEncryptAndDecryptInPlace() {
-        byte[] key = Dice.rollBytes(16);
-        String str = TestDice.rollString(16);
-        byte[] in = str.getBytes();
-        AES.encrypt(key, in, 16, in);
-        Assertions.assertNotEquals(str, new String(in));
-        AES.decrypt(key, in, 16, in);
-        Assertions.assertEquals(str, new String(in));
+        byte[] block = str.getBytes();
+        AES.encrypt128(key, block);
+        Assertions.assertNotEquals(str, new String(block));
+        AES.decrypt128(key, block);
+        Assertions.assertEquals(str, new String(block));
     }
 
     @Test
     void testAes256() {
-        byte[] decrypt = AES.decrypt("4ylXkB2KedlvbLFytehZISl HZNo3s3LR049qziLBO9YVsZB".getBytes(), Base64.getDecoder().decode("P1RKHzOxcv1GKRlbD5OZGA=="), 32);
-        Assertions.assertEquals("Tp5MsnjQk/37dPkQpaBB9w==", Base64.getEncoder().encodeToString(decrypt));
+        byte[] key = Arrays.copyOf("4ylXkB2KedlvbLFytehZISl HZNo3s3LR049qziLBO9YVsZB".getBytes(), 32);
+        byte[] block = Base64.getDecoder().decode("P1RKHzOxcv1GKRlbD5OZGA==");
+        AES.decrypt256(key, block);
+        Assertions.assertEquals("Tp5MsnjQk/37dPkQpaBB9w==", Base64.getEncoder().encodeToString(block));
     }
 }

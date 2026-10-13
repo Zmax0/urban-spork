@@ -110,7 +110,7 @@ public abstract class UdpTestTemplate extends TestTemplate {
                     ch.pipeline().addLast(
                         new DatagramPacketEncoder(),
                         new DatagramPacketDecoder(),
-                        new SimpleChannelInboundHandler<DatagramPacketWrapper>(false) {
+                        new SimpleChannelInboundHandler<DatagramPacketWrapper>() {
                             @Override
                             protected void channelRead0(ChannelHandlerContext ctx, DatagramPacketWrapper msg) {
                                 logger.info("Receive msg {}", msg);

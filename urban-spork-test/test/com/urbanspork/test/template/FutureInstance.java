@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 public record FutureInstance<T>(Future<?> future, T instance) {
     @Override
     public String toString() {
-        return "F" + System.identityHashCode(future) + "I" + System.identityHashCode(instance);
+        return "[f-" + System.identityHashCode(future) + "|i-" + System.identityHashCode(instance) + "]";
     }
 
     public void close(Consumer<T> consumer) {

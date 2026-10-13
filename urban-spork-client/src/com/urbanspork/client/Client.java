@@ -137,6 +137,7 @@ public class Client {
         }
         if (closeTcp != null) {
             closeTcp.syncUninterruptibly();
+            tcp.deregister().syncUninterruptibly();
         }
     }
 

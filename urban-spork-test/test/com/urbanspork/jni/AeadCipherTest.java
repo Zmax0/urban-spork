@@ -18,6 +18,14 @@ class AeadCipherTest {
     }
 
     @Test
+    void testChaCha20Poly1305() {
+        try (com.urbanspork.jni.chacha20poly1305.Cipher cipher = com.urbanspork.jni.chacha20poly1305.Cipher.newInstance(KEY)) {
+            testEncrypt(cipher, 12, "e3MBmpgwz5N2oBKv2GdDjyiOaBs4gorsog==");
+            testDecrypt(cipher, 12, "aHYQm5M23o56kk+cmqDHq6CPIxj80S6u6Ts=");
+        }
+    }
+
+    @Test
     void testXChaCha8Poly1305() {
         try (com.urbanspork.jni.xchacha8poly1305.Cipher cipher = com.urbanspork.jni.xchacha8poly1305.Cipher.newInstance(KEY)) {
             testEncrypt(cipher, 24, "W1eIELrnJAOWgI2ab/A3tOewRWpeOzr4KA==");
@@ -48,4 +56,5 @@ class AeadCipherTest {
         byte[] ciphertext = Arrays.copyOf(buffer, buffer.length - 16);
         Assertions.assertArrayEquals("ciphertext".getBytes(), ciphertext);
     }
+
 }

@@ -1,7 +1,6 @@
 package com.urbanspork.client;
 
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
-import com.urbanspork.common.util.FutureListeners;
 import com.urbanspork.common.util.LruCache;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -42,11 +41,15 @@ public abstract class AbstractClientUdpRelayHandler<K, C extends Channel> extend
     public void channelRead0(ChannelHandlerContext ctx, DatagramPacketWrapper msg) {
         DatagramPacket packet = msg.packet();
         Channel inbound = ctx.channel();
-        getBindingChannel(inbound, getKey(msg)).addListener(
-            FutureListeners.success(outbound -> {
+        getBindingChannel(inbound, getKey(msg)).addListener((Future<C> future) -> {
+            if (future.isSuccess()) {
+                C outbound = future.getNow();
                 logger.debug("[udp][{}]{}→{}~{}→{}", context.config().getProtocol(), packet.sender(), msg.server(), inbound.localAddress(), outbound.localAddress());
                 outbound.writeAndFlush(convertToWrite(msg));
-            }));
+            } else {
+                msg.release();
+            }
+        });
     }
 
     @Override

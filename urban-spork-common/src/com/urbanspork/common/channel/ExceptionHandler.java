@@ -5,7 +5,6 @@ import com.urbanspork.common.protocol.Protocol;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,11 +23,7 @@ public class ExceptionHandler extends ChannelInboundHandlerAdapter {
         Channel channel = ctx.channel();
         Protocol protocol = config.getProtocol();
         String transLog = transLog(channel);
-        if (cause.getCause() instanceof InvalidCipherTextException) {
-            logger.error("{}[{}][{}] Invalid cipher text", channel, protocol, transLog);
-        } else {
-            logger.error("{}[{}][{}] Caught exception", channel, protocol, transLog, cause);
-        }
+        logger.error("{}[{}][{}] Caught exception", channel, protocol, transLog, cause);
         if (channel.isActive()) {
             ctx.close();
         }

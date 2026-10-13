@@ -33,6 +33,8 @@ class DnsResponseDecoderTest {
         ByteBuf buffer = Unpooled.wrappedBuffer(bytes);
         DnsResponse dnsResponse = DnsResponseDecoder.decode(buffer);
         Assertions.assertNotNull(dnsResponse);
+        dnsResponse.release();
+        buffer.release();
     }
 
     @Test
@@ -44,5 +46,7 @@ class DnsResponseDecoderTest {
         ByteBuf buffer = Unpooled.wrappedBuffer(bytes);
         DnsResponse dnsResponse = DnsResponseDecoder.decode(buffer);
         Assertions.assertNotNull(dnsResponse);
+        dnsResponse.release();
+        buffer.release();
     }
 }

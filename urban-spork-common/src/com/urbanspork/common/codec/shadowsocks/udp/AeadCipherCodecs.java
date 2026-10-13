@@ -18,7 +18,7 @@ class AeadCipherCodecs {
             case chacha20_poly1305 -> methods = CipherMethod.CHACHA20_POLY1305;
             case aead2022_blake3_chacha8_poly1305 -> methods = CipherMethod.XCHACHA8_POLY1305;
             case aead2022_blake3_chacha20_poly1305 -> methods = CipherMethod.XCHACHA20_POLY1305;
-            default -> methods = CipherMethod.AES_265_GCM;
+            default -> methods = CipherMethod.AES_256_GCM;
         }
         if (kind.isAead2022()) {
             return new Aead2022CipherCodecImpl(kind, methods, keys);

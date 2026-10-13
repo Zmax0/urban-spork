@@ -7,6 +7,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 
+import java.util.Arrays;
+
 public class AuthID {
     private AuthID() {}
 
@@ -20,14 +22,16 @@ public class AuthID {
         buf.writeBytes(Go.nextUnsignedInt());
         long crc32 = VMess.crc32(ByteBufUtil.getBytes(buf, buf.readerIndex(), buf.writerIndex(), false));
         buf.writeInt((int) crc32);
-        return AES.encrypt(KDF.kdf16(key, KDF_SALT_AUTH_ID_ENCRYPTION_KEY), authID, 16);
+        AES.encrypt128(KDF.kdf16(key, KDF_SALT_AUTH_ID_ENCRYPTION_KEY), authID);
+        return authID;
     }
 
     public static byte[] match(byte[] authID, byte[][] keys) {
         for (byte[] key : keys) {
             byte[] bytes;
             try {
-                bytes = AES.decrypt(KDF.kdf16(key, KDF_SALT_AUTH_ID_ENCRYPTION_KEY), authID, 16);
+                bytes = Arrays.copyOf(authID, authID.length);
+                AES.decrypt128(KDF.kdf16(key, KDF_SALT_AUTH_ID_ENCRYPTION_KEY), bytes);
             } catch (Exception _) {
                 continue;
             }

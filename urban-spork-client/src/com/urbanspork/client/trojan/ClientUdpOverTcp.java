@@ -17,13 +17,13 @@ import java.util.List;
 
 interface ClientUdpOverTcp {
     default Object convertToWrite(DatagramPacketWrapper msg) {
-        DatagramPacket packet = msg.packet();
         ByteBuf buffer = Unpooled.buffer();
         Address.encode(msg.server(), buffer);
-        ByteBuf content = packet.content();
+        ByteBuf content = msg.packet().content();
         buffer.writeShort(content.readableBytes());
         buffer.writeBytes(Trojan.CRLF);
         buffer.writeBytes(content);
+        msg.release();
         return buffer;
     }
 

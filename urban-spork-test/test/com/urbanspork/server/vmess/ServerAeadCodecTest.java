@@ -44,6 +44,7 @@ class ServerAeadCodecTest {
         EmbeddedChannel serverChannel = new EmbeddedChannel();
         serverChannel.pipeline().addLast(serverCodec);
         Assertions.assertThrows(DecoderException.class, () -> serverChannel.writeInbound(buf));
+        buf.release();
     }
 
     @Test

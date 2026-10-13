@@ -22,13 +22,14 @@
     <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
     <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
     <junit.jupiter.version>5.13.4</junit.jupiter.version>
-    <jackson.version>3.1.5</jackson.version>
-    <logback.version>1.5.32</logback.version>
-    <netty.version>4.2.16.Final</netty.version>
-    <bouncycastle.version>2.73.12</bouncycastle.version>
+    <jackson.version>3.2.3</jackson.version>
+    <logback.version>1.6.5</logback.version>
+    <netty.version>4.2.19.Final</netty.version>
+    <bouncycastle.version>2.73.13</bouncycastle.version>
     <jar-jni.version>1.2.0</jar-jni.version>
     <javafx.version>26.0.2</javafx.version>
     <caffeine.version>3.2.4</caffeine.version>
+    <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
     <jlink.executable>${java.home}/bin/jlink</jlink.executable>
     <jpackage.executable>${java.home}/bin/jpackage</jpackage.executable>
   </properties>
@@ -154,6 +155,13 @@
     <finalName>${project.name}</finalName>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>${os-maven-plugin.version}</version>
+      </extension>
+    </extensions>
     <resources>
       <resource>
         <directory>resource</directory>

@@ -191,7 +191,9 @@ public class DohTestServer {
             Map<String, List<String>> parameters = new QueryStringDecoder(uri).parameters();
             Optional<String> dns = Optional.ofNullable(parameters.get("dns")).orElse(Collections.emptyList()).stream().findFirst();
             if (dns.isPresent()) {
-                DnsQuery query = decode(Unpooled.wrappedBuffer(Base64.getUrlDecoder().decode(dns.get())));
+                ByteBuf encoded = Unpooled.wrappedBuffer(Base64.getUrlDecoder().decode(dns.get()));
+                DnsQuery query = decode(encoded);
+                encoded.release();
                 String resolved = Optional.ofNullable(parameters.get("resolved")).orElse(Collections.emptyList()).stream().findFirst().orElse("localhost");
                 DnsRecord question = query.recordAt(DnsSection.QUESTION);
                 DefaultDnsRawRecord answer = new DefaultDnsRawRecord(
@@ -204,6 +206,8 @@ public class DohTestServer {
                 dnsResponse.addRecord(DnsSection.QUESTION, question);
                 dnsResponse.addRecord(DnsSection.ANSWER, answer);
                 encode(dnsResponse, content);
+                dnsResponse.release();
+                query.release();
             }
         }
 

@@ -3,8 +3,8 @@ use super::*;
 /// # Safety
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Java_com_urbanspork_jni_xchacha20poly1305_Cipher_init<'local>(
-    env: JNIEnv<'local>,
-    class: JClass,
+    env: EnvUnowned<'local>,
+    class: JClass<'local>,
     key: JByteArray<'local>,
 ) -> JObject<'local> {
     unsafe { init::<XChaCha20Poly1305>(env, class, key) }
@@ -13,8 +13,8 @@ pub unsafe extern "C" fn Java_com_urbanspork_jni_xchacha20poly1305_Cipher_init<'
 /// # Safety
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Java_com_urbanspork_jni_xchacha20poly1305_Cipher_dispose<'local>(
-    env: JNIEnv<'local>,
-    _: JClass,
+    env: EnvUnowned<'local>,
+    _this: JObject<'local>,
     ptr: jlong,
 ) {
     unsafe { dispose::<XChaCha20Poly1305>(env, ptr) }
@@ -22,24 +22,50 @@ pub unsafe extern "C" fn Java_com_urbanspork_jni_xchacha20poly1305_Cipher_dispos
 
 /// # Safety
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Java_com_urbanspork_jni_xchacha20poly1305_Cipher_encrypt<'local>(
-    env: JNIEnv<'local>,
-    this: JObject<'local>,
+pub unsafe extern "C" fn Java_com_urbanspork_jni_xchacha20poly1305_Cipher_encrypt0<'local>(
+    env: EnvUnowned<'local>,
+    _this: JObject<'local>,
+    ptr: jlong,
     nonce: JByteArray<'local>,
     aad: JByteArray<'local>,
     plaintext: JByteArray<'local>,
 ) {
-    unsafe { encrypt::<XChaCha20Poly1305>(env, this, nonce, aad, plaintext) }
+    unsafe { encrypt::<XChaCha20Poly1305>(env, ptr, nonce, aad, plaintext) }
 }
 
 /// # Safety
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Java_com_urbanspork_jni_xchacha20poly1305_Cipher_decrypt<'local>(
-    env: JNIEnv<'local>,
-    this: JObject<'local>,
+pub unsafe extern "C" fn Java_com_urbanspork_jni_xchacha20poly1305_Cipher_decrypt0<'local>(
+    env: EnvUnowned<'local>,
+    _this: JObject<'local>,
+    ptr: jlong,
     nonce: JByteArray<'local>,
     aad: JByteArray<'local>,
     ciphertext: JByteArray<'local>,
 ) {
-    unsafe { decrypt::<XChaCha20Poly1305>(env, this, nonce, aad, ciphertext) }
+    unsafe { decrypt::<XChaCha20Poly1305>(env, ptr, nonce, aad, ciphertext) }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn Java_com_urbanspork_jni_xchacha20poly1305_Cipher_encryptDirect0<'local>(
+    env: EnvUnowned<'local>,
+    _this: JObject<'local>,
+    ptr: jlong,
+    nonce: JByteArray<'local>,
+    aad: JByteArray<'local>,
+    plaintext: JByteBuffer<'local>,
+) {
+    unsafe { encrypt_direct::<XChaCha20Poly1305>(env, ptr, nonce, aad, plaintext) }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn Java_com_urbanspork_jni_xchacha20poly1305_Cipher_decryptDirect0<'local>(
+    env: EnvUnowned<'local>,
+    _this: JObject<'local>,
+    ptr: jlong,
+    nonce: JByteArray<'local>,
+    aad: JByteArray<'local>,
+    ciphertext: JByteBuffer<'local>,
+) {
+    unsafe { decrypt_direct::<XChaCha20Poly1305>(env, ptr, nonce, aad, ciphertext) }
 }

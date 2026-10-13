@@ -24,7 +24,7 @@ public class Encrypt {
         int nonceSize = method.nonceSize();
         out.writeBytes(generatedAuthID); // 16
         try (CipherInstance instance = method.init(KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY, generatedAuthID, connectionNonce))) {
-            byte[] payloadHeaderLengthAEADEncrypted = instance.encrypt(
+            byte[] payloadHeaderLengthAEADEncrypted = instance.encryptTo(
                 KDF.kdf(key, nonceSize, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_IV, generatedAuthID, connectionNonce),
                 generatedAuthID,
                 aeadPayloadLengthSerializedByte
@@ -33,7 +33,7 @@ public class Encrypt {
         }
         out.writeBytes(connectionNonce); // 8
         try (CipherInstance instance = method.init(KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_KEY, generatedAuthID, connectionNonce))) {
-            byte[] payloadHeaderAEADEncrypted = instance.encrypt(
+            byte[] payloadHeaderAEADEncrypted = instance.encryptTo(
                 KDF.kdf(key, nonceSize, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_IV, generatedAuthID, connectionNonce),
                 generatedAuthID,
                 header
@@ -58,7 +58,7 @@ public class Encrypt {
         int nonceSize = method.nonceSize();
         byte[] decryptedAEADHeaderLengthPayloadResult;
         try (CipherInstance instance = method.init(KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_KEY, authid, nonce))) {
-            decryptedAEADHeaderLengthPayloadResult = instance.decrypt(
+            decryptedAEADHeaderLengthPayloadResult = instance.decryptTo(
                 KDF.kdf(key, nonceSize, KDF_SALT_VMESS_HEADER_PAYLOAD_LENGTH_AEAD_IV, authid, nonce),
                 authid,
                 payloadHeaderLengthAEADEncrypted
@@ -72,7 +72,7 @@ public class Encrypt {
         byte[] payloadHeaderAEADEncrypted = new byte[length + tagSize];
         in.readBytes(payloadHeaderAEADEncrypted);
         try (CipherInstance instance = method.init(KDF.kdf16(key, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_KEY, authid, nonce))) {
-            byte[] decryptedAEADHeaderPayloadR = instance.decrypt(
+            byte[] decryptedAEADHeaderPayloadR = instance.decryptTo(
                 KDF.kdf(key, nonceSize, KDF_SALT_VMESS_HEADER_PAYLOAD_AEAD_IV, authid, nonce),
                 authid,
                 payloadHeaderAEADEncrypted

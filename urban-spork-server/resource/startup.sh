@@ -9,6 +9,7 @@ fi
 mkdir -p logs
 touch logs/server.log
 nohup "$JAVA_HOME"/bin/java \
+--enable-native-access=com.urbanspork.jni \
 --enable-native-access=io.netty.common \
 --add-opens java.base/jdk.internal.misc=io.netty.common \
 --add-opens java.base/java.nio=io.netty.common \

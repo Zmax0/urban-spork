@@ -105,6 +105,7 @@ public class TcpCapture {
                             outboundPromise.setSuccess(outboundCapture);
                         }
                         if (block) {
+                            buf.release();
                             return;
                         }
                         if (promise.isDone()) {

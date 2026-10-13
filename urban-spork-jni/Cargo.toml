@@ -11,5 +11,7 @@ crate-type = ["cdylib"]
 path = "src/ciphers.rs"
 
 [dependencies]
-jni = "0.21.1"
-chacha20poly1305 = { version = "0.10.1", features = ["reduced-round"] }
+jni = "0.22.4"
+aes = "0.9.3"
+aes-gcm = "0.11.1"
+chacha20poly1305 = { version = "0.11.0", features = ["reduced-round"] }

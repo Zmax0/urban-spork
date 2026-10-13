@@ -50,13 +50,6 @@
     </dependency>
   </dependencies>
   <build>
-    <extensions>
-      <extension>
-        <groupId>kr.motd.maven</groupId>
-        <artifactId>os-maven-plugin</artifactId>
-        <version>1.7.1</version>
-      </extension>
-    </extensions>
     <resources>
       <resource>
         <directory>resource</directory>
@@ -234,6 +227,8 @@
                       <arg value="-Xms64m"/>
                       <arg value="--java-options"/>
                       <arg value="-Xmx256m"/>
+                      <arg value="--java-options"/>
+                      <arg value="--enable-native-access=com.urbanspork.jni"/>
                     </exec>
                     <!-- jpackage marks the launcher read-only, which mvn clean cannot delete -->
                     <attrib readonly="false">
