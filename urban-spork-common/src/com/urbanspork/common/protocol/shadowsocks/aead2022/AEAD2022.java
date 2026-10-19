@@ -12,17 +12,17 @@ import com.urbanspork.common.codec.chunk.AEADChunkSizeParser;
 import com.urbanspork.common.codec.shadowsocks.Keys;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.crypto.AES;
+import com.urbanspork.common.crypto.Blake3;
 import com.urbanspork.common.crypto.Digests;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.shadowsocks.Control;
 import com.urbanspork.common.protocol.shadowsocks.Identity;
 import com.urbanspork.common.util.ByteString;
+import com.urbanspork.common.util.Bytes;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
-import org.bouncycastle.crypto.digests.Blake3Digest;
-import org.bouncycastle.crypto.params.Blake3Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -161,12 +161,12 @@ public interface AEAD2022 {
 
         // session_subkey := blake3::derive_key(context: "shadowsocks 2022 session subkey", key_material: key + salt)
         static byte[] sessionSubkey(CipherMethod method, byte[] key, byte[] salt) {
-            return deriveKey(method.keySize(), "shadowsocks 2022 session subkey".getBytes(), concat(key, salt));
+            return deriveKey(method.keySize(), "shadowsocks 2022 session subkey".getBytes(), Bytes.concat(key, salt));
         }
 
         // identity_subkey := blake3::derive_key(context: "shadowsocks 2022 identity subkey", key_material: key + salt)
         static byte[] identitySubkey(CipherMethod method, byte[] key, byte[] salt) {
-            return deriveKey(method.keySize(), "shadowsocks 2022 identity subkey".getBytes(), concat(key, salt));
+            return deriveKey(method.keySize(), "shadowsocks 2022 identity subkey".getBytes(), Bytes.concat(key, salt));
         }
 
         static void withEih(CipherKind kind, Keys keys, byte[] salt, ByteBuf out) {
@@ -175,7 +175,7 @@ public interface AEAD2022 {
                 if (subKey != null) {
                     withEih(kind, subKey, iPSK, out);
                 }
-                subKey = deriveKey(kind.keySize(), "shadowsocks 2022 identity subkey".getBytes(), concat(iPSK, salt));
+                subKey = deriveKey(kind.keySize(), "shadowsocks 2022 identity subkey".getBytes(), Bytes.concat(iPSK, salt));
             }
             if (subKey != null) {
                 withEih(kind, subKey, keys.encKey(), out);
@@ -377,20 +377,8 @@ public interface AEAD2022 {
         }
     }
 
-    static byte[] concat(byte[] bytes1, byte[] bytes2) {
-        byte[] result = Arrays.copyOf(bytes1, bytes1.length + bytes2.length);
-        System.arraycopy(bytes2, 0, result, bytes1.length, bytes2.length);
-        return result;
-    }
-
     private static byte[] deriveKey(int length, byte[] context, byte[] keyMaterial) {
-        Blake3Digest digest = new Blake3Digest();
-        Blake3Parameters parameters = Blake3Parameters.context(context);
-        digest.init(parameters);
-        digest.update(keyMaterial, 0, keyMaterial.length);
-        byte[] out = new byte[length];
-        digest.doFinal(out, 0, length);
-        return out;
+        return Blake3.deriveKey(context, keyMaterial, length);
     }
 
     static void aesEncrypt(int keySize, byte[] key, byte[] block) {

@@ -14,7 +14,6 @@ module com.urbanspork.common {
     requires io.netty.handler;
     requires io.netty.transport;
     requires jdk.unsupported;
-    requires org.bouncycastle.lts.prov;
     requires org.jspecify;
     requires org.slf4j;
     requires tools.jackson.core;

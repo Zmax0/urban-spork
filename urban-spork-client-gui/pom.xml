@@ -229,6 +229,8 @@
                       <arg value="-Xmx256m"/>
                       <arg value="--java-options"/>
                       <arg value="--enable-native-access=com.urbanspork.jni"/>
+                      <arg value="--java-options"/>
+                      <arg value="--enable-native-access=io.questdb.jar.jni"/>
                     </exec>
                     <!-- jpackage marks the launcher read-only, which mvn clean cannot delete -->
                     <attrib readonly="false">

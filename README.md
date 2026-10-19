@@ -39,7 +39,7 @@ server
 
 - `shadowsocks`: `udp` > `quic`
 
-### Ciphers
+### Ciphers(*)
 
 |                                   | Shadowsocks |  VMess  |
 |:----------------------------------|:-----------:|:-------:|
@@ -48,14 +48,13 @@ server
 | chacha20-poly1305                 |   `C` `S`   | `C` `S` |
 | 2022-blake3-aes-128-gcm           |   `C` `S`   |         |
 | 2022-blake3-aes-256-gcm           |   `C` `S`   |         |
-| 2022-blake3-chacha8-poly1305 (*)  |   `C` `S`   |         |
-| 2022-blake3-chacha20-poly1305 (*) |   `C` `S`   |         |
+| 2022-blake3-chacha8-poly1305      |   `C` `S`   |         |
+| 2022-blake3-chacha20-poly1305     |   `C` `S`   |         |
 
 `C` for client `S` for server
 
-`2022-blake3-chacha8-poly1305` implemented via JNI, has only been tested on the amd64 arch
+**NOTE**: all ciphers implemented via JNI, has only been tested on the amd64 arch
 
-`2022-blake3-chacha20-poly1305` UDP part, implemented via JNI, has only been tested on the amd64 arch
 
 ## Config
 
@@ -148,7 +147,7 @@ Headers*](https://github.com/Shadowsocks-NET/shadowsocks-specs/blob/main/2022-2-
 
 JDK 25+
 
-Rust 1.69+
+Rust 1.85+
 
 ### Build Output
 

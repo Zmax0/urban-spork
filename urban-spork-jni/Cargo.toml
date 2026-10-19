@@ -14,4 +14,6 @@ path = "src/ciphers.rs"
 jni = "0.22.4"
 aes = "0.9.3"
 aes-gcm = "0.11.1"
+blake3 = "1.8.7"
 chacha20poly1305 = { version = "0.11.0", features = ["reduced-round"] }
+shake = "0.1.0"

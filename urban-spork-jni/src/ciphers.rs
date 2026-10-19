@@ -2,8 +2,10 @@ pub mod aes128;
 pub mod aes128gcm;
 pub mod aes256;
 pub mod aes256gcm;
+pub mod blake3;
 pub mod chacha20poly1305;
 pub mod chacha8poly1305;
+pub mod shake128;
 pub mod xchacha20poly1305;
 pub mod xchacha8poly1305;
 

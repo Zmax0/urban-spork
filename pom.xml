@@ -25,7 +25,6 @@
     <jackson.version>3.2.3</jackson.version>
     <logback.version>1.6.5</logback.version>
     <netty.version>4.2.19.Final</netty.version>
-    <bouncycastle.version>2.73.13</bouncycastle.version>
     <jar-jni.version>1.2.0</jar-jni.version>
     <javafx.version>26.0.2</javafx.version>
     <caffeine.version>3.2.4</caffeine.version>
@@ -110,16 +109,6 @@
         <groupId>io.netty</groupId>
         <artifactId>netty-codec-http3</artifactId>
         <version>${netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.bouncycastle</groupId>
-        <artifactId>bcpkix-lts8on</artifactId>
-        <version>${bouncycastle.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.bouncycastle</groupId>
-        <artifactId>bcprov-lts8on</artifactId>
-        <version>${bouncycastle.version}</version>
       </dependency>
       <dependency>
         <groupId>org.questdb</groupId>

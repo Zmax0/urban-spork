@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +47,7 @@ class AeadCipherCodec implements AutoCloseable {
         this.cipherMethod = cipherMethod;
     }
 
-    public void encode(Session session, ByteBuf msg, ByteBuf out) {
+    public void encode(Session session, ByteBuf msg, ByteBuf out) throws NoSuchAlgorithmException, InvalidKeyException {
         boolean isAead2022 = cipherKind.isAead2022();
         if (payloadEncoder == null) {
             initPayloadEncoder(session, isAead2022, out);
@@ -59,7 +61,7 @@ class AeadCipherCodec implements AutoCloseable {
         payloadEncoder.encodePayload(msg, out);
     }
 
-    private void initPayloadEncoder(Session session, boolean isAead2022, ByteBuf out) {
+    private void initPayloadEncoder(Session session, boolean isAead2022, ByteBuf out) throws NoSuchAlgorithmException, InvalidKeyException {
         withIdentity(session, cipherKind, keys, out);
         byte[] salt = session.identity().salt();
         if (isAead2022) {

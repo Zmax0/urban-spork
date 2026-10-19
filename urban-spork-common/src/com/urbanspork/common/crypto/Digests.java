@@ -1,42 +1,50 @@
 package com.urbanspork.common.crypto;
 
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.Blake3Digest;
-import org.bouncycastle.crypto.digests.MD5Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA224Digest;
-
-import java.util.function.Supplier;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public enum Digests {
 
-    md5(MD5Digest::new),
-    sha224(SHA224Digest::new),
-    sha256(SHA256Digest::new),
-    blake3(Blake3Digest::new),
+    md5("MD5", 16),
+    sha224("SHA-224", 28),
+    sha256("SHA-256", 32),
+    blake3(null, Blake3.OUT_LEN),
     ;
 
-    private final Supplier<Digest> provider;
+    private final String algorithm;
+    private final int size;
 
-    Digests(Supplier<Digest> provider) {
-        this.provider = provider;
+    Digests(String algorithm, int size) {
+        this.algorithm = algorithm;
+        this.size = size;
     }
 
     public byte[] hash(byte[] in) {
-        Digest digest = provider.get();
-        digest.update(in, 0, in.length);
-        byte[] out = new byte[digest.getDigestSize()];
-        digest.doFinal(out, 0);
-        return out;
+        if (algorithm == null) {
+            return Blake3.hash(in);
+        }
+        return digest().digest(in);
     }
 
     public void hash(byte[] in, byte[] out, int outOff) {
-        Digest digest = provider.get();
-        digest.update(in, 0, in.length);
-        digest.doFinal(out, outOff);
+        if (algorithm == null) {
+            byte[] hash = Blake3.hash(in);
+            System.arraycopy(hash, 0, out, outOff, hash.length);
+            return;
+        }
+        byte[] hash = digest().digest(in);
+        System.arraycopy(hash, 0, out, outOff, hash.length);
     }
 
     public int size() {
-        return provider.get().getDigestSize();
+        return size;
+    }
+
+    private MessageDigest digest() {
+        try {
+            return MessageDigest.getInstance(algorithm);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(algorithm + " is not available", e);
+        }
     }
 }

@@ -2,18 +2,19 @@ package com.urbanspork.common.codec.vmess;
 
 import com.urbanspork.common.codec.PaddingLengthGenerator;
 import com.urbanspork.common.codec.chunk.ChunkSizeCodec;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import org.bouncycastle.crypto.digests.SHAKEDigest;
+import com.urbanspork.common.crypto.Shake128;
 
 public class ShakeSizeParser implements ChunkSizeCodec, PaddingLengthGenerator {
 
-    private final SHAKEDigest shake = new SHAKEDigest();
+    private static final int MASK_BYTES = 2;
+    private static final int BUFFERED_MASKS = 4096;
 
-    private final ByteBuf buffer = Unpooled.buffer(sizeBytes());
+    private final Shake128 shake;
+    private final byte[] buffer = new byte[MASK_BYTES * BUFFERED_MASKS];
+    private int position = buffer.length;
 
     public ShakeSizeParser(byte[] nonce) {
-        shake.update(nonce, 0, nonce.length);
+        this.shake = new Shake128(nonce);
     }
 
     @Override
@@ -23,16 +24,14 @@ public class ShakeSizeParser implements ChunkSizeCodec, PaddingLengthGenerator {
 
     @Override
     public byte[] encode(int size) {
-        byte[] result = new byte[2];
         int mask = next();
-        Unpooled.wrappedBuffer(result).setShort(0, mask ^ size);
-        return result;
+        return new byte[]{(byte) ((mask ^ size) >>> 8), (byte) (mask ^ size)};
     }
 
     @Override
     public int decode(byte[] data) {
         int mask = next();
-        int size = Unpooled.wrappedBuffer(data).getUnsignedShort(0);
+        int size = ((data[0] & 0xff) << 8) | (data[1] & 0xff);
         return mask ^ size;
     }
 
@@ -42,7 +41,12 @@ public class ShakeSizeParser implements ChunkSizeCodec, PaddingLengthGenerator {
     }
 
     private int next() {
-        shake.doOutput(buffer.array(), 0, sizeBytes());
-        return buffer.getUnsignedShort(0);
+        if (position + MASK_BYTES > buffer.length) {
+            shake.squeeze(buffer);
+            position = 0;
+        }
+        int mask = ((buffer[position] & 0xff) << 8) | (buffer[position + 1] & 0xff);
+        position += MASK_BYTES;
+        return mask;
     }
 }
