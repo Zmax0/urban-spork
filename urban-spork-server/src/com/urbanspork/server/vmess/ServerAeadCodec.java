@@ -141,7 +141,11 @@ public class ServerAeadCodec extends ByteToMessageCodec<ByteBuf> {
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
         super.handlerRemoved(ctx);
-        payloadDecoder.close();
-        payloadEncoder.close();
+        if (payloadDecoder != null) {
+            payloadDecoder.close();
+        }
+        if (payloadEncoder != null) {
+            payloadEncoder.close();
+        }
     }
 }

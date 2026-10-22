@@ -12,7 +12,6 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
@@ -32,16 +31,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -53,52 +47,20 @@ public abstract class UdpTestTemplate extends TestTemplate {
     private final EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
     protected Channel channel;
     private Consumer<DatagramPacketWrapper> consumer;
-    protected FutureInstance<DatagramSocket> simpleEchoTestUdpServer;
-    protected FutureInstance<DatagramSocket> delayedEchoTestUdpServer;
+    protected SimpleEchoTestServer simpleEchoTestUdpServer;
+    protected DelayedEchoTestServer delayedEchoTestUdpServer;
 
     @BeforeAll
-    protected void initTemplate() {
+    protected void initTemplate() throws IOException {
         launchUDPTestServer();
         initChannel();
     }
 
-    private void launchUDPTestServer() {
-        CompletableFuture<DatagramSocket> f1 = new CompletableFuture<>();
-        Future<?> simpleEchoTestUdpServerFuture = POOL.submit(() -> {
-            try {
-                SimpleEchoTestServer.launch(0, f1);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        });
-        try {
-            simpleEchoTestUdpServer = new FutureInstance<>(simpleEchoTestUdpServerFuture, f1.get());
-            int localPort = simpleEchoTestUdpServer.instance().getLocalPort();
-            dstAddress.add(new InetSocketAddress(InetAddress.getLoopbackAddress(), localPort));
-        } catch (InterruptedException _) {
-            Thread.currentThread().interrupt();
-        } catch (Exception e) {
-            logger.error("launch simple echo server failed", e);
-            Assertions.fail("launch test server failed");
-        }
-        CompletableFuture<DatagramSocket> f2 = new CompletableFuture<>();
-        Future<?> delayedEchoTestUdpServerFuture = POOL.submit(() -> {
-            try {
-                DelayedEchoTestServer.launch(0, f2);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        try {
-            delayedEchoTestUdpServer = new FutureInstance<>(delayedEchoTestUdpServerFuture, f2.get());
-            int localPort = delayedEchoTestUdpServer.instance().getLocalPort();
-            dstAddress.add(new InetSocketAddress(InetAddress.getLoopbackAddress(), localPort));
-        } catch (InterruptedException _) {
-            Thread.currentThread().interrupt();
-        } catch (Exception e) {
-            logger.error("launch delayed echo server failed", e);
-            Assertions.fail("launch test server failed");
-        }
+    private void launchUDPTestServer() throws IOException {
+        simpleEchoTestUdpServer = SimpleEchoTestServer.launch(0);
+        dstAddress.add(simpleEchoTestUdpServer.localAddress());
+        delayedEchoTestUdpServer = DelayedEchoTestServer.launch(0);
+        dstAddress.add(delayedEchoTestUdpServer.localAddress());
     }
 
     private void initChannel() {
@@ -156,16 +118,9 @@ public abstract class UdpTestTemplate extends TestTemplate {
 
     @AfterAll
     void cleanTemplate() {
-        Channel channel = new Bootstrap().group(group)
-            .channel(NioDatagramChannel.class)
-            .handler(new ChannelInboundHandlerAdapter()).bind(0).syncUninterruptibly().channel();
-        logger.info("send close msg");
-        for (InetSocketAddress dstAddress : dstAddress) {
-            channel.writeAndFlush(new DatagramPacket(Unpooled.wrappedBuffer("close".getBytes(StandardCharsets.UTF_8)), dstAddress));
-        }
-        channel.close().syncUninterruptibly();
-        simpleEchoTestUdpServer.close(_ -> {});
-        delayedEchoTestUdpServer.close(_ -> {});
+        logger.info("close test servers");
+        simpleEchoTestUdpServer.close();
+        delayedEchoTestUdpServer.close();
         logger.info("close channel");
         this.channel.close().syncUninterruptibly();
         group.shutdownGracefully().syncUninterruptibly();

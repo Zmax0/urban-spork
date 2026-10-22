@@ -16,7 +16,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioIoHandler;
-import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.FixedLengthFrameDecoder;
 import io.netty.handler.codec.http.DefaultHttpRequest;
@@ -37,9 +36,7 @@ import org.junit.jupiter.api.TestInstance;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -47,19 +44,13 @@ import java.util.concurrent.TimeoutException;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TcpTestTemplate extends TestTemplate {
     final EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-    protected FutureInstance<ServerSocketChannel> echoTestServer;
+    protected EchoTestServer echoTestServer;
     protected InetSocketAddress dstAddress;
 
     @BeforeAll
-    void initTemplate() throws ExecutionException, InterruptedException {
-        launchEchoTestServer();
-    }
-
-    private void launchEchoTestServer() throws InterruptedException, ExecutionException {
-        CompletableFuture<ServerSocketChannel> promise = new CompletableFuture<>();
-        Future<?> echoTestServerFuture = POOL.submit(() -> EchoTestServer.launch(0, promise));
-        echoTestServer = new FutureInstance<>(echoTestServerFuture, promise.get());
-        dstAddress = echoTestServer.instance().localAddress();
+    void initTemplate() throws InterruptedException {
+        echoTestServer = EchoTestServer.launch(0);
+        dstAddress = echoTestServer.localAddress();
     }
 
     protected Channel connect(InetSocketAddress address) throws InterruptedException {
@@ -153,7 +144,7 @@ public abstract class TcpTestTemplate extends TestTemplate {
     @AfterAll
     void cleanTemplate() {
         logger.info("close echo test server: {}", echoTestServer);
-        echoTestServer.close(Channel::close);
+        echoTestServer.close();
         group.shutdownGracefully().syncUninterruptibly();
     }
 }

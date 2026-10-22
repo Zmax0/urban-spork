@@ -3,16 +3,21 @@ package com.urbanspork.client;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-class ClientInitializer extends ChannelInitializer<NioSocketChannel> {
+class ClientTcpInitializer extends ChannelInitializer<NioSocketChannel> {
 
-    private final ClientChannelContext context;
+    private volatile ClientChannelContext context;
 
-    ClientInitializer(ClientChannelContext context) {
+    ClientTcpInitializer(ClientChannelContext context) {
         this.context = context;
     }
 
     @Override
     protected void initChannel(NioSocketChannel channel) {
+        ClientChannelContext context = this.context;
         channel.pipeline().addLast(context.traffic(), new ClientProxyUnificationHandler(context));
+    }
+
+    void reloadContext(ClientChannelContext context) {
+        this.context = context;
     }
 }

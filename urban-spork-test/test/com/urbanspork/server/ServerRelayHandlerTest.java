@@ -16,16 +16,11 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.nio.NioIoHandler;
-import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 class ServerRelayHandlerTest {
     @Test
@@ -45,25 +40,25 @@ class ServerRelayHandlerTest {
     }
 
     @Test
-    void testClientClose() throws ExecutionException, InterruptedException {
+    void testClientClose() throws InterruptedException {
         ServerConfig config = ServerConfigTest.testConfig(0);
-        try (ExecutorService pool = Executors.newSingleThreadExecutor()) {
-            CompletableFuture<ServerSocketChannel> promise = new CompletableFuture<>();
-            pool.submit(() -> EchoTestServer.launch(0, promise));
-            ServerSocketChannel echoTestServer = promise.get();
+        try (EchoTestServer echoTestServer = EchoTestServer.launch(0)) {
             EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-            Channel channel = new Bootstrap().group(group)
-                .channel(NioSocketChannel.class)
-                .handler(new ChannelHandlerAdapter() {
-                    @Override
-                    public void handlerAdded(ChannelHandlerContext ctx) {
-                        ctx.pipeline().addLast(new ServerRelayHandler(config)).fireChannelRead(new RelayingPayload<>(echoTestServer.localAddress(), Unpooled.wrappedBuffer(Dice.rollBytes(10))));
-                    }
-                })
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
-                .bind(0).sync().channel();
-            Assertions.assertFalse(channel.isActive());
-            echoTestServer.close();
+            try {
+                Channel channel = new Bootstrap().group(group)
+                    .channel(NioSocketChannel.class)
+                    .handler(new ChannelHandlerAdapter() {
+                        @Override
+                        public void handlerAdded(ChannelHandlerContext ctx) {
+                            ctx.pipeline().addLast(new ServerRelayHandler(config)).fireChannelRead(new RelayingPayload<>(echoTestServer.localAddress(), Unpooled.wrappedBuffer(Dice.rollBytes(10))));
+                        }
+                    })
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
+                    .bind(0).sync().channel();
+                Assertions.assertFalse(channel.isActive());
+            } finally {
+                group.shutdownGracefully().syncUninterruptibly();
+            }
         }
     }
 }

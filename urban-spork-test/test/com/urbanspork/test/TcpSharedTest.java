@@ -5,18 +5,12 @@ import com.urbanspork.common.codec.CipherKind;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ClientConfigTest;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.config.ServerConfigTest;
 import com.urbanspork.common.config.ServerUserConfig;
-import com.urbanspork.common.manage.shadowsocks.ServerUser;
-import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.transport.Transport;
 import com.urbanspork.server.Server;
-import com.urbanspork.test.template.FutureInstance;
 import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.TcpTestTemplate;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -28,94 +22,44 @@ import java.util.concurrent.TimeoutException;
 class TcpSharedTest extends TcpTestTemplate {
     private static final Transport[] TRANSPORTS = new Transport[]{Transport.TCP};
 
-    private ServerConfig config;
-    private FutureInstance<List<Server.Instance>> server;
-    private InetSocketAddress clientAddress;
-    private FutureInstance<Client.Instance> client;
-
-    private ServerConfig sslConfig;
-    private FutureInstance<List<Server.Instance>> sslServer;
-    private FutureInstance<Client.Instance> sslClient;
-    private InetSocketAddress sslClientAddress;
-
-    private ServerConfig shadowsocksAEAD2022EihServerConfig;
-    private ClientConfig shadowsocksAEAD2022EihClientConfig;
-    private FutureInstance<List<Server.Instance>> shadowsocksAEAD2022EihServer;
-    private ServerUserManager shadowsocksAEAD2022EihServerUserManager;
-    private FutureInstance<Client.Instance> shadowsocksAEAD2022EihClient;
-    private InetSocketAddress shadowsocksAEAD2022EihClientAddress;
-
-    @BeforeAll
-    void beforeAll() throws ExecutionException, InterruptedException {
-        init();
-        initSsl();
-        initShadowsocksAEAD2022Eih();
-    }
-
-    private void init() throws InterruptedException, ExecutionException {
-        ClientConfig clientConfig = testConfig();
-        config = clientConfig.getServers().getFirst();
-        config.setTransport(TRANSPORTS);
-        server = launchServer(clientConfig.getServers());
-        client = launchClient(clientConfig);
-        clientAddress = client.instance().tcp().localAddress();
-    }
-
-    private void initSsl() throws InterruptedException, ExecutionException {
-        ClientConfig clientConfig = ClientConfigTest.testConfig(0, 0);
-        sslConfig = clientConfig.getServers().getFirst();
-        sslConfig.setTransport(TRANSPORTS);
-        sslConfig.setSsl(SslUtil.getSslSetting());
-        sslServer = launchServer(clientConfig.getServers());
-        sslClient = launchClient(clientConfig);
-        sslClientAddress = sslClient.instance().tcp().localAddress();
-    }
-
-    private void initShadowsocksAEAD2022Eih() throws InterruptedException, ExecutionException {
-        shadowsocksAEAD2022EihServerConfig = ServerConfigTest.testConfig(0);
-        shadowsocksAEAD2022EihServerConfig.setTransport(TRANSPORTS);
-        shadowsocksAEAD2022EihServer = launchServer(List.of(shadowsocksAEAD2022EihServerConfig));
-        shadowsocksAEAD2022EihServerUserManager = shadowsocksAEAD2022EihServer.instance().getFirst().context().userManager();
-        shadowsocksAEAD2022EihClientConfig = ClientConfigTest.testConfig(0, shadowsocksAEAD2022EihServerConfig.getPort());
-        shadowsocksAEAD2022EihClientConfig.getCurrent().setTransport(TRANSPORTS);
-        shadowsocksAEAD2022EihClient = launchClient(shadowsocksAEAD2022EihClientConfig);
-        shadowsocksAEAD2022EihClientAddress = shadowsocksAEAD2022EihClient.instance().tcp().localAddress();
-    }
-
     @ParameterizedTest
     @ArgumentsSource(Parameter.Provider.class)
     void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
-        CipherKind cipher = parameter.cipher();
-        Protocol protocol = parameter.protocol();
-        if (protocol == Protocol.shadowsocks && cipher.isAead2022() && cipher.supportEih()) {
-            shadowsocksAEAD2022EihServerConfig.setProtocol(protocol);
-            shadowsocksAEAD2022EihServerConfig.setCipher(cipher);
-            shadowsocksAEAD2022EihServerConfig.setPassword(parameter.serverPassword());
-            shadowsocksAEAD2022EihServerUserManager.clear();
-            shadowsocksAEAD2022EihServerUserManager.addUser(ServerUser.from(new ServerUserConfig(TestDice.rollString(10), parameter.clientPassword())));
-            ServerConfig current = shadowsocksAEAD2022EihClientConfig.getCurrent();
-            current.setProtocol(protocol);
-            current.setCipher(cipher);
-            current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
-            socksHandshakeAndSendBytes(shadowsocksAEAD2022EihClientAddress);
-            checkHttpsHandshakeAndSendBytes(shadowsocksAEAD2022EihClientAddress);
-            checkHttpSendBytes(shadowsocksAEAD2022EihClientAddress);
+        if (isShadowsocksAEAD2022Eih(parameter)) {
+            testByParameter(parameter, true);
         }
-        boolean tls = parameter.sslSetting() != null;
-        updateConfig(tls ? sslConfig : config, parameter);
-        InetSocketAddress address = tls ? sslClientAddress : clientAddress;
-        socksHandshakeAndSendBytes(address);
-        checkHttpsHandshakeAndSendBytes(address);
-        checkHttpSendBytes(address);
+        testByParameter(parameter, false);
     }
 
-    @AfterAll
-    protected void afterAll() {
-        closeClient(client);
-        closeServer(server);
-        closeClient(sslClient);
-        closeServer(sslServer);
-        closeClient(shadowsocksAEAD2022EihClient);
-        closeServer(shadowsocksAEAD2022EihServer);
+    private void testByParameter(Parameter parameter, boolean eih) throws ExecutionException, InterruptedException, TimeoutException {
+        ServerConfig serverConfig = testConfig().getCurrent();
+        serverConfig.setTransport(TRANSPORTS);
+        updateConfig(serverConfig, parameter);
+        if (eih) {
+            serverConfig.setUser(List.of(new ServerUserConfig(TestDice.rollString(10), parameter.clientPassword())));
+        }
+        try (Server.Instances _ = launchServer(List.of(serverConfig));
+             Client.Instance client = launchClient(clientConfig(serverConfig, parameter, eih))) {
+            InetSocketAddress address = client.tcp().localAddress();
+            socksHandshakeAndSendBytes(address);
+            checkHttpsHandshakeAndSendBytes(address);
+            checkHttpSendBytes(address);
+        }
+    }
+
+    private static ClientConfig clientConfig(ServerConfig serverConfig, Parameter parameter, boolean eih) {
+        ClientConfig clientConfig = ClientConfigTest.testConfig(0, serverConfig.getPort());
+        ServerConfig current = clientConfig.getCurrent();
+        current.setTransport(TRANSPORTS);
+        updateConfig(current, parameter);
+        if (eih) {
+            current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
+        }
+        return clientConfig;
+    }
+
+    private static boolean isShadowsocksAEAD2022Eih(Parameter parameter) {
+        CipherKind cipher = parameter.cipher();
+        return parameter.protocol() == Protocol.shadowsocks && cipher != null && cipher.isAead2022() && cipher.supportEih();
     }
 }

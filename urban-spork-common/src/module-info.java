@@ -3,8 +3,6 @@ module com.urbanspork.common {
     requires com.github.benmanes.caffeine;
     requires com.urbanspork.jni;
     requires io.netty.buffer;
-    requires io.netty.codec.classes.quic;
-    requires io.netty.codec.compression;
     requires io.netty.codec.dns;
     requires io.netty.codec.http2;
     requires io.netty.codec.http;
@@ -13,7 +11,6 @@ module com.urbanspork.common {
     requires io.netty.common;
     requires io.netty.handler;
     requires io.netty.transport;
-    requires jdk.unsupported;
     requires org.jspecify;
     requires org.slf4j;
     requires tools.jackson.core;

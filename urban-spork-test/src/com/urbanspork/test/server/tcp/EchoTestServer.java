@@ -3,7 +3,6 @@ package com.urbanspork.test.server.tcp;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
@@ -16,24 +15,34 @@ import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.net.InetAddress;
-import java.util.concurrent.CompletableFuture;
+import java.net.InetSocketAddress;
 
-public class EchoTestServer {
+public class EchoTestServer implements Closeable {
 
     private static final Logger logger = LoggerFactory.getLogger(EchoTestServer.class);
     public static final int PORT = 16802;
 
-    static void main() {
-        launch(PORT, new CompletableFuture<>());
+    private final EventLoopGroup bossGroup;
+    private final EventLoopGroup workerGroup;
+    private final ServerSocketChannel channel;
+
+    private EchoTestServer(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerSocketChannel channel) {
+        this.bossGroup = bossGroup;
+        this.workerGroup = workerGroup;
+        this.channel = channel;
     }
 
-    public static void launch(int port, CompletableFuture<ServerSocketChannel> promise) {
+    static void main() throws InterruptedException {
+        launch(PORT).awaitTermination();
+    }
+
+    public static EchoTestServer launch(int port) throws InterruptedException {
         EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-        Channel channel = null;
         try {
-            channel = new ServerBootstrap().group(bossGroup, workerGroup)
+            ServerSocketChannel channel = (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new ChannelInitializer<>() {
                     @Override
@@ -47,26 +56,32 @@ public class EchoTestServer {
                         });
                     }
                 })
-                .bind(InetAddress.getLoopbackAddress(), port).addListener((ChannelFutureListener) future -> {
-                    if (future.isSuccess()) {
-                        ServerSocketChannel c = (ServerSocketChannel) future.channel();
-                        logger.info("Launch echo test server => {}", c.localAddress());
-                        promise.complete(c);
-                    } else {
-                        promise.completeExceptionally(future.cause());
-                    }
-                }).sync().channel();
-            channel.closeFuture().sync();
-        } catch (InterruptedException _) {
-            if (channel != null) {
-                channel.close();
-            }
-            Thread.currentThread().interrupt();
-        } finally {
-            Future<?> shutdownWorker = workerGroup.shutdownGracefully().syncUninterruptibly();
-            bossGroup.shutdownGracefully().syncUninterruptibly();
-            shutdownWorker.syncUninterruptibly();
+                .bind(InetAddress.getLoopbackAddress(), port).sync().channel();
+            logger.info("Launch echo test server => {}", channel.localAddress());
+            return new EchoTestServer(bossGroup, workerGroup, channel);
+        } catch (InterruptedException | RuntimeException e) {
+            shutdown(workerGroup, bossGroup);
+            throw e;
         }
     }
 
+    public InetSocketAddress localAddress() {
+        return channel.localAddress();
+    }
+
+    public void awaitTermination() throws InterruptedException {
+        channel.closeFuture().sync();
+    }
+
+    @Override
+    public void close() {
+        channel.close().syncUninterruptibly();
+        shutdown(workerGroup, bossGroup);
+    }
+
+    private static void shutdown(EventLoopGroup workerGroup, EventLoopGroup bossGroup) {
+        Future<?> workerTerminated = workerGroup.shutdownGracefully();
+        bossGroup.shutdownGracefully().syncUninterruptibly();
+        workerTerminated.syncUninterruptibly();
+    }
 }

@@ -9,18 +9,10 @@ import com.urbanspork.common.config.ServerConfig;
 
 import java.awt.TrayIcon.MessageType;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 class Proxy {
     private static final ClientConfig config = Resource.config();
-    private static final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
-        Thread thread = new Thread(r);
-        thread.setName("Client-Launcher");
-        return thread;
-    });
     private final Runtime runtime = new Runtime();
     private final Tray tray;
     private Client.Instance client;
@@ -35,11 +27,8 @@ class Proxy {
             tray.displayMessage("Proxy is not running", "Please set up a proxy server first", MessageType.INFO);
             return Optional.empty();
         }
-        Optional.ofNullable(client).ifPresent(Client.Instance::close);
-        CompletableFuture<Client.Instance> promise = new CompletableFuture<>();
-        executor.submit(() -> Client.launch(runtime, config, promise));
         try {
-            client = promise.get();
+            client = launch0();
             String message = current.toString();
             tray.displayMessage("Proxy is running", message, MessageType.INFO);
             tray.setToolTip(message);
@@ -53,9 +42,19 @@ class Proxy {
         return Optional.ofNullable(client);
     }
 
+    private Client.Instance launch0() throws ExecutionException, InterruptedException {
+        if (client == null) {
+            return Client.launch(runtime, Proxy.config).get();
+        } else if (client.tcp().localAddress().getPort() != Proxy.config.getPort()) {
+            client.close();
+            return Client.launch(runtime, Proxy.config).get();
+        } else {
+            return Client.reload(runtime, client, Proxy.config.getCurrent()).get();
+        }
+    }
+
     void exit() {
         Optional.ofNullable(client).ifPresent(Client.Instance::close);
-        executor.shutdown();
         runtime.close();
     }
 }

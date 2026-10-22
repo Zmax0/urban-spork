@@ -11,8 +11,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.nio.NioIoHandler;
-import io.netty.channel.socket.ServerSocketChannel;
-import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Promise;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -20,8 +18,6 @@ import org.junit.jupiter.api.Test;
 import javax.net.ssl.SSLException;
 import java.net.InetAddress;
 import java.time.Instant;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 class ClientRelayHandlerTest {
@@ -47,32 +43,29 @@ class ClientRelayHandlerTest {
     @Test
     void testResolveServerHost() throws Exception {
         EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-        ExecutorService pool = Executors.newThreadPerTaskExecutor(Thread.ofPlatform().name("resolveHostTest-", 1).factory());
-        DefaultPromise<ServerSocketChannel> serverPromise = new DefaultPromise<>() {};
-        pool.submit(() -> DohTestServer.launch(0, serverPromise));
-        ServerSocketChannel dohServer = serverPromise.get();
-        int dohPort = dohServer.localAddress().getPort();
-        ServerConfig config = ServerConfigTest.testConfig(0);
-        config.setHost(InetAddress.getLoopbackAddress().getHostName());
-        DnsSetting dnsSetting = new DnsSetting(String.format("https://localhost:%d/dns-query?resolved=1.2.3.4", dohPort), SslUtil.getSslSetting(), 256);
-        config.setDns(dnsSetting);
-        ClientChannelContext context = new ClientChannelContext(config, null, null);
-        Assertions.assertEquals(config.getHost(), ClientRelayHandler.resolveServerHost(group, context).get(10, TimeUnit.SECONDS));
-        config.setHost("example.com");
-        Promise<String> promise = ClientRelayHandler.resolveServerHost(group, context);
-        Assertions.assertEquals("1.2.3.4", promise.get(20, TimeUnit.SECONDS));
-        Assertions.assertEquals("1.2.3.4", dnsSetting.cache().get("example.com", Instant.now()).orElseThrow());
-        Assertions.assertEquals("1.2.3.4", ClientRelayHandler.resolveServerHost(group, context).get(10, TimeUnit.SECONDS));
-        String cachedHost = TestDice.rollHost();
-        config.setHost(cachedHost);
-        dnsSetting.cache().put(cachedHost, "1.2.3.4", 60, Instant.now());
-        Assertions.assertEquals("1.2.3.4", ClientRelayHandler.resolveServerHost(group, context).get(10, TimeUnit.SECONDS));
-        String unresolvableOnPeer = TestDice.rollHost();
-        config.setHost(unresolvableOnPeer);
-        config.setDns(new DnsSetting("https://localhost:1/dns-query", null));
-        Assertions.assertEquals(unresolvableOnPeer, ClientRelayHandler.resolveServerHost(group, context).get(10, TimeUnit.SECONDS));
-        dohServer.close();
-        group.shutdownGracefully();
-        pool.shutdownNow();
+        try (DohTestServer dohServer = DohTestServer.launch(0)) {
+            int dohPort = dohServer.localAddress().getPort();
+            ServerConfig config = ServerConfigTest.testConfig(0);
+            config.setHost(InetAddress.getLoopbackAddress().getHostName());
+            DnsSetting dnsSetting = new DnsSetting(String.format("https://localhost:%d/dns-query?resolved=1.2.3.4", dohPort), SslUtil.getSslSetting(), 256);
+            config.setDns(dnsSetting);
+            ClientChannelContext context = new ClientChannelContext(config, null, null);
+            Assertions.assertEquals(config.getHost(), ClientRelayHandler.resolveServerHost(group, context).get(10, TimeUnit.SECONDS));
+            config.setHost("example.com");
+            Promise<String> promise = ClientRelayHandler.resolveServerHost(group, context);
+            Assertions.assertEquals("1.2.3.4", promise.get(20, TimeUnit.SECONDS));
+            Assertions.assertEquals("1.2.3.4", dnsSetting.cache().get("example.com", Instant.now()).orElseThrow());
+            Assertions.assertEquals("1.2.3.4", ClientRelayHandler.resolveServerHost(group, context).get(10, TimeUnit.SECONDS));
+            String cachedHost = TestDice.rollHost();
+            config.setHost(cachedHost);
+            dnsSetting.cache().put(cachedHost, "1.2.3.4", 60, Instant.now());
+            Assertions.assertEquals("1.2.3.4", ClientRelayHandler.resolveServerHost(group, context).get(10, TimeUnit.SECONDS));
+            String unresolvableOnPeer = TestDice.rollHost();
+            config.setHost(unresolvableOnPeer);
+            config.setDns(new DnsSetting("https://localhost:1/dns-query", null));
+            Assertions.assertEquals(unresolvableOnPeer, ClientRelayHandler.resolveServerHost(group, context).get(10, TimeUnit.SECONDS));
+        } finally {
+            group.shutdownGracefully();
+        }
     }
 }

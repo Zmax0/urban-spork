@@ -25,10 +25,7 @@ import org.junit.jupiter.api.Test;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -62,10 +59,8 @@ class ClientTcpRelayHandlerTest {
         ServerConfig config = ServerConfigTest.testConfig(0);
         config.setSsl(SslUtil.getSslSetting());
         config.setTransport(new Transport[]{Transport.QUIC});
-        CompletableFuture<List<Server.Instance>> serverPromise = new CompletableFuture<>();
-        ExecutorService pool = Executors.newThreadPerTaskExecutor(Thread.ofPlatform().factory());
-        pool.submit(() -> Server.launch(runtime, List.of(config), serverPromise));
-        Server.Instance server = serverPromise.get().getFirst();
+        Server.Instances instances = Server.launch(runtime, List.of(config));
+        Server.Instance server = instances.servers().getFirst();
         int serverPort = (server.udp().orElseThrow().localAddress()).getPort();
         config.setPort(serverPort);
         EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
@@ -79,7 +74,6 @@ class ClientTcpRelayHandlerTest {
         Assertions.assertEquals(80, resolved.get().original().getPort());
         group.shutdownGracefully().sync();
         runtime.close();
-        pool.shutdownNow();
     }
 
     private static ClientTcpRelayHandler newTestHandler(AtomicReference<MaybeResolved> resolved, CountDownLatch streamAttempt) {

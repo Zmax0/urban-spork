@@ -10,7 +10,6 @@ import com.urbanspork.common.config.ServerUserConfig;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.common.transport.Transport;
 import com.urbanspork.server.Server;
-import com.urbanspork.test.template.FutureInstance;
 import com.urbanspork.test.template.Parameter;
 import com.urbanspork.test.template.UdpTestTemplate;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -20,8 +19,6 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.support.ParameterDeclarations;
 
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -31,24 +28,21 @@ class UdpTest extends UdpTestTemplate {
     @ParameterizedTest
     @ArgumentsSource(Parameter.Provider.class)
     void testByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
-        Protocol protocol = parameter.protocol();
-        CipherKind cipher = parameter.cipher();
-        if (protocol == Protocol.shadowsocks && cipher.isAead2022() && cipher.supportEih()) {
+        if (isShadowsocksAEAD2022Eih(parameter)) {
             testShadowsocksAEAD2022EihByParameter(parameter);
         }
         ClientConfig config = testConfig();
         ServerConfig serverConfig = config.getServers().getFirst();
         serverConfig.setTransport(new Transport[]{Transport.UDP});
-        serverConfig.setProtocol(protocol);
-        serverConfig.setCipher(cipher);
+        serverConfig.setProtocol(parameter.protocol());
+        serverConfig.setCipher(parameter.cipher());
         serverConfig.setPassword(parameter.serverPassword());
         serverConfig.setSsl(parameter.sslSetting());
         serverConfig.setWs(parameter.wsSetting());
-        FutureInstance<List<Server.Instance>> server = launchServer(config.getServers());
-        FutureInstance<Client.Instance> client = launchClient(config);
-        InetSocketAddress clientLocalAddress = client.instance().tcp().localAddress();
-        handshakeAndSendBytes(clientLocalAddress);
-        close(client, server);
+        try (Server.Instances _ = launchServer(config.getServers());
+             Client.Instance client = launchClient(config)) {
+            handshakeAndSendBytes(client.tcp().localAddress());
+        }
     }
 
     void testShadowsocksAEAD2022EihByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
@@ -60,46 +54,53 @@ class UdpTest extends UdpTestTemplate {
         serverConfig.setProtocol(protocol);
         serverConfig.setCipher(cipher);
         serverConfig.setPassword(parameter.serverPassword());
-        List<ServerUserConfig> user = new ArrayList<>();
-        user.add(new ServerUserConfig(TestDice.rollString(10), parameter.clientPassword()));
-        serverConfig.setUser(user);
-        FutureInstance<List<Server.Instance>> server = launchServer(List.of(serverConfig));
-        ClientConfig clientConfig = ClientConfigTest.testConfig(CLIENT_PORT, serverConfig.getPort());
-        ServerConfig current = clientConfig.getCurrent();
-        current.setCipher(cipher);
-        current.setTransport(transports);
-        current.setProtocol(protocol);
-        current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
-        FutureInstance<Client.Instance> client = launchClient(clientConfig);
-        InetSocketAddress clientLocalAddress = client.instance().tcp().localAddress();
-        handshakeAndSendBytes(clientLocalAddress);
-        close(client, server);
+        serverConfig.setUser(List.of(new ServerUserConfig(TestDice.rollString(10), parameter.clientPassword())));
+        try (Server.Instances _ = launchServer(List.of(serverConfig));
+             Client.Instance client = launchClient(shadowsocksAEAD2022EihClientConfig(serverConfig, parameter))) {
+            handshakeAndSendBytes(client.tcp().localAddress());
+        }
     }
 
     @ParameterizedTest
     @ArgumentsSource(QuicProvider.class)
     void testQuicByParameter(Parameter parameter) throws ExecutionException, InterruptedException, TimeoutException {
-        Protocol protocol = parameter.protocol();
-        CipherKind cipher = parameter.cipher();
         ServerConfig serverConfig = ServerConfigTest.testConfig(SERVER_PORT);
         serverConfig.setTransport(new Transport[]{Transport.QUIC});
-        serverConfig.setProtocol(protocol);
-        serverConfig.setCipher(cipher);
+        serverConfig.setProtocol(parameter.protocol());
+        serverConfig.setCipher(parameter.cipher());
         serverConfig.setPassword(parameter.serverPassword());
         serverConfig.setSsl(parameter.sslSetting());
         serverConfig.setWs(parameter.wsSetting());
-        FutureInstance<List<Server.Instance>> server = launchServer(List.of(serverConfig));
+        try (Server.Instances _ = launchServer(List.of(serverConfig));
+             Client.Instance client = launchClient(quicClientConfig(serverConfig, parameter))) {
+            handshakeAndSendBytes(client.tcp().localAddress());
+        }
+    }
+
+    private static ClientConfig shadowsocksAEAD2022EihClientConfig(ServerConfig serverConfig, Parameter parameter) {
         ClientConfig clientConfig = ClientConfigTest.testConfig(CLIENT_PORT, serverConfig.getPort());
         ServerConfig current = clientConfig.getCurrent();
-        current.setCipher(cipher);
+        current.setCipher(parameter.cipher());
+        current.setTransport(new Transport[]{Transport.TCP, Transport.UDP});
+        current.setProtocol(parameter.protocol());
+        current.setPassword(parameter.serverPassword() + ":" + parameter.clientPassword());
+        return clientConfig;
+    }
+
+    private static ClientConfig quicClientConfig(ServerConfig serverConfig, Parameter parameter) {
+        ClientConfig clientConfig = ClientConfigTest.testConfig(CLIENT_PORT, serverConfig.getPort());
+        ServerConfig current = clientConfig.getCurrent();
+        current.setCipher(parameter.cipher());
         current.setTransport(new Transport[]{Transport.UDP, Transport.QUIC});
-        current.setProtocol(protocol);
+        current.setProtocol(parameter.protocol());
         current.setSsl(parameter.sslSetting());
         current.setPassword(parameter.serverPassword());
-        FutureInstance<Client.Instance> client = launchClient(clientConfig);
-        InetSocketAddress clientLocalAddress = client.instance().tcp().localAddress();
-        handshakeAndSendBytes(clientLocalAddress);
-        close(client, server);
+        return clientConfig;
+    }
+
+    private static boolean isShadowsocksAEAD2022Eih(Parameter parameter) {
+        CipherKind cipher = parameter.cipher();
+        return parameter.protocol() == Protocol.shadowsocks && cipher != null && cipher.isAead2022() && cipher.supportEih();
     }
 
     static class QuicProvider implements ArgumentsProvider {
