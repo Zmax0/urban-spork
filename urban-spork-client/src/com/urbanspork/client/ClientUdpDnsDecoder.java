@@ -24,7 +24,7 @@ public class ClientUdpDnsDecoder extends MessageToMessageDecoder<DatagramPacketW
     }
 
     @Override
-    protected void decode(ChannelHandlerContext ctx, DatagramPacketWrapper msg, List<Object> out) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, DatagramPacketWrapper msg, List<Object> out) {
         ServerConfig config = context.config();
         msg.retain();
         EventLoop group = ctx.channel().eventLoop();

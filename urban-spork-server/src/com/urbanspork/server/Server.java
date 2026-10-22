@@ -13,13 +13,17 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.quic.QuicServerCodecBuilder;
 import io.netty.handler.codec.quic.QuicSslContext;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,72 +31,65 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class Server {
+    /*
+     * Whoever starts it owns it and closes it.
+     */
 
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
     public static void main() {
         List<ServerConfig> configs = ConfigHandler.DEFAULT.read().getServers();
         Runtime runtime = new Runtime();
-        try {
-            launch(runtime, configs, new CompletableFuture<>());
+        try (Instances instances = launch(runtime, configs)) {
+            instances.awaitTermination();
+        } catch (InterruptedException _) {
+            Thread.currentThread().interrupt();
         } finally {
             runtime.close();
         }
     }
 
-    public static void launch(Runtime runtime, List<ServerConfig> configs, CompletableFuture<List<Instance>> promise) {
+    public static Instances launch(Runtime runtime, List<ServerConfig> configs) throws InterruptedException {
         Context context = Context.newCheckReplayInstance();
         List<Instance> servers = new ArrayList<>(configs.size());
         try {
-            int count = 0;
             for (ServerConfig config : configs) {
-                Instance server = start(runtime.parentGroup(), runtime.childGroup(), new ServerChannelContext(config, context));
-                count += server.udp().isPresent() ? 2 : 1;
-                servers.add(server);
+                servers.add(start(runtime.parentGroup(), runtime.childGroup(), new ServerChannelContext(config, context)));
             }
-            CountDownLatch latch = new CountDownLatch(count);
-            for (Instance server : servers) {
-                server.tcp().closeFuture().addListener(_ -> latch.countDown());
-                server.udp().ifPresent(v -> v.closeFuture().addListener(_ -> latch.countDown()));
-            }
-            promise.complete(servers);
-            latch.await(); // main thread is waiting here
-            logger.info("Server is terminated");
-        } catch (InterruptedException _) {
+            return new Instances(servers, context);
+        } catch (InterruptedException e) {
             logger.warn("Interrupt main launch thread");
-            for (Instance server : servers) {
-                server.close();
-            }
-            Thread.currentThread().interrupt();
+            close(servers, context);
+            throw e;
         } catch (Throwable e) {
             logger.error("Launch server failed", e);
-            for (Instance server : servers) {
-                server.close();
-            }
-            promise.completeExceptionally(e);
-        } finally {
-            context.release();
+            close(servers, context);
+            throw new RuntimeException(e);
         }
     }
 
-    private static Instance start(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerChannelContext context)
-        throws InterruptedException {
-        ServerSocketChannel tcp = startTcp(bossGroup, workerGroup, context);
-        Optional<DatagramChannel> udp = startUdp(workerGroup, context);
-        return new Instance(tcp, udp, context);
+    private static Instance start(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerChannelContext context) throws InterruptedException {
+        ChannelGroup children = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+        ServerSocketChannel tcp = startTcp(bossGroup, workerGroup, context, children);
+        try {
+            return new Instance(tcp, startUdp(workerGroup, context, children), children, context);
+        } catch (Throwable e) {
+            close(children, tcp, null);
+            throw e;
+        }
     }
 
-    private static ServerSocketChannel startTcp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerChannelContext context) throws InterruptedException {
+    private static ServerSocketChannel startTcp(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerChannelContext context, ChannelGroup children) throws InterruptedException {
         ServerConfig config = context.config();
         ServerSocketChannel tcp = (ServerSocketChannel) new ServerBootstrap()
+            .option(ChannelOption.SO_REUSEADDR, true)
             .group(bossGroup, workerGroup)
             .channel(NioServerSocketChannel.class)
-            .childHandler(new ServerInitializer(context))
+            .childHandler(new ServerInitializer(context, children))
             .bind(config.getPort())
             .sync().channel();
         config.setPort(tcp.localAddress().getPort());
@@ -100,10 +97,11 @@ public class Server {
         return tcp;
     }
 
-    private static Optional<DatagramChannel> startUdp(EventLoopGroup group, ServerChannelContext context) throws InterruptedException {
+    private static Optional<DatagramChannel> startUdp(EventLoopGroup group, ServerChannelContext context, ChannelGroup children) throws InterruptedException {
         ServerConfig config = context.config();
         if (Protocol.shadowsocks == config.getProtocol() && config.udpEnabled()) {
-            Channel channel = new Bootstrap().group(group).channel(NioDatagramChannel.class)
+            DatagramChannel udp = (DatagramChannel) new Bootstrap().group(group).channel(NioDatagramChannel.class)
+                .option(ChannelOption.SO_REUSEADDR, true)
                 .handler(new ChannelInitializer<>() {
                     @Override
                     protected void initChannel(Channel ch) {
@@ -116,15 +114,15 @@ public class Server {
                 })
                 .bind(config.getPort()).sync().channel();
             logger.info("Running a udp server => {}", config);
-            return Optional.of((DatagramChannel) channel);
+            return Optional.of(udp);
         } else if (config.quicEnabled()) {
-            return startQuic(group, context);
+            return startQuic(group, context, children);
         } else {
             return Optional.empty();
         }
     }
 
-    private static Optional<DatagramChannel> startQuic(EventLoopGroup boosGroup, ServerChannelContext context) throws InterruptedException {
+    private static Optional<DatagramChannel> startQuic(EventLoopGroup boosGroup, ServerChannelContext context, ChannelGroup children) throws InterruptedException {
         ServerConfig config = context.config();
         QuicSslContext quicSslContext = context.quicContext();
         if (quicSslContext == null) {
@@ -141,6 +139,7 @@ public class Server {
             .streamHandler(new ChannelInitializer<>() {
                 @Override
                 protected void initChannel(Channel ch) {
+                    children.add(ch);
                     ServerInitializer.addProtocolHandlers(ch, context);
                 }
             })
@@ -156,11 +155,50 @@ public class Server {
         return Optional.of(channel);
     }
 
-    public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp, ServerChannelContext context) implements Closeable {
+    public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp, ChannelGroup children, ServerChannelContext context) implements Closeable {
         @Override
         public void close() {
-            udp.ifPresent(c -> c.close().syncUninterruptibly());
-            tcp.close().syncUninterruptibly();
+            Server.close(children, tcp, udp.orElse(null));
         }
+    }
+
+    public record Instances(List<Instance> servers, Context context) implements Closeable {
+
+        public Instances {
+            servers = List.copyOf(servers);
+        }
+
+        public void awaitTermination() throws InterruptedException {
+            CountDownLatch latch = new CountDownLatch(servers.stream().mapToInt(server -> server.udp().isPresent() ? 2 : 1).sum());
+            for (Instance server : servers) {
+                server.tcp().closeFuture().addListener(_ -> latch.countDown());
+                server.udp().ifPresent(udp -> udp.closeFuture().addListener(_ -> latch.countDown()));
+            }
+            latch.await();
+        }
+
+        @Override
+        public void close() {
+            Server.close(servers, context);
+        }
+    }
+
+    private static void close(List<Instance> servers, Context context) {
+        servers.forEach(Instance::close);
+        context.release();
+    }
+
+    private static void close(ChannelGroup children, Channel tcp, Channel udp) {
+        close0(tcp);
+        close0(udp);
+        children.close().syncUninterruptibly();
+    }
+
+    private static void close0(Channel channel) {
+        if (channel == null) {
+            return;
+        }
+        channel.close().syncUninterruptibly();
+        channel.deregister().syncUninterruptibly();
     }
 }

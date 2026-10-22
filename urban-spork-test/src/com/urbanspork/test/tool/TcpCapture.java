@@ -18,16 +18,18 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class TcpCapture {
+public class TcpCapture implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(TcpCapture.class);
     private final EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
     private final EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
@@ -50,6 +52,14 @@ public class TcpCapture {
 
     public ServerSocketChannel getLocalChannel() {
         return localChannel;
+    }
+
+    @Override
+    public void close() {
+        localChannel.close().syncUninterruptibly();
+        Future<?> workerTerminated = workerGroup.shutdownGracefully();
+        bossGroup.shutdownGracefully().syncUninterruptibly();
+        workerTerminated.syncUninterruptibly();
     }
 
     public SocketChannel newRemoteChannel() throws InterruptedException {

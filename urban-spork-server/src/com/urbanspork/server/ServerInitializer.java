@@ -11,6 +11,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.group.ChannelGroup;
 import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
@@ -22,13 +23,16 @@ import java.util.Objects;
 public class ServerInitializer extends ChannelInitializer<Channel> {
 
     private final ServerChannelContext context;
+    private final ChannelGroup children;
 
-    public ServerInitializer(ServerChannelContext context) {
+    public ServerInitializer(ServerChannelContext context, ChannelGroup children) {
         this.context = context;
+        this.children = children;
     }
 
     @Override
     protected void initChannel(Channel ch) {
+        children.add(ch);
         ServerConfig config = context.config();
         context.addSslHandler(ch);
         addWebSocketHandlers(ch, config);

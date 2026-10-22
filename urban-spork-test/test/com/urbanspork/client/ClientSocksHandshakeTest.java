@@ -30,7 +30,7 @@ class ClientSocksHandshakeTest {
     void testUdpEnable() throws InterruptedException, ExecutionException, TimeoutException {
         ClientConfig config = ClientConfigTest.testConfig(0, 0);
         config.getServers().getFirst().setProtocol(Protocol.vmess);
-        Client.Instance client = ClientTest.asyncLaunchClient(config);
+        Client.Instance client = ClientTest.launch(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress1 = new InetSocketAddress(InetAddress.getLoopbackAddress(), TestDice.rollPort());
         assertFailedHandshake(proxyAddress, dstAddress1, Socks5CommandStatus.FORBIDDEN);
@@ -40,7 +40,7 @@ class ClientSocksHandshakeTest {
     @Test
     void testIllegalDstAddress() throws InterruptedException, ExecutionException, TimeoutException {
         ClientConfig config = ClientConfigTest.testConfig(0, 0);
-        Client.Instance client = ClientTest.asyncLaunchClient(config);
+        Client.Instance client = ClientTest.launch(config);
         InetSocketAddress proxyAddress = new InetSocketAddress(config.getPort());
         InetSocketAddress dstAddress1 = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         assertFailedHandshake(proxyAddress, dstAddress1, Socks5CommandStatus.FAILURE);

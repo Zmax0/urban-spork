@@ -29,13 +29,14 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SupportedCipherSuiteFilter;
 import io.netty.util.NetUtil;
-import io.netty.util.concurrent.DefaultPromise;
-import io.netty.util.concurrent.Promise;
+import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
+import java.io.Closeable;
 import java.io.File;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Base64;
@@ -47,58 +48,81 @@ import java.util.Optional;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 
-public class DohTestServer {
+public class DohTestServer implements Closeable {
     public static final int PORT = 16803;
     private static final Logger logger = LoggerFactory.getLogger(DohTestServer.class);
 
-    static void main() {
-        launch(PORT, new DefaultPromise<>() {});
+    private final EventLoopGroup bossGroup;
+    private final EventLoopGroup workerGroup;
+    private final ServerSocketChannel channel;
+
+    private DohTestServer(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerSocketChannel channel) {
+        this.bossGroup = bossGroup;
+        this.workerGroup = workerGroup;
+        this.channel = channel;
     }
 
-    public static void launch(int port, Promise<ServerSocketChannel> promise) {
+    static void main() throws InterruptedException, SSLException {
+        launch(PORT).awaitTermination();
+    }
+
+    public static DohTestServer launch(int port) throws InterruptedException, SSLException {
         URI crt;
         URI key;
         try {
             crt = Objects.requireNonNull(DohTestServer.class.getResource("/localhost.crt")).toURI();
             key = Objects.requireNonNull(DohTestServer.class.getResource("/localhost.key")).toURI();
         } catch (URISyntaxException e) {
-            promise.setFailure(e);
-            return;
+            throw new IllegalArgumentException("invalid certificate location", e);
         }
-        SslContext sslContext;
+        SslContext sslContext = SslContextBuilder.forServer(new File(crt), new File(key), null)
+            .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
+            .applicationProtocolConfig(new ApplicationProtocolConfig(
+                ApplicationProtocolConfig.Protocol.ALPN,
+                ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+                ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+                ApplicationProtocolNames.HTTP_2,
+                ApplicationProtocolNames.HTTP_1_1
+            ))
+            .build();
+        EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+        EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         try {
-            sslContext = SslContextBuilder.forServer(new File(crt), new File(key), null)
-                .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
-                .applicationProtocolConfig(new ApplicationProtocolConfig(
-                    ApplicationProtocolConfig.Protocol.ALPN,
-                    ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
-                    ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
-                    ApplicationProtocolNames.HTTP_2,
-                    ApplicationProtocolNames.HTTP_1_1
-                ))
-                .build();
-        } catch (SSLException e) {
-            promise.setFailure(e);
-            return;
-        }
-        try (EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-             EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory())) {
-            new ServerBootstrap().group(bossGroup, workerGroup)
+            ServerSocketChannel channel = (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new Http2ServerInitializer(sslContext))
-                .bind(port).addListener((ChannelFutureListener) future -> {
-                    if (future.isSuccess()) {
-                        ServerSocketChannel channel = (ServerSocketChannel) future.channel();
-                        logger.info("launch doh test server => {}", channel.localAddress());
-                        promise.setSuccess(channel);
-                    } else {
-                        promise.setFailure(future.cause());
-                    }
-                }).sync().channel().closeFuture().sync();
-            logger.info("Doh test server close");
-        } catch (InterruptedException _) {
-            Thread.currentThread().interrupt();
+                .bind(port).sync().channel();
+            logger.info("launch doh test server => {}", channel.localAddress());
+            return new DohTestServer(bossGroup, workerGroup, channel);
+        } catch (InterruptedException | RuntimeException e) {
+            shutdown(workerGroup, bossGroup);
+            throw e;
         }
+    }
+
+    public InetSocketAddress localAddress() {
+        return channel.localAddress();
+    }
+
+    public boolean isActive() {
+        return channel.isActive();
+    }
+
+    public void awaitTermination() throws InterruptedException {
+        channel.closeFuture().sync();
+    }
+
+    @Override
+    public void close() {
+        channel.close().syncUninterruptibly();
+        shutdown(workerGroup, bossGroup);
+        logger.info("Doh test server close");
+    }
+
+    private static void shutdown(EventLoopGroup workerGroup, EventLoopGroup bossGroup) {
+        Future<?> workerTerminated = workerGroup.shutdownGracefully();
+        bossGroup.shutdownGracefully().syncUninterruptibly();
+        workerTerminated.syncUninterruptibly();
     }
 
     private static class Http2ServerInitializer extends ChannelInitializer<SocketChannel> {

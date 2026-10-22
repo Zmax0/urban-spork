@@ -26,9 +26,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 class ClientDnsRelayHandlerTest {
@@ -40,12 +37,10 @@ class ClientDnsRelayHandlerTest {
         config.setProtocol(Protocol.trojan);
         config.setTransport(new Transport[]{Transport.QUIC});
         config.setSsl(SslUtil.getSslSetting());
-        CompletableFuture<List<Server.Instance>> serverPromise = new CompletableFuture<>();
-        ExecutorService pool = Executors.newThreadPerTaskExecutor(Thread.ofPlatform().name("dnsQuicTest-", 1).factory());
         EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-        pool.submit(() -> Server.launch(runtime, List.of(config), serverPromise));
-        List<Server.Instance> servers = serverPromise.get();
-        InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), (servers.getFirst().udp().orElseThrow().localAddress()).getPort());
+        Server.Instances instances = Server.launch(runtime, List.of(config));
+        Server.Instance server = instances.servers().getFirst();
+        InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), (server.udp().orElseThrow().localAddress()).getPort());
         config.setPort(serverAddress.getPort());
         ClientChannelContext context = new ClientChannelContext(config, null, null);
         Channel endpoint = context.quicEndpoint(group).syncUninterruptibly().channel();
@@ -61,46 +56,40 @@ class ClientDnsRelayHandlerTest {
         endpoint.close();
         runtime.close();
         group.shutdownGracefully();
-        pool.shutdownNow();
     }
 
-    private static class QuicDnsRelayHandler implements ClientDnsRelayHandler {
-        private final Throwable cause;
-
-        private QuicDnsRelayHandler(Throwable cause) {
-            this.cause = cause;
-        }
+    private record QuicDnsRelayHandler(Throwable cause) implements ClientDnsRelayHandler {
 
         @Override
-        public String label() {
-            return "test";
-        }
+            public String label() {
+                return "test";
+            }
 
-        @Override
-        public Future<? extends Channel> newChannel(DnsRequest dohRequest, Promise<IpResponse> ipPromise) {
-            throw new UnsupportedOperationException();
-        }
+            @Override
+            public Future<? extends Channel> newChannel(DnsRequest dohRequest, Promise<IpResponse> ipPromise) {
+                throw new UnsupportedOperationException();
+            }
 
-        @Override
-        public boolean isReadyOnceConnected() {
-            return true;
-        }
+            @Override
+            public boolean isReadyOnceConnected() {
+                return true;
+            }
 
-        @Override
-        public void callback1(MaybeResolved maybeResolved) {
-            throw new UnsupportedOperationException();
-        }
+            @Override
+            public void callback1(MaybeResolved maybeResolved) {
+                throw new UnsupportedOperationException();
+            }
 
-        @Override
-        public void callback0(Throwable t) {
-            throw new IllegalStateException(t);
-        }
+            @Override
+            public void callback0(Throwable t) {
+                throw new IllegalStateException(t);
+            }
 
-        @Override
-        public Future<QuicStreamChannel> createQuicStreamChannel(QuicChannel quicChannel, MaybeResolved maybeResolved, ClientChannelContext ctx) {
-            Promise<QuicStreamChannel> failed = ImmediateEventExecutor.INSTANCE.newPromise();
-            failed.setFailure(cause);
-            return failed;
+            @Override
+            public Future<QuicStreamChannel> createQuicStreamChannel(QuicChannel quicChannel, MaybeResolved maybeResolved, ClientChannelContext ctx) {
+                Promise<QuicStreamChannel> failed = ImmediateEventExecutor.INSTANCE.newPromise();
+                failed.setFailure(cause);
+                return failed;
+            }
         }
-    }
 }
