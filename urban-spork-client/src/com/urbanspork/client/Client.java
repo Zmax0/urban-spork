@@ -137,6 +137,7 @@ public class Client {
         }
         if (udp != null) {
             udp.close().syncUninterruptibly();
+            udp.deregister().syncUninterruptibly();
         }
         if (closeTcp != null) {
             closeTcp.syncUninterruptibly();

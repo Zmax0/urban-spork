@@ -151,8 +151,12 @@ public class Server {
     public record Instance(ServerSocketChannel tcp, Optional<DatagramChannel> udp, ServerChannelContext context) implements Closeable {
         @Override
         public void close() {
-            udp.ifPresent(c -> c.close().syncUninterruptibly());
+            udp.ifPresent(c -> {
+                c.close().syncUninterruptibly();
+                c.deregister().syncUninterruptibly();
+            });
             tcp.close().syncUninterruptibly();
+            tcp.deregister().syncUninterruptibly();
         }
     }
 
