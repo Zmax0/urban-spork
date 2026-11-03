@@ -23,7 +23,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -46,10 +48,16 @@ class ServerTest {
     }
 
     @Test
-    void launchFailed() {
+    void launchFailed() throws SocketException {
         int port = TestDice.rollPort();
-        List<ServerConfig> configs = ServerConfigTest.testConfigs(port, port);
-        Assertions.assertThrows(RuntimeException.class, () -> Server.launch(runtime, configs));
+        // duplicate bind on a TCP socket
+        Assertions.assertThrows(RuntimeException.class, () -> Server.launch(runtime, ServerConfigTest.testConfigs(port, port)));
+        // duplicate bind on a UDP socket
+        try (DatagramSocket _ = new DatagramSocket(port)) {
+            List<ServerConfig> configs = ServerConfigTest.testConfigs(port);
+            configs.getFirst().setTransport(new Transport[]{Transport.UDP});
+            Assertions.assertThrows(RuntimeException.class, () -> Server.launch(runtime, configs));
+        }
     }
 
     @Test

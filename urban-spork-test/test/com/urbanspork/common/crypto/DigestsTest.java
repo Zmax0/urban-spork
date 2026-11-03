@@ -24,7 +24,12 @@ class DigestsTest {
 
     @Test
     void testBlake3() {
-        byte[] hash = Digests.blake3.hash(DATA);
+        byte[] hash = Blake3.hash(DATA);
         Assertions.assertEquals("mW+mJTxIruXj0ke+marzpHHuF8G48gQKmAcvc6k5pc4=", Base64.getEncoder().encodeToString(hash));
+    }
+
+    @Test
+    void testUnsupported() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Digests.tryDigest("unknown"));
     }
 }

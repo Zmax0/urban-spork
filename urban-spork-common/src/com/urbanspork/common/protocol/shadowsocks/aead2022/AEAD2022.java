@@ -13,7 +13,6 @@ import com.urbanspork.common.codec.shadowsocks.Keys;
 import com.urbanspork.common.codec.shadowsocks.Mode;
 import com.urbanspork.common.crypto.AES;
 import com.urbanspork.common.crypto.Blake3;
-import com.urbanspork.common.crypto.Digests;
 import com.urbanspork.common.manage.shadowsocks.ServerUser;
 import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.shadowsocks.Control;
@@ -183,7 +182,7 @@ public interface AEAD2022 {
         }
 
         private static void withEih(CipherKind kind, byte[] subKey, byte[] iPSK, ByteBuf out) {
-            byte[] iPSKHash = Digests.blake3.hash(iPSK);
+            byte[] iPSKHash = Blake3.hash(iPSK);
             byte[] iPSKPlainText = Arrays.copyOf(iPSKHash, 16);
             String hash = logger.isTraceEnabled() ? ByteString.valueOf(iPSKPlainText) : null;
             aesEncrypt(kind.keySize(), subKey, iPSKPlainText);
@@ -343,7 +342,7 @@ public interface AEAD2022 {
         }
 
         private static void withEih(CipherKind kind, byte[] iPSK, byte[] iPSKn, byte[] sessionIdPacketId, byte[] identityHeader) {
-            byte[] iPSKnHash = Digests.blake3.hash(iPSKn);
+            byte[] iPSKnHash = Blake3.hash(iPSKn);
             byte[] iPSKnHashPlainText = Arrays.copyOf(iPSKnHash, 16);
             System.arraycopy(iPSKnHashPlainText, 0, identityHeader, 0, iPSKnHashPlainText.length);
             for (int i = 0; i < 16; i++) {

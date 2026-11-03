@@ -1,7 +1,7 @@
 package com.urbanspork.common.manage.shadowsocks;
 
 import com.urbanspork.common.config.ServerUserConfig;
-import com.urbanspork.common.crypto.Digests;
+import com.urbanspork.common.crypto.Blake3;
 import com.urbanspork.common.util.ByteString;
 
 import java.util.Arrays;
@@ -10,7 +10,7 @@ import java.util.Base64;
 public record ServerUser(String name, byte[] key, byte[] identityHash) {
     public static ServerUser from(ServerUserConfig userConfig) {
         byte[] key = Base64.getDecoder().decode(userConfig.password());
-        byte[] hash = Digests.blake3.hash(key);
+        byte[] hash = Blake3.hash(key);
         return new ServerUser(userConfig.name(), key, Arrays.copyOf(hash, 16));
     }
 

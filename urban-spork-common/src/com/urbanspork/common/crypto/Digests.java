@@ -8,7 +8,6 @@ public enum Digests {
     md5("MD5", 16),
     sha224("SHA-224", 28),
     sha256("SHA-256", 32),
-    blake3(null, Blake3.OUT_LEN),
     ;
 
     private final String algorithm;
@@ -20,18 +19,10 @@ public enum Digests {
     }
 
     public byte[] hash(byte[] in) {
-        if (algorithm == null) {
-            return Blake3.hash(in);
-        }
         return digest().digest(in);
     }
 
     public void hash(byte[] in, byte[] out, int outOff) {
-        if (algorithm == null) {
-            byte[] hash = Blake3.hash(in);
-            System.arraycopy(hash, 0, out, outOff, hash.length);
-            return;
-        }
         byte[] hash = digest().digest(in);
         System.arraycopy(hash, 0, out, outOff, hash.length);
     }
@@ -41,10 +32,14 @@ public enum Digests {
     }
 
     private MessageDigest digest() {
+        return tryDigest(algorithm);
+    }
+
+    static MessageDigest tryDigest(String algorithm) {
         try {
             return MessageDigest.getInstance(algorithm);
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(algorithm + " is not available", e);
+            throw new IllegalArgumentException(algorithm + " is not available", e);
         }
     }
 }
