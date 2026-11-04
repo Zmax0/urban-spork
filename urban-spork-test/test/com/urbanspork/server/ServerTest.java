@@ -23,16 +23,16 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 class ServerTest {
     private static Runtime runtime;
@@ -48,41 +48,42 @@ class ServerTest {
     }
 
     @Test
-    void launchFailed() {
+    void launchFailed() throws SocketException {
         int port = TestDice.rollPort();
-        List<ServerConfig> configs = ServerConfigTest.testConfigs(port, port);
-        CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
-        Server.launch(runtime, configs, promise);
-        Assertions.assertEquals(java.net.BindException.class, promise.exceptionNow().getClass());
-    }
-
-    @Test
-    void launchEmptyQUIC() throws ExecutionException, InterruptedException, TimeoutException {
-        ServerConfig quic = ServerConfigTest.testConfig(0);
-        quic.setProtocol(Protocol.trojan);
-        quic.setTransport(new Transport[]{Transport.QUIC});
-        CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
-        try (ExecutorService service = Executors.newSingleThreadExecutor()) {
-            service.submit(() -> Server.launch(runtime, Collections.singletonList(quic), promise));
-            List<Server.Instance> res = promise.get(1, TimeUnit.SECONDS);
-            Assertions.assertEquals(1, res.size());
-            closeServer(res);
+        // duplicate bind on a TCP socket
+        Assertions.assertThrows(RuntimeException.class, () -> Server.launch(runtime, ServerConfigTest.testConfigs(port, port)));
+        // duplicate bind on a UDP socket
+        try (DatagramSocket _ = new DatagramSocket(port)) {
+            List<ServerConfig> configs = ServerConfigTest.testConfigs(port);
+            configs.getFirst().setTransport(new Transport[]{Transport.UDP});
+            Assertions.assertThrows(RuntimeException.class, () -> Server.launch(runtime, configs));
         }
     }
 
     @Test
-    void shutdown() {
-        List<ServerConfig> configs = ServerConfigTest.testConfigs(0, 0);
-        try (ExecutorService service = Executors.newSingleThreadExecutor()) {
-            Future<?> future = service.submit(() -> Server.launch(runtime, configs, new CompletableFuture<>()));
-            try {
-                future.get(1, TimeUnit.SECONDS);
-            } catch (InterruptedException _) {
-                Thread.currentThread().interrupt();
-            } catch (ExecutionException | TimeoutException _) {
-                future.cancel(true);
-            }
-            Assertions.assertTrue(future.isCancelled());
+    void launchEmptyQUIC() throws InterruptedException {
+        ServerConfig quic = ServerConfigTest.testConfig(0);
+        quic.setProtocol(Protocol.trojan);
+        quic.setTransport(new Transport[]{Transport.QUIC});
+        try (Server.Instances instances = Server.launch(runtime, Collections.singletonList(quic))) {
+            Assertions.assertEquals(1, instances.servers().size());
+        }
+    }
+
+    @Test
+    void awaitTermination() throws Exception {
+        Server.Instances instances = Server.launch(runtime, ServerConfigTest.testConfigs(0, 0));
+        ExecutorService service = Executors.newSingleThreadExecutor();
+        try {
+            Future<?> terminated = service.submit(() -> {
+                instances.awaitTermination();
+                return null;
+            });
+            instances.close();
+            terminated.get(10, TimeUnit.SECONDS);
+        } finally {
+            service.shutdownNow();
+            instances.close();
         }
     }
 
@@ -90,10 +91,7 @@ class ServerTest {
     void sendInvalidUDP() throws InterruptedException, ExecutionException {
         ServerConfig config = ServerConfigTest.testConfig(0);
         config.setTransport(new Transport[]{Transport.TCP, Transport.UDP});
-        try (ExecutorService service = Executors.newVirtualThreadPerTaskExecutor()) {
-            CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
-            service.submit(() -> Server.launch(runtime, List.of(config), promise));
-            List<Server.Instance> servers = promise.get();
+        try (Server.Instances _ = Server.launch(runtime, List.of(config))) {
             InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
             Channel channel = new Bootstrap().group(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()))
                 .channel(NioDatagramChannel.class)
@@ -102,17 +100,13 @@ class ServerTest {
             ChannelFuture future = channel.writeAndFlush(new DatagramPacket(Unpooled.wrappedBuffer(Dice.rollBytes(512)), serverAddress)).sync();
             future.get();
             Assertions.assertTrue(future.isDone());
-            closeServer(servers);
         }
     }
 
     @Test
     void sendInvalidTCP() throws InterruptedException, ExecutionException {
         ServerConfig config = ServerConfigTest.testConfig(0);
-        try (ExecutorService service = Executors.newVirtualThreadPerTaskExecutor()) {
-            CompletableFuture<List<Server.Instance>> promise = new CompletableFuture<>();
-            service.submit(() -> Server.launch(runtime, List.of(config), promise));
-            List<Server.Instance> servers = promise.get();
+        try (Server.Instances _ = Server.launch(runtime, List.of(config))) {
             Channel channel = new Bootstrap().group(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()))
                 .channel(NioSocketChannel.class)
                 .handler(new LoggingHandler())
@@ -120,15 +114,6 @@ class ServerTest {
             ChannelFuture future = channel.writeAndFlush(Unpooled.wrappedBuffer(Dice.rollBytes(512))).sync();
             future.get();
             Assertions.assertTrue(future.isDone());
-            for (Server.Instance server : servers) {
-                server.close();
-            }
-        }
-    }
-
-    private static void closeServer(List<Server.Instance> servers) {
-        for (Server.Instance server : servers) {
-            server.close();
         }
     }
 

@@ -16,7 +16,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioIoHandler;
-import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.FixedLengthFrameDecoder;
 import io.netty.handler.codec.http.DefaultHttpRequest;
@@ -37,9 +36,7 @@ import org.junit.jupiter.api.TestInstance;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -47,19 +44,13 @@ import java.util.concurrent.TimeoutException;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TcpTestTemplate extends TestTemplate {
     final EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-    protected FutureInstance<ServerSocketChannel> echoTestServer;
+    protected EchoTestServer echoTestServer;
     protected InetSocketAddress dstAddress;
 
     @BeforeAll
-    void initTemplate() throws ExecutionException, InterruptedException {
-        launchEchoTestServer();
-    }
-
-    private void launchEchoTestServer() throws InterruptedException, ExecutionException {
-        CompletableFuture<ServerSocketChannel> promise = new CompletableFuture<>();
-        Future<?> echoTestServerFuture = POOL.submit(() -> EchoTestServer.launch(0, promise));
-        echoTestServer = new FutureInstance<>(echoTestServerFuture, promise.get());
-        dstAddress = echoTestServer.instance().localAddress();
+    void initTemplate() throws InterruptedException {
+        echoTestServer = EchoTestServer.launch(0);
+        dstAddress = echoTestServer.localAddress();
     }
 
     protected Channel connect(InetSocketAddress address) throws InterruptedException {
@@ -68,7 +59,7 @@ public abstract class TcpTestTemplate extends TestTemplate {
 
     protected void socksHandshakeAndSendBytes(InetSocketAddress proxyAddress) throws ExecutionException, InterruptedException, TimeoutException {
         HandshakeResult<Socks5CommandResponse> result = Socks5Handshake
-            .noAuth(group, Socks5CommandType.CONNECT, proxyAddress, dstAddress).get();
+            .noAuth(group, Socks5CommandType.CONNECT, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS);
         if (!result.response().status().isSuccess()) {
             result.channel().close();
             throw new ExecutionException(new IllegalStateException("Unsuccessful response status: " + result.response().status()));
@@ -118,12 +109,12 @@ public abstract class TcpTestTemplate extends TestTemplate {
 
     protected void checkHttpsHandshakeAndSendBytes(InetSocketAddress proxyAddress) throws ExecutionException, InterruptedException, TimeoutException {
         HandshakeResult<HttpResponse> result = com.urbanspork.common.protocol.https.proxy.Handshake
-            .start(group, proxyAddress, dstAddress).get();
+            .start(group, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS);
         Channel channel = result.channel();
         checkSendRandomBytes(channel);
     }
 
-    private static void checkSendRandomBytes(Channel channel) throws InterruptedException, ExecutionException, TimeoutException {
+    private static void checkSendRandomBytes(Channel channel) throws InterruptedException, ExecutionException {
         int length = ThreadLocalRandom.current().nextInt(0xfff, 0xffff);
         byte[] bytes = Dice.rollBytes(length);
         ChannelPromise promise = channel.newPromise();
@@ -145,15 +136,19 @@ public abstract class TcpTestTemplate extends TestTemplate {
                 }
             }
         );
-        channel.writeAndFlush(Unpooled.wrappedBuffer(bytes));
-        promise.get(10, TimeUnit.SECONDS);
+        channel.writeAndFlush(Unpooled.wrappedBuffer(bytes)).addListener(f -> {
+            if (!f.isSuccess()) {
+                promise.setFailure(f.cause());
+            }
+        });
+        promise.get();
         channel.close().sync();
     }
 
     @AfterAll
     void cleanTemplate() {
         logger.info("close echo test server: {}", echoTestServer);
-        echoTestServer.close(Channel::close);
+        echoTestServer.close();
         group.shutdownGracefully().syncUninterruptibly();
     }
 }

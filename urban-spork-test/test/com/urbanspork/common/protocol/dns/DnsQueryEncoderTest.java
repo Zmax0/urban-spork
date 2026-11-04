@@ -19,6 +19,7 @@ class DnsQueryEncoderTest {
         query.setRecursionDesired(true);
         query.addRecord(DnsSection.QUESTION, new TestDnsQuestion());
         Assertions.assertThrows(EncoderException.class, () -> DnsQueryEncoder.encode(query));
+        query.release();
     }
 
     @Test
@@ -28,6 +29,7 @@ class DnsQueryEncoderTest {
         query.addRecord(DnsSection.ADDITIONAL, new DefaultDnsRawRecord("www.example.com", DnsRecordType.A, 1, Unpooled.EMPTY_BUFFER));
         query.addRecord(DnsSection.ADDITIONAL, new TestDnsRecord());
         Assertions.assertThrows(EncoderException.class, () -> DnsQueryEncoder.encode(query));
+        query.release();
     }
 
     private static class TestDnsQuestion implements DnsQuestion {

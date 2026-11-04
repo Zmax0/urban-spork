@@ -1,8 +1,9 @@
 package com.urbanspork.common.protocol.vmess;
 
+import com.urbanspork.common.crypto.Digests;
+import com.urbanspork.common.util.Bytes;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.bouncycastle.crypto.digests.MD5Digest;
 
 import java.util.UUID;
 
@@ -27,12 +28,8 @@ public class ID {
 
     public static byte[] newID(byte[] uuid) {
         byte[] salt = "c48619fe-8f02-49e0-b9e9-edf763e17e21".getBytes();
-        MD5Digest digest = new MD5Digest();
-        digest.update(uuid, 0, uuid.length);
-        digest.update(salt, 0, salt.length);
-        byte[] newID = new byte[digest.getDigestSize()];
-        digest.doFinal(newID, 0);
-        return newID;
+        byte[] in = Bytes.concat(uuid, salt);
+        return Digests.md5.hash(in);
     }
 
     private static byte[] getBytes(UUID uuid) {
@@ -44,13 +41,12 @@ public class ID {
     }
 
     public static byte[] nextID(byte[] oldID) {
-        MD5Digest digest = new MD5Digest();
-        digest.update(oldID, 0, oldID.length);
         byte[] salt = "16167dc8-16b6-4e6d-b8bb-65dd68113a81".getBytes();
-        digest.update(salt, 0, salt.length);
-        byte[] newID = new byte[oldID.length];
-        digest.doFinal(newID, 0);
-        return newID;
+        byte[] in = Bytes.concat(oldID, salt);
+        byte[] nextID = new byte[oldID.length];
+        byte[] hash = Digests.md5.hash(in);
+        System.arraycopy(hash, 0, nextID, 0, Math.min(hash.length, nextID.length));
+        return nextID;
     }
 
     public static byte[][] newAlterIDs(byte[] id, int alterIDCount) {

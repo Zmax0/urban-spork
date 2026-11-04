@@ -55,6 +55,7 @@ class EmbeddedChannelTest extends TraceLevelLoggerTestTemplate {
         client.writeInbound(msg);
         msg = client.readInbound();
         Assertions.assertEquals(message, msg.readCharSequence(msg.readableBytes(), StandardCharsets.UTF_8));
+        msg.release();
         client.close();
         server.close();
     }

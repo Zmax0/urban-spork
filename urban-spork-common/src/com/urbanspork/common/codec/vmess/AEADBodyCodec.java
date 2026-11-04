@@ -22,7 +22,7 @@ import java.util.function.Predicate;
 public class AEADBodyCodec {
 
     private static final byte[] AUTH_LEN = "auth_len".getBytes();
-    private static final int PAYLOAD_LIMIT = 2048;
+    private static final int PAYLOAD_LIMIT = 16301;
 
     private AEADBodyCodec() {}
 

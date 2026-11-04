@@ -1,37 +1,31 @@
 package com.urbanspork.common.crypto;
 
-import org.bouncycastle.crypto.MultiBlockCipher;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.params.KeyParameter;
-
 public class AES {
+    public static final int BLOCK_SIZE = 16;
+
     private AES() {}
 
-    public static byte[] encrypt(byte[] key, byte[] in, int keyLen) {
-        MultiBlockCipher cipher = AESEngine.newInstance();
-        byte[] out = new byte[cipher.getBlockSize()];
-        cipher.init(true, new KeyParameter(key, 0, keyLen));
-        cipher.processBlock(in, 0, out, 0);
-        return out;
+    public static void encrypt128(byte[] key, byte[] block) {
+        try (com.urbanspork.jni.aes128.Cipher cipher = com.urbanspork.jni.aes128.Cipher.newInstance(key)) {
+            cipher.encrypt(block);
+        }
     }
 
-    public static void encrypt(byte[] key, byte[] in, int keyLen, byte[] out) {
-        MultiBlockCipher cipher = AESEngine.newInstance();
-        cipher.init(true, new KeyParameter(key, 0, keyLen));
-        cipher.processBlock(in, 0, out, 0);
+    public static void decrypt128(byte[] key, byte[] block) {
+        try (com.urbanspork.jni.aes128.Cipher cipher = com.urbanspork.jni.aes128.Cipher.newInstance(key)) {
+            cipher.decrypt(block);
+        }
     }
 
-    public static byte[] decrypt(byte[] key, byte[] in, int keyLen) {
-        MultiBlockCipher cipher = AESEngine.newInstance();
-        byte[] out = new byte[cipher.getBlockSize()];
-        cipher.init(false, new KeyParameter(key, 0, keyLen));
-        cipher.processBlock(in, 0, out, 0);
-        return out;
+    public static void encrypt256(byte[] key, byte[] block) {
+        try (com.urbanspork.jni.aes256.Cipher cipher = com.urbanspork.jni.aes256.Cipher.newInstance(key)) {
+            cipher.encrypt(block);
+        }
     }
 
-    public static void decrypt(byte[] key, byte[] in, int keyLen, byte[] out) {
-        MultiBlockCipher cipher = AESEngine.newInstance();
-        cipher.init(false, new KeyParameter(key, 0, keyLen));
-        cipher.processBlock(in, 0, out, 0);
+    public static void decrypt256(byte[] key, byte[] block) {
+        try (com.urbanspork.jni.aes256.Cipher cipher = com.urbanspork.jni.aes256.Cipher.newInstance(key)) {
+            cipher.decrypt(block);
+        }
     }
 }

@@ -17,11 +17,12 @@ import com.urbanspork.common.util.Dice;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,7 +47,7 @@ class AeadCipherCodec implements AutoCloseable {
         this.cipherMethod = cipherMethod;
     }
 
-    public void encode(Session session, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+    public void encode(Session session, ByteBuf msg, ByteBuf out) throws NoSuchAlgorithmException, InvalidKeyException {
         boolean isAead2022 = cipherKind.isAead2022();
         if (payloadEncoder == null) {
             initPayloadEncoder(session, isAead2022, out);
@@ -60,7 +61,7 @@ class AeadCipherCodec implements AutoCloseable {
         payloadEncoder.encodePayload(msg, out);
     }
 
-    private void initPayloadEncoder(Session session, boolean isAead2022, ByteBuf out) {
+    private void initPayloadEncoder(Session session, boolean isAead2022, ByteBuf out) throws NoSuchAlgorithmException, InvalidKeyException {
         withIdentity(session, cipherKind, keys, out);
         byte[] salt = session.identity().salt();
         if (isAead2022) {
@@ -75,7 +76,7 @@ class AeadCipherCodec implements AutoCloseable {
         }
     }
 
-    private ByteBuf handleClientHeader(Session session, boolean isAead2022, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+    private ByteBuf handleClientHeader(Session session, boolean isAead2022, ByteBuf msg, ByteBuf out) {
         ByteBuf temp = Unpooled.buffer();
         Address.encode(session.request(), temp);
         if (isAead2022) {
@@ -93,7 +94,7 @@ class AeadCipherCodec implements AutoCloseable {
         return temp;
     }
 
-    private void handleServerHeader(Session session, boolean isAead2022, ByteBuf msg, ByteBuf out) throws InvalidCipherTextException {
+    private void handleServerHeader(Session session, boolean isAead2022, ByteBuf msg, ByteBuf out) {
         if (isAead2022) {
             for (byte[] bytes : AEAD2022.TCP.newHeader(session.mode(), session.identity().getRequestSalt(), msg)) {
                 out.writeBytes(payloadEncoder.auth().seal(bytes));

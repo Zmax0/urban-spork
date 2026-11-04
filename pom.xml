@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>urban-spork</groupId>
   <artifactId>urban-spork</artifactId>
-  <version>2.7.0</version>
+  <version>2.7.1</version>
   <packaging>pom</packaging>
   <modules>
     <module>urban-spork-common</module>
@@ -22,13 +22,13 @@
     <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
     <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
     <junit.jupiter.version>5.13.4</junit.jupiter.version>
-    <jackson.version>3.1.5</jackson.version>
-    <logback.version>1.5.32</logback.version>
-    <netty.version>4.2.16.Final</netty.version>
-    <bouncycastle.version>2.73.12</bouncycastle.version>
+    <jackson.version>3.2.4</jackson.version>
+    <logback.version>1.6.5</logback.version>
+    <netty.version>4.2.19.Final</netty.version>
     <jar-jni.version>1.2.0</jar-jni.version>
     <javafx.version>26.0.2</javafx.version>
     <caffeine.version>3.2.4</caffeine.version>
+    <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
     <jlink.executable>${java.home}/bin/jlink</jlink.executable>
     <jpackage.executable>${java.home}/bin/jpackage</jpackage.executable>
   </properties>
@@ -111,16 +111,6 @@
         <version>${netty.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.bouncycastle</groupId>
-        <artifactId>bcpkix-lts8on</artifactId>
-        <version>${bouncycastle.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.bouncycastle</groupId>
-        <artifactId>bcprov-lts8on</artifactId>
-        <version>${bouncycastle.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.questdb</groupId>
         <artifactId>jar-jni</artifactId>
         <version>${jar-jni.version}</version>
@@ -154,6 +144,13 @@
     <finalName>${project.name}</finalName>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>${os-maven-plugin.version}</version>
+      </extension>
+    </extensions>
     <resources>
       <resource>
         <directory>resource</directory>

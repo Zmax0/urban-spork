@@ -1,17 +1,11 @@
 package com.urbanspork.client;
 
-import com.urbanspork.client.trojan.ClientHeaderEncoder;
-import com.urbanspork.client.vmess.ClientAeadCodec;
 import com.urbanspork.common.channel.DefaultChannelInboundHandler;
 import com.urbanspork.common.codec.address.MaybeResolved;
-import com.urbanspork.common.util.FutureListeners;
-import com.urbanspork.common.codec.shadowsocks.Mode;
-import com.urbanspork.common.codec.shadowsocks.tcp.Context;
-import com.urbanspork.common.codec.shadowsocks.tcp.TcpRelayCodec;
 import com.urbanspork.common.config.ServerConfig;
-import com.urbanspork.common.manage.shadowsocks.ServerUserManager;
 import com.urbanspork.common.protocol.dns.DnsRequest;
 import com.urbanspork.common.protocol.dns.IpResponse;
+import com.urbanspork.common.util.FutureListeners;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -26,7 +20,6 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.quic.QuicChannel;
 import io.netty.handler.codec.quic.QuicStreamChannel;
-import io.netty.handler.codec.socks.SocksCmdType;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
@@ -50,37 +43,38 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
         ServerConfig config = context.config();
         boolean isReadyOnceConnected = config.getWs() == null;
         EventLoop eventLoop = inbound.eventLoop();
-        String serverHost = ClientRelayHandler.tryResolveServerHost(eventLoop, config);
-        InetSocketAddress serverAddress = new InetSocketAddress(serverHost, config.getPort());
-        new ClientDnsRelayHandler() {
-            @Override
-            public String label() {
-                return config.networkText();
-            }
+        ClientRelayHandler.resolveServerHost(eventLoop, context).addListener(FutureListeners.success(serverHost -> {
+            InetSocketAddress serverAddress = new InetSocketAddress(serverHost, config.getPort());
+            new ClientDnsRelayHandler() {
+                @Override
+                public String label() {
+                    return config.networkText();
+                }
 
-            @Override
-            public Future<? extends Channel> newChannel(DnsRequest dohRequest, Promise<IpResponse> ipPromise) {
-                Promise<Channel> channelPromise = eventLoop.newPromise();
-                newTcpChannel(eventLoop, serverAddress, dohRequest, context, channelPromise, ipPromise);
-                channelPromise.addListener(FutureListeners.failure(_ -> ClientTcpRelayHandler.this.handleFailure(inbound)));
-                return channelPromise;
-            }
+                @Override
+                public Future<? extends Channel> newChannel(DnsRequest dohRequest, Promise<IpResponse> ipPromise) {
+                    Promise<Channel> channelPromise = eventLoop.newPromise();
+                    newTcpChannel(eventLoop, serverAddress, dohRequest, context, channelPromise, ipPromise);
+                    channelPromise.addListener(FutureListeners.failure(_ -> ClientTcpRelayHandler.this.handleFailure(inbound)));
+                    return channelPromise;
+                }
 
-            @Override
-            public boolean isReadyOnceConnected() {
-                return isReadyOnceConnected;
-            }
+                @Override
+                public boolean isReadyOnceConnected() {
+                    return isReadyOnceConnected;
+                }
 
-            @Override
-            public void callback1(MaybeResolved maybeResolved) {
-                connectTcp(inbound, context, serverAddress, maybeResolved, isReadyOnceConnected);
-            }
+                @Override
+                public void callback1(MaybeResolved maybeResolved) {
+                    connectTcp(inbound, context, serverAddress, maybeResolved, isReadyOnceConnected);
+                }
 
-            @Override
-            public void callback0(Throwable t) {
-                ClientTcpRelayHandler.this.handleFailure(inbound);
-            }
-        }.resolve(eventLoop, config.getDns(), dst);
+                @Override
+                public void callback0(Throwable t) {
+                    ClientTcpRelayHandler.this.handleFailure(inbound);
+                }
+            }.resolve(eventLoop, context, dst);
+        }));
     }
 
     private void connectTcp(Channel inbound, ClientChannelContext context, InetSocketAddress serverAddress, MaybeResolved dstAddress, boolean isReadyOnceConnected) {
@@ -107,9 +101,9 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
     }
 
     private void tcpOutboundReady(Channel inbound, Channel outbound, boolean isReadyOnceConnected) {
-        outbound.pipeline().addLast(new DefaultChannelInboundHandler(inbound)); // R → L
+        outbound.pipeline().addLast(new DefaultChannelInboundHandler(inbound, false)); // R → L
         if (isReadyOnceConnected) {
-            inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
+            inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound, false)); // L → R
             inboundReady().success().accept(inbound);
             outboundReady(inbound).accept(outbound);
         }
@@ -117,21 +111,27 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
 
     private void quic(Channel inbound, InetSocketAddress dstAddress, ClientChannelContext context) {
         ServerConfig config = context.config();
-        ClientRelayHandler.quicEndpoint(config, inbound.eventLoop()).addListener((ChannelFutureListener) f0 -> {
+        context.quicEndpoint(inbound.eventLoop()).addListener((ChannelFutureListener) f0 -> {
             InetSocketAddress serverAddress = new InetSocketAddress(config.getHost(), config.getPort());
-            Channel quicEndpoint = f0.channel();
-            QuicChannel.newBootstrap(quicEndpoint).remoteAddress(serverAddress).streamHandler(new ChannelInboundHandlerAdapter()).connect().addListener(f1 -> {
-                    if (f1.isSuccess()) {
-                        QuicChannel quicChannel = (QuicChannel) f1.get();
-                        inbound.closeFuture().addListener(_ -> quicChannel.close());
-                        connectQuic(inbound, dstAddress, context, quicChannel, quicEndpoint);
-                    } else {
-                        logger.error("[quic] create endpoint channel failed, relay server {}", serverAddress, f1.cause());
-                        quicEndpoint.close();
-                        handleFailure(inbound);
+            Channel c0 = f0.channel();
+            QuicChannel.newBootstrap(c0).remoteAddress(serverAddress).streamHandler(new ChannelInboundHandlerAdapter())
+                .connect().addListener(f1 -> {
+                        if (f1.isSuccess()) {
+                            QuicChannel c1 = (QuicChannel) f1.get();
+                            if (inbound.isActive()) {// check inbound channel
+                                inbound.closeFuture().addListener(_ -> c1.close());
+                                connectQuic(inbound, dstAddress, context, c1, c0);
+                            } else {
+                                logger.warn("[quic] create endpoint channel failed: inbound inactive");
+                                c0.close();
+                            }
+                        } else {
+                            logger.error("[quic] create endpoint channel failed, relay server {}", serverAddress, f1.cause());
+                            c0.close();
+                            handleFailure(inbound);
+                        }
                     }
-                }
-            );
+                );
         });
     }
 
@@ -168,7 +168,7 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
                 quicEndpoint.close();
                 ClientTcpRelayHandler.this.handleFailure(inbound);
             }
-        }.resolve(inbound.eventLoop(), context.config().getDns(), dstAddress);
+        }.resolve(inbound.eventLoop(), context, dstAddress);
     }
 
     private void connectQuic0(Channel inbound, QuicChannel quicChannel, MaybeResolved dstAddress, ClientChannelContext context) {
@@ -181,21 +181,9 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
         });
     }
 
-    static Future<QuicStreamChannel> createQuicStreamChannel(QuicChannel quicChannel, MaybeResolved dstAddress, ClientChannelContext context) {
-        return quicChannel.newStreamBootstrap().handler(
-            new ChannelInitializer<>() {
-                @Override
-                protected void initChannel(Channel ch) {
-                    ClientRelayHandler.addChannelTrafficHandler(ch, dstAddress, context);
-                    addProtocolHandler(ch, dstAddress.address(), context);
-                }
-            }
-        ).create();
-    }
-
     private void quicOutboundReady(Channel inbound, QuicStreamChannel outbound) {
-        outbound.pipeline().addLast(new DefaultChannelInboundHandler(inbound)); // R → L
-        inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound)); // L → R
+        outbound.pipeline().addLast(new DefaultChannelInboundHandler(inbound, false)); // R → L
+        inbound.pipeline().addLast(new DefaultChannelInboundHandler(outbound, false)); // L → R
         inboundReady().success().accept(inbound);
         outboundReady(inbound).accept(outbound);
     }
@@ -204,27 +192,15 @@ public interface ClientTcpRelayHandler extends ClientRelayHandler {
         return new ChannelInitializer<>() {
             @Override
             protected void initChannel(Channel outbound) throws Exception {
-                ClientRelayHandler.addSslHandler(outbound, context);
+                context.addSslHandler(outbound);
                 if (ClientRelayHandler.addWebSocketHandlers(outbound, context)) {
                     outbound.pipeline().addLast(new WebSocketCodec(inbound, context.config(), ClientTcpRelayHandler.this));
                     inbound.closeFuture().addListener(_ -> outbound.writeAndFlush(new CloseWebSocketFrame()));
                 }
                 ClientRelayHandler.addChannelTrafficHandler(outbound, address, context);
-                addProtocolHandler(outbound, address.address(), context);
+                ClientRelayHandler.addProtocolHandler(outbound, address.address(), context);
             }
         };
     }
 
-    static void addProtocolHandler(Channel outbound, InetSocketAddress address, ClientChannelContext context) {
-        outbound.pipeline().addLast(newProtocolHandler(address, context));
-    }
-
-    private static ChannelHandler newProtocolHandler(InetSocketAddress address, ClientChannelContext context) {
-        ServerConfig config = context.config();
-        return switch (config.getProtocol()) {
-            case vmess -> new ClientAeadCodec(config.getCipher(), address, config.getPassword());
-            case trojan -> new ClientHeaderEncoder(config.getPassword(), address, SocksCmdType.CONNECT.byteValue());
-            default -> new TcpRelayCodec(new Context(), config, address, Mode.Client, ServerUserManager.empty());
-        };
-    }
 }

@@ -35,6 +35,7 @@ class ServerUserManagerTest {
     void testBytesKey() {
         ServerUserManager.BytesKey key1 = new ServerUserManager.BytesKey(new byte[]{1, 2, 3});
         ServerUserManager.BytesKey key2 = new ServerUserManager.BytesKey(new byte[]{1, 2, 3});
+        Assertions.assertEquals("\\x01\\x02\\x03", key1.toString());
         TestUtil.testEqualsAndHashcode(key1, key2);
     }
 }

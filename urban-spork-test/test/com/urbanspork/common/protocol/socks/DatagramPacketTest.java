@@ -41,5 +41,6 @@ class DatagramPacketTest {
         Assertions.assertEquals(socksAddress, inbound.packet().recipient());
         ByteBuf content = inbound.packet().content();
         Assertions.assertEquals(str, content.readCharSequence(content.readableBytes(), StandardCharsets.UTF_8));
+        inbound.release();
     }
 }

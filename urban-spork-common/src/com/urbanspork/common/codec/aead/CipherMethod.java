@@ -1,19 +1,14 @@
 package com.urbanspork.common.codec.aead;
 
 import com.urbanspork.jni.AeadCipher;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.modes.AEADCipher;
-import org.bouncycastle.crypto.modes.ChaCha20Poly1305;
-import org.bouncycastle.crypto.modes.GCMBlockCipher;
-import org.bouncycastle.crypto.params.AEADParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
-import java.util.Arrays;
+import java.nio.ByteBuffer;
 
 public enum CipherMethod {
     AES_128_GCM(16, 12, 16),
-    AES_265_GCM(32, 12, 16),
+    AES_256_GCM(32, 12, 16),
     CHACHA8_POLY1305(32, 12, 16),
     CHACHA20_POLY1305(32, 12, 16),
     XCHACHA8_POLY1305(32, 24, 16),
@@ -43,54 +38,64 @@ public enum CipherMethod {
     }
 
     public CipherInstance init(byte[] key) {
-        return switch (this) {
-            case AES_128_GCM, AES_265_GCM -> new BouncyCastleCipherInstance(GCMBlockCipher.newInstance(AESEngine.newInstance()), key);
-            case CHACHA8_POLY1305 -> new JniCipherInstance(com.urbanspork.jni.chacha8poly1305.Cipher.newInstance(key), tagSize);
-            case XCHACHA8_POLY1305 -> new JniCipherInstance(com.urbanspork.jni.xchacha8poly1305.Cipher.newInstance(key), tagSize);
-            case XCHACHA20_POLY1305 -> new JniCipherInstance(com.urbanspork.jni.xchacha20poly1305.Cipher.newInstance(key), tagSize);
-            default -> new BouncyCastleCipherInstance(new ChaCha20Poly1305(), key);
+        if (key.length != keySize) {
+            String msg = String.format("%s is expecting a %d bytes key, but found %d bytes", this, keySize, key.length);
+            throw new IllegalArgumentException(msg);
+        }
+        AeadCipher cipher = switch (this) {
+            case AES_128_GCM -> com.urbanspork.jni.aes128gcm.Cipher.newInstance(key);
+            case AES_256_GCM -> com.urbanspork.jni.aes256gcm.Cipher.newInstance(key);
+            case CHACHA8_POLY1305 -> com.urbanspork.jni.chacha8poly1305.Cipher.newInstance(key);
+            case CHACHA20_POLY1305 -> com.urbanspork.jni.chacha20poly1305.Cipher.newInstance(key);
+            case XCHACHA8_POLY1305 -> com.urbanspork.jni.xchacha8poly1305.Cipher.newInstance(key);
+            case XCHACHA20_POLY1305 -> com.urbanspork.jni.xchacha20poly1305.Cipher.newInstance(key);
         };
+        return new JniCipherInstance(cipher, tagSize);
     }
 
-    private record BouncyCastleCipherInstance(AEADCipher cipher, KeyParameter key) implements CipherInstance {
-        BouncyCastleCipherInstance(AEADCipher cipher, byte[] key) {
-            this(cipher, new KeyParameter(key));
+    static ByteBuffer region(ByteBuf buf, int index, int length) {
+        if (!buf.isDirect() || buf.nioBufferCount() != 1) {
+            return null;
         }
-
-        @Override
-        public byte[] encrypt(byte[] nonce, byte[] aad, byte[] in) throws InvalidCipherTextException {
-            cipher.init(true, new AEADParameters(key, 128, nonce, aad));
-            byte[] out = new byte[cipher.getOutputSize(in.length)];
-            cipher.doFinal(out, cipher.processBytes(in, 0, in.length, out, 0));
-            return out;
-        }
-
-        @Override
-        public byte[] decrypt(byte[] nonce, byte[] aad, byte[] in) throws InvalidCipherTextException {
-            cipher.init(false, new AEADParameters(key, 128, nonce, aad));
-            byte[] out = new byte[cipher.getOutputSize(in.length)];
-            cipher.doFinal(out, cipher.processBytes(in, 0, in.length, out, 0));
-            return out;
-        }
-
-        @Override
-        public void close() {
-            // skip
-        }
+        return buf.nioBuffer(index, length).slice();
     }
 
     private record JniCipherInstance(AeadCipher cipher, int tagSize) implements CipherInstance {
         @Override
-        public byte[] encrypt(byte[] nonce, byte[] aad, byte[] in) {
-            byte[] out = Arrays.copyOf(in, in.length + tagSize);
-            cipher.encrypt(nonce, aad, out);
-            return out;
+        public void encrypt(byte[] nonce, byte[] aad, byte[] buffer) {
+            cipher.encrypt(nonce, aad, buffer);
         }
 
         @Override
-        public byte[] decrypt(byte[] nonce, byte[] aad, byte[] in) {
-            cipher.decrypt(nonce, aad, in);
-            return Arrays.copyOfRange(in, 0, in.length - tagSize);
+        public int decrypt(byte[] nonce, byte[] aad, byte[] buffer) {
+            cipher.decrypt(nonce, aad, buffer);
+            return buffer.length - tagSize;
+        }
+
+        @Override
+        public void encrypt(byte[] nonce, byte[] aad, ByteBuf dst, int index, int length) {
+            ByteBuffer view = region(dst, index, length);
+            if (view != null) {
+                cipher.encryptDirect(nonce, aad, view);
+                return;
+            }
+            byte[] buffer = new byte[length];
+            dst.getBytes(index, buffer, 0, length);
+            cipher.encrypt(nonce, aad, buffer);
+            dst.setBytes(index, buffer, 0, length);
+        }
+
+        @Override
+        public ByteBuf decrypt(byte[] nonce, byte[] aad, ByteBuf src, int index, int length) {
+            ByteBuffer view = region(src, index, length);
+            if (view != null) {
+                cipher.decryptDirect(nonce, aad, view);
+                return src.retainedSlice(index, length - tagSize);
+            }
+            byte[] buffer = new byte[length];
+            src.getBytes(index, buffer, 0, length);
+            cipher.decrypt(nonce, aad, buffer);
+            return Unpooled.wrappedBuffer(buffer, 0, length - tagSize);
         }
 
         @Override

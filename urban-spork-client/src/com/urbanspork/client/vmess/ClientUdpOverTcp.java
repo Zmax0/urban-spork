@@ -36,7 +36,7 @@ interface ClientUdpOverTcp {
         @Override
         public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
             Channel inboundChannel = ctx.channel();
-            logger.info("[udp][vmess]{} ← {} ~ {} ← {}", sender, inboundChannel.localAddress(), inboundChannel.remoteAddress(), recipient);
+            logger.debug("[udp][vmess]{} ← {} ~ {} ← {}", sender, inboundChannel.localAddress(), inboundChannel.remoteAddress(), recipient);
             channel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(msg, recipient), sender));
         }
     }

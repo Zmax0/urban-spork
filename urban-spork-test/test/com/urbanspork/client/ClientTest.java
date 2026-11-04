@@ -4,6 +4,7 @@ import com.urbanspork.common.Runtime;
 import com.urbanspork.common.config.ClientConfig;
 import com.urbanspork.common.config.ClientConfigTest;
 import com.urbanspork.common.config.ConfigHandler;
+import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.test.client.Socks5Handshake;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
@@ -24,7 +25,6 @@ import org.junit.jupiter.params.support.ParameterDeclarations;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,38 +36,46 @@ import java.util.stream.Stream;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ClientTest {
-    private static final ExecutorService SERVICE = Executors.newVirtualThreadPerTaskExecutor();
     private static final Runtime RUNTIME = new Runtime();
 
     private final EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
 
     @Test
     @Order(1)
-    void testExit() {
-        ClientConfig config = ClientConfigTest.testConfig(0, 0);
-        ConfigHandler.DEFAULT.save(config);
-        try (ExecutorService pool = Executors.newSingleThreadExecutor()) {
-            Future<?> future = pool.submit(Client::main);
-            try {
-                future.get(2, TimeUnit.SECONDS);
-            } catch (TimeoutException | InterruptedException _) {
-                future.cancel(true);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            Assertions.assertTrue(future.isCancelled());
+    void testReload() throws InterruptedException, ExecutionException {
+        ClientConfig clientConfig = ClientConfigTest.testConfig(0, 0);
+        try (Client.Instance client = Client.launch(RUNTIME, clientConfig).get()) {
+            ServerConfig current = clientConfig.getCurrent();
+            Client.reload(RUNTIME, client, current);
+            Assertions.assertTrue(client.tcp().isActive());
         }
     }
 
     @Test
     @Order(2)
+    void testExit() throws InterruptedException, ExecutionException, TimeoutException {
+        ClientConfig config = ClientConfigTest.testConfig(0, 0);
+        ConfigHandler.DEFAULT.save(config);
+        try (Client.Instance client = Client.launch(RUNTIME, config).get();
+             ExecutorService pool = Executors.newSingleThreadExecutor()) {
+            Future<?> terminated = pool.submit(() -> {
+                client.awaitTermination();
+                return null;
+            });
+            client.close();
+            terminated.get(10, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    @Order(3)
     void testLaunchFailed() throws InterruptedException, ExecutionException {
-        Client.Instance client = asyncLaunchClient(ClientConfigTest.testConfig(0, 0));
+        Client.Instance client = launch(ClientConfigTest.testConfig(0, 0));
         ClientConfig config = ClientConfigTest.testConfig(client.tcp().localAddress().getPort(), 0);
         config.setHost(null);
         Assertions.assertThrows(
             ExecutionException.class, () -> {
-                Client.Instance client2 = asyncLaunchClient(config);
+                Client.Instance client2 = launch(config);
                 client2.close();
             }
         );
@@ -76,17 +84,15 @@ class ClientTest {
 
     @ParameterizedTest
     @ArgumentsSource(Socks5CommandTypeProvider.class)
-    @Order(3)
+    @Order(4)
     void testHandshake(Socks5CommandType type) {
         InetSocketAddress proxyAddress = new InetSocketAddress(0);
         InetSocketAddress dstAddress = new InetSocketAddress(0);
         Assertions.assertThrows(ExecutionException.class, () -> Socks5Handshake.noAuth(group, type, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS));
     }
 
-    public static Client.Instance asyncLaunchClient(ClientConfig config) throws InterruptedException, ExecutionException {
-        CompletableFuture<Client.Instance> promise = new CompletableFuture<>();
-        SERVICE.submit(() -> Client.launch(RUNTIME, config, promise));
-        return promise.get();
+    public static Client.Instance launch(ClientConfig config) throws InterruptedException, ExecutionException {
+        return Client.launch(RUNTIME, config).get();
     }
 
     private static class Socks5CommandTypeProvider implements ArgumentsProvider {

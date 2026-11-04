@@ -8,7 +8,7 @@ class DefaultChannelInboundHandlerTest {
     @Test
     void testExceptionCaught() {
         EmbeddedChannel channel1 = new EmbeddedChannel();
-        DefaultChannelInboundHandler handler = new DefaultChannelInboundHandler(channel1);
+        DefaultChannelInboundHandler handler = new DefaultChannelInboundHandler(channel1, true);
         EmbeddedChannel channel2 = new EmbeddedChannel(handler);
         handler.exceptionCaught(channel2.pipeline().lastContext(), new UnsupportedOperationException("Test"));
         Assertions.assertFalse(channel1.isActive());

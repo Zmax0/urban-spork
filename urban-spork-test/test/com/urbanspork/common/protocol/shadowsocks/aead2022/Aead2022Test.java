@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.StringJoiner;
 import java.util.concurrent.ThreadLocalRandom;
@@ -28,8 +29,11 @@ class Aead2022Test extends TraceLevelLoggerTestTemplate {
     void testSessionSubkey() {
         byte[] key = Base64.getDecoder().decode("Lc3tTx0BY6ZJ/fCwOx3JvF0I/anhwJBO5p2+FA5Vce4=");
         byte[] salt = Base64.getDecoder().decode("3oFO0VyLyGI4nFN0M9P+62vPND/L6v8IingaPJWTbJA=");
-        byte[] bytes = AEAD2022.TCP.sessionSubkey(key, salt);
-        Assertions.assertEquals("EdNE+4U8dVnHT0+poAFDK2bdlwfrHT61sUNr9WYPh+E=", Base64.getEncoder().encodeToString(bytes));
+        byte[] subkey256 = AEAD2022.TCP.sessionSubkey(CipherMethod.AES_256_GCM, key, salt);
+        Assertions.assertEquals("EdNE+4U8dVnHT0+poAFDK2bdlwfrHT61sUNr9WYPh+E=", Base64.getEncoder().encodeToString(subkey256));
+        byte[] subkey128 = AEAD2022.TCP.sessionSubkey(CipherMethod.AES_128_GCM, key, salt);
+        Assertions.assertEquals(CipherMethod.AES_128_GCM.keySize(), subkey128.length);
+        Assertions.assertArrayEquals(subkey128, Arrays.copyOf(subkey256, subkey128.length));
     }
 
     @Test
@@ -66,7 +70,7 @@ class Aead2022Test extends TraceLevelLoggerTestTemplate {
     @Test
     void testTcpInvalidClientUserIdentity() {
         CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
-        CipherMethod method = CipherMethod.AES_265_GCM;
+        CipherMethod method = CipherMethod.AES_256_GCM;
         ServerUser user = rollUser(kind);
         ServerUserManager userManager = ServerUserManager.from(new ServerConfig());
         userManager.addUser(user);
@@ -80,7 +84,7 @@ class Aead2022Test extends TraceLevelLoggerTestTemplate {
     @Test
     void testUdpUserNotFound() throws Exception {
         CipherKind kind = CipherKind.aead2022_blake3_aes_256_gcm;
-        CipherMethod method = CipherMethod.AES_265_GCM;
+        CipherMethod method = CipherMethod.AES_256_GCM;
         byte[] iPSK = Base64.getDecoder().decode(TestDice.rollPassword(Protocol.shadowsocks, kind));
         ServerUser user = rollUser(kind);
         ServerUserManager userManager = ServerUserManager.from(new ServerConfig());

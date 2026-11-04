@@ -8,31 +8,38 @@ import com.urbanspork.common.config.WebSocketSetting;
 import com.urbanspork.common.protocol.Protocol;
 import com.urbanspork.test.SslUtil;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import javax.net.ssl.SSLException;
+
 class ServerInitializerTest {
+    private static final ChannelGroup CHILDREN = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+
     @Test
-    void outboundSslChanelFailed() {
+    void outboundSslChanelFailed() throws SSLException {
         ServerConfig config = ServerConfigTest.testConfig(0);
         config.setProtocol(Protocol.trojan);
         EmbeddedChannel channel = new EmbeddedChannel();
-        ServerInitializationContext context = new ServerInitializationContext(config, new Context());
-        ServerInitializer initializer = new ServerInitializer(context);
+        ServerInitializer initializer = new ServerInitializer(new ServerChannelContext(config, new Context()), CHILDREN);
         Assertions.assertThrows(IllegalArgumentException.class, () -> initializer.initChannel(channel));
         SslSetting sslSetting = SslUtil.getSslSetting();
         sslSetting.setServerName(null);
         config.setSsl(sslSetting);
-        Assertions.assertDoesNotThrow(() -> initializer.initChannel(channel));
+        ServerInitializer tlsInitializer = new ServerInitializer(new ServerChannelContext(config, new Context()), CHILDREN);
+        Assertions.assertDoesNotThrow(() -> tlsInitializer.initChannel(channel));
     }
 
     @Test
-    void outboundWsChannelFailed() {
+    void outboundWsChannelFailed() throws SSLException {
         ServerConfig config = ServerConfigTest.testConfig(0);
         config.setWs(new WebSocketSetting());
         EmbeddedChannel channel = new EmbeddedChannel();
-        ServerInitializationContext context = new ServerInitializationContext(config, new Context());
-        ServerInitializer initializer = new ServerInitializer(context);
+        ServerChannelContext context = new ServerChannelContext(config, new Context());
+        ServerInitializer initializer = new ServerInitializer(context, CHILDREN);
         Assertions.assertThrows(NullPointerException.class, () -> initializer.initChannel(channel));
     }
 }

@@ -2,6 +2,7 @@ package com.urbanspork.client;
 
 import com.urbanspork.common.codec.address.MaybeResolved;
 import com.urbanspork.common.config.DnsSetting;
+import com.urbanspork.common.config.ServerConfig;
 import com.urbanspork.common.protocol.dns.Cache;
 import com.urbanspork.common.protocol.dns.DnsRequest;
 import com.urbanspork.common.protocol.dns.IpResponse;
@@ -51,11 +52,17 @@ public interface ClientDnsRelayHandler extends ClientRelayHandler {
     ///
     void callback0(Throwable t);
 
-    default void resolve(EventLoop eventLoop, DnsSetting dnsSetting, InetSocketAddress target) {
+    static Promise<IpResponse> dohQuery(EventLoopGroup group, ClientChannelContext context, String nameServer, String domain) {
+        DnsRequest request = new DnsRequest(nameServer, domain);
+        return Doh.query(group, request, channel -> context.newDohSslHandler(channel, request.address()));
+    }
+
+    default void resolve(EventLoop eventLoop, ClientChannelContext context, InetSocketAddress target) {
         if (!target.isUnresolved()) {
             callback1(new MaybeResolved(target, target));
             return;
         }
+        DnsSetting dnsSetting = context.config().getDns();
         String host = target.getHostString();
         if (dnsSetting != null && ClientRelayHandler.canResolve(host)) {
             Cache cache = dnsSetting.cache();
@@ -79,10 +86,11 @@ public interface ClientDnsRelayHandler extends ClientRelayHandler {
                         callback0(f1.cause());
                     }
                 });
-                DnsRequest dohRequest = Doh.getRequest(dnsSetting.nameServer(), host, dnsSetting.ssl());
+                DnsRequest dohRequest = new DnsRequest(dnsSetting.nameServer(), host);
                 Future<? extends Channel> outboundChannel = newChannel(dohRequest, inner);
                 if (isReadyOnceConnected()) {
-                    outboundChannel.addListener(FutureListeners.success(ch -> Doh.query(ch, dohRequest, inner)));
+                    outboundChannel.addListener(FutureListeners.success(ch ->
+                        Doh.query(ch, dohRequest, inner, context.newDohSslHandler(ch, dohRequest.address()))));
                 }
             }
         } else {
@@ -90,8 +98,8 @@ public interface ClientDnsRelayHandler extends ClientRelayHandler {
         }
     }
 
-    default void newTcpChannel(EventLoopGroup group, InetSocketAddress server, DnsRequest dohRequest, ClientChannelContext context, Promise<Channel> channelPromise, Promise<IpResponse> ipPromise) {
-        ClientTcpRelayHandler.createTcpOutboundChannel(group, getDohRequestHandler(dohRequest, ipPromise, context), server).addListener((ChannelFutureListener) f -> {
+    default void newTcpChannel(EventLoopGroup group, InetSocketAddress server, DnsRequest dnsRequest, ClientChannelContext context, Promise<Channel> channelPromise, Promise<IpResponse> ipPromise) {
+        ClientTcpRelayHandler.createTcpOutboundChannel(group, getChannelInitializer(dnsRequest, ipPromise, context), server).addListener((ChannelFutureListener) f -> {
             if (f.isSuccess()) {
                 channelPromise.setSuccess(f.channel());
             } else {
@@ -103,16 +111,16 @@ public interface ClientDnsRelayHandler extends ClientRelayHandler {
     }
 
     default void newQuicChannel(EventLoopGroup group, InetSocketAddress server, DnsRequest dohRequest, ClientChannelContext context, Promise<Channel> channelPromise) {
-        ClientRelayHandler.quicEndpoint(context.config(), group).addListener((ChannelFutureListener) f0 -> {
+        context.quicEndpoint(group).addListener((ChannelFutureListener) f0 -> {
             Channel quicEndpoint = f0.channel();
             QuicChannel.newBootstrap(quicEndpoint).remoteAddress(server).streamHandler(new ChannelInboundHandlerAdapter()).connect().addListener((GenericFutureListener<Future<QuicChannel>>) f1 -> {
                 if (f1.isSuccess()) {
-                    ClientTcpRelayHandler.createQuicStreamChannel(f1.get(), new MaybeResolved(dohRequest.address()), context).addListener((GenericFutureListener<Future<QuicStreamChannel>>) f2 -> {
+                    createQuicStreamChannel(f1.get(), new MaybeResolved(dohRequest.address()), context).addListener((GenericFutureListener<Future<QuicStreamChannel>>) f2 -> {
                         if (f2.isSuccess()) {
                             channelPromise.setSuccess(f2.get());
                         } else {
                             Throwable cause = f2.cause();
-                            logger.error("[dns][{}]connect relay server {} failed", label(), server, cause);
+                            logger.error("[dns][{}]create stream channel server failed, relay server {}", label(), server, cause);
                             channelPromise.setFailure(cause);
                         }
                     });
@@ -126,25 +134,29 @@ public interface ClientDnsRelayHandler extends ClientRelayHandler {
         });
     }
 
-    private static ChannelInitializer<Channel> getDohRequestHandler(DnsRequest request, Promise<IpResponse> promise, ClientChannelContext context) {
+    private static ChannelInitializer<Channel> getChannelInitializer(DnsRequest request, Promise<IpResponse> promise, ClientChannelContext context) {
         return new ChannelInitializer<>() {
             @Override
             protected void initChannel(Channel outbound) throws Exception {
-                ClientRelayHandler.addSslHandler(outbound, context);
+                context.addSslHandler(outbound);
                 if (ClientRelayHandler.addWebSocketHandlers(outbound, context)) {
-                    outbound.pipeline().addLast(new DohRequestWebSocketCodec(request, promise));
+                    Optional.of(context).map(ClientChannelContext::config).map(ServerConfig::getDns).ifPresent(
+                        _ -> outbound.pipeline().addLast(new DohRequestWebSocketCodec(request, context, promise))
+                    );
                 }
-                ClientTcpRelayHandler.addProtocolHandler(outbound, request.address(), context);
+                ClientRelayHandler.addProtocolHandler(outbound, request.address(), context);
             }
         };
     }
 
     class DohRequestWebSocketCodec extends MessageToMessageCodec<BinaryWebSocketFrame, ByteBuf> {
         private final DnsRequest request;
+        private final ClientChannelContext context;
         private final Promise<IpResponse> promise;
 
-        public DohRequestWebSocketCodec(DnsRequest request, Promise<IpResponse> promise) {
+        public DohRequestWebSocketCodec(DnsRequest request, ClientChannelContext context, Promise<IpResponse> promise) {
             this.request = request;
+            this.context = context;
             this.promise = promise;
         }
 
@@ -161,7 +173,8 @@ public interface ClientDnsRelayHandler extends ClientRelayHandler {
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
             if (evt == WebSocketClientProtocolHandler.ClientHandshakeStateEvent.HANDSHAKE_COMPLETE) {
-                Doh.query(ctx.channel(), request, promise);
+                Channel channel = ctx.channel();
+                Doh.query(channel, request, promise, context.newDohSslHandler(channel, request.address()));
             }
         }
     }

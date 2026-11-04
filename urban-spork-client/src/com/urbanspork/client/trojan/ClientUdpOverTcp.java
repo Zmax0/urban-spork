@@ -17,13 +17,13 @@ import java.util.List;
 
 interface ClientUdpOverTcp {
     default Object convertToWrite(DatagramPacketWrapper msg) {
-        DatagramPacket packet = msg.packet();
         ByteBuf buffer = Unpooled.buffer();
         Address.encode(msg.server(), buffer);
-        ByteBuf content = packet.content();
+        ByteBuf content = msg.packet().content();
         buffer.writeShort(content.readableBytes());
         buffer.writeBytes(Trojan.CRLF);
         buffer.writeBytes(content);
+        msg.release();
         return buffer;
     }
 
@@ -45,7 +45,7 @@ interface ClientUdpOverTcp {
         protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
             Channel outboundChannel = ctx.channel();
             InetSocketAddress address = Address.decode(in);
-            logger.info("[udp][trojan]{}←{}~{}←{}", sender, address, channel.localAddress(), outboundChannel.localAddress());
+            logger.debug("[udp][trojan]{}←{}~{}←{}", sender, address, channel.localAddress(), outboundChannel.localAddress());
             short length = in.readShort();
             in.skipBytes(Trojan.CRLF.length);
             ByteBuf content = in.readBytes(length);

@@ -3,7 +3,6 @@ module com.urbanspork.client.gui {
     requires ch.qos.logback.core;
     requires com.urbanspork.client;
     requires com.urbanspork.common;
-    requires io.netty.common;
     requires io.netty.handler;
     requires io.netty.transport;
     requires java.desktop;

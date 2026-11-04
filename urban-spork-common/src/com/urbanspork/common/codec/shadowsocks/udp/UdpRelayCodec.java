@@ -19,6 +19,7 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.EncoderException;
 import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.util.AttributeKey;
+import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,6 +103,7 @@ public class UdpRelayCodec extends MessageToMessageCodec<DatagramPacket, Datagra
         }
         if (cipher instanceof Aead2022CipherCodecImpl && !filter.inner.validatePacketId(packetId, Long.MAX_VALUE)) {
             logger.error("packet id out of window, {}→{}|{}", msg.sender(), packet.address(), control);
+            ReferenceCountUtil.release(packet.content());
             return;
         }
         out.add(new DatagramPacket(packet.content(), packet.address(), msg.sender()));

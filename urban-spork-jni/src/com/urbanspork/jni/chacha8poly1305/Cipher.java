@@ -1,8 +1,10 @@
 package com.urbanspork.jni.chacha8poly1305;
 
-import com.urbanspork.jni.CipherLoader;
+import com.urbanspork.jni.AeadCipherLoader;
 
-public class Cipher extends CipherLoader {
+import java.nio.ByteBuffer;
+
+public class Cipher extends AeadCipherLoader {
     private Cipher() {}
 
     public static Cipher newInstance(byte[] key) {
@@ -11,20 +13,18 @@ public class Cipher extends CipherLoader {
 
     static native Cipher init(byte[] key);
 
-    static native void dispose(long ptr);
+    @Override
+    protected native void dispose(long ptr);
 
     @Override
-    public native void encrypt(byte[] nonce, byte[] aad, byte[] plaintext);
+    protected native void encrypt0(long ptr, byte[] nonce, byte[] aad, byte[] plaintext);
 
     @Override
-    public native void decrypt(byte[] nonce, byte[] aad, byte[] ciphertext);
+    protected native void decrypt0(long ptr, byte[] nonce, byte[] aad, byte[] ciphertext);
 
     @Override
-    public void close() {
-        if (closed) {
-            return;
-        }
-        dispose(ptr);
-        closed = true;
-    }
+    protected native void encryptDirect0(long ptr, byte[] nonce, byte[] aad, ByteBuffer plaintext);
+
+    @Override
+    protected native void decryptDirect0(long ptr, byte[] nonce, byte[] aad, ByteBuffer ciphertext);
 }
