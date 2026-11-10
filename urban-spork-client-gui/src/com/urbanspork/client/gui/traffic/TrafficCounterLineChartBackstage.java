@@ -1,6 +1,5 @@
 package com.urbanspork.client.gui.traffic;
 
-import com.urbanspork.client.gui.interpolation.MonotoneCubic;
 import com.urbanspork.client.gui.util.HumanReadable;
 import io.netty.handler.traffic.TrafficCounter;
 import javafx.animation.Animation;
@@ -8,7 +7,6 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Point2D;
 import javafx.scene.chart.Axis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
@@ -17,10 +15,12 @@ import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.PathElement;
+import javafx.scene.shape.QuadCurveTo;
 import javafx.util.Duration;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class TrafficCounterLineChartBackstage {
@@ -130,9 +130,6 @@ public class TrafficCounterLineChartBackstage {
     }
 
     private static class TrafficCounterLineChart extends LineChart<Number, Number> {
-        private static final int SMOOTH_SEGMENTS = 12;
-        private static final Point2D[] EMPTY_POINTS = new Point2D[0];
-        private static final MonotoneCubic CURVE = new MonotoneCubic();
         private final Map<Series<Number, Number>, CurveCache> curveCache = new IdentityHashMap<>();
 
         public TrafficCounterLineChart(Axis<Number> xAxis, Axis<Number> yAxis) {
@@ -151,62 +148,39 @@ public class TrafficCounterLineChartBackstage {
             if (!(series.getNode() instanceof Path path)) {
                 return;
             }
-            Point2D[] points = points(path.getElements());
-            if (points.length < 2) {
+            ObservableList<PathElement> elements = path.getElements();
+            if (elements.size() < 3) {
                 curveCache.remove(series);
                 return;
             }
             CurveCache cache = curveCache.computeIfAbsent(series, _ -> new CurveCache());
-            Point2D[] interpolate = CURVE.interpolate(points, SMOOTH_SEGMENTS);
-            cache.rebuild(interpolate);
+            cache.rebuild(elements.subList(1, elements.size()));
             path.getElements().setAll(cache.elements);
-        }
-
-        private Point2D[] points(ObservableList<PathElement> elements) {
-            if (elements.size() < 2) {
-                return EMPTY_POINTS;
-            }
-            PathElement first = elements.getFirst();
-            if (!(first instanceof MoveTo moveTo)) {
-                return EMPTY_POINTS;
-            }
-            Point2D[] points = new Point2D[elements.size()];
-            points[0] = new Point2D(moveTo.getX(), moveTo.getY());
-            for (int i = 1; i < points.length; i++) {
-                PathElement element = elements.get(i);
-                if (!(element instanceof LineTo lineTo)) {
-                    return EMPTY_POINTS;
-                }
-                points[i] = new Point2D(lineTo.getX(), lineTo.getY());
-            }
-            return points;
         }
 
         private static final class CurveCache {
             private final ArrayList<PathElement> elements = new ArrayList<>();
 
-            private void rebuild(Point2D[] interpolate) {
-                if (elements.size() != interpolate.length) {
+            private void rebuild(List<PathElement> points) {
+                if (elements.size() != points.size()) {
                     elements.clear();
-                    elements.add(new MoveTo(interpolate[0].getX(), interpolate[0].getY()));
-                    for (int i = 1; i < interpolate.length; i++) {
-                        elements.add(new LineTo(interpolate[i].getX(), interpolate[i].getY()));
+                    elements.add(new MoveTo());
+                    for (int i = 1; i < points.size(); i++) {
+                        elements.add(new QuadCurveTo());
                     }
-                    return;
                 }
-                update(elements.getFirst(), interpolate[0]);
-                for (int i = 1; i < interpolate.length; i++) {
-                    update(elements.get(i), interpolate[i]);
-                }
-            }
-
-            private void update(PathElement element, Point2D point) {
-                if (element instanceof MoveTo moveTo) {
-                    moveTo.setX(point.getX());
-                    moveTo.setY(point.getY());
-                } else if (element instanceof LineTo lineTo) {
-                    lineTo.setX(point.getX());
-                    lineTo.setY(point.getY());
+                LineTo first = (LineTo) points.getFirst();
+                MoveTo start = (MoveTo) elements.getFirst();
+                start.setX(first.getX());
+                start.setY(first.getY());
+                for (int i = 1; i < points.size(); i++) {
+                    LineTo current = (LineTo) points.get(i);
+                    LineTo next = (LineTo) points.get(Math.min(i + 1, points.size() - 1));
+                    QuadCurveTo curve = (QuadCurveTo) elements.get(i);
+                    curve.setControlX(current.getX());
+                    curve.setControlY(current.getY());
+                    curve.setX((current.getX() + next.getX()) / 2);
+                    curve.setY((current.getY() + next.getY()) / 2);
                 }
             }
         }
