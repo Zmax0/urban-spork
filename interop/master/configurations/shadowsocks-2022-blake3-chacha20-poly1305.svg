@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="168" height="20" role="img" aria-label="interop shadowsocks/2022-blake3-chacha20-poly1305: 4/4 passing; master; 7f774d483e06">
+  <title>interop shadowsocks/2022-blake3-chacha20-poly1305: 4/4 passing; master; 7f774d483e06</title>
+  <linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
+  <clipPath id="r"><rect width="168" height="20" rx="3" fill="#fff"/></clipPath>
+  <g clip-path="url(#r)"><path fill="#555" d="M0 0h52v20H0z"/><path fill="#4c1" d="M52 0h116v20H52z"/><path fill="url(#s)" d="M0 0h168v20H0z"/></g>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11">
+    <text x="26" y="15" fill="#010101" fill-opacity=".3">interop</text><text x="26" y="14">interop</text>
+    <text x="110" y="15" fill="#010101" fill-opacity=".3">4/4 passing</text><text x="110" y="14">4/4 passing</text>
+  </g>
+</svg>

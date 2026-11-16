@@ -1,0 +1,252 @@
+{
+  "branch": "master",
+  "commit": "7f774d483e06d2dd5669e45c74f3f67d60859a95",
+  "run_id": "43826593747",
+  "run_number": 10,
+  "run_attempt": 1,
+  "run_url": "https://github.com/Zmax0/urban-spork/actions/runs/43826593747",
+  "generated_at": "2026-11-16T07:52:29.115870+00:00",
+  "protocols": {
+    "shadowsocks": {
+      "tests": 26,
+      "passed": 26,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "flaky": 0,
+      "expected": 26,
+      "issues": [],
+      "peers": [
+        {
+          "image": "ghcr.io/shadowsocks/sslocal-rust@sha256:56786760f6a1bc447c3bcdcac94d5e2e2ffdbdaacce14c38e819003d8bb125dc",
+          "actual_version": "shadowsocks 1.25.0"
+        },
+        {
+          "image": "ghcr.io/shadowsocks/ssserver-rust@sha256:22240c07d8ce3a36421ede770bd775dcc5fc56d5d829943196957b05452dc36f",
+          "actual_version": "shadowsocks 1.25.0"
+        }
+      ],
+      "configurations": {
+        "aes-128-gcm": {
+          "tests": 6,
+          "passed": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 6,
+          "status": "passed"
+        },
+        "aes-256-gcm": {
+          "tests": 4,
+          "passed": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 4,
+          "status": "passed"
+        },
+        "chacha20-poly1305": {
+          "tests": 4,
+          "passed": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 4,
+          "status": "passed"
+        },
+        "2022-blake3-aes-128-gcm": {
+          "tests": 4,
+          "passed": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 4,
+          "status": "passed"
+        },
+        "2022-blake3-aes-256-gcm": {
+          "tests": 4,
+          "passed": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 4,
+          "status": "passed"
+        },
+        "2022-blake3-chacha20-poly1305": {
+          "tests": 4,
+          "passed": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 4,
+          "status": "passed"
+        }
+      },
+      "job": {
+        "commit": "7f774d483e06d2dd5669e45c74f3f67d60859a95",
+        "run_id": "43826593747",
+        "run_attempt": 1,
+        "docker": "success",
+        "verify": "success"
+      },
+      "status": "passed"
+    },
+    "vmess": {
+      "tests": 34,
+      "passed": 34,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "flaky": 0,
+      "expected": 34,
+      "issues": [],
+      "peers": [
+        {
+          "image": "v2fly/v2fly-core@sha256:d06727b221fe8cbaed2dd1d23f9d8270cb6581dc1c2c2949bd4d04d4c332eee3",
+          "actual_version": "V2Ray 5.41.0 (V2Fly, a community-driven edition of V2Ray.) Custom (go1.24.2 linux/amd64)\nA unified platform for anti-censorship."
+        }
+      ],
+      "configurations": {
+        "aes-128-gcm-tcp": {
+          "tests": 6,
+          "passed": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 6,
+          "status": "passed"
+        },
+        "aes-128-gcm-tls": {
+          "tests": 4,
+          "passed": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 4,
+          "status": "passed"
+        },
+        "aes-128-gcm-ws": {
+          "tests": 4,
+          "passed": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 4,
+          "status": "passed"
+        },
+        "aes-128-gcm-wss": {
+          "tests": 4,
+          "passed": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 4,
+          "status": "passed"
+        },
+        "chacha20-poly1305-tcp": {
+          "tests": 4,
+          "passed": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 4,
+          "status": "passed"
+        },
+        "chacha20-poly1305-tls": {
+          "tests": 4,
+          "passed": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 4,
+          "status": "passed"
+        },
+        "chacha20-poly1305-ws": {
+          "tests": 4,
+          "passed": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 4,
+          "status": "passed"
+        },
+        "chacha20-poly1305-wss": {
+          "tests": 4,
+          "passed": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 4,
+          "status": "passed"
+        }
+      },
+      "job": {
+        "commit": "7f774d483e06d2dd5669e45c74f3f67d60859a95",
+        "run_id": "43826593747",
+        "run_attempt": 1,
+        "docker": "success",
+        "verify": "success"
+      },
+      "status": "passed"
+    },
+    "trojan": {
+      "tests": 6,
+      "passed": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "flaky": 0,
+      "expected": 6,
+      "issues": [],
+      "peers": [
+        {
+          "image": "trojangfw/trojan@sha256:5b36c2b9046c6412af9d4e3145611d323b532bcc9fd5a230ad5a52b12d98b5f7",
+          "actual_version": "Welcome to trojan 1.16.0\nBoost 1_71, OpenSSL 1.1.1g  21 Apr 2020\n [Enabled] MySQL Support (10.4.3)\n [Enabled] TCP_FASTOPEN Support\n [Enabled] TCP_FASTOPEN_CONNECT Support\n [Enabled] SSL KeyLog Support\n [Enabled] NAT Support\n [Enabled] TLS1.3 Ciphersuites Support\n [Enabled] TCP Port Reuse Support\nOpenSSL Information\n\tBuild Flags: compiler: gcc -fPIC -pthread -m64 -Wa,--noexecstack -Os -fomit-frame-pointer -g -Os -fomit-frame-pointer -Os -fomit-frame-pointer -g -Wa,--noexecstack -DOPENSSL_USE_NODELETE -DL_ENDIAN -DOPENSSL_PIC -DOPENSSL_CPUID_OBJ -DOPENSSL_IA32_SSE2 -DOPENSSL_BN_ASM_MONT -DOPENSSL_BN_ASM_MONT5 -DOPENSSL_BN_ASM_GF2m -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM -DKECCAK1600_ASM -DRC4_ASM -DMD5_ASM -DAESNI_ASM -DVPAES_ASM -DGHASH_ASM -DECP_NISTZ256_ASM -DX25519_ASM -DPOLY1305_ASM -DNDEBUG -Os -fomit-frame-pointer"
+        }
+      ],
+      "configurations": {
+        "tls": {
+          "tests": 6,
+          "passed": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "flaky": 0,
+          "expected": 6,
+          "status": "passed"
+        }
+      },
+      "job": {
+        "commit": "7f774d483e06d2dd5669e45c74f3f67d60859a95",
+        "run_id": "43826593747",
+        "run_attempt": 1,
+        "docker": "success",
+        "verify": "success"
+      },
+      "status": "passed"
+    }
+  },
+  "expected": 66,
+  "issues": [],
+  "tests": 66,
+  "passed": 66,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "flaky": 0,
+  "status": "passed"
+}
