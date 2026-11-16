@@ -68,9 +68,9 @@ class AeadBodyCodecTest {
         if (RequestCommand.UDP.equals(header.command())) {
             bytes = Dice.rollBytes(ThreadLocalRandom.current().nextInt(clientBodyEncoder.payloadLimit() / 2));
             clientBodyEncoder.encodePacket(Unpooled.wrappedBuffer(bytes), out);
-            serverBodyDecoder.decodePacket(out, list);
+            serverBodyDecoder.decodePayload(out, list);
             serverBodyEncoder.encodePacket(merge(list), out);
-            clientBodyDecoder.decodePacket(out, list);
+            clientBodyDecoder.decodePayload(out, list);
         } else {
             bytes = Dice.rollBytes(ThreadLocalRandom.current().nextInt(10 * clientBodyEncoder.payloadLimit()));
             clientBodyEncoder.encodePayload(Unpooled.wrappedBuffer(bytes), out);

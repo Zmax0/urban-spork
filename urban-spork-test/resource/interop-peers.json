@@ -1,0 +1,22 @@
+{
+  "shadowsocksClient": {
+    "name": "ghcr.io/shadowsocks/sslocal-rust",
+    "tag": "v1.25.0",
+    "digest": "sha256:56786760f6a1bc447c3bcdcac94d5e2e2ffdbdaacce14c38e819003d8bb125dc"
+  },
+  "shadowsocksServer": {
+    "name": "ghcr.io/shadowsocks/ssserver-rust",
+    "tag": "v1.25.0",
+    "digest": "sha256:22240c07d8ce3a36421ede770bd775dcc5fc56d5d829943196957b05452dc36f"
+  },
+  "vmess": {
+    "name": "v2fly/v2fly-core",
+    "tag": "v5.41.0",
+    "digest": "sha256:d06727b221fe8cbaed2dd1d23f9d8270cb6581dc1c2c2949bd4d04d4c332eee3"
+  },
+  "trojan": {
+    "name": "trojangfw/trojan",
+    "tag": "latest",
+    "digest": "sha256:5b36c2b9046c6412af9d4e3145611d323b532bcc9fd5a230ad5a52b12d98b5f7"
+  }
+}

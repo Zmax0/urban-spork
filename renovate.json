@@ -1,0 +1,33 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "schedule:monthly"],
+  "mode": "full",
+  "timezone": "UTC",
+  "enabledManagers": ["custom.jsonata"],
+  "includePaths": ["urban-spork-test/resource/interop-peers.json"],
+  "updateNotScheduled": false,
+  "automerge": false,
+  "customManagers": [
+    {
+      "customType": "jsonata",
+      "fileFormat": "json",
+      "managerFilePatterns": ["/^urban-spork-test/resource/interop-peers\\.json$/"],
+      "matchStrings": [
+        "$.*.{\"depName\": name, \"currentValue\": tag, \"currentDigest\": digest}"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["custom.jsonata"],
+      "matchDatasources": ["docker"],
+      "groupName": "interop peer images",
+      "groupSlug": "interop-peer-images",
+      "separateMajorMinor": false,
+      "pinDigests": true,
+      "allowedVersions": "/^(v?[0-9]+\\.[0-9]+\\.[0-9]+|latest)$/"
+    }
+  ]
+}

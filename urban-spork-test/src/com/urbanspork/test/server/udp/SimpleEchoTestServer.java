@@ -42,15 +42,10 @@ public class SimpleEchoTestServer implements Closeable {
     private static void receive(DatagramSocket socket) {
         try {
             for (; ; ) {
-                byte[] data = new byte[1024];
+                byte[] data = new byte[65535];
                 DatagramPacket packet = new DatagramPacket(data, data.length);
                 socket.receive(packet);
-                String str = new String(data, 0, packet.getLength());
-                InetSocketAddress address = new InetSocketAddress(packet.getAddress().getHostAddress(), packet.getPort());
-                logger.info(MessageFormat.format("Receive msg from [{0}]: {1}", address, str));
-                byte[] bytes = MessageFormat.format("Received your msg [{0}] ^_^", str).getBytes();
-                socket.send(new DatagramPacket(bytes, bytes.length, address));
-                logger.info("Callback");
+                socket.send(packet);
             }
         } catch (SocketException e) {
             logger.info("UDP test server closed");

@@ -13,7 +13,7 @@ public record PayloadDecoder(Authenticator auth, ChunkSizeCodec sizeCodec, Paddi
     }
 
     /**
-     * decrypt payload for TCP
+     * Decrypt complete frames from a stream, preserving each frame's boundary.
      */
     public void decodePayload(ByteBuf in, List<Object> out) {
         while (in.isReadable()) {
@@ -47,10 +47,6 @@ public record PayloadDecoder(Authenticator auth, ChunkSizeCodec sizeCodec, Paddi
     /**
      * decrypt packet for UDP
      */
-    public void decodePacket(ByteBuf in, List<Object> out) {
-        out.add(decodePacket(in));
-    }
-
     public ByteBuf decodePacket(ByteBuf in) {
         int paddingLength = padding.nextPaddingLength();
         int sizeBytes = sizeCodec.sizeBytes();
@@ -70,6 +66,7 @@ public record PayloadDecoder(Authenticator auth, ChunkSizeCodec sizeCodec, Paddi
     @Override
     public void close() throws Exception {
         auth.close();
+        sizeCodec.close();
     }
 
     private static class Length {

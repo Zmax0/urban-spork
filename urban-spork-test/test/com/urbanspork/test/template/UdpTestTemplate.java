@@ -4,16 +4,19 @@ import com.urbanspork.common.codec.socks.DatagramPacketDecoder;
 import com.urbanspork.common.codec.socks.DatagramPacketEncoder;
 import com.urbanspork.common.protocol.HandshakeResult;
 import com.urbanspork.common.transport.udp.DatagramPacketWrapper;
-import com.urbanspork.test.TestDice;
+import com.urbanspork.common.util.Dice;
 import com.urbanspork.test.client.Socks5Handshake;
 import com.urbanspork.test.server.udp.DelayedEchoTestServer;
 import com.urbanspork.test.server.udp.SimpleEchoTestServer;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioIoHandler;
@@ -23,12 +26,12 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandResponse;
 import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AssertionFailureBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +66,7 @@ public abstract class UdpTestTemplate extends TestTemplate {
     private void initChannel() {
         channel = new Bootstrap().group(group)
             .channel(NioDatagramChannel.class)
+            .option(ChannelOption.RECVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(65535))
             .handler(new ChannelInitializer<>() {
                 @Override
                 protected void initChannel(Channel ch) {
@@ -79,7 +83,7 @@ public abstract class UdpTestTemplate extends TestTemplate {
                     );
                 }
             })
-            .bind(0).syncUninterruptibly().channel();
+            .bind("127.0.0.1", 0).syncUninterruptibly().channel();
     }
 
     protected void handshakeAndSendBytes(InetSocketAddress proxyAddress) throws InterruptedException, ExecutionException, TimeoutException {
@@ -89,28 +93,31 @@ public abstract class UdpTestTemplate extends TestTemplate {
     }
 
     void handshakeAndSendBytes(InetSocketAddress proxyAddress, InetSocketAddress dstAddress) throws InterruptedException, ExecutionException, TimeoutException {
-        HandshakeResult<Socks5CommandResponse> result = Socks5Handshake.noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, dstAddress).get(10, TimeUnit.SECONDS);
+        HandshakeResult<Socks5CommandResponse> result = Socks5Handshake
+            .noAuth(group, Socks5CommandType.UDP_ASSOCIATE, proxyAddress, (InetSocketAddress) channel.localAddress()).get(10, TimeUnit.SECONDS);
         try {
             Socks5CommandResponse response = result.response();
             Assertions.assertEquals(Socks5CommandStatus.SUCCESS, response.status());
+            // A large first datagram catches truncation before any adaptive buffer can grow.
+            byte[] bytes = Dice.rollBytes(4096);
+            InetSocketAddress expectedAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(), dstAddress.getPort());
+            CompletableFuture<Void> promise = new CompletableFuture<>();
+            consumer = msg -> {
+                try {
+                    Assertions.assertEquals(expectedAddress, msg.server());
+                    Assertions.assertArrayEquals(bytes, ByteBufUtil.getBytes(msg.packet().content()));
+                    promise.complete(null);
+                } catch (AssertionError e) {
+                    promise.completeExceptionally(e);
+                }
+            };
+            InetSocketAddress relayAddress = new InetSocketAddress(response.bndAddr(), response.bndPort());
+            DatagramPacket data = new DatagramPacket(Unpooled.wrappedBuffer(bytes), dstAddress);
+            channel.writeAndFlush(new DatagramPacketWrapper(data, relayAddress)).sync();
+            promise.get(DelayedEchoTestServer.MAX_DELAYED_SECOND + 5L, TimeUnit.SECONDS);
         } finally {
             result.channel().close().sync();
         }
-        CompletableFuture<Void> promise = new CompletableFuture<>();
-        consumer = msg -> {
-            if (dstAddress.isUnresolved() || dstAddress.equals(msg.server())) {
-                promise.complete(null);
-            } else {
-                promise.completeExceptionally(AssertionFailureBuilder.assertionFailure().message("Not equals").build());
-            }
-        };
-        String str = TestDice.rollString();
-        DatagramPacket data = new DatagramPacket(Unpooled.copiedBuffer(str.getBytes()), dstAddress);
-        DatagramPacketWrapper msg = new DatagramPacketWrapper(data, proxyAddress);
-        logger.info("Send msg {}", msg);
-        channel.writeAndFlush(msg);
-        promise.get(DelayedEchoTestServer.MAX_DELAYED_SECOND + 5L, TimeUnit.SECONDS);
-        Assertions.assertTrue(promise.isDone());
     }
 
     @AfterAll

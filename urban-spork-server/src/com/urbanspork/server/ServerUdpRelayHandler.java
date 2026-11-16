@@ -9,7 +9,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
@@ -70,6 +72,7 @@ public class ServerUdpRelayHandler extends SimpleChannelInboundHandler<DatagramP
         EventLoop eventLoop = inboundChannel.eventLoop();
         Promise<Channel> promise = eventLoop.next().newPromise();
         new Bootstrap().group(eventLoop).channel(NioDatagramChannel.class)
+            .option(ChannelOption.RECVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(65535))
             .handler(new ChannelInitializer<>() {
                 @Override
                 protected void initChannel(Channel ch) {

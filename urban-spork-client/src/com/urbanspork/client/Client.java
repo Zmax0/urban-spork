@@ -9,6 +9,7 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
@@ -126,6 +127,7 @@ public class Client {
 
     private static DatagramChannel launchUdp(EventLoopGroup bossGroup, String host, int port, ClientUdpInitializer initializer) throws InterruptedException {
         return (DatagramChannel) new Bootstrap().group(bossGroup).channel(NioDatagramChannel.class)
+            .option(ChannelOption.RECVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(65535))
             .handler(initializer)
             .bind(host, port).sync().channel();
     }

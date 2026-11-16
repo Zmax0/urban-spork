@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class EchoTestServer implements Closeable {
 
@@ -27,11 +28,13 @@ public class EchoTestServer implements Closeable {
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
     private final ServerSocketChannel channel;
+    private final AtomicLong receivedBytes;
 
-    private EchoTestServer(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerSocketChannel channel) {
+    private EchoTestServer(EventLoopGroup bossGroup, EventLoopGroup workerGroup, ServerSocketChannel channel, AtomicLong receivedBytes) {
         this.bossGroup = bossGroup;
         this.workerGroup = workerGroup;
         this.channel = channel;
+        this.receivedBytes = receivedBytes;
     }
 
     static void main() throws InterruptedException {
@@ -41,6 +44,7 @@ public class EchoTestServer implements Closeable {
     public static EchoTestServer launch(int port) throws InterruptedException {
         EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+        AtomicLong receivedBytes = new AtomicLong();
         try {
             ServerSocketChannel channel = (ServerSocketChannel) new ServerBootstrap().group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
@@ -50,6 +54,7 @@ public class EchoTestServer implements Closeable {
                         ch.pipeline().addLast(new SimpleChannelInboundHandler<ByteBuf>(false) {
                             @Override
                             protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
+                                receivedBytes.addAndGet(msg.readableBytes());
                                 logger.info("Receive msg and send back");
                                 ctx.writeAndFlush(msg);
                             }
@@ -58,7 +63,7 @@ public class EchoTestServer implements Closeable {
                 })
                 .bind(InetAddress.getLoopbackAddress(), port).sync().channel();
             logger.info("Launch echo test server => {}", channel.localAddress());
-            return new EchoTestServer(bossGroup, workerGroup, channel);
+            return new EchoTestServer(bossGroup, workerGroup, channel, receivedBytes);
         } catch (InterruptedException | RuntimeException e) {
             shutdown(workerGroup, bossGroup);
             throw e;
@@ -67,6 +72,10 @@ public class EchoTestServer implements Closeable {
 
     public InetSocketAddress localAddress() {
         return channel.localAddress();
+    }
+
+    public long receivedBytes() {
+        return receivedBytes.get();
     }
 
     public void awaitTermination() throws InterruptedException {

@@ -1,0 +1,169 @@
+name: interop
+on:
+  push:
+    branches: [ master, 'dev/**' ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: interop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  interop:
+    name: ${{ matrix.protocol }} client/server
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - protocol: shadowsocks
+            test: ShadowsocksInteroperabilityIntegrationTest
+          - protocol: vmess
+            test: VMessInteroperabilityIntegrationTest
+          - protocol: trojan
+            test: TrojanInteroperabilityIntegrationTest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: corretto
+          cache: maven
+      - name: Verify Docker
+        id: docker
+        run: docker info
+      - name: Verify interoperability
+        id: verify
+        run: mvn -B -pl urban-spork-test -am -Pinterop verify -Dit.test=${{ matrix.test }}
+      - name: Record job outcome
+        if: always()
+        env:
+          DOCKER_RESULT: ${{ steps.docker.outcome }}
+          VERIFY_RESULT: ${{ steps.verify.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          directory = Path('urban-spork-test/target/interop')
+          directory.mkdir(parents=True, exist_ok=True)
+          (directory / 'job.json').write_text(json.dumps({
+              'commit': os.environ['GITHUB_SHA'],
+              'run_id': os.environ['GITHUB_RUN_ID'],
+              'run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
+              'docker': os.environ['DOCKER_RESULT'],
+              'verify': os.environ['VERIFY_RESULT'],
+          }))
+          PY
+      - name: Upload test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: interop-${{ matrix.protocol }}
+          path: |
+            urban-spork-test/target/failsafe-reports/
+            urban-spork-test/target/interop/
+          retention-days: 7
+          overwrite: true
+
+  report:
+    name: Summarize interoperability
+    needs: interop
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      status: ${{ steps.report.outputs.status }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Test report accounting
+        run: python3 -B -m unittest discover -s .github/scripts -p 'test_*.py'
+      - uses: actions/download-artifact@v8
+        id: reports
+        # Generate an incomplete badge on download failure; the final result check still fails.
+        continue-on-error: true
+        with:
+          pattern: interop-*
+          path: ${{ runner.temp }}/interop-reports
+      - name: Generate badge and summary
+        id: report
+        env:
+          MATRIX_RESULT: ${{ needs.interop.result == 'success' && steps.reports.outcome == 'success' && 'success' || 'failure' }}
+        run: |
+          python3 .github/scripts/interop_report.py \
+            --artifacts "$RUNNER_TEMP/interop-reports" \
+            --output "$RUNNER_TEMP/interop-badge"
+          cat "$RUNNER_TEMP/interop-badge/summary.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: interop-badge
+          path: ${{ runner.temp }}/interop-badge/
+          retention-days: 7
+          overwrite: true
+      - name: Require the complete passing matrix
+        env:
+          RESULT: ${{ steps.report.outputs.status }}
+        run: test "$RESULT" = passed
+
+  publish:
+    name: Publish interoperability badge
+    needs: report
+    if: >-
+      ${{ !cancelled() && needs.report.outputs.status != '' &&
+          github.event_name != 'pull_request' &&
+          (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/dev/')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    concurrency:
+      group: interop-badges
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
+        with:
+          name: interop-badge
+          path: ${{ runner.temp }}/interop-badge
+      - name: Publish this branch's result
+        shell: bash
+        env:
+          SOURCE_BRANCH: ${{ github.ref_name }}
+        run: |
+          source_ref=$(git ls-remote origin "refs/heads/$SOURCE_BRANCH")
+          if [ "${source_ref%%$'\t'*}" != "$GITHUB_SHA" ]; then
+            echo 'Source branch has moved; a newer run will publish its result.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          badge_ref=$(git ls-remote --heads origin badges)
+          if [ -n "$badge_ref" ]; then
+            git fetch --depth=1 origin badges
+            git switch -C badges FETCH_HEAD
+          else
+            git switch --orphan badges
+          fi
+          destination="interop/$SOURCE_BRANCH"
+          if [ -f "$destination/result.json" ]; then
+            python3 - "$destination/result.json" <<'PY'
+          import json, os, sys
+          previous = json.load(open(sys.argv[1]))
+          current = (int(os.environ['GITHUB_RUN_NUMBER']), int(os.environ['GITHUB_RUN_ATTEMPT']))
+          if (previous['run_number'], previous['run_attempt']) > current:
+              sys.exit('Refusing to replace a newer published result')
+          PY
+          fi
+          git rm -r --ignore-unmatch -- "$destination"
+          mkdir -p "$destination"
+          cp -R "$RUNNER_TEMP/interop-badge/." "$destination/"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$destination"
+          git commit -m "ci: update interop badge for $SOURCE_BRANCH"
+          git push origin HEAD:refs/heads/badges
+          echo "Published [badge](https://raw.githubusercontent.com/$GITHUB_REPOSITORY/badges/$destination/badge.svg) for \`$SOURCE_BRANCH\`." >> "$GITHUB_STEP_SUMMARY"

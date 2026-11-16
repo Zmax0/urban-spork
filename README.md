@@ -158,3 +158,27 @@ server
 client(with a bundled java runtime, no java required to run)
 
     urban-spork-client-gui/target/urban-spork-client-gui-<platform>-<version>.zip
+
+## Interoperability
+
+[![Total interoperability](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/badge.svg)][interop-results]
+
+| Implementation | Configurations | Result |
+|:---------------|:---------------|:-------|
+| shadowsocks-rust | AES-128-GCM / TCP, UDP | [![Shadowsocks AES-128-GCM / TCP, UDP](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/shadowsocks-aes-128-gcm.svg)][interop-results] |
+| shadowsocks-rust | AES-256-GCM / TCP, UDP | [![Shadowsocks AES-256-GCM / TCP, UDP](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/shadowsocks-aes-256-gcm.svg)][interop-results] |
+| shadowsocks-rust | CHACHA20-POLY1305 / TCP, UDP | [![Shadowsocks CHACHA20-POLY1305 / TCP, UDP](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/shadowsocks-chacha20-poly1305.svg)][interop-results] |
+| shadowsocks-rust | 2022 AES-128-GCM / TCP, UDP | [![Shadowsocks 2022 AES-128-GCM / TCP, UDP](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/shadowsocks-2022-blake3-aes-128-gcm.svg)][interop-results] |
+| shadowsocks-rust | 2022 AES-256-GCM / TCP, UDP | [![Shadowsocks 2022 AES-256-GCM / TCP, UDP](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/shadowsocks-2022-blake3-aes-256-gcm.svg)][interop-results] |
+| shadowsocks-rust | 2022 CHACHA20-POLY1305 / TCP, UDP | [![Shadowsocks 2022 CHACHA20-POLY1305 / TCP, UDP](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/shadowsocks-2022-blake3-chacha20-poly1305.svg)][interop-results] |
+| V2Ray (V2Fly) | AES-128-GCM / TCP | [![VMess AES-128-GCM / TCP](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/vmess-aes-128-gcm-tcp.svg)][interop-results] |
+| V2Ray (V2Fly) | AES-128-GCM / TLS | [![VMess AES-128-GCM / TLS](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/vmess-aes-128-gcm-tls.svg)][interop-results] |
+| V2Ray (V2Fly) | AES-128-GCM / WS | [![VMess AES-128-GCM / WS](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/vmess-aes-128-gcm-ws.svg)][interop-results] |
+| V2Ray (V2Fly) | AES-128-GCM / WSS | [![VMess AES-128-GCM / WSS](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/vmess-aes-128-gcm-wss.svg)][interop-results] |
+| V2Ray (V2Fly) | CHACHA20-POLY1305 / TCP | [![VMess CHACHA20-POLY1305 / TCP](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/vmess-chacha20-poly1305-tcp.svg)][interop-results] |
+| V2Ray (V2Fly) | CHACHA20-POLY1305 / TLS | [![VMess CHACHA20-POLY1305 / TLS](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/vmess-chacha20-poly1305-tls.svg)][interop-results] |
+| V2Ray (V2Fly) | CHACHA20-POLY1305 / WS | [![VMess CHACHA20-POLY1305 / WS](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/vmess-chacha20-poly1305-ws.svg)][interop-results] |
+| V2Ray (V2Fly) | CHACHA20-POLY1305 / WSS | [![VMess CHACHA20-POLY1305 / WSS](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/vmess-chacha20-poly1305-wss.svg)][interop-results] |
+| Trojan (trojan-gfw) | TLS | [![Trojan TLS](https://raw.githubusercontent.com/Zmax0/urban-spork/badges/interop/dev/protocol-interop-ci/configurations/trojan-tls.svg)][interop-results] |
+
+[interop-results]: https://github.com/Zmax0/urban-spork/blob/badges/interop/dev/protocol-interop-ci/summary.md

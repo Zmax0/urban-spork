@@ -15,6 +15,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.DatagramChannel;
@@ -90,7 +91,7 @@ public class Server {
             .group(bossGroup, workerGroup)
             .channel(NioServerSocketChannel.class)
             .childHandler(new ServerInitializer(context, children))
-            .bind(config.getPort())
+            .bind(config.getHost(), config.getPort())
             .sync().channel();
         config.setPort(tcp.localAddress().getPort());
         logger.info("Running a tcp server => {}", config);
@@ -101,6 +102,7 @@ public class Server {
         ServerConfig config = context.config();
         if (Protocol.shadowsocks == config.getProtocol() && config.udpEnabled()) {
             DatagramChannel udp = (DatagramChannel) new Bootstrap().group(group).channel(NioDatagramChannel.class)
+                .option(ChannelOption.RECVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(65535))
                 .option(ChannelOption.SO_REUSEADDR, true)
                 .handler(new ChannelInitializer<>() {
                     @Override
@@ -112,7 +114,7 @@ public class Server {
                         );
                     }
                 })
-                .bind(config.getPort()).sync().channel();
+                .bind(config.getHost(), config.getPort()).sync().channel();
             logger.info("Running a udp server => {}", config);
             return Optional.of(udp);
         } else if (config.quicEnabled()) {
@@ -148,7 +150,7 @@ public class Server {
             .group(boosGroup)
             .channel(NioDatagramChannel.class)
             .handler(codec)
-            .bind(config.getPort())
+            .bind(config.getHost(), config.getPort())
             .sync()
             .channel();
         logger.info("Running a quic server => {}", config);

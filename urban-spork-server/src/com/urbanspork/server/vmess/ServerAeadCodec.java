@@ -131,11 +131,7 @@ public class ServerAeadCodec extends ByteToMessageCodec<ByteBuf> {
                 out.add(new RelayingPayload<>(address, Unpooled.EMPTY_BUFFER));
             }
         }
-        if (isUdp) {
-            payloadDecoder.decodePacket(in, out);
-        } else {
-            payloadDecoder.decodePayload(in, out);
-        }
+        payloadDecoder.decodePayload(in, out);
     }
 
     @Override

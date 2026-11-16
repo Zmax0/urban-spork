@@ -51,13 +51,9 @@ public class DelayedEchoTestServer implements Closeable {
     private static void receive(DatagramSocket socket, ScheduledExecutorService service) {
         try {
             for (; ; ) {
-                byte[] data = new byte[1024];
-                DatagramPacket packet = new DatagramPacket(data, data.length);
-                socket.receive(packet);
-                String str = new String(data, 0, packet.getLength());
-                InetSocketAddress address = new InetSocketAddress(packet.getAddress().getHostAddress(), packet.getPort());
-                byte[] bytes = MessageFormat.format("Received your msg [{0}] ^_^", str).getBytes();
-                DatagramPacket msg = new DatagramPacket(bytes, bytes.length, address);
+                byte[] data = new byte[65535];
+                DatagramPacket msg = new DatagramPacket(data, data.length);
+                socket.receive(msg);
                 int id = System.identityHashCode(msg);
                 service.schedule(
                     () -> {
@@ -69,7 +65,7 @@ public class DelayedEchoTestServer implements Closeable {
                         }
                     }, ThreadLocalRandom.current().nextInt(1, MAX_DELAYED_SECOND), TimeUnit.SECONDS
                 );
-                logger.info(MessageFormat.format("Received msg from [{0}]: {1} [id: {2,number,#}]", address, str, id));
+                logger.info(MessageFormat.format("Received {0} bytes [id: {1,number,#}]", msg.getLength(), id));
             }
         } catch (SocketException e) {
             logger.info("UDP test server closed");

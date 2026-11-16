@@ -61,6 +61,19 @@ class ServerTest {
     }
 
     @Test
+    void bindsConfiguredHost() throws InterruptedException {
+        ServerConfig config = ServerConfigTest.testConfig(0);
+        config.setHost("127.0.0.1");
+        config.setTransport(new Transport[]{Transport.TCP, Transport.UDP});
+        try (Server.Instances instances = Server.launch(runtime, List.of(config))) {
+            Server.Instance server = instances.servers().getFirst();
+            InetSocketAddress expected = new InetSocketAddress(config.getHost(), config.getPort());
+            Assertions.assertEquals(expected, server.tcp().localAddress());
+            Assertions.assertEquals(expected, server.udp().orElseThrow().localAddress());
+        }
+    }
+
+    @Test
     void launchEmptyQUIC() throws InterruptedException {
         ServerConfig quic = ServerConfigTest.testConfig(0);
         quic.setProtocol(Protocol.trojan);

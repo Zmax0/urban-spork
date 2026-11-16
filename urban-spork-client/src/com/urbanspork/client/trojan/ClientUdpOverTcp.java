@@ -43,11 +43,21 @@ interface ClientUdpOverTcp {
 
         @Override
         protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
+            if (in.readableBytes() < 2) {
+                return;
+            }
+            int headerLength = Address.requireLength(in, in.readerIndex()) + Short.BYTES + Trojan.CRLF.length;
+            if (in.readableBytes() < headerLength) {
+                return;
+            }
+            int length = in.getUnsignedShort(in.readerIndex() + headerLength - Short.BYTES - Trojan.CRLF.length);
+            if (in.readableBytes() < headerLength + length) {
+                return;
+            }
             Channel outboundChannel = ctx.channel();
             InetSocketAddress address = Address.decode(in);
             logger.debug("[udp][trojan]{}←{}~{}←{}", sender, address, channel.localAddress(), outboundChannel.localAddress());
-            short length = in.readShort();
-            in.skipBytes(Trojan.CRLF.length);
+            in.skipBytes(Short.BYTES + Trojan.CRLF.length);
             ByteBuf content = in.readBytes(length);
             channel.writeAndFlush(new DatagramPacketWrapper(new DatagramPacket(content, address), sender));
         }

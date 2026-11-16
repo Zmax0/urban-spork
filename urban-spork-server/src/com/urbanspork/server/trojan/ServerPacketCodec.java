@@ -30,9 +30,19 @@ class ServerPacketCodec extends ByteToMessageCodec<DatagramPacketWrapper> {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
+        if (msg.readableBytes() < 2) {
+            return;
+        }
+        int headerLength = Address.requireLength(msg, msg.readerIndex()) + Short.BYTES + Trojan.CRLF.length;
+        if (msg.readableBytes() < headerLength) {
+            return;
+        }
+        int length = msg.getUnsignedShort(msg.readerIndex() + headerLength - Short.BYTES - Trojan.CRLF.length);
+        if (msg.readableBytes() < headerLength + length) {
+            return;
+        }
         InetSocketAddress recipient = Address.decode(msg);
-        short length = msg.readShort();
-        msg.skipBytes(Trojan.CRLF.length);
+        msg.skipBytes(Short.BYTES + Trojan.CRLF.length);
         ByteBuf content = msg.readBytes(length);
         out.add(new DatagramPacket(content, recipient, address));
     }

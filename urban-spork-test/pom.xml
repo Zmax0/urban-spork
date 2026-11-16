@@ -27,6 +27,18 @@
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <version>2.0.5</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>slf4j-api</artifactId>
+          <groupId>org.slf4j</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
   </dependencies>
   <build>
     <resources>
@@ -67,4 +79,39 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>interop</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/*InteroperabilityIntegrationTest.java</include>
+              </includes>
+              <failIfNoTests>true</failIfNoTests>
+              <redirectTestOutputToFile>true</redirectTestOutputToFile>
+              <statelessTestsetReporter implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
+                <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
+              </statelessTestsetReporter>
+              <systemPropertyVariables>
+                <java.net.preferIPv4Stack>true</java.net.preferIPv4Stack>
+                <junit.jupiter.execution.parallel.enabled>false</junit.jupiter.execution.parallel.enabled>
+              </systemPropertyVariables>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

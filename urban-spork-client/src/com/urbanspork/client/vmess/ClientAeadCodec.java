@@ -119,11 +119,7 @@ public class ClientAeadCodec extends ByteToMessageCodec<ByteBuf> {
             }
             bodyDecoder = AEADBodyCodec.getBodyDecoder(header, session);
         }
-        if (RequestCommand.UDP.equals(header.command())) {
-            bodyDecoder.decodePacket(in, out);
-        } else {
-            bodyDecoder.decodePayload(in, out);
-        }
+        bodyDecoder.decodePayload(in, out);
     }
 
     @Override
